@@ -36,6 +36,7 @@
 extern apc_cache_t* apc_user_cache;
 
 extern int _apc_store(char *strkey, int strkey_len, const zval *val, const uint ttl, const int exclusive TSRMLS_DC); /* this is hacky */
+extern zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC);
 
 #define APC_BINDUMP_DEBUG 0
 
@@ -399,7 +400,7 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     for(i=0; i < apc_user_cache->num_slots; i++) {
         sp = apc_user_cache->slots[i];
         for(; sp != NULL; sp = sp->next) {
-            if(apc_bin_checkfilter(user_vars, sp->key.data.user.identifier, sp->key.data.user.identifier_len)) {
+            if(apc_bin_checkfilter(user_vars, sp->key.data.identifier, sp->key.data.identifier_len)) {
                 size += sizeof(apc_bd_entry_t*) + sizeof(apc_bd_entry_t);
                 size += sp->value->mem_size - (sizeof(apc_cache_entry_t) - sizeof(apc_cache_entry_value_t));
                 count++;
@@ -418,7 +419,7 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
         return NULL;
     }
 
-    ctxt.copy = APC_NO_COPY; /* avoid stupid ALLOC_ZVAL calls here, hack */
+    ctxt.copy = APC_COPY_OTHER; /* avoid stupid ALLOC_ZVAL calls here, hack */
     apc_bd_alloc_ex((void*)((long)bd + sizeof(apc_bd_t)), bd->size - sizeof(apc_bd_t) -1 TSRMLS_CC);
     bd->num_entries = count;
     bd->entries = apc_bd_alloc_ex(NULL, sizeof(apc_bd_entry_t) * count TSRMLS_CC);
@@ -429,46 +430,45 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     for(i=0; i < apc_user_cache->num_slots; i++) {
         sp = apc_user_cache->slots[i];
         for(; sp != NULL; sp = sp->next) {
-            if(apc_bin_checkfilter(user_vars, sp->key.data.user.identifier, sp->key.data.user.identifier_len)) {
+            if(apc_bin_checkfilter(user_vars, sp->key.data.identifier, sp->key.data.identifier_len)) {
                 ep = &bd->entries[count];
-                ep->type = sp->value->type;
-                ep->val.user.info = apc_bd_alloc(sp->value->data.user.info_len TSRMLS_CC);
-                memcpy(ep->val.user.info, sp->value->data.user.info, sp->value->data.user.info_len);
-                ep->val.user.info_len = sp->value->data.user.info_len;
-                if ((Z_TYPE_P(sp->value->data.user.val) == IS_ARRAY && APCG(serializer))
-                        || Z_TYPE_P(sp->value->data.user.val) == IS_OBJECT) {
+                ep->val.info = apc_bd_alloc(sp->value->data.info_len TSRMLS_CC);
+                memcpy(ep->val.info, sp->value->data.info, sp->value->data.info_len);
+                ep->val.info_len = sp->value->data.info_len;
+                if ((Z_TYPE_P(sp->value->data.val) == IS_ARRAY && APCG(serializer))
+                        || Z_TYPE_P(sp->value->data.val) == IS_OBJECT) {
                     /* avoiding hash copy, hack */
-                    uint type = Z_TYPE_P(sp->value->data.user.val);
-                    Z_TYPE_P(sp->value->data.user.val) = IS_STRING;
-                    ep->val.user.val = apc_copy_zval(NULL, sp->value->data.user.val, &ctxt TSRMLS_CC);
-                    Z_TYPE_P(ep->val.user.val) = IS_OBJECT;
-                    sp->value->data.user.val->type = type;
-                } else if (Z_TYPE_P(sp->value->data.user.val) == IS_ARRAY && !APCG(serializer)) {
+                    uint type = Z_TYPE_P(sp->value->data.val);
+                    Z_TYPE_P(sp->value->data.val) = IS_STRING;
+                    ep->val.val = apc_copy_zval(NULL, sp->value->data.val, &ctxt TSRMLS_CC);
+                    Z_TYPE_P(ep->val.val) = IS_OBJECT;
+                    sp->value->data.val->type = type;
+                } else if (Z_TYPE_P(sp->value->data.val) == IS_ARRAY && !APCG(serializer)) {
                     /* this is a little complicated, we have to unserialize it first, then serialize it again */
                     zval *garbage;
                     ctxt.copy = APC_COPY_OUT_USER;
-                    garbage = apc_copy_zval(NULL, sp->value->data.user.val, &ctxt TSRMLS_CC);
+                    garbage = apc_copy_zval(NULL, sp->value->data.val, &ctxt TSRMLS_CC);
                     APCG(serializer) = apc_find_serializer("php" TSRMLS_CC);
                     ctxt.copy = APC_COPY_IN_USER;
-                    ep->val.user.val = apc_copy_zval(NULL, garbage, &ctxt TSRMLS_CC);
-                    ep->val.user.val->type = IS_OBJECT;
+                    ep->val.val = apc_copy_zval(NULL, garbage, &ctxt TSRMLS_CC);
+                    ep->val.val->type = IS_OBJECT;
                     /* a memleak can not be avoided: zval_ptr_dtor(&garbage); */
                     APCG(serializer) = NULL;
-                    ctxt.copy = APC_NO_COPY;
+                    ctxt.copy = APC_COPY_OTHER;
                 } else {
-                    ep->val.user.val = apc_copy_zval(NULL, sp->value->data.user.val, &ctxt TSRMLS_CC);
+                    ep->val.val = apc_copy_zval(NULL, sp->value->data.val, &ctxt TSRMLS_CC);
                 }
-                ep->val.user.ttl = sp->value->data.user.ttl;
+                ep->val.ttl = sp->value->data.ttl;
 
                 /* swizzle pointers */
-                apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.user.info);
+                apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.info);
                 zend_hash_clean(&APCG(copied_zvals));
-                if (ep->val.user.val->type == IS_OBJECT) {
-                    apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.user.val->value.str.val);
+                if (ep->val.val->type == IS_OBJECT) {
+                    apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.val->value.str.val);
                 } else {
-                    apc_swizzle_zval(bd, &ll, bd->entries[count].val.user.val TSRMLS_CC);
+                    apc_swizzle_zval(bd, &ll, bd->entries[count].val.val TSRMLS_CC);
                 }
-                apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.user.val);
+                apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.val);
 
                 count++;
             }
@@ -502,9 +502,6 @@ int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
     uint i, i2;
     int ret;
     time_t t;
-    zend_op_array *alloc_op_array = NULL;
-    apc_function_t *alloc_functions = NULL;
-    apc_class_t *alloc_classes = NULL;
     apc_cache_entry_t *cache_entry;
     apc_cache_key_t cache_key;
     apc_context_t ctxt;
@@ -527,18 +524,18 @@ int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
         {
             zval *data;
             uint use_copy = 0;
-            switch (Z_TYPE_P(ep->val.user.val)) {
+            switch (Z_TYPE_P(ep->val.val)) {
                 case IS_OBJECT:
                     ctxt.copy = APC_COPY_OUT_USER;
-                    data = apc_copy_zval(NULL, ep->val.user.val, &ctxt TSRMLS_CC);
+                    data = apc_copy_zval(NULL, ep->val.val, &ctxt TSRMLS_CC);
                     use_copy = 1;
                 break;
                 default:
-                    data = ep->val.user.val;
+                    data = ep->val.val;
                 break;
             }
             ctxt.copy = APC_COPY_IN_USER;
-            _apc_store(ep->val.user.info, ep->val.user.info_len, data, ep->val.user.ttl, 0 TSRMLS_CC);
+            _apc_store(ep->val.info, ep->val.info_len, data, ep->val.ttl, 0 TSRMLS_CC);
             if (use_copy) {
                 zval_ptr_dtor(&data);
             }
@@ -550,11 +547,7 @@ int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
 failure:
     apc_pool_destroy(ctxt.pool TSRMLS_CC);
     apc_warning("Unable to allocate memory for apc binary load/dump functionality." TSRMLS_CC);
-#if NONBLOCKING_LOCK_AVAILABLE
-    if(APCG(write_lock)) {
-        apc_cache_write_unlock(apc_cache TSRMLS_CC);
-    }
-#endif
+
     HANDLE_UNBLOCK_INTERRUPTIONS();
     return -1;
 } /* }}} */

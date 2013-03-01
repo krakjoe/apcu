@@ -48,7 +48,8 @@ extern int apc_request_init(TSRMLS_D);
 typedef enum _apc_copy_type {
     APC_NO_COPY = 0,
     APC_COPY_IN_USER,
-    APC_COPY_OUT_USER
+    APC_COPY_OUT_USER,
+	APC_COPY_OTHER
 } apc_copy_type;
 
 typedef struct _apc_context_t

@@ -86,7 +86,10 @@ ZEND_BEGIN_MODULE_GLOBALS(apc)
     double rfc1867_freq;          /* Update frequency as percentage or bytes */
     long rfc1867_ttl;             /* TTL for rfc1867 entries */
     apc_rfc1867_data rfc1867_data;/* Per-request data */
-#endif
+#endif	
+	void *apc_bd_alloc_ptr;      /* bindump alloc() ptr */
+    void *apc_bd_alloc_ubptr;    /* bindump alloc() upper bound ptr */
+    HashTable apc_bd_alloc_list; /* bindump alloc() ptr list */
 	char *preload_path;
     HashTable copied_zvals;      /* my_copy recursion detection list */
     zend_bool coredump_unmap;    /* Trap signals that coredump and unmap shared memory */
