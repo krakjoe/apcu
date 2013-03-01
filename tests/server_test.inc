@@ -1,7 +1,7 @@
 <?php
 /* based on sapi/cli/tests/php_cli_server.inc */
-define ("PHP_CLI_SERVER_HOSTNAME", "localhost");
-define ("PHP_CLI_SERVER_PORT", 8964);
+define ("PHP_CLI_SERVER_HOSTNAME", "127.0.0.1");
+define ("PHP_CLI_SERVER_PORT", 8000);
 define ("PHP_CLI_SERVER_ADDRESS", PHP_CLI_SERVER_HOSTNAME.":".PHP_CLI_SERVER_PORT);
 
 /* XXX incapsulate all this globals into a class when have a favourable minute */
@@ -53,7 +53,7 @@ function server_start_one($host, $port, $code = 'echo "Hello world";', $php_opts
 	//       it might not be listening yet...need to wait until fsockopen() call returns
     $i = 0;
     while (($i++ < 10) && !connection_test($host, $port)) {
-        usleep(10000);
+        usleep(100000);
     }
 
 	return $handle;
@@ -109,7 +109,7 @@ function connection_test($host, $port)
 {
 	$port = intval($port)?:80;
 
-	$fp = @fsockopen($host, $port, $errno, $errstr, 0.5);
+	$fp = @fsockopen($host, $port, $errno, $errstr, 2);
 	if (!$fp) {
 		return false;
 	}
@@ -141,7 +141,7 @@ function run_test_simple($request_uri = NULL)
 
 function run_test($host, $port, $send)
 {
-	$fp = fsockopen($host, $port, $errno, $errstr, 0.5);
+	$fp = fsockopen($host, $port, $errno, $errstr, 3);
 	if (!$fp) {
 	  die(sprintf("connect failed errno=%d errstr='%s'", $errno, $errstr));
 	}

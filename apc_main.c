@@ -238,6 +238,17 @@ int apc_module_init(int module_number TSRMLS_DC)
 
     apc_pool_init();
 
+/*
+ @TODO starting interned strings causes many things to fail right now
+*/
+#if 0
+#ifdef ZEND_ENGINE_2_4
+#ifndef ZTS
+    apc_interned_strings_init(TSRMLS_C);
+#endif
+#endif
+#endif
+
     apc_data_preload(TSRMLS_C);
 
     APCG(initialized) = 1;
@@ -248,6 +259,14 @@ int apc_module_shutdown(TSRMLS_D)
 {
     if (!APCG(initialized))
         return 0;
+
+#if 0
+#ifdef ZEND_ENGINE_2_4
+#ifndef ZTS
+	apc_interned_strings_shutdown(TSRMLS_CC);
+#endif
+#endif
+#endif
 
     apc_cache_destroy(apc_user_cache TSRMLS_CC);
     apc_sma_cleanup(TSRMLS_C);
