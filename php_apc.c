@@ -337,34 +337,26 @@ static PHP_RINIT_FUNCTION(apc)
 }
 /* }}} */
 
-/* {{{ proto void apc_clear_cache([string cache]) */
+/* {{{ proto void apc_clear_cache() */
 PHP_FUNCTION(apc_clear_cache)
 {
-    char *cache_type;
-    int ct_len = 0;
-
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &cache_type, &ct_len) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
         return;
     }
 
-    if(ct_len) {
-        if(!strcasecmp(cache_type, "user")) {
-            apc_cache_clear(apc_user_cache TSRMLS_CC);
-            RETURN_TRUE;
-        }
-    }
-
+    apc_cache_clear(
+		apc_user_cache TSRMLS_CC);
     RETURN_TRUE;
 }
 /* }}} */
 
-/* {{{ proto array apc_cache_info([string type [, bool limited]]) */
+/* {{{ proto array apc_cache_info([bool limited]) */
 PHP_FUNCTION(apc_cache_info)
 {
     zval* info;
     zend_bool limited = 0;
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "b", &limited) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &limited) == FAILURE) {
         return;
     }
 
