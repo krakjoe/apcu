@@ -913,7 +913,7 @@ static zval** my_copy_zval_ptr(zval** dst, const zval** src, apc_context_t* ctxt
 {
     zval* dst_new;
     apc_pool* pool = ctxt->pool;
-    int usegc = (ctxt->copy == APC_COPY_OUT_OPCODE) || (ctxt->copy == APC_COPY_OUT_USER);
+    int usegc = (ctxt->copy == APC_COPY_OUT_USER);
 
     assert(src != NULL);
 
@@ -996,8 +996,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 
     case IS_ARRAY:
     case IS_CONSTANT_ARRAY:
-        if(APCG(serializer) == NULL ||
-            ctxt->copy == APC_COPY_IN_OPCODE || ctxt->copy == APC_COPY_OUT_OPCODE) {
+        if(APCG(serializer) == NULL) {
 
             CHECK(dst->value.ht =
                 my_copy_hashtable(NULL,
@@ -1038,12 +1037,11 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
 {
     apc_pool* pool = ctxt->pool;
-    int usegc = (ctxt->copy == APC_COPY_OUT_OPCODE) || (ctxt->copy == APC_COPY_OUT_USER);
-
+    
     assert(src != NULL);
 
     if (!dst) {
-        if(usegc) {
+        if(ctxt->copy == APC_COPY_OUT_USER) {
             ALLOC_ZVAL(dst);
             CHECK(dst);
         } else {
