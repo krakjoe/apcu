@@ -705,7 +705,7 @@ echo <<<EOB
 EOB;
 echo
 	menu_entry(OB_HOST_STATS,'View Host Stats'),
-	menu_entry(OB_USER_CACHE,'User Cache Entries'),
+	menu_entry(OB_USER_CACHE,'Cache Entries'),
 	menu_entry(OB_VERSION_CHECK,'Version Check');
 	
 if ($AUTHENTICATED) {
@@ -731,7 +731,7 @@ switch ($MYREQUEST['OB']) {
 // -----------------------------------------------
 case OB_HOST_STATS:
 	$mem_size = $mem['num_seg']*$mem['seg_size'];
-	$mem_avail= $mem['avail_mem'];
+	$mem_avail=  $mem['avail_mem'];
 	$mem_used = $mem_size-$mem_avail;
 	$seg_size = bsize($mem['seg_size']);
 	$req_rate_user = sprintf("%.2f",($cache['num_hits']+$cache['num_misses'])/($time-$cache['start_time']));
