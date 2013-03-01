@@ -28,7 +28,6 @@
 
 /* $Id: php_apc.c 328290 2012-11-09 03:30:09Z laruence $ */
 
-#include "apc_zend.h"
 #include "apc_cache.h"
 #include "apc_iterator.h"
 #include "apc_main.h"

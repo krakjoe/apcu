@@ -32,7 +32,6 @@
 /* $Id: apc.c 328941 2012-12-31 18:41:07Z ab $ */
 
 #include "apc.h"
-#include "apc_zend.h"
 #include "apc_cache.h"
 #include "apc_globals.h"
 #include "php.h"
@@ -79,6 +78,16 @@ void apc_efree(void* p TSRMLS_DC)
         return;
     }
     free(p);
+}
+
+void* apc_php_malloc(size_t n TSRMLS_DC)
+{
+    return emalloc(n);
+}
+
+void apc_php_free(void* p TSRMLS_DC)
+{
+    efree(p);
 }
 
 char* APC_ALLOC apc_estrdup(const char* s TSRMLS_DC)

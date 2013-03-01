@@ -297,7 +297,6 @@ if test "$PHP_APC" != "no"; then
                pgsql_s_lock.c \
                apc_sma.c \
                apc_stack.c \
-               apc_zend.c \
                apc_rfc1867.c \
                apc_signal.c \
                apc_pool.c \

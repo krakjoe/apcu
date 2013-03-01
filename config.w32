@@ -13,7 +13,7 @@ if(PHP_APC != 'no')
 {
 	var apc_sources = 	'apc.c php_apc.c apc_cache.c apc_debug.c ' + 
 				'apc_fcntl_win32.c apc_iterator.c apc_main.c apc_shm.c ' + 
-				'apc_sma.c apc_stack.c apc_rfc1867.c apc_zend.c apc_pool.c ' +
+				'apc_sma.c apc_stack.c apc_rfc1867.c apc_pool.c ' +
 				'apc_bin.c';
 
 	if(PHP_APC_DEBUG != 'no')

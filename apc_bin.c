@@ -28,7 +28,6 @@
 
 #include "apc_globals.h"
 #include "apc_bin.h"
-#include "apc_zend.h"
 #include "apc_php.h"
 #include "apc_sma.h"
 #include "apc_pool.h"

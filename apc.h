@@ -68,7 +68,9 @@ typedef void  (*apc_free_t)  (void * TSRMLS_DC);
 /* wrappers for memory allocation routines */
 extern void* apc_emalloc(size_t n TSRMLS_DC);
 extern void* apc_erealloc(void* p, size_t n TSRMLS_DC);
-extern void apc_efree(void* p TSRMLS_DC);
+extern void* apc_php_malloc(size_t n TSRMLS_DC);
+extern void  apc_php_free(void* p TSRMLS_DC);
+extern void  apc_efree(void* p TSRMLS_DC);
 extern char* apc_estrdup(const char* s TSRMLS_DC);
 extern void* apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC);
 extern void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC);

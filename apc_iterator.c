@@ -22,7 +22,6 @@
 #include "php_apc.h"
 #include "apc_iterator.h"
 #include "apc_cache.h"
-#include "apc_zend.h"
 
 #include "ext/standard/md5.h"
 
