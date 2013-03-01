@@ -20,10 +20,9 @@
 
 /* $Id: apc_bin.c 328828 2012-12-18 15:18:39Z remi $ */
 
-/* Creates a binary architecture specific output to a string or file containing
- * the current cache contents for both fies and user variables.  This is accomplished
- * via the apc_copy_* functions and "swizzling" pointer values to a position
- * independent value, and unswizzling them on restoration.
+/* Creates an architecture specific binary output to a string or file containing
+ * the current cache contents.  This is accomplished via the apc_copy_* functions and 
+ * "swizzling" pointers to achieve position independence.
  */
 
 #include "apc_globals.h"
