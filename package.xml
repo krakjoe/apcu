@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" packagerversion="1.4.7" version="2.0" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
-  <name>APC</name>
+  <name>APCu</name>
   <channel>pecl.php.net</channel>
   <summary>Alternative PHP Cache</summary>
-  <description>APC is a free, open, and robust framework for caching and optimizing PHP intermediate code.</description>
+  <description>APCu is a free, open, and robust framework for caching user variables.</description>
   <lead>
     <name>Rasmus Lerdorf</name>
     <user>rasmus</user>
@@ -66,12 +66,12 @@
   </developer>
   <date>2013-??-??</date>
   <version>
-    <release>3.1.15</release>
-    <api>3.1.0</api>
+    <release>4.0</release>
+    <api>4.0.0</api>
   </version>
   <stability>
     <release>beta</release>
-    <api>stable</api>
+    <api>beta</api>
   </stability>
   <license uri="http://www.php.net/license">PHP License</license>
   <notes>
@@ -210,14 +210,13 @@
       </pearinstaller>
     </required>
   </dependencies>
-  <providesextension>apc</providesextension>
+  <providesextension>apcu</providesextension>
   <extsrcrelease>
-    <configureoption name="enable-apc-debug" default="no" prompt="Enable internal debugging in APC"/>
-    <configureoption name="enable-apc-filehits" default="no" prompt="Enable per request file info about files used from the APC cache"/>
-    <configureoption name="enable-apc-spinlocks" default="no" prompt="Enable spin locks (EXPERIMENTAL)"/>
-    <configureoption name="enable-apc-memprotect" default="no" prompt="Enable memory protection (EXPERIMENTAL)"/>
-    <configureoption name="enable-apc-pthreadmutex" default="no" prompt="Enable pthread mutexes (default)"/>
-    <configureoption name="enable-apc-pthreadrwlocks" default="yes" prompt="Enable pthread read/write locks (EXPERIMENTAL)"/>
+    <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu"/>
+    <configureoption name="enable-apcu-spinlocks" default="no" prompt="Enable spin locks (EXPERIMENTAL)"/>
+    <configureoption name="enable-apcu-memprotect" default="no" prompt="Enable memory protection (EXPERIMENTAL)"/>
+    <configureoption name="enable-apcu-pthreadmutex" default="no" prompt="Enable pthread mutexes (default)"/>
+    <configureoption name="enable-apcu-pthreadrwlocks" default="yes" prompt="Enable pthread read/write locks (EXPERIMENTAL)"/>
     <!--
         The following configures are currently not defined:
 
@@ -226,6 +225,21 @@
    -->
   </extsrcrelease>
   <changelog>
+    <release>
+      <date>----------</date>
+      <version>
+       <release>4.0.0</release>
+       <api>4.0.0</api>
+      </version>
+      <stability>
+       <release>beta</release>
+       <api>beta</api>
+      </stability>
+      <license uri="http://www.php.net/license">PHP License</license>
+      <notes>
+   - opcode caching functionality removed and APC renamed APCu
+      </notes>
+    </release>
     <release>
       <date>2013-01-02</date>
       <version>
