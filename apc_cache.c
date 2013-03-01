@@ -160,16 +160,20 @@ static char *apc_string_pmemcpy(char *str, size_t len, apc_pool* pool TSRMLS_DC)
 slot_t* make_slot(apc_cache_key_t *key, apc_cache_entry_t* value, slot_t* next, time_t t TSRMLS_DC)
 {
     slot_t* p = apc_pool_alloc(value->pool, sizeof(slot_t));
+	char *identifier = NULL;
+	
+    if (!p) 
+		return NULL;
 
-    if (!p) return NULL;
-
-    if(key->type == APC_CACHE_KEY_USER) {
-        char *identifier = (char*) apc_pmemcpy(key->data.identifier, key->data.identifier_len, value->pool TSRMLS_CC);
-        if (!identifier) {
-            return NULL;
-        }
-        key->data.identifier = identifier;
-    }
+	identifier = (char*) apc_pmemcpy(
+		key->data.identifier, key->data.identifier_len, 
+		value->pool TSRMLS_CC
+	);
+	
+	if (!identifier)
+		return NULL;
+	
+    key->data.identifier = identifier;
 
     p->key = key[0];
     p->value = value;
@@ -467,25 +471,6 @@ clear_all:
 }
 /* }}} */
 
-/* {{{ apc_cache_insert */
-int *apc_cache_insert_mult(apc_cache_t* cache, apc_cache_key_t* keys, apc_cache_entry_t** values, apc_context_t *ctxt, time_t t, int num_entries TSRMLS_DC)
-{
-    int *rval;
-    int i;
-
-    rval = emalloc(sizeof(int) * num_entries);
-    CACHE_LOCK(cache);
-    for (i=0; i < num_entries; i++) {
-        if (values[i]) {
-            ctxt->pool = values[i]->pool;
-            rval[i] = _apc_cache_insert(cache, keys[i], values[i], ctxt, t TSRMLS_CC);
-        }
-    }
-    CACHE_UNLOCK(cache);
-    return rval;
-}
-/* }}} */
-
 /* {{{ apc_cache_user_insert */
 int apc_cache_user_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC)
 {
@@ -762,9 +747,10 @@ int apc_cache_make_user_key(apc_cache_key_t* key, char* identifier, int identifi
 
     key->data.identifier = identifier;
     key->data.identifier_len = identifier_len;
-    key->h = string_nhash_8((char *)key->data.identifier, key->data.identifier_len);
+    key->h = string_nhash_8(
+		(char *)key->data.identifier, key->data.identifier_len);
     key->mtime = t;
-    key->type = APC_CACHE_KEY_USER;
+
     return 1;
 }
 /* }}} */

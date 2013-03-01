@@ -34,7 +34,6 @@
 #include "apc_pool.h"
 #include "ext/standard/md5.h"
 
-extern apc_cache_t* apc_cache;
 extern apc_cache_t* apc_user_cache;
 
 extern int _apc_store(char *strkey, int strkey_len, const zval *val, const uint ttl, const int exclusive TSRMLS_DC); /* this is hacky */
@@ -692,22 +691,7 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
             }
         }
     }
-    for(i=0; i < apc_cache->num_slots; i++) {
-        sp = apc_cache->slots[i];
-        for(; sp != NULL; sp = sp->next) {
-            if(sp->key.type == APC_CACHE_KEY_FPFILE) {
-                if(apc_bin_checkfilter(files, sp->key.data.fpfile.fullpath, sp->key.data.fpfile.fullpath_len+1)) {
-                    size += sizeof(apc_bd_entry_t*) + sizeof(apc_bd_entry_t);
-                    size += sp->value->mem_size - (sizeof(apc_cache_entry_t) - sizeof(apc_cache_entry_value_t));
-                    count++;
-                }
-            } else {
-                /* TODO: Currently we don't support APC_CACHE_KEY_FILE type.  We need to store the path and re-stat on load */
-                apc_warning("Excluding some files from apc_bin_dump[file].  Cached files must be included using full path with apc.stat=0." TSRMLS_CC);
-            }
-        }
-    }
-
+	
     size += sizeof(apc_bd_t) +1;  /* +1 for null termination */
     bd = emalloc(size);
     bd->size = (unsigned int)size;
@@ -777,77 +761,6 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     zend_hash_destroy(&APCG(copied_zvals));
     APCG(copied_zvals).nTableSize=0;
 
-    /* File entries */
-    for(i=0; i < apc_cache->num_slots; i++) {
-        for(sp=apc_cache->slots[i]; sp != NULL; sp = sp->next) {
-            if(sp->key.type == APC_CACHE_KEY_FPFILE) {
-                if(apc_bin_checkfilter(files, sp->key.data.fpfile.fullpath, sp->key.data.fpfile.fullpath_len+1)) {
-                    ep = &bd->entries[count];
-                    ep->type = sp->key.type;
-                    memmove(ep->file_md5, sp->key.md5, 16);
-                    ep->val.file.filename = apc_bd_alloc(strlen(sp->value->data.file.filename) + 1 TSRMLS_CC);
-                    strcpy(ep->val.file.filename, sp->value->data.file.filename);
-                    ep->val.file.op_array = apc_copy_op_array(NULL, sp->value->data.file.op_array, &ctxt TSRMLS_CC);
-
-                    for(ep->num_functions=0; sp->value->data.file.functions[ep->num_functions].function != NULL;) { ep->num_functions++; }
-                    ep->val.file.functions = apc_bd_alloc(sizeof(apc_function_t) * ep->num_functions TSRMLS_CC);
-                    for(fcount=0; fcount < ep->num_functions; fcount++) {
-                        memcpy(&ep->val.file.functions[fcount], &sp->value->data.file.functions[fcount], sizeof(apc_function_t));
-                        ep->val.file.functions[fcount].name = apc_xmemcpy(sp->value->data.file.functions[fcount].name, sp->value->data.file.functions[fcount].name_len+1, apc_bd_alloc TSRMLS_CC);
-                        ep->val.file.functions[fcount].name_len = sp->value->data.file.functions[fcount].name_len;
-                        ep->val.file.functions[fcount].function = apc_bd_alloc(sizeof(zend_function) TSRMLS_CC);
-                        efp = ep->val.file.functions[fcount].function;
-                        sfp = sp->value->data.file.functions[fcount].function;
-                        switch(sfp->type) {
-                            case ZEND_INTERNAL_FUNCTION:
-                            case ZEND_OVERLOADED_FUNCTION:
-                                efp->op_array = sfp->op_array;
-                                break;
-                            case ZEND_USER_FUNCTION:
-                            case ZEND_EVAL_CODE:
-                                apc_copy_op_array(&efp->op_array, &sfp->op_array, &ctxt TSRMLS_CC);
-                                break;
-                            default:
-                                assert(0);
-                        }
-#ifdef ZEND_ENGINE_2
-                        efp->common.prototype = NULL;
-                        efp->common.fn_flags = sfp->common.fn_flags & (~ZEND_ACC_IMPLEMENTED_ABSTRACT);
-#endif
-                        apc_swizzle_ptr(bd, &ll, &ep->val.file.functions[fcount].name);
-                        apc_swizzle_ptr(bd, &ll, (void**)&ep->val.file.functions[fcount].function);
-                        apc_swizzle_op_array(bd, &ll, &efp->op_array TSRMLS_CC);
-                    }
-
-
-                    for(ep->num_classes=0; sp->value->data.file.classes[ep->num_classes].class_entry != NULL;) { ep->num_classes++; }
-                    ep->val.file.classes = apc_bd_alloc(sizeof(apc_class_t) * ep->num_classes TSRMLS_CC);
-                    for(fcount=0; fcount < ep->num_classes; fcount++) {
-                        ep->val.file.classes[fcount].name = apc_xmemcpy(sp->value->data.file.classes[fcount].name, sp->value->data.file.classes[fcount].name_len + 1, apc_bd_alloc TSRMLS_CC);
-                        ep->val.file.classes[fcount].name_len = sp->value->data.file.classes[fcount].name_len;
-                        ep->val.file.classes[fcount].class_entry = apc_copy_class_entry(NULL, sp->value->data.file.classes[fcount].class_entry, &ctxt TSRMLS_CC);
-                        ep->val.file.classes[fcount].parent_name = apc_xstrdup(sp->value->data.file.classes[fcount].parent_name, apc_bd_alloc TSRMLS_CC);
-
-                        apc_swizzle_ptr(bd, &ll, &ep->val.file.classes[fcount].name);
-                        apc_swizzle_ptr(bd, &ll, &ep->val.file.classes[fcount].parent_name);
-                        apc_swizzle_class_entry(bd, &ll, ep->val.file.classes[fcount].class_entry TSRMLS_CC);
-                        apc_swizzle_ptr(bd, &ll, &ep->val.file.classes[fcount].class_entry);
-                    }
-
-                    apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.file.filename);
-                    apc_swizzle_op_array(bd, &ll, bd->entries[count].val.file.op_array TSRMLS_CC);
-                    apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.file.op_array);
-                    apc_swizzle_ptr(bd, &ll, (void**)&ep->val.file.functions);
-                    apc_swizzle_ptr(bd, &ll, (void**)&ep->val.file.classes);
-
-                    count++;
-                } else {
-                    /* TODO: Currently we don't support APC_CACHE_KEY_FILE type.  We need to store the path and re-stat on load */
-                }
-            }
-        }
-    }
-
     /* append swizzle pointer list to bd */
     bd = apc_swizzle_bd(bd, &ll TSRMLS_CC);
     zend_llist_destroy(&ll);
@@ -895,129 +808,25 @@ int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
             goto failure;
         }
         ep = &bd->entries[i];
-        switch (ep->type) {
-            case APC_CACHE_KEY_FILE:
-                /* TODO: Currently we don't support APC_CACHE_KEY_FILE type.  We need to store the path and re-stat on load (or something else perhaps?) */
+        {
+            zval *data;
+            uint use_copy = 0;
+            switch (Z_TYPE_P(ep->val.user.val)) {
+                case IS_OBJECT:
+                    ctxt.copy = APC_COPY_OUT_USER;
+                    data = apc_copy_zval(NULL, ep->val.user.val, &ctxt TSRMLS_CC);
+                    use_copy = 1;
                 break;
-            case APC_CACHE_KEY_FPFILE:
-                ctxt.copy = APC_COPY_IN_OPCODE;
-
-                HANDLE_BLOCK_INTERRUPTIONS();
-#if NONBLOCKING_LOCK_AVAILABLE
-                if(APCG(write_lock)) {
-                    if(!apc_cache_write_lock(apc_cache TSRMLS_CC)) {
-                        HANDLE_UNBLOCK_INTERRUPTIONS();
-                        return -1;
-                    }
-                }
-#endif
-                if(! (alloc_op_array = apc_copy_op_array(NULL, ep->val.file.op_array, &ctxt TSRMLS_CC))) {
-                    goto failure;
-                }
-                apc_bin_fixup_op_array(alloc_op_array);
-
-                if(! (alloc_functions = apc_sma_malloc(sizeof(apc_function_t) * (ep->num_functions + 1) TSRMLS_CC))) {
-                    goto failure;
-                }
-                for(i2=0; i2 < ep->num_functions; i2++) {
-                    if(! (alloc_functions[i2].name = apc_xmemcpy(ep->val.file.functions[i2].name, ep->val.file.functions[i2].name_len + 1, apc_sma_malloc TSRMLS_CC))) {
-                        goto failure;
-                    }
-                    alloc_functions[i2].name_len = ep->val.file.functions[i2].name_len;
-                    if(! (alloc_functions[i2].function = apc_sma_malloc(sizeof(zend_function) TSRMLS_CC))) {
-                        goto failure;
-                    }
-                    switch(ep->val.file.functions[i2].function->type) {
-                        case ZEND_INTERNAL_FUNCTION:
-                        case ZEND_OVERLOADED_FUNCTION:
-                            alloc_functions[i2].function->op_array = ep->val.file.functions[i2].function->op_array;
-                            break;
-                        case ZEND_USER_FUNCTION:
-                        case ZEND_EVAL_CODE:
-                            if (!apc_copy_op_array(&alloc_functions[i2].function->op_array, &ep->val.file.functions[i2].function->op_array, &ctxt TSRMLS_CC)) {
-                                goto failure;
-                            }
-                            apc_bin_fixup_op_array(&alloc_functions[i2].function->op_array);
-                            break;
-                        default:
-                            assert(0);
-                    }
-#ifdef ZEND_ENGINE_2
-                    alloc_functions[i2].function->common.prototype=NULL;
-                    alloc_functions[i2].function->common.fn_flags=ep->val.file.functions[i2].function->common.fn_flags & (~ZEND_ACC_IMPLEMENTED_ABSTRACT);
-#endif
-                }
-                alloc_functions[i2].name = NULL;
-                alloc_functions[i2].function = NULL;
-
-                if(! (alloc_classes = apc_sma_malloc(sizeof(apc_class_t) * (ep->num_classes + 1) TSRMLS_CC))) {
-                    goto failure;
-                }
-                for(i2=0; i2 < ep->num_classes; i2++) {
-                    if(! (alloc_classes[i2].name = apc_xmemcpy(ep->val.file.classes[i2].name, ep->val.file.classes[i2].name_len+1, apc_sma_malloc TSRMLS_CC))) {
-                        goto failure;
-                    }
-                    alloc_classes[i2].name_len = ep->val.file.classes[i2].name_len;
-                    if(! (alloc_classes[i2].class_entry = apc_copy_class_entry(NULL, ep->val.file.classes[i2].class_entry, &ctxt TSRMLS_CC))) {
-                        goto failure;
-                    }
-                    apc_bin_fixup_class_entry(alloc_classes[i2].class_entry);
-                    if(! (alloc_classes[i2].parent_name = apc_xstrdup(ep->val.file.classes[i2].parent_name, apc_sma_malloc TSRMLS_CC))) {
-                        if(ep->val.file.classes[i2].parent_name != NULL) {
-                            goto failure;
-                        }
-                    }
-                }
-                alloc_classes[i2].name = NULL;
-                alloc_classes[i2].class_entry = NULL;
-
-                if(!(cache_entry = apc_cache_make_file_entry(ep->val.file.filename, alloc_op_array, alloc_functions, alloc_classes, &ctxt TSRMLS_CC))) {
-                    goto failure;
-                }
-
-                if (!apc_cache_make_file_key(&cache_key, ep->val.file.filename, PG(include_path), t TSRMLS_CC)) {
-                    goto failure;
-                }
-                memmove(cache_key.md5, ep->file_md5, 16);
-
-                if ((ret = apc_cache_insert(apc_cache, cache_key, cache_entry, &ctxt, t TSRMLS_CC)) != 1) {
-                    if(ret==-1) {
-                        goto failure;
-                    }
-                }
-
-#if NONBLOCKING_LOCK_AVAILABLE
-                if(APCG(write_lock)) {
-                    apc_cache_write_unlock(apc_cache TSRMLS_CC);
-                }
-#endif
-                HANDLE_UNBLOCK_INTERRUPTIONS();
-
+                default:
+                    data = ep->val.user.val;
                 break;
-            case APC_CACHE_KEY_USER:
-                {
-                    zval *data;
-                    uint use_copy = 0;
-                    switch (Z_TYPE_P(ep->val.user.val)) {
-                        case IS_OBJECT:
-                            ctxt.copy = APC_COPY_OUT_USER;
-                            data = apc_copy_zval(NULL, ep->val.user.val, &ctxt TSRMLS_CC);
-                            use_copy = 1;
-                        break;
-                        default:
-                            data = ep->val.user.val;
-                        break;
-                    }
-                    ctxt.copy = APC_COPY_IN_USER;
-                    _apc_store(ep->val.user.info, ep->val.user.info_len, data, ep->val.user.ttl, 0 TSRMLS_CC);
-                    if (use_copy) {
-                        zval_ptr_dtor(&data);
-                    }
-                }
-                break;
-            default:
-                break;
-       }
+            }
+            ctxt.copy = APC_COPY_IN_USER;
+            _apc_store(ep->val.user.info, ep->val.user.info_len, data, ep->val.user.ttl, 0 TSRMLS_CC);
+            if (use_copy) {
+                zval_ptr_dtor(&data);
+            }
+        }
     }
 
     return 0;

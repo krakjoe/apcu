@@ -42,9 +42,6 @@
 #include "apc_main.h"
 #include "TSRM.h"
 
-#define APC_CACHE_ENTRY_USER   2
-#define APC_CACHE_KEY_USER     2
-
 #ifdef PHP_WIN32
 typedef unsigned __int64 apc_ino_t;
 typedef unsigned __int64 apc_dev_t;
@@ -91,7 +88,6 @@ struct apc_cache_key_t {
     apc_cache_key_data_t data;
     unsigned long h;              /* pre-computed hash value */
     time_t mtime;                 /* the mtime of this cached entry */
-    unsigned char type;
 };
 
 typedef struct apc_keyid_t apc_keyid_t;
@@ -159,35 +155,17 @@ extern void apc_cache_destroy(T cache TSRMLS_DC);
 extern void apc_cache_clear(T cache TSRMLS_DC);
 
 /*
- * apc_cache_insert adds an entry to the cache, using a filename as a key.
- * Internally, the filename is translated to a canonical representation, so
- * that relative and absolute filenames will map to a single key. Returns
- * non-zero if the file was successfully inserted, 0 otherwise. If 0 is
- * returned, the caller must free the cache entry by calling
+ * apc_cache_user_insert adds an entry to the cache.
+ * Returns non-zero if the entry was successfully inserted, 0 otherwise. 
+ * If 0 is returned, the caller must free the cache entry by calling
  * apc_cache_free_entry (see below).
  *
- * key is the value created by apc_cache_make_file_key for file keys.
+ * key is the value created by apc_cache_make_user_key for file keys.
  *
  * value is a cache entry returned by apc_cache_make_entry (see below).
  */
-extern int apc_cache_insert(T cache, apc_cache_key_t key,
-                            apc_cache_entry_t* value, apc_context_t* ctxt, time_t t TSRMLS_DC);
-
 extern int apc_cache_user_insert(T cache, apc_cache_key_t key,
                             apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC);
-
-extern int *apc_cache_insert_mult(apc_cache_t* cache, apc_cache_key_t* keys,
-                            apc_cache_entry_t** values, apc_context_t *ctxt, time_t t, int num_entries TSRMLS_DC);
-
-extern apc_cache_entry_t* apc_get_cache_entry(zend_file_handle* h TSRMLS_DC);
-
-/*
- * apc_cache_find searches for a cache entry by filename, and returns a
- * pointer to the entry if found, NULL otherwise.
- *
- * key is a value created by apc_cache_make_file_key for file keys.
- */
-extern apc_cache_entry_t* apc_cache_find(T cache, apc_cache_key_t key, time_t t TSRMLS_DC);
 
 /*
  * apc_cache_user_find searches for a cache entry by its hashed identifier,
@@ -208,7 +186,6 @@ extern apc_cache_entry_t* apc_cache_user_exists(T cache, char* strkey, int keyle
 /*
  * apc_cache_delete and apc_cache_user_delete finds an entry in the cache and deletes it.
  */
-extern int apc_cache_delete(apc_cache_t* cache, char *filename, int filename_len TSRMLS_DC);
 extern int apc_cache_user_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_DC);
 
 /* apc_cach_fetch_zval takes a zval in the cache and reconstructs a runtime
