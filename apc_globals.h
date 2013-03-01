@@ -61,7 +61,7 @@ struct _apc_rfc1867_data {
 /* }}} */
 
 
-ZEND_BEGIN_MODULE_GLOBALS(apc)
+ZEND_BEGIN_MODULE_GLOBALS(apcu)
     /* configuration parameters */
     zend_bool enabled;      /* if true, apc is enabled (defaults to true) */
     long shm_segments;      /* number of shared memory segments to use */
@@ -96,15 +96,15 @@ ZEND_BEGIN_MODULE_GLOBALS(apc)
     zend_bool use_request_time;  /* use the SAPI request start time for TTL */
     char *serializer_name;       /* the serializer config option */
     apc_serializer_t *serializer;/* the actual serializer in use */
-ZEND_END_MODULE_GLOBALS(apc)
+ZEND_END_MODULE_GLOBALS(apcu)
 
 /* (the following declaration is defined in php_apc.c) */
-ZEND_EXTERN_MODULE_GLOBALS(apc)
+ZEND_EXTERN_MODULE_GLOBALS(apcu)
 
 #ifdef ZTS
-# define APCG(v) TSRMG(apc_globals_id, zend_apc_globals *, v)
+# define APCG(v) TSRMG(apcu_globals_id, zend_apcu_globals *, v)
 #else
-# define APCG(v) (apc_globals.v)
+# define APCG(v) (apcu_globals.v)
 #endif
 
 /* True globals */

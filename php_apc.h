@@ -37,10 +37,10 @@
 
 #define PHP_APC_VERSION "3.1.15-dev"
 
-extern zend_module_entry apc_module_entry;
-#define apc_module_ptr &apc_module_entry
+extern zend_module_entry apcu_module_entry;
+#define apcu_module_ptr &apcu_module_entry
 
-#define phpext_apc_ptr apc_module_ptr
+#define phpext_apcu_ptr apcu_module_ptr
 
 #endif /* PHP_APC_H */
 

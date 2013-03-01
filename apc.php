@@ -506,7 +506,7 @@ function block_sort($array1, $array2)
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
-<head><title>APC INFO <?php echo $host ?></title>
+<head><title>APCu INFO <?php echo $host ?></title>
 <style><!--
 body { background:white; font-size:100.01%; margin:0; padding:0; }
 body,p,td,th,input,submit { font-size:0.8em;font-family:arial,helvetica,sans-serif; }
@@ -707,8 +707,8 @@ input {
 <body>
 <div class="head">
 	<h1 class="apc">
-		<div class="logo"><span class="logo"><a href="http://pecl.php.net/package/APC">APC</a></span></div>
-		<div class="nameinfo">Opcode Cache</div>
+		<div class="logo"><span class="logo"><a href="http://pecl.php.net/package/APCu">APCu</a></span></div>
+		<div class="nameinfo">User Cache</div>
 	</h1>
 	<div class="login">
 	<?php put_login_link(); ?>
@@ -757,7 +757,7 @@ case OB_HOST_STATS:
 	$hit_rate_user = sprintf("%.2f",($cache['num_hits'])/($time-$cache['start_time']));
 	$miss_rate_user = sprintf("%.2f",($cache['num_misses'])/($time-$cache['start_time']));
 	$insert_rate_user = sprintf("%.2f",($cache['num_inserts'])/($time-$cache['start_time']));
-	$apcversion = phpversion('apc');
+	$apcversion = phpversion('apcu');
 	$phpversion = phpversion();
 	$number_vars = $cache['num_entries'];
     $size_vars = bsize($cache['mem_size']);
@@ -765,12 +765,12 @@ case OB_HOST_STATS:
 	echo <<< EOB
 		<div class="info div1"><h2>General Cache Information</h2>
 		<table cellspacing=0><tbody>
-		<tr class=tr-0><td class=td-0>APC Version</td><td>$apcversion</td></tr>
+		<tr class=tr-0><td class=td-0>APCu Version</td><td>$apcversion</td></tr>
 		<tr class=tr-1><td class=td-0>PHP Version</td><td>$phpversion</td></tr>
 EOB;
 
 	if(!empty($_SERVER['SERVER_NAME']))
-		echo "<tr class=tr-0><td class=td-0>APC Host</td><td>{$_SERVER['SERVER_NAME']} $host</td></tr>\n";
+		echo "<tr class=tr-0><td class=td-0>APCu Host</td><td>{$_SERVER['SERVER_NAME']} $host</td></tr>\n";
 	if(!empty($_SERVER['SERVER_SOFTWARE']))
 		echo "<tr class=tr-1><td class=td-0>Server Software</td><td>{$_SERVER['SERVER_SOFTWARE']}</td></tr>\n";
 
@@ -1072,7 +1072,7 @@ EOB;
 // -----------------------------------------------
 case OB_VERSION_CHECK:
 	echo <<<EOB
-		<div class="info"><h2>APC Version Information</h2>
+		<div class="info"><h2>APCu Version Information</h2>
 		<table cellspacing=0><tbody>
 		<tr>
 		<th></th>
@@ -1080,24 +1080,24 @@ case OB_VERSION_CHECK:
 EOB;
   if (defined('PROXY')) {
     $ctxt = stream_context_create( array( 'http' => array( 'proxy' => PROXY, 'request_fulluri' => True ) ) );
-    $rss = @file_get_contents("http://pecl.php.net/feeds/pkg_apc.rss", False, $ctxt);
+    $rss = @file_get_contents("http://pecl.php.net/feeds/pkg_apcu.rss", False, $ctxt);
   } else {
-    $rss = @file_get_contents("http://pecl.php.net/feeds/pkg_apc.rss");
+    $rss = @file_get_contents("http://pecl.php.net/feeds/pkg_apcu.rss");
   }
 	if (!$rss) {
 		echo '<tr class="td-last center"><td>Unable to fetch version information.</td></tr>';
 	} else {
 		$apcversion = phpversion('apc');
 
-		preg_match('!<title>APC ([0-9.]+)</title>!', $rss, $match);
+		preg_match('!<title>APCu ([0-9.]+)</title>!', $rss, $match);
 		echo '<tr class="tr-0 center"><td>';
 		if (version_compare($apcversion, $match[1], '>=')) {
-			echo '<div class="ok">You are running the latest version of APC ('.$apcversion.')</div>';
+			echo '<div class="ok">You are running the latest version of APCu ('.$apcversion.')</div>';
 			$i = 3;
 		} else {
-			echo '<div class="failed">You are running an older version of APC ('.$apcversion.'), 
-				newer version '.$match[1].' is available at <a href="http://pecl.php.net/package/APC/'.$match[1].'">
-				http://pecl.php.net/package/APC/'.$match[1].'</a>
+			echo '<div class="failed">You are running an older version of APCu ('.$apcversion.'), 
+				newer version '.$match[1].' is available at <a href="http://pecl.php.net/package/APCu/'.$match[1].'">
+				http://pecl.php.net/package/APCu/'.$match[1].'</a>
 				</div>';
 			$i = -1;
 		}
@@ -1114,7 +1114,7 @@ EOB;
 			} else if (!$i--) {
 				break;
 			}
-			echo "<b><a href=\"http://pecl.php.net/package/APC/$ver\">".htmlspecialchars($v, ENT_QUOTES, 'UTF-8')."</a></b><br><blockquote>";
+			echo "<b><a href=\"http://pecl.php.net/package/APCu/$ver\">".htmlspecialchars($v, ENT_QUOTES, 'UTF-8')."</a></b><br><blockquote>";
 			echo nl2br(htmlspecialchars(current($match[2]), ENT_QUOTES, 'UTF-8'))."</blockquote>";
 			next($match[2]);
 		}

@@ -2,68 +2,56 @@ dnl
 dnl $Id: config.m4 327593 2012-09-10 11:50:58Z pajoye $
 dnl
 
-PHP_ARG_ENABLE(apc, whether to enable APC support,
-[  --enable-apc           Enable APC support])
+PHP_ARG_ENABLE(apcu, whether to enable APCu support,
+[  --enable-apc           Enable APCu support])
 
-AC_ARG_ENABLE(apc-debug,
-[  --enable-apc-debug     Enable APC debugging], 
+AC_ARG_ENABLE(apcu-debug,
+[  --enable-apc-debug     Enable APCu debugging], 
 [
-  PHP_APC_DEBUG=$enableval
+  PHP_APCU_DEBUG=$enableval
 ], 
 [
-  PHP_APC_DEBUG=no
-])
-
-AC_MSG_CHECKING(whether we should enable cache request file info)
-AC_ARG_ENABLE(apc-filehits,
-[  --enable-apc-filehits   Enable per request file info about files used from the APC cache (ie: apc_cache_info('filehits')) ],
-[
-  PHP_APC_FILEHITS=$enableval
-	AC_MSG_RESULT($enableval)
-], 
-[
-  PHP_APC_FILEHITS=no
-	AC_MSG_RESULT(no)
+  PHP_APCU_DEBUG=no
 ])
 
 AC_MSG_CHECKING(whether we should use mmap)
-AC_ARG_ENABLE(apc-mmap,
-[  --disable-apc-mmap
+AC_ARG_ENABLE(apcu-mmap,
+[  --disable-apcu-mmap
                           Disable mmap support and use IPC shm instead],
 [
-  PHP_APC_MMAP=$enableval
+  PHP_APCU_MMAP=$enableval
   AC_MSG_RESULT($enableval)
 ], [
-  PHP_APC_MMAP=yes
+  PHP_APCU_MMAP=yes
   AC_MSG_RESULT(yes)
 ])
 
 AC_MSG_CHECKING(whether we should use semaphore locking instead of fcntl)
-AC_ARG_ENABLE(apc-sem,
-[  --enable-apc-sem
+AC_ARG_ENABLE(apcu-sem,
+[  --enable-apcu-sem
                           Enable semaphore locks instead of fcntl],
 [
-  PHP_APC_SEM=$enableval
+  PHP_APCU_SEM=$enableval
   AC_MSG_RESULT($enableval)
 ], [
-  PHP_APC_SEM=no
+  PHP_APCU_SEM=no
   AC_MSG_RESULT(no)
 ])
 
 AC_MSG_CHECKING(whether we should use pthread mutex locking)
-AC_ARG_ENABLE(apc-pthreadmutex,
-[  --disable-apc-pthreadmutex
+AC_ARG_ENABLE(apcu-pthreadmutex,
+[  --disable-apcu-pthreadmutex
                           Disable pthread mutex locking ],
 [
-  PHP_APC_PTHREADMUTEX=$enableval
+  PHP_APCU_PTHREADMUTEX=$enableval
   AC_MSG_RESULT($enableval)
 ],
 [
-  PHP_APC_PTHREADMUTEX=yes
+  PHP_APCU_PTHREADMUTEX=yes
   AC_MSG_RESULT(yes)
 ])
 
-if test "$PHP_APC_PTHREADMUTEX" != "no"; then
+if test "$PHP_APCU_PTHREADMUTEX" != "no"; then
 	orig_LIBS="$LIBS"
 	LIBS="$LIBS -lpthread"
 	AC_TRY_RUN(
@@ -104,7 +92,7 @@ if test "$PHP_APC_PTHREADMUTEX" != "no"; then
 			],
 			[ dnl -Failure-
 				AC_MSG_WARN([It doesn't appear that pthread mutexes are supported on your system])
-  			PHP_APC_PTHREADMUTEX=no
+  			PHP_APCU_PTHREADMUTEX=no
 			],
 			[
 				PHP_ADD_LIBRARY(pthread)
@@ -114,19 +102,19 @@ if test "$PHP_APC_PTHREADMUTEX" != "no"; then
 fi
 
 AC_MSG_CHECKING(whether we should use pthread read/write locking)
-AC_ARG_ENABLE(apc-pthreadrwlocks,
-[  --enable-apc-pthreadrwlocks
+AC_ARG_ENABLE(apcu-pthreadrwlocks,
+[  --enable-apcu-pthreadrwlocks
                           Enable pthread read/write locking ],
 [
-  PHP_APC_PTHREADRWLOCK=$enableval
+  PHP_APCU_PTHREADRWLOCK=$enableval
   AC_MSG_RESULT($enableval)
 ],
 [
-  PHP_APC_PTHREADRWLOCK=no
+  PHP_APCU_PTHREADRWLOCK=no
   AC_MSG_RESULT(no)
 ])
 
-if test "$PHP_APC_PTHREADRWLOCK" != "no"; then
+if test "$PHP_APCU_PTHREADRWLOCK" != "no"; then
 	orig_LIBS="$LIBS"
 	LIBS="$LIBS -lpthread"
 	AC_TRY_RUN(
@@ -168,7 +156,7 @@ if test "$PHP_APC_PTHREADRWLOCK" != "no"; then
 			],
 			[ dnl -Failure-
 				AC_MSG_WARN([It doesn't appear that pthread rwlocks are supported on your system])
-  				PHP_APC_PTHREADRWLOCK=no
+  				PHP_APCU_PTHREADRWLOCK=no
 			],
 			[
 				PHP_ADD_LIBRARY(pthread)
@@ -193,60 +181,59 @@ fi
 			AC_DEFINE(HAVE_ATOMIC_OPERATIONS, 1,
 				[Define this if your target compiler supports builtin atomics])
 		else
-			if test "$PHP_APC_PTHREADRWLOCK" != "no"; then
+			if test "$PHP_APCU_PTHREADRWLOCK" != "no"; then
 				AC_MSG_WARN([Disabling pthread rwlocks, because of missing atomic operations])
 				dnl - fall back would most likely be pthread mutexes 
-				PHP_APC_PTHREADRWLOCK=no
+				PHP_APCU_PTHREADRWLOCK=no
 			fi
 	fi
 
 AC_MSG_CHECKING(whether we should use spin locks)
 AC_ARG_ENABLE(apc-spinlocks,
-[  --enable-apc-spinlocks
+[  --enable-apcu-spinlocks
                           Enable spin locks  EXPERIMENTAL ],
 [
-  PHP_APC_SPINLOCKS=$enableval
+  PHP_APCU_SPINLOCKS=$enableval
   AC_MSG_RESULT($enableval)
 ],
 [
-  PHP_APC_SPINLOCKS=no
+  PHP_APCU_SPINLOCKS=no
   AC_MSG_RESULT(no)
 ])
 
 
 AC_MSG_CHECKING(whether we should enable memory protection)
-AC_ARG_ENABLE(apc-memprotect,
-[  --enable-apc-memprotect
+AC_ARG_ENABLE(apcu-memprotect,
+[  --enable-apcu-memprotect
                           Enable mmap/shm memory protection],
 [
-  PHP_APC_MEMPROTECT=$enableval
+  PHP_APCU_MEMPROTECT=$enableval
   AC_MSG_RESULT($enableval)
 ], [
-  PHP_APC_MEMPROTECT=no
+  PHP_APCU_MEMPROTECT=no
   AC_MSG_RESULT(no)
 ])
 
-if test "$PHP_APC" != "no"; then
-  test "$PHP_APC_MMAP" != "no" && AC_DEFINE(APC_MMAP, 1, [ ])
-  test "$PHP_APC_FILEHITS" != "no" && AC_DEFINE(APC_FILEHITS, 1, [ ])
+if test "$PHP_APCU" != "no"; then
+  test "$PHP_APCU_MMAP" != "no" && AC_DEFINE(APC_MMAP, 1, [ ])
 
-	if test "$PHP_APC_DEBUG" != "no"; then
+	if test "$PHP_APCU_DEBUG" != "no"; then
 		AC_DEFINE(__DEBUG_APC__, 1, [ ])
 	fi
 
-	if test "$PHP_APC_SEM" != "no"; then
+	if test "$PHP_APCU_SEM" != "no"; then
 		AC_DEFINE(APC_SEM_LOCKS, 1, [ ])
-	elif test "$PHP_APC_SPINLOCKS" != "no"; then
+	elif test "$PHP_APCU_SPINLOCKS" != "no"; then
 		AC_DEFINE(APC_SPIN_LOCKS, 1, [ ]) 
-	elif test "$PHP_APC_PTHREADRWLOCK" != "no"; then
+	elif test "$PHP_APCU_PTHREADRWLOCK" != "no"; then
 		AC_DEFINE(APC_PTHREADRW_LOCKS, 1, [ ]) 
-	elif test "$PHP_APC_PTHREADMUTEX" != "no"; then 
+	elif test "$PHP_APCU_PTHREADMUTEX" != "no"; then 
 		AC_DEFINE(APC_PTHREADMUTEX_LOCKS, 1, [ ])
 	else 
 		AC_DEFINE(APC_FCNTL_LOCKS, 1, [ ])
 	fi
   
-	if test "$PHP_APC_MEMPROTECT" != "no"; then
+	if test "$PHP_APCU_MEMPROTECT" != "no"; then
 		AC_DEFINE(APC_MEMPROTECT, 1, [ shm/mmap memory protection ])
 	fi
 
@@ -274,10 +261,10 @@ if test "$PHP_APC" != "no"; then
   [  --disable-valgrind-checks
                           Disable valgrind based memory checks],
   [
-    PHP_APC_VALGRIND=$enableval
+    PHP_APCU_VALGRIND=$enableval
     AC_MSG_RESULT($enableval)
   ], [
-    PHP_APC_VALGRIND=yes
+    PHP_APCU_VALGRIND=yes
     AC_MSG_RESULT(yes)
     AC_CHECK_HEADER(valgrind/memcheck.h, 
   		[AC_DEFINE([HAVE_VALGRIND_MEMCHECK_H],1, [enable valgrind memchecks])])
@@ -304,11 +291,11 @@ if test "$PHP_APC" != "no"; then
 							 apc_bin.c "
 
   PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APC_SHARED_LIBADD)])
-  PHP_NEW_EXTENSION(apc, $apc_sources, $ext_shared,, \\$(APC_CFLAGS))
+  PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APC_CFLAGS))
   PHP_SUBST(APC_SHARED_LIBADD)
   PHP_SUBST(APC_CFLAGS)
-  PHP_INSTALL_HEADERS(ext/apc, [apc_serializer.h])
-  AC_DEFINE(HAVE_APC, 1, [ ])
+  PHP_INSTALL_HEADERS(ext/apcu, [apc_serializer.h])
+  AC_DEFINE(HAVE_APCU, 1, [ ])
 fi
 
 PHP_ARG_ENABLE(coverage,  whether to include code coverage symbols,

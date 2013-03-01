@@ -70,30 +70,30 @@ PHP_FUNCTION(apc_bin_dumpfile);
 PHP_FUNCTION(apc_bin_loadfile);
 /* }}} */
 
-/* {{{ ZEND_DECLARE_MODULE_GLOBALS(apc) */
-ZEND_DECLARE_MODULE_GLOBALS(apc)
+/* {{{ ZEND_DECLARE_MODULE_GLOBALS(apcu) */
+ZEND_DECLARE_MODULE_GLOBALS(apcu)
 
 /* True globals */
 apc_cache_t* apc_user_cache = NULL;
 
-static void php_apc_init_globals(zend_apc_globals* apc_globals TSRMLS_DC)
+static void php_apc_init_globals(zend_apcu_globals* apcu_globals TSRMLS_DC)
 {
-    apc_globals->initialized = 0;
-    apc_globals->write_lock = 1;
-    apc_globals->slam_defense = 1;
+    apcu_globals->initialized = 0;
+    apcu_globals->write_lock = 1;
+    apcu_globals->slam_defense = 1;
 #ifdef MULTIPART_EVENT_FORMDATA
-    apc_globals->rfc1867 = 0;
-    memset(&(apc_globals->rfc1867_data), 0, sizeof(apc_rfc1867_data));
+    apcu_globals->rfc1867 = 0;
+    memset(&(apcu_globals->rfc1867_data), 0, sizeof(apc_rfc1867_data));
 #endif
-    memset(&apc_globals->copied_zvals, 0, sizeof(HashTable));
-	apc_globals->preload_path = NULL;
-    apc_globals->coredump_unmap = 0;
-    apc_globals->use_request_time = 1;
-    apc_globals->serializer_name = NULL;
-    apc_globals->serializer = NULL;
+    memset(&apcu_globals->copied_zvals, 0, sizeof(HashTable));
+	apcu_globals->preload_path = NULL;
+    apcu_globals->coredump_unmap = 0;
+    apcu_globals->use_request_time = 1;
+    apcu_globals->serializer_name = NULL;
+    apcu_globals->serializer = NULL;
 }
 
-static void php_apc_shutdown_globals(zend_apc_globals* apc_globals TSRMLS_DC)
+static void php_apc_shutdown_globals(zend_apcu_globals* apcu_globals TSRMLS_DC)
 {
     /* the rest of the globals are cleaned up in apc_module_shutdown() */
 }
@@ -195,48 +195,48 @@ static PHP_INI_MH(OnUpdateRfc1867Freq) /* {{{ */
 #endif
 
 PHP_INI_BEGIN()
-STD_PHP_INI_BOOLEAN("apc.enabled",      "1",    PHP_INI_SYSTEM, OnUpdateBool,              enabled,         zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.shm_segments",   "1",    PHP_INI_SYSTEM, OnUpdateShmSegments,       shm_segments,    zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.shm_size",       "32M",  PHP_INI_SYSTEM, OnUpdateShmSize,           shm_size,        zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.user_entries_hint", "4096", PHP_INI_SYSTEM, OnUpdateLong,          user_entries_hint, zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.gc_ttl",         "3600", PHP_INI_SYSTEM, OnUpdateLong,            gc_ttl,           zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.ttl",            "0",    PHP_INI_SYSTEM, OnUpdateLong,            ttl,              zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.user_ttl",       "0",    PHP_INI_SYSTEM, OnUpdateLong,            user_ttl,         zend_apc_globals, apc_globals)
+STD_PHP_INI_BOOLEAN("apc.enabled",      "1",    PHP_INI_SYSTEM, OnUpdateBool,              enabled,         zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.shm_segments",   "1",    PHP_INI_SYSTEM, OnUpdateShmSegments,       shm_segments,    zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.shm_size",       "32M",  PHP_INI_SYSTEM, OnUpdateShmSize,           shm_size,        zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.user_entries_hint", "4096", PHP_INI_SYSTEM, OnUpdateLong,          user_entries_hint, zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.gc_ttl",         "3600", PHP_INI_SYSTEM, OnUpdateLong,            gc_ttl,           zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.ttl",            "0",    PHP_INI_SYSTEM, OnUpdateLong,            ttl,              zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.user_ttl",       "0",    PHP_INI_SYSTEM, OnUpdateLong,            user_ttl,         zend_apcu_globals, apcu_globals)
 #if APC_MMAP
-STD_PHP_INI_ENTRY("apc.mmap_file_mask",  NULL,  PHP_INI_SYSTEM, OnUpdateString,         mmap_file_mask,   zend_apc_globals, apc_globals)
+STD_PHP_INI_ENTRY("apc.mmap_file_mask",  NULL,  PHP_INI_SYSTEM, OnUpdateString,         mmap_file_mask,   zend_apcu_globals, apcu_globals)
 #endif
-STD_PHP_INI_BOOLEAN("apc.enable_cli", "0",      PHP_INI_SYSTEM, OnUpdateBool,           enable_cli,       zend_apc_globals, apc_globals)
-STD_PHP_INI_BOOLEAN("apc.write_lock", "1",      PHP_INI_SYSTEM, OnUpdateBool,           write_lock,       zend_apc_globals, apc_globals)
-STD_PHP_INI_BOOLEAN("apc.slam_defense", "1",    PHP_INI_SYSTEM, OnUpdateBool,           slam_defense,     zend_apc_globals, apc_globals)
+STD_PHP_INI_BOOLEAN("apc.enable_cli", "0",      PHP_INI_SYSTEM, OnUpdateBool,           enable_cli,       zend_apcu_globals, apcu_globals)
+STD_PHP_INI_BOOLEAN("apc.write_lock", "1",      PHP_INI_SYSTEM, OnUpdateBool,           write_lock,       zend_apcu_globals, apcu_globals)
+STD_PHP_INI_BOOLEAN("apc.slam_defense", "1",    PHP_INI_SYSTEM, OnUpdateBool,           slam_defense,     zend_apcu_globals, apcu_globals)
 #ifdef MULTIPART_EVENT_FORMDATA
-STD_PHP_INI_BOOLEAN("apc.rfc1867", "0", PHP_INI_SYSTEM, OnUpdateBool, rfc1867, zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.rfc1867_prefix", "upload_", PHP_INI_SYSTEM, OnUpdateStringUnempty, rfc1867_prefix, zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.rfc1867_name", "APC_UPLOAD_PROGRESS", PHP_INI_SYSTEM, OnUpdateStringUnempty, rfc1867_name, zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.rfc1867_freq", "0", PHP_INI_SYSTEM, OnUpdateRfc1867Freq, rfc1867_freq, zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.rfc1867_ttl", "3600", PHP_INI_SYSTEM, OnUpdateLong, rfc1867_ttl, zend_apc_globals, apc_globals)
+STD_PHP_INI_BOOLEAN("apc.rfc1867", "0", PHP_INI_SYSTEM, OnUpdateBool, rfc1867, zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.rfc1867_prefix", "upload_", PHP_INI_SYSTEM, OnUpdateStringUnempty, rfc1867_prefix, zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.rfc1867_name", "APC_UPLOAD_PROGRESS", PHP_INI_SYSTEM, OnUpdateStringUnempty, rfc1867_name, zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.rfc1867_freq", "0", PHP_INI_SYSTEM, OnUpdateRfc1867Freq, rfc1867_freq, zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.rfc1867_ttl", "3600", PHP_INI_SYSTEM, OnUpdateLong, rfc1867_ttl, zend_apcu_globals, apcu_globals)
 #endif
-STD_PHP_INI_ENTRY("apc.preload_path", (char*)NULL,              PHP_INI_SYSTEM, OnUpdateString,       preload_path,  zend_apc_globals, apc_globals)
-STD_PHP_INI_BOOLEAN("apc.coredump_unmap", "0", PHP_INI_SYSTEM, OnUpdateBool, coredump_unmap, zend_apc_globals, apc_globals)
-STD_PHP_INI_BOOLEAN("apc.use_request_time", "1", PHP_INI_ALL, OnUpdateBool, use_request_time,  zend_apc_globals, apc_globals)
-STD_PHP_INI_ENTRY("apc.serializer", "default", PHP_INI_SYSTEM, OnUpdateStringUnempty, serializer_name, zend_apc_globals, apc_globals)
+STD_PHP_INI_ENTRY("apc.preload_path", (char*)NULL,              PHP_INI_SYSTEM, OnUpdateString,       preload_path,  zend_apcu_globals, apcu_globals)
+STD_PHP_INI_BOOLEAN("apc.coredump_unmap", "0", PHP_INI_SYSTEM, OnUpdateBool, coredump_unmap, zend_apcu_globals, apcu_globals)
+STD_PHP_INI_BOOLEAN("apc.use_request_time", "1", PHP_INI_ALL, OnUpdateBool, use_request_time,  zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.serializer", "default", PHP_INI_SYSTEM, OnUpdateStringUnempty, serializer_name, zend_apcu_globals, apcu_globals)
 PHP_INI_END()
 
 /* }}} */
 
-/* {{{ PHP_MINFO_FUNCTION(apc) */
-static PHP_MINFO_FUNCTION(apc)
+/* {{{ PHP_MINFO_FUNCTION(apcu) */
+static PHP_MINFO_FUNCTION(apcu)
 {
     apc_serializer_t *serializer = NULL;
     smart_str names = {0,};
     int i;
 
     php_info_print_table_start();
-    php_info_print_table_header(2, "APC Support", APCG(enabled) ? "enabled" : "disabled");
+    php_info_print_table_header(2, "APCu Support", APCG(enabled) ? "enabled" : "disabled");
     php_info_print_table_row(2, "Version", PHP_APC_VERSION);
 #ifdef __DEBUG_APC__
-    php_info_print_table_row(2, "APC Debugging", "Enabled");
+    php_info_print_table_row(2, "APCu Debugging", "Enabled");
 #else
-    php_info_print_table_row(2, "APC Debugging", "Disabled");
+    php_info_print_table_row(2, "APCu Debugging", "Disabled");
 #endif
 #if APC_MMAP
     php_info_print_table_row(2, "MMAP Support", "Enabled");
@@ -272,10 +272,10 @@ static PHP_MINFO_FUNCTION(apc)
 extern int apc_rfc1867_progress(unsigned int event, void *event_data, void **extra TSRMLS_DC);
 #endif
 
-/* {{{ PHP_MINIT_FUNCTION(apc) */
-static PHP_MINIT_FUNCTION(apc)
+/* {{{ PHP_MINIT_FUNCTION(apcu) */
+static PHP_MINIT_FUNCTION(apcu)
 {
-    ZEND_INIT_MODULE_GLOBALS(apc, php_apc_init_globals, php_apc_shutdown_globals);
+    ZEND_INIT_MODULE_GLOBALS(apcu, php_apc_init_globals, php_apc_shutdown_globals);
 
     REGISTER_INI_ENTRIES();
 
@@ -301,28 +301,28 @@ static PHP_MINIT_FUNCTION(apc)
 }
 /* }}} */
 
-/* {{{ PHP_MSHUTDOWN_FUNCTION(apc) */
-static PHP_MSHUTDOWN_FUNCTION(apc)
+/* {{{ PHP_MSHUTDOWN_FUNCTION(apcu) */
+static PHP_MSHUTDOWN_FUNCTION(apcu)
 {
     if(APCG(enabled)) {
         apc_module_shutdown(TSRMLS_C);
 #ifndef ZTS
-        php_apc_shutdown_globals(&apc_globals);
+        php_apc_shutdown_globals(&apcu_globals);
 #endif
 #if HAVE_SIGACTION
         apc_shutdown_signals(TSRMLS_C);
 #endif
     }
 #ifdef ZTS
-    ts_free_id(apc_globals_id);
+    ts_free_id(apcu_globals_id);
 #endif
     UNREGISTER_INI_ENTRIES();
     return SUCCESS;
 }
 /* }}} */
 
-/* {{{ PHP_RINIT_FUNCTION(apc) */
-static PHP_RINIT_FUNCTION(apc)
+/* {{{ PHP_RINIT_FUNCTION(apcu) */
+static PHP_RINIT_FUNCTION(apcu)
 {
     if(APCG(enabled)) {
         apc_request_init(TSRMLS_C);
@@ -1183,7 +1183,7 @@ ZEND_END_ARG_INFO()
 /* }}} */
 
 /* {{{ apc_functions[] */
-zend_function_entry apc_functions[] = {
+zend_function_entry apcu_functions[] = {
     PHP_FE(apc_cache_info,          arginfo_apc_cache_info)
     PHP_FE(apc_clear_cache,         arginfo_apc_clear_cache)
     PHP_FE(apc_sma_info,            arginfo_apc_sma_info)
@@ -1206,21 +1206,21 @@ zend_function_entry apc_functions[] = {
 
 /* {{{ module definition structure */
 
-zend_module_entry apc_module_entry = {
+zend_module_entry apcu_module_entry = {
     STANDARD_MODULE_HEADER,
-    "apc",
-    apc_functions,
-    PHP_MINIT(apc),
-    PHP_MSHUTDOWN(apc),
-    PHP_RINIT(apc),
+    "apcu",
+    apcu_functions,
+    PHP_MINIT(apcu),
+    PHP_MSHUTDOWN(apcu),
+    PHP_RINIT(apcu),
     NULL,
-    PHP_MINFO(apc),
+    PHP_MINFO(apcu),
     PHP_APC_VERSION,
     STANDARD_MODULE_PROPERTIES
 };
 
-#ifdef COMPILE_DL_APC
-ZEND_GET_MODULE(apc)
+#ifdef COMPILE_DL_APCU
+ZEND_GET_MODULE(apcu)
 #endif
 /* }}} */
 
