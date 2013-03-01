@@ -73,7 +73,6 @@ typedef struct _apc_iterator_t {
     long format;             /* format bitmask of the return values ie: key, value, info */
     int (*fetch)(struct _apc_iterator_t *iterator TSRMLS_DC);
                              /* fetch callback to fetch items from cache slots or lists */
-    apc_cache_t *cache;      /* cache which we are iterating on */
     long slot_idx;           /* index to the slot array or linked list */
     long chunk_size;         /* number of entries to pull down per fetch */
     apc_stack_t *stack;      /* stack of entries pulled from cache */
@@ -96,7 +95,6 @@ typedef struct _apc_iterator_t {
 typedef struct _apc_iterator_item_t {
     char *key;              /* string key */
     long key_len;           /* strlen of key */
-    char *filename_key;     /* filename key used for deletion */
     zval *value;
 } apc_iterator_item_t;
 /* }}} */

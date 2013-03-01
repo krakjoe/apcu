@@ -18,7 +18,7 @@ for(\$i=0;\$i<50000;\$i++) {
 }
 
 //then later (usually after a few minutes) this won't work correctly:
-\$it = new ApcIterator('user', '#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
+\$it = new ApcIterator('#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
 var_dump(\$it->getTotalCount()); //returns 50000
 var_dump(\$it->current()); //returns false on error
 FL;
@@ -38,9 +38,7 @@ echo 'done';
 
 --EXPECTF--
 int(50000)
-array(11) {
-  ["type"]=>
-  string(4) "user"
+array(10) {
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
@@ -63,9 +61,7 @@ array(11) {
   int(0)
 }
 int(50000)
-array(11) {
-  ["type"]=>
-  string(4) "user"
+array(10) {
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
@@ -88,9 +84,7 @@ array(11) {
   int(0)
 }
 int(50000)
-array(11) {
-  ["type"]=>
-  string(4) "user"
+array(10) {
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
@@ -113,9 +107,7 @@ array(11) {
   int(0)
 }
 int(50000)
-array(11) {
-  ["type"]=>
-  string(4) "user"
+array(10) {
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
@@ -138,9 +130,7 @@ array(11) {
   int(0)
 }
 int(50000)
-array(11) {
-  ["type"]=>
-  string(4) "user"
+array(10) {
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
@@ -163,9 +153,7 @@ array(11) {
   int(0)
 }
 int(50000)
-array(11) {
-  ["type"]=>
-  string(4) "user"
+array(10) {
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
@@ -188,9 +176,7 @@ array(11) {
   int(0)
 }
 int(50000)
-array(11) {
-  ["type"]=>
-  string(4) "user"
+array(10) {
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
@@ -213,9 +199,7 @@ array(11) {
   int(0)
 }
 int(50000)
-array(11) {
-  ["type"]=>
-  string(4) "user"
+array(10) {
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
@@ -238,9 +222,7 @@ array(11) {
   int(0)
 }
 int(50000)
-array(11) {
-  ["type"]=>
-  string(4) "user"
+array(10) {
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
