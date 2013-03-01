@@ -19,6 +19,7 @@
   +----------------------------------------------------------------------+
 
    All other licensing and usage conditions are those of the PHP Group.
+
  */
 
 $VERSION='$Id$';
@@ -29,7 +30,7 @@ if (file_exists("apc.conf.php")) include("apc.conf.php");
 
 ////////// BEGIN OF DEFAULT CONFIG AREA ///////////////////////////////////////////////////////////
 
-defaults('USE_AUTHENTICATION',1);			// Use (internal) authentication - best choice if 
+defaults('USE_AUTHENTICATION',0);			// Use (internal) authentication - best choice if 
 											// no other authentication is available
 											// If set to 0:
 											//  There will be no further authentication. You 
@@ -184,7 +185,8 @@ if(!function_exists('apc_cache_info')) {
   exit;
 }
 
-$cache = apc_cache_info();  
+$cache = apc_cache_info(); 
+
 $mem=apc_sma_info();
 
 // don't cache this page
@@ -371,6 +373,14 @@ if (isset($MYREQUEST['IMG']))
 			text_arc($image,$x,$y,$size,$angle[0]*360,$angle[1]*360,$col_black,bsize($s*($angle[1]-$angle[0])));
 		}
 		break;
+
+	case 2: 
+		$s=$cache['num_hits']+$cache['num_misses'];
+		$a=$cache['num_hits'];
+		
+		fill_box($image, 30,$size,50,$s ? (-$a*($size-21)/$s) : 0,$col_black,$col_green,sprintf("%.1f%%",$s ? $cache['num_hits']*100/$s : 0));
+		fill_box($image,130,$size,50,$s ? -max(4,($s-$a)*($size-21)/$s) : 0,$col_black,$col_red,sprintf("%.1f%%",$s ? $cache['num_misses']*100/$s : 0));
+		break;
 		
 	case 3:
 		$s=$mem['num_seg']*$mem['seg_size'];
@@ -412,7 +422,16 @@ if (isset($MYREQUEST['IMG']))
 			}
 		}
 		break;
+
+		case 4: 
+			$s=$cache['num_hits']+$cache['num_misses'];
+			$a=$cache['num_hits'];
+    		    	
+			fill_box($image, 30,$size,50,$s ? -$a*($size-21)/$s : 0,$col_black,$col_green,sprintf("%.1f%%", $s ? $cache['num_hits']*100/$s : 0));
+			fill_box($image,130,$size,50,$s ? -max(4,($s-$a)*($size-21)/$s) : 0,$col_black,$col_red,sprintf("%.1f%%", $s ? $cache['num_misses']*100/$s : 0));
+		break;
 	}
+
 	header("Content-type: image/png");
 	imagepng($image);
 	exit;
@@ -705,7 +724,7 @@ echo <<<EOB
 EOB;
 echo
 	menu_entry(OB_HOST_STATS,'View Host Stats'),
-	menu_entry(OB_USER_CACHE,'Cache Entries'),
+	menu_entry(OB_USER_CACHE,'User Cache Entries'),
 	menu_entry(OB_VERSION_CHECK,'Version Check');
 	
 if ($AUTHENTICATED) {
@@ -731,7 +750,7 @@ switch ($MYREQUEST['OB']) {
 // -----------------------------------------------
 case OB_HOST_STATS:
 	$mem_size = $mem['num_seg']*$mem['seg_size'];
-	$mem_avail=  $mem['avail_mem'];
+	$mem_avail= $mem['avail_mem'];
 	$mem_used = $mem_size-$mem_avail;
 	$seg_size = bsize($mem['seg_size']);
 	$req_rate_user = sprintf("%.2f",($cache['num_hits']+$cache['num_misses'])/($time-$cache['start_time']));
@@ -803,22 +822,26 @@ EOB;
 		<table cellspacing=0><tbody>
 EOB;
 	$size='width='.(GRAPH_SIZE+50).' height='.(GRAPH_SIZE+10);
-	echo <<<EOB
+echo <<<EOB
 		<tr>
 		<td class=td-0>$mem_note</td>
+		<td class=td-1>Hits &amp; Misses</td>
 		</tr>
 EOB;
 
 	echo
 		graphics_avail() ? 
 			  '<tr>'.
-			  "<td class=td-0><img alt=\"\" $size src=\"$PHP_SELF?IMG=1&$time\"></td>\n"
+			  "<td class=td-0><img alt=\"\" $size src=\"$PHP_SELF?IMG=1&$time\"></td>".
+			  "<td class=td-1><img alt=\"\" $size src=\"$PHP_SELF?IMG=2&$time\"></td></tr>\n"
 			: "",
 		'<tr>',
 		'<td class=td-0><span class="green box">&nbsp;</span>Free: ',bsize($mem_avail).sprintf(" (%.1f%%)",$mem_avail*100/$mem_size),"</td>\n",
+		'<td class=td-1><span class="green box">&nbsp;</span>Hits: ',$cache['num_hits'].@sprintf(" (%.1f%%)",$cache['num_hits']*100/($cache['num_hits']+$cache['num_misses'])),"</td>\n",
 		'</tr>',
 		'<tr>',
-		'<td class=td-0><span class="red box">&nbsp;</span>Used: ',bsize($mem_used ).sprintf(" (%.1f%%)",$mem_used *100/$mem_size),"</td>\n";
+		'<td class=td-0><span class="red box">&nbsp;</span>Used: ',bsize($mem_used ).sprintf(" (%.1f%%)",$mem_used *100/$mem_size),"</td>\n",
+		'<td class=td-1><span class="red box">&nbsp;</span>Misses: ',$cache['num_misses'].@sprintf(" (%.1f%%)",$cache['num_misses']*100/($cache['num_hits']+$cache['num_misses'])),"</td>\n";
 	echo <<< EOB
 		</tr>
 		</tbody></table>
