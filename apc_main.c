@@ -258,20 +258,7 @@ int apc_module_shutdown(TSRMLS_D)
 
 /* }}} */
 
-/* {{{ process init and shutdown */
-int apc_process_init(int module_number TSRMLS_DC)
-{
-    return 0;
-}
-
-int apc_process_shutdown(TSRMLS_D)
-{
-    return 0;
-}
-/* }}} */
-
 /* {{{ request init and shutdown */
-
 int apc_request_init(TSRMLS_D)
 {
     if (!APCG(serializer) && APCG(serializer_name)) {
@@ -281,9 +268,6 @@ int apc_request_init(TSRMLS_D)
 
     return 0;
 }
-
-int apc_request_shutdown(TSRMLS_D){return 0;}
-
 /* }}} */
 
 /*

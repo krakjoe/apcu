@@ -282,12 +282,8 @@ static PHP_MINIT_FUNCTION(apc)
     }
 
     if (APCG(enabled)) {
-        if(APCG(initialized)) {
-            apc_process_init(module_number TSRMLS_CC);
-        } else {
-            apc_module_init(module_number TSRMLS_CC);
-            apc_zend_init(TSRMLS_C);
-            apc_process_init(module_number TSRMLS_CC);
+        if(!APCG(initialized)) {
+			apc_module_init(module_number TSRMLS_CC);
 #ifdef MULTIPART_EVENT_FORMDATA
             /* File upload progress tracking */
             if(APCG(rfc1867)) {
@@ -296,9 +292,6 @@ static PHP_MINIT_FUNCTION(apc)
 #endif
             apc_iterator_init(module_number TSRMLS_CC);
         }
-
-        zend_register_long_constant("APC_BIN_VERIFY_MD5", sizeof("APC_BIN_VERIFY_MD5"), APC_BIN_VERIFY_MD5, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
-        zend_register_long_constant("APC_BIN_VERIFY_CRC32", sizeof("APC_BIN_VERIFY_CRC32"), APC_BIN_VERIFY_CRC32, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
     }
 
     return SUCCESS;
@@ -309,8 +302,6 @@ static PHP_MINIT_FUNCTION(apc)
 static PHP_MSHUTDOWN_FUNCTION(apc)
 {
     if(APCG(enabled)) {
-        apc_process_shutdown(TSRMLS_C);
-        apc_zend_shutdown(TSRMLS_C);
         apc_module_shutdown(TSRMLS_C);
 #ifndef ZTS
         php_apc_shutdown_globals(&apc_globals);
@@ -336,16 +327,6 @@ static PHP_RINIT_FUNCTION(apc)
 #if HAVE_SIGACTION
         apc_set_signals(TSRMLS_C);
 #endif
-    }
-    return SUCCESS;
-}
-/* }}} */
-
-/* {{{ PHP_RSHUTDOWN_FUNCTION(apc) */
-static PHP_RSHUTDOWN_FUNCTION(apc)
-{
-    if(APCG(enabled)) {
-        apc_request_shutdown(TSRMLS_C);
     }
     return SUCCESS;
 }
@@ -989,7 +970,7 @@ zend_module_entry apc_module_entry = {
     PHP_MINIT(apc),
     PHP_MSHUTDOWN(apc),
     PHP_RINIT(apc),
-    PHP_RSHUTDOWN(apc),
+    NULL,
     PHP_MINFO(apc),
     PHP_APC_VERSION,
     STANDARD_MODULE_PROPERTIES

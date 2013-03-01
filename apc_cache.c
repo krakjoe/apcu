@@ -54,6 +54,9 @@ typedef int (*ht_check_copy_fun_t)(Bucket*, va_list);
 static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC);
 
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC);
+static HashTable* my_copy_hashtable_ex(HashTable*, HashTable* TSRMLS_DC, ht_copy_fun_t, int, apc_context_t*, ht_check_copy_fun_t, ...);
+#define my_copy_hashtable( dst, src, copy_fn, holds_ptr, ctxt) \
+    my_copy_hashtable_ex(dst, src TSRMLS_CC, copy_fn, holds_ptr, ctxt, NULL)
 
 /* {{{ hash */
 static unsigned long hash(apc_cache_key_t key)
@@ -822,6 +825,133 @@ static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ct
         zval_dtor(dst);
         dst->type = IS_NULL;
     }
+    return dst;
+}
+/* }}} */
+
+
+/* {{{ my_copy_hashtable_ex */
+static APC_HOTSPOT HashTable* my_copy_hashtable_ex(HashTable* dst,
+                                    HashTable* src TSRMLS_DC,
+                                    ht_copy_fun_t copy_fn,
+                                    int holds_ptrs,
+                                    apc_context_t* ctxt,
+                                    ht_check_copy_fun_t check_fn,
+                                    ...)
+{
+    Bucket* curr = NULL;
+    Bucket* prev = NULL;
+    Bucket* newp = NULL;
+    int first = 1;
+    apc_pool* pool = ctxt->pool;
+
+    assert(src != NULL);
+
+    if (!dst) {
+        CHECK(dst = (HashTable*) apc_pool_alloc(pool, sizeof(src[0])));
+    }
+
+    memcpy(dst, src, sizeof(src[0]));
+
+    /* allocate buckets for the new hashtable */
+    CHECK((dst->arBuckets = apc_pool_alloc(pool, (dst->nTableSize * sizeof(Bucket*)))));
+
+    memset(dst->arBuckets, 0, dst->nTableSize * sizeof(Bucket*));
+    dst->pInternalPointer = NULL;
+    dst->pListHead = NULL;
+
+    for (curr = src->pListHead; curr != NULL; curr = curr->pListNext) {
+        int n = curr->h % dst->nTableSize;
+
+        if(check_fn) {
+            va_list args;
+            va_start(args, check_fn);
+
+            /* Call the check_fn to see if the current bucket
+             * needs to be copied out
+             */
+            if(!check_fn(curr, args)) {
+                dst->nNumOfElements--;
+                va_end(args);
+                continue;
+            }
+
+            va_end(args);
+        }
+
+        /* create a copy of the bucket 'curr' */
+#ifdef ZEND_ENGINE_2_4
+        if (!curr->nKeyLength) {
+            CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket), pool TSRMLS_CC)));
+        } else if (IS_INTERNED(curr->arKey)) {
+            CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket), pool TSRMLS_CC)));
+#ifndef ZTS
+        } else if (pool->type != APC_UNPOOL) {
+            char *arKey;
+
+            arKey = (char *)apc_new_interned_string(curr->arKey, curr->nKeyLength TSRMLS_CC);
+            if (!arKey) {
+                /* this is ugly, but the old arkey[1] is gone, so we allocate all of the bytes as a tail-fragment (see IS_TAILED) */
+                CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket) + curr->nKeyLength, pool TSRMLS_CC)));
+                newp->arKey = (const char*)(newp+1); 
+            } else {
+                CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket), pool TSRMLS_CC)));
+                newp->arKey = arKey;
+            }
+#endif
+        } else {
+            /* I repeat, this is ugly */
+            CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket) + curr->nKeyLength, pool TSRMLS_CC)));
+            newp->arKey = (const char*)(newp+1);
+        }
+#else
+        CHECK((newp = (Bucket*) apc_pmemcpy(curr,
+                                  (sizeof(Bucket) + curr->nKeyLength - 1),
+                                  pool TSRMLS_CC)));
+#endif
+
+        /* insert 'newp' into the linked list at its hashed index */
+        if (dst->arBuckets[n]) {
+            newp->pNext = dst->arBuckets[n];
+            newp->pLast = NULL;
+            newp->pNext->pLast = newp;
+        }
+        else {
+            newp->pNext = newp->pLast = NULL;
+        }
+
+        dst->arBuckets[n] = newp;
+
+        /* copy the bucket data using our 'copy_fn' callback function */
+        CHECK((newp->pData = copy_fn(NULL, curr->pData, ctxt TSRMLS_CC)));
+
+        if (holds_ptrs) {
+            memcpy(&newp->pDataPtr, newp->pData, sizeof(void*));
+        }
+        else {
+            newp->pDataPtr = NULL;
+        }
+
+        /* insert 'newp' into the table-thread linked list */
+        newp->pListLast = prev;
+        newp->pListNext = NULL;
+
+        if (prev) {
+            prev->pListNext = newp;
+        }
+
+        if (first) {
+            dst->pListHead = newp;
+            first = 0;
+        }
+
+        prev = newp;
+    }
+
+    dst->pListTail = newp;
+
+    zend_hash_internal_pointer_reset(dst);
+
     return dst;
 }
 /* }}} */

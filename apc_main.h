@@ -43,10 +43,7 @@
 
 extern int apc_module_init(int module_number TSRMLS_DC);
 extern int apc_module_shutdown(TSRMLS_D);
-extern int apc_process_init(int module_number TSRMLS_DC);
-extern int apc_process_shutdown(TSRMLS_D);
 extern int apc_request_init(TSRMLS_D);
-extern int apc_request_shutdown(TSRMLS_D);
 
 typedef enum _apc_copy_type {
     APC_NO_COPY = 0,
