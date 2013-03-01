@@ -185,10 +185,8 @@ if(!function_exists('apc_cache_info')) {
   exit;
 }
 
-$cache_user = apc_cache_info(1);  
+$cache_user = apc_cache_info();  
 $mem=apc_sma_info();
-
-if(!$cache['num_hits']) { $cache['num_hits']=1; $time++; }  // Avoid division by 0 errors on a cache clear
 
 // don't cache this page
 //
@@ -375,14 +373,6 @@ if (isset($MYREQUEST['IMG']))
 		}
 		break;
 		
-	case 2: 
-		$s=$cache['num_hits']+$cache['num_misses'];
-		$a=$cache['num_hits'];
-		
-		fill_box($image, 30,$size,50,-$a*($size-21)/$s,$col_black,$col_green,sprintf("%.1f%%",$cache['num_hits']*100/$s));
-		fill_box($image,130,$size,50,-max(4,($s-$a)*($size-21)/$s),$col_black,$col_red,sprintf("%.1f%%",$cache['num_misses']*100/$s));
-		break;
-		
 	case 3:
 		$s=$mem['num_seg']*$mem['seg_size'];
 		$a=$mem['avail_mem'];
@@ -423,14 +413,6 @@ if (isset($MYREQUEST['IMG']))
 			}
 		}
 		break;
-	case 4: 
-		$s=$cache['num_hits']+$cache['num_misses'];
-		$a=$cache['num_hits'];
-	        	
-		fill_box($image, 30,$size,50,-$a*($size-21)/$s,$col_black,$col_green,sprintf("%.1f%%",$cache['num_hits']*100/$s));
-		fill_box($image,130,$size,50,-max(4,($s-$a)*($size-21)/$s),$col_black,$col_red,sprintf("%.1f%%",$cache['num_misses']*100/$s));
-		break;
-	
 	}
 	header("Content-type: image/png");
 	imagepng($image);
@@ -723,8 +705,7 @@ echo <<<EOB
 	<li><a href="$MY_SELF&OB={$MYREQUEST['OB']}&SH={$MYREQUEST['SH']}">Refresh Data</a></li>
 EOB;
 echo
-	menu_entry(OB_HOST_STATS,'View Host Stats');
-echo
+	menu_entry(OB_HOST_STATS,'View Host Stats'),
 	menu_entry(OB_USER_CACHE,'User Cache Entries'),
 	menu_entry(OB_VERSION_CHECK,'Version Check');
 	
@@ -754,18 +735,12 @@ case OB_HOST_STATS:
 	$mem_avail= $mem['avail_mem'];
 	$mem_used = $mem_size-$mem_avail;
 	$seg_size = bsize($mem['seg_size']);
-	$req_rate = sprintf("%.2f",($cache['num_hits']+$cache['num_misses'])/($time-$cache['start_time']));
-	$hit_rate = sprintf("%.2f",($cache['num_hits'])/($time-$cache['start_time']));
-	$miss_rate = sprintf("%.2f",($cache['num_misses'])/($time-$cache['start_time']));
-	$insert_rate = sprintf("%.2f",($cache['num_inserts'])/($time-$cache['start_time']));
 	$req_rate_user = sprintf("%.2f",($cache_user['num_hits']+$cache_user['num_misses'])/($time-$cache_user['start_time']));
 	$hit_rate_user = sprintf("%.2f",($cache_user['num_hits'])/($time-$cache_user['start_time']));
 	$miss_rate_user = sprintf("%.2f",($cache_user['num_misses'])/($time-$cache_user['start_time']));
 	$insert_rate_user = sprintf("%.2f",($cache_user['num_inserts'])/($time-$cache_user['start_time']));
 	$apcversion = phpversion('apc');
 	$phpversion = phpversion();
-	$number_files = $cache['num_entries']; 
-    $size_files = bsize($cache['mem_size']);
 	$number_vars = $cache_user['num_entries'];
     $size_vars = bsize($cache_user['mem_size']);
 	$i=0;
@@ -783,12 +758,12 @@ EOB;
 
 	echo <<<EOB
 		<tr class=tr-0><td class=td-0>Shared Memory</td><td>{$mem['num_seg']} Segment(s) with $seg_size 
-    <br/> ({$cache['memory_type']} memory, {$cache['locking_type']} locking)
+    <br/> ({$cache_user['memory_type']} memory, {$cache_user['locking_type']} locking)
     </td></tr>
 EOB;
-	echo   '<tr class=tr-1><td class=td-0>Start Time</td><td>',date(DATE_FORMAT,$cache['start_time']),'</td></tr>';
-	echo   '<tr class=tr-0><td class=td-0>Uptime</td><td>',duration($cache['start_time']),'</td></tr>';
-	echo   '<tr class=tr-1><td class=td-0>File Upload Support</td><td>',$cache['file_upload_progress'],'</td></tr>';
+	echo   '<tr class=tr-1><td class=td-0>Start Time</td><td>',date(DATE_FORMAT,$cache_user['start_time']),'</td></tr>';
+	echo   '<tr class=tr-0><td class=td-0>Uptime</td><td>',duration($cache_user['start_time']),'</td></tr>';
+	echo   '<tr class=tr-1><td class=td-0>File Upload Support</td><td>',$cache_user['file_upload_progress'],'</td></tr>';
 	echo <<<EOB
 		</tbody></table>
 		</div>
@@ -832,23 +807,19 @@ EOB;
 	echo <<<EOB
 		<tr>
 		<td class=td-0>$mem_note</td>
-		<td class=td-1>Hits &amp; Misses</td>
 		</tr>
 EOB;
 
 	echo
 		graphics_avail() ? 
 			  '<tr>'.
-			  "<td class=td-0><img alt=\"\" $size src=\"$PHP_SELF?IMG=1&$time\"></td>".
-			  "<td class=td-1><img alt=\"\" $size src=\"$PHP_SELF?IMG=2&$time\"></td></tr>\n"
+			  "<td class=td-0><img alt=\"\" $size src=\"$PHP_SELF?IMG=1&$time\"></td>\n"
 			: "",
 		'<tr>',
 		'<td class=td-0><span class="green box">&nbsp;</span>Free: ',bsize($mem_avail).sprintf(" (%.1f%%)",$mem_avail*100/$mem_size),"</td>\n",
-		'<td class=td-1><span class="green box">&nbsp;</span>Hits: ',$cache['num_hits'].sprintf(" (%.1f%%)",$cache['num_hits']*100/($cache['num_hits']+$cache['num_misses'])),"</td>\n",
 		'</tr>',
 		'<tr>',
-		'<td class=td-0><span class="red box">&nbsp;</span>Used: ',bsize($mem_used ).sprintf(" (%.1f%%)",$mem_used *100/$mem_size),"</td>\n",
-		'<td class=td-1><span class="red box">&nbsp;</span>Misses: ',$cache['num_misses'].sprintf(" (%.1f%%)",$cache['num_misses']*100/($cache['num_hits']+$cache['num_misses'])),"</td>\n";
+		'<td class=td-0><span class="red box">&nbsp;</span>Used: ',bsize($mem_used ).sprintf(" (%.1f%%)",$mem_used *100/$mem_size),"</td>\n";
 	echo <<< EOB
 		</tr>
 		</tbody></table>
@@ -993,7 +964,7 @@ EOB;
 	//
 	$list = array();
 	
-	foreach($cache[$scope_list[$MYREQUEST['SCOPE']]] as $i => $entry) {
+	foreach($cache_user[$scope_list[$MYREQUEST['SCOPE']]] as $i => $entry) {
 		switch($MYREQUEST['SORT1']) {
 			case 'A': $k=sprintf('%015d-',$entry['access_time']); 	break;
 			case 'H': $k=sprintf('%015d-',$entry['num_hits']); 		break;

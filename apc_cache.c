@@ -1183,11 +1183,8 @@ static zval* apc_cache_link_info(apc_cache_t *cache, slot_t* p TSRMLS_DC)
 
     array_init(link);
 
-    if(p->value->type == APC_CACHE_ENTRY_USER) {
-        add_assoc_stringl(link, "info", p->value->data.user.info, p->value->data.user.info_len-1, 1);
-        add_assoc_long(link, "ttl", (long)p->value->data.user.ttl);
-        add_assoc_string(link, "type", "user", 1);
-    }
+    add_assoc_stringl(link, "info", p->value->data.user.info, p->value->data.user.info_len-1, 1);
+    add_assoc_long(link, "ttl", (long)p->value->data.user.ttl);
 
     add_assoc_double(link, "num_hits", (double)p->num_hits);
     add_assoc_long(link, "mtime", p->key.mtime);
