@@ -64,7 +64,7 @@
     <email>ab@php.net</email>
     <active>yes</active>
   </developer>
-  <date>2013-??-??</date>
+  <date>2013-01-03</date>
   <version>
     <release>4.0</release>
     <api>4.0.0</api>
@@ -144,17 +144,7 @@
         <file role="test" name="apc_006.phpt"/>
         <file role="test" name="apc_007.phpt"/>
         <file role="test" name="apc_008.phpt"/>
-        <file role="test" name="apc_009.phpt"/>
         <file role="test" name="apc_010.phpt"/>
-        <file role="test" name="apc53_001.phpt"/>
-        <file role="test" name="apc53_002.phpt"/>
-        <file role="test" name="apc53_003.phpt"/>
-        <file role="test" name="apc53_004.phpt"/>
-        <file role="test" name="apc53_005.phpt"/>
-        <file role="test" name="apc_bin_001.phpt"/>
-        <file role="test" name="apc_bin_002-1.inc"/>
-        <file role="test" name="apc_bin_002-2.inc"/>
-        <file role="test" name="apc_bin_002.phpt"/>
         <file role="test" name="iterator_001.phpt"/>
         <file role="test" name="iterator_002.phpt"/>
         <file role="test" name="iterator_003.phpt"/>
@@ -162,37 +152,8 @@
         <file role="test" name="iterator_005.phpt"/>
         <file role="test" name="iterator_006.phpt"/>
         <file role="test" name="iterator_007.phpt"/>
-        <file role="test" name="bug38779.phpt"/>
-        <file role="test" name="bug61398.phpt"/>
-        <file role="test" name="bug61398_2.phpt"/>
-        <file role="test" name="bug62757.phpt"/>
-        <file role="test" name="bug62765.phpt"/>
-        <file role="test" name="bug62802.phpt"/>
-        <file role="test" name="apc54_001.phpt"/>
-        <file role="test" name="apc54_002.phpt"/>
-        <file role="test" name="apc54_003.phpt"/>
-        <file role="test" name="apc54_004.phpt"/>
-        <file role="test" name="apc54_005.phpt"/>
-        <file role="test" name="apc54_006.phpt"/>
-        <file role="test" name="apc54_007.phpt"/>
-        <file role="test" name="apc54_008.phpt"/>
-        <file role="test" name="apc54_009.phpt"/>
-        <file role="test" name="apc54_010.phpt"/>
-        <file role="test" name="apc54_011.phpt"/>
-        <file role="test" name="apc54_012.phpt"/>
-        <file role="test" name="apc54_013.phpt"/>
         <file role="test" name="apc54_014.phpt"/>
-        <file role="test" name="apc54_015.phpt"/>
-        <file role="test" name="apc54_016.phpt"/>
-        <file role="test" name="apc54_017.phpt"/>
         <file role="test" name="apc54_018.phpt"/>
-        <file role="test" name="apc54_019.phpt"/>
-        <file role="test" name="apc54_020.phpt"/>
-        <file role="test" name="apc54_021.phpt"/>
-        <file role="test" name="apc54_bug62699_2.phpt"/>
-        <file role="test" name="apc54_bug62699.phpt"/>
-        <file role="test" name="apc54_error_010_2.phpt"/>
-        <file role="test" name="apc54_error_010.phpt"/>
         <file role="test" name="server_test.inc"/>
         <file role="test" name="php_5_3_ns.inc"/>
         <file role="test" name="skipif.inc"/>
@@ -226,7 +187,7 @@
   </extsrcrelease>
   <changelog>
     <release>
-      <date>----------</date>
+      <date>2013-01-03</date>
       <version>
        <release>4.0.0</release>
        <api>4.0.0</api>
@@ -661,7 +622,6 @@ Allow keys used in apc_store/apc_fetch/apc_delete to be binary safe and prevent 
 * 64-bit fixes (George)
 
 * Don't mix Full Path and Inode keys (George)
-
 * Override ZEND_INCLUDE_OR_EVAL opcode (when possible) to speed up use of
   require_once() and include_once() statements. (Sara)
 
