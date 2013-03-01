@@ -804,7 +804,7 @@ EOB;
 EOB;
 
 	$j = 0;
-	foreach (ini_get_all('apc') as $k => $v) {
+	foreach (ini_get_all('apcu') as $k => $v) {
 		echo "<tr class=tr-$j><td class=td-0>",$k,"</td><td>",str_replace(',',',<br />',$v['local_value']),"</td></tr>\n";
 		$j = 1 - $j;
 	}
