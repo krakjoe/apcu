@@ -23,14 +23,14 @@
  */
 
 $VERSION='$Id$';
-apc_store("test", $_POST);
+
 ////////// READ OPTIONAL CONFIGURATION FILE ////////////
 if (file_exists("apc.conf.php")) include("apc.conf.php");
 ////////////////////////////////////////////////////////
 
 ////////// BEGIN OF DEFAULT CONFIG AREA ///////////////////////////////////////////////////////////
 
-defaults('USE_AUTHENTICATION',1);			// Use (internal) authentication - best choice if 
+defaults('USE_AUTHENTICATION',0);			// Use (internal) authentication - best choice if 
 											// no other authentication is available
 											// If set to 0:
 											//  There will be no further authentication. You 
@@ -71,10 +71,8 @@ if (isset($_SERVER['SERVER_ADDR'])) {
 
 // operation constants
 define('OB_HOST_STATS',1);
-define('OB_SYS_CACHE',2);
-define('OB_USER_CACHE',3);
-define('OB_SYS_CACHE_DIR',4);
-define('OB_VERSION_CHECK',9);
+define('OB_USER_CACHE',2);
+define('OB_VERSION_CHECK',3);
 
 // check validity of input variables
 $vardom=array(
@@ -189,6 +187,7 @@ if(!function_exists('apc_cache_info')) {
 
 $cache_user = apc_cache_info(1);  
 $mem=apc_sma_info();
+
 if(!$cache['num_hits']) { $cache['num_hits']=1; $time++; }  // Avoid division by 0 errors on a cache clear
 
 // don't cache this page
@@ -716,23 +715,18 @@ input {
 	</div>
 	<hr class="apc">
 </div>
+
 <?php
-
-
 // Display main Menu
 echo <<<EOB
 	<ol class=menu>
 	<li><a href="$MY_SELF&OB={$MYREQUEST['OB']}&SH={$MYREQUEST['SH']}">Refresh Data</a></li>
 EOB;
 echo
-	menu_entry(1,'View Host Stats'),
-	menu_entry(2,'System Cache Entries');
-if ($AUTHENTICATED) {
-	echo menu_entry(4,'Per-Directory Entries');
-}
+	menu_entry(OB_HOST_STATS,'View Host Stats');
 echo
-	menu_entry(3,'User Cache Entries'),
-	menu_entry(9,'Version Check');
+	menu_entry(OB_USER_CACHE,'User Cache Entries'),
+	menu_entry(OB_VERSION_CHECK,'Version Check');
 	
 if ($AUTHENTICATED) {
 	echo <<<EOB
@@ -752,11 +746,6 @@ EOB;
 // MAIN SWITCH STATEMENT 
 
 switch ($MYREQUEST['OB']) {
-
-
-
-
-
 // -----------------------------------------------
 // Host Stats
 // -----------------------------------------------
@@ -934,64 +923,6 @@ case OB_USER_CACHE:
 	$fieldheading='User Entry Label';
 	$fieldkey='info';
 
-// -----------------------------------------------
-// System Cache Entries		
-// -----------------------------------------------
-case OB_SYS_CACHE:	
-	if (!isset($fieldname))
-	{
-		$fieldname='filename';
-		$fieldheading='Script Filename';
-		if(ini_get("apc.stat")) $fieldkey='inode';
-		else $fieldkey='filename'; 
-	}
-	if (!empty($MYREQUEST['SH']))
-	{
-		echo <<< EOB
-			<div class="info"><table cellspacing=0><tbody>
-			<tr><th>Attribute</th><th>Value</th></tr>
-EOB;
-
-		$m=0;
-		foreach($scope_list as $j => $list) {
-			foreach($cache[$list] as $i => $entry) {
-				if (md5($entry[$fieldkey])!=$MYREQUEST['SH']) continue;
-				foreach($entry as $k => $value) {
-					if (!$AUTHENTICATED) {
-						// hide all path entries if not logged in
-						$value=preg_replace('/^.*(\\/|\\\\)/','<i>&lt;hidden&gt;</i>/',$value);
-					}
-
-					if ($k == "num_hits") {
-						$value=sprintf("%s (%.2f%%)",$value,$value*100/$cache['num_hits']);
-					}
-					if ($k == 'deletion_time') {
-						if(!$entry['deletion_time']) $value = "None";
-					}
-					echo
-						"<tr class=tr-$m>",
-						"<td class=td-0>",ucwords(preg_replace("/_/"," ",$k)),"</td>",
-						"<td class=td-last>",(preg_match("/time/",$k) && $value!='None') ? date(DATE_FORMAT,$value) : htmlspecialchars($value, ENT_QUOTES, 'UTF-8'),"</td>",
-						"</tr>";
-					$m=1-$m;
-				}
-				if($fieldkey=='info') {
-					echo "<tr class=tr-$m><td class=td-0>Stored Value</td><td class=td-last><pre>";
-					$output = var_export(apc_fetch($entry[$fieldkey]),true);
-					echo htmlspecialchars($output, ENT_QUOTES, 'UTF-8');
-					echo "</pre></td></tr>\n";
-				}
-				break;
-			}
-		}
-
-		echo <<<EOB
-			</tbody></table>
-			</div>
-EOB;
-		break;
-	}
-
 	$cols=6;
 	echo <<<EOB
 		<div class=sorting><form>Scope:
@@ -1061,6 +992,7 @@ EOB;
 	// builds list with alpha numeric sortable keys
 	//
 	$list = array();
+	
 	foreach($cache[$scope_list[$MYREQUEST['SCOPE']]] as $i => $entry) {
 		switch($MYREQUEST['SORT1']) {
 			case 'A': $k=sprintf('%015d-',$entry['access_time']); 	break;
@@ -1081,7 +1013,6 @@ EOB;
 	}
 
 	if ($list) {
-		
 		// sort list
 		//
 		switch ($MYREQUEST['SORT2']) {
@@ -1129,133 +1060,6 @@ EOB;
 		
 	} else {
 		echo '<tr class=tr-0><td class="center" colspan=',$cols,'><i>No data</i></td></tr>';
-	}
-	echo <<< EOB
-		</tbody></table>
-EOB;
-
-	if ($list && $i < count($list)) {
-		echo "<a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],"&COUNT=0\"><i>",count($list)-$i,' more available...</i></a>';
-	}
-
-	echo <<< EOB
-		</div>
-EOB;
-	break;
-
-
-// -----------------------------------------------
-// Per-Directory System Cache Entries
-// -----------------------------------------------
-case OB_SYS_CACHE_DIR:	
-	if (!$AUTHENTICATED) {
-		break;
-	}
-
-	echo <<<EOB
-		<div class=sorting><form>Scope:
-		<input type=hidden name=OB value={$MYREQUEST['OB']}>
-		<select name=SCOPE>
-EOB;
-	echo 
-		"<option value=A",$MYREQUEST['SCOPE']=='A' ? " selected":"",">Active</option>",
-		"<option value=D",$MYREQUEST['SCOPE']=='D' ? " selected":"",">Deleted</option>",
-		"</select>",
-		", Sorting:<select name=SORT1>",
-		"<option value=H",$MYREQUEST['SORT1']=='H' ? " selected":"",">Total Hits</option>",
-		"<option value=Z",$MYREQUEST['SORT1']=='Z' ? " selected":"",">Total Size</option>",
-		"<option value=T",$MYREQUEST['SORT1']=='T' ? " selected":"",">Number of Files</option>",
-		"<option value=S",$MYREQUEST['SORT1']=='S' ? " selected":"",">Directory Name</option>",
-		"<option value=A",$MYREQUEST['SORT1']=='A' ? " selected":"",">Avg. Size</option>",
-		"<option value=C",$MYREQUEST['SORT1']=='C' ? " selected":"",">Avg. Hits</option>",
-		'</select>',
-		'<select name=SORT2>',
-		'<option value=D',$MYREQUEST['SORT2']=='D' ? ' selected':'','>DESC</option>',
-		'<option value=A',$MYREQUEST['SORT2']=='A' ? ' selected':'','>ASC</option>',
-		'</select>',
-		'<select name=COUNT onChange="form.submit()">',
-		'<option value=10 ',$MYREQUEST['COUNT']=='10' ? ' selected':'','>Top 10</option>',
-		'<option value=20 ',$MYREQUEST['COUNT']=='20' ? ' selected':'','>Top 20</option>',
-		'<option value=50 ',$MYREQUEST['COUNT']=='50' ? ' selected':'','>Top 50</option>',
-		'<option value=100',$MYREQUEST['COUNT']=='100'? ' selected':'','>Top 100</option>',
-		'<option value=150',$MYREQUEST['COUNT']=='150'? ' selected':'','>Top 150</option>',
-		'<option value=200',$MYREQUEST['COUNT']=='200'? ' selected':'','>Top 200</option>',
-		'<option value=500',$MYREQUEST['COUNT']=='500'? ' selected':'','>Top 500</option>',
-		'<option value=0  ',$MYREQUEST['COUNT']=='0'  ? ' selected':'','>All</option>',
-		'</select>',
-		", Group By Dir Level:<select name=AGGR>",
-		"<option value='' selected>None</option>";
-		for ($i = 1; $i < 10; $i++)
-			echo "<option value=$i",$MYREQUEST['AGGR']==$i ? " selected":"",">$i</option>";
-		echo '</select>',
-		'&nbsp;<input type=submit value="GO!">',
-		'</form></div>',
-
-		'<div class="info"><table cellspacing=0><tbody>',
-		'<tr>',
-		'<th>',sortheader('S','Directory Name',	"&OB=".$MYREQUEST['OB']),'</th>',
-		'<th>',sortheader('T','Number of Files',"&OB=".$MYREQUEST['OB']),'</th>',
-		'<th>',sortheader('H','Total Hits',	"&OB=".$MYREQUEST['OB']),'</th>',
-		'<th>',sortheader('Z','Total Size',	"&OB=".$MYREQUEST['OB']),'</th>',
-		'<th>',sortheader('C','Avg. Hits',	"&OB=".$MYREQUEST['OB']),'</th>',
-		'<th>',sortheader('A','Avg. Size',	"&OB=".$MYREQUEST['OB']),'</th>',
-		'</tr>';
-
-	// builds list with alpha numeric sortable keys
-	//
-	$tmp = $list = array();
-	foreach($cache[$scope_list[$MYREQUEST['SCOPE']]] as $entry) {
-		$n = dirname($entry['filename']);
-		if ($MYREQUEST['AGGR'] > 0) {
-			$n = preg_replace("!^(/?(?:[^/\\\\]+[/\\\\]){".($MYREQUEST['AGGR']-1)."}[^/\\\\]*).*!", "$1", $n);
-		}
-		if (!isset($tmp[$n])) {
-			$tmp[$n] = array('hits'=>0,'size'=>0,'ents'=>0);
-		}
-		$tmp[$n]['hits'] += $entry['num_hits'];
-		$tmp[$n]['size'] += $entry['mem_size'];
-		++$tmp[$n]['ents'];
-	}
-
-	foreach ($tmp as $k => $v) {
-		switch($MYREQUEST['SORT1']) {
-			case 'A': $kn=sprintf('%015d-',$v['size'] / $v['ents']);break;
-			case 'T': $kn=sprintf('%015d-',$v['ents']);		break;
-			case 'H': $kn=sprintf('%015d-',$v['hits']);		break;
-			case 'Z': $kn=sprintf('%015d-',$v['size']);		break;
-			case 'C': $kn=sprintf('%015d-',$v['hits'] / $v['ents']);break;
-			case 'S': $kn = $k;					break;
-		}
-		$list[$kn.$k] = array($k, $v['ents'], $v['hits'], $v['size']);
-	}
-
-	if ($list) {
-		
-		// sort list
-		//
-		switch ($MYREQUEST['SORT2']) {
-			case "A":	krsort($list);	break;
-			case "D":	ksort($list);	break;
-		}
-		
-		// output list
-		$i = 0;
-		foreach($list as $entry) {
-			echo
-				'<tr class=tr-',$i%2,'>',
-				"<td class=td-0>",$entry[0],'</a></td>',
-				'<td class="td-n center">',$entry[1],'</td>',
-				'<td class="td-n center">',$entry[2],'</td>',
-				'<td class="td-n center">',$entry[3],'</td>',
-				'<td class="td-n center">',round($entry[2] / $entry[1]),'</td>',
-				'<td class="td-n center">',round($entry[3] / $entry[1]),'</td>',
-				'</tr>';
-
-			if (++$i == $MYREQUEST['COUNT']) break;
-		}
-		
-	} else {
-		echo '<tr class=tr-0><td class="center" colspan=6><i>No data</i></td></tr>';
 	}
 	echo <<< EOB
 		</tbody></table>
