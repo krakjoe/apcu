@@ -58,13 +58,6 @@ static HashTable* my_copy_hashtable_ex(HashTable*, HashTable* TSRMLS_DC, ht_copy
 #define my_copy_hashtable( dst, src, copy_fn, holds_ptr, ctxt) \
     my_copy_hashtable_ex(dst, src TSRMLS_CC, copy_fn, holds_ptr, ctxt, NULL)
 
-/* {{{ hash */
-static unsigned long hash(apc_cache_key_t key)
-{
-    return (unsigned long)(key.data.file.device + key.data.file.inode);
-}
-/* }}} */
-
 /* {{{ string_nhash_8 */
 #define string_nhash_8(s,len) (unsigned long)(zend_inline_hash_func((s), len))
 /* }}} */
@@ -171,11 +164,11 @@ slot_t* make_slot(apc_cache_key_t *key, apc_cache_entry_t* value, slot_t* next, 
     if (!p) return NULL;
 
     if(key->type == APC_CACHE_KEY_USER) {
-        char *identifier = (char*) apc_pmemcpy(key->data.user.identifier, key->data.user.identifier_len, value->pool TSRMLS_CC);
+        char *identifier = (char*) apc_pmemcpy(key->data.identifier, key->data.identifier_len, value->pool TSRMLS_CC);
         if (!identifier) {
             return NULL;
         }
-        key->data.user.identifier = identifier;
+        key->data.identifier = identifier;
     }
 
     p->key = key[0];
@@ -240,11 +233,10 @@ static void process_pending_removals(apc_cache_t* cache TSRMLS_DC)
             slot_t* dead = *slot;
 
             if (dead->value->ref_count > 0) {
-                switch(dead->value->type) {
-                    case APC_CACHE_ENTRY_USER:
-                        apc_debug("GC cache entry '%s' was on gc-list for %d seconds" TSRMLS_CC, dead->value->data.user.info, gc_sec);
-                        break;
-                }
+                apc_debug(
+					"GC cache entry '%s' was on gc-list for %d seconds" TSRMLS_CC, 
+					dead->value->data.info, gc_sec
+				);
             }
             *slot = dead->next;
             free_slot(dead TSRMLS_CC);
@@ -449,21 +441,16 @@ clear_all:
                  * For the user cache we look at the individual entry ttl values
                  * and if not set fall back to the default ttl for the user cache
                  */
-                if((*p)->value->type == APC_CACHE_ENTRY_USER) {
-                    if((*p)->value->data.user.ttl) {
-                        if((time_t) ((*p)->creation_time + (*p)->value->data.user.ttl) < t) {
-                            remove_slot(cache, p TSRMLS_CC);
-                            continue;
-                        }
-                    } else if(cache->ttl) {
-                        if((*p)->creation_time + cache->ttl < t) {
-                            remove_slot(cache, p TSRMLS_CC);
-                            continue;
-                        }
+                if((*p)->value->data.ttl) {
+                    if((time_t) ((*p)->creation_time + (*p)->value->data.ttl) < t) {
+                        remove_slot(cache, p TSRMLS_CC);
+                        continue;
                     }
-                } else if((*p)->access_time < (t - cache->ttl)) {
-                    remove_slot(cache, p TSRMLS_CC);
-                    continue;
+                } else if(cache->ttl) {
+                    if((*p)->creation_time + cache->ttl < t) {
+                        remove_slot(cache, p TSRMLS_CC);
+                        continue;
+                    }
                 }
                 p = &(*p)->next;
             }
@@ -503,7 +490,7 @@ int *apc_cache_insert_mult(apc_cache_t* cache, apc_cache_key_t* keys, apc_cache_
 int apc_cache_user_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC)
 {
     slot_t** slot;
-    unsigned int keylen = key.data.user.identifier_len;
+    unsigned int keylen = key.data.identifier_len;
     apc_keyid_t *lastkey = &cache->header->lastkey;
     
     if (!value) {
@@ -543,15 +530,15 @@ int apc_cache_user_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_ent
 
     while (*slot) {
         if (((*slot)->key.h == key.h) && 
-            (!memcmp((*slot)->key.data.user.identifier, key.data.user.identifier, keylen))) {
+            (!memcmp((*slot)->key.data.identifier, key.data.identifier, keylen))) {
             /* 
              * At this point we have found the user cache entry.  If we are doing 
              * an exclusive insert (apc_add) we are going to bail right away if
              * the user entry already exists and it has no ttl, or
              * there is a ttl and the entry has not timed out yet.
              */
-            if(exclusive && (  !(*slot)->value->data.user.ttl ||
-                              ( (*slot)->value->data.user.ttl && (time_t) ((*slot)->creation_time + (*slot)->value->data.user.ttl) >= t ) 
+            if(exclusive && (  !(*slot)->value->data.ttl ||
+                              ( (*slot)->value->data.ttl && (time_t) ((*slot)->creation_time + (*slot)->value->data.ttl) >= t ) 
                             ) ) {
                 goto fail;
             }
@@ -566,7 +553,7 @@ int apc_cache_user_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_ent
          * we see if the entry has a hard ttl on it and remove it if it has been around longer than its ttl
          */
         if((cache->ttl && (*slot)->access_time < (t - cache->ttl)) || 
-           ((*slot)->value->data.user.ttl && (time_t) ((*slot)->creation_time + (*slot)->value->data.user.ttl) < t)) {
+           ((*slot)->value->data.ttl && (time_t) ((*slot)->creation_time + (*slot)->value->data.ttl) < t)) {
             remove_slot(cache, slot TSRMLS_CC);
             continue;
         }
@@ -615,9 +602,9 @@ apc_cache_entry_t* apc_cache_user_find(apc_cache_t* cache, char *strkey, int key
 
     while (*slot) {
         if ((h == (*slot)->key.h) &&
-            !memcmp((*slot)->key.data.user.identifier, strkey, keylen)) {
+            !memcmp((*slot)->key.data.identifier, strkey, keylen)) {
             /* Check to make sure this entry isn't expired by a hard TTL */
-            if((*slot)->value->data.user.ttl && (time_t) ((*slot)->creation_time + (*slot)->value->data.user.ttl) < t) {
+            if((*slot)->value->data.ttl && (time_t) ((*slot)->creation_time + (*slot)->value->data.ttl) < t) {
                 #if (USE_READ_LOCKS == 0) 
                 /* this is merely a memory-friendly optimization, if we do have a write-lock
                  * might as well move this to the deleted_list right-away. Otherwise an insert
@@ -669,9 +656,9 @@ apc_cache_entry_t* apc_cache_user_exists(apc_cache_t* cache, char *strkey, int k
 
     while (*slot) {
         if ((h == (*slot)->key.h) &&
-            !memcmp((*slot)->key.data.user.identifier, strkey, keylen)) {
+            !memcmp((*slot)->key.data.identifier, strkey, keylen)) {
             /* Check to make sure this entry isn't expired by a hard TTL */
-            if((*slot)->value->data.user.ttl && (time_t) ((*slot)->creation_time + (*slot)->value->data.user.ttl) < t) {
+            if((*slot)->value->data.ttl && (time_t) ((*slot)->creation_time + (*slot)->value->data.ttl) < t) {
                 CACHE_UNLOCK(cache);
                 return NULL;
             }
@@ -707,8 +694,8 @@ int _apc_cache_user_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
 
     while (*slot) {
         if ((h == (*slot)->key.h) &&
-            !memcmp((*slot)->key.data.user.identifier, strkey, keylen)) {
-            switch(Z_TYPE_P((*slot)->value->data.user.val) & ~IS_CONSTANT_INDEX) {
+            !memcmp((*slot)->key.data.identifier, strkey, keylen)) {
+            switch(Z_TYPE_P((*slot)->value->data.val) & ~IS_CONSTANT_INDEX) {
                 case IS_ARRAY:
                 case IS_CONSTANT_ARRAY:
                 case IS_OBJECT:
@@ -752,7 +739,7 @@ int apc_cache_user_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_DC
 
     while (*slot) {
         if ((h == (*slot)->key.h) && 
-            !memcmp((*slot)->key.data.user.identifier, strkey, keylen)) {
+            !memcmp((*slot)->key.data.identifier, strkey, keylen)) {
             remove_slot(cache, slot TSRMLS_CC);
             CACHE_UNLOCK(cache);
             return 1;
@@ -773,9 +760,9 @@ int apc_cache_make_user_key(apc_cache_key_t* key, char* identifier, int identifi
     if (!identifier)
         return 0;
 
-    key->data.user.identifier = identifier;
-    key->data.user.identifier_len = identifier_len;
-    key->h = string_nhash_8((char *)key->data.user.identifier, key->data.user.identifier_len);
+    key->data.identifier = identifier;
+    key->data.identifier_len = identifier_len;
+    key->h = string_nhash_8((char *)key->data.identifier, key->data.identifier_len);
     key->mtime = t;
     key->type = APC_CACHE_KEY_USER;
     return 1;
@@ -1150,18 +1137,17 @@ apc_cache_entry_t* apc_cache_make_user_entry(const char* info, int info_len, con
     entry = (apc_cache_entry_t*) apc_pool_alloc(pool, sizeof(apc_cache_entry_t));
     if (!entry) return NULL;
 
-    entry->data.user.info = apc_pmemcpy(info, info_len, pool TSRMLS_CC);
-    entry->data.user.info_len = info_len;
-    if(!entry->data.user.info) {
+    entry->data.info = apc_pmemcpy(info, info_len, pool TSRMLS_CC);
+    entry->data.info_len = info_len;
+    if(!entry->data.info) {
         return NULL;
     }
-    entry->data.user.val = apc_cache_store_zval(NULL, val, ctxt TSRMLS_CC);
-    if(!entry->data.user.val) {
+    entry->data.val = apc_cache_store_zval(NULL, val, ctxt TSRMLS_CC);
+    if(!entry->data.val) {
         return NULL;
     }
-    INIT_PZVAL(entry->data.user.val);
-    entry->data.user.ttl = ttl;
-    entry->type = APC_CACHE_ENTRY_USER;
+    INIT_PZVAL(entry->data.val);
+    entry->data.ttl = ttl;
     entry->ref_count = 0;
     entry->mem_size = 0;
     entry->pool = pool;
@@ -1183,8 +1169,8 @@ static zval* apc_cache_link_info(apc_cache_t *cache, slot_t* p TSRMLS_DC)
 
     array_init(link);
 
-    add_assoc_stringl(link, "info", p->value->data.user.info, p->value->data.user.info_len-1, 1);
-    add_assoc_long(link, "ttl", (long)p->value->data.user.ttl);
+    add_assoc_stringl(link, "info", p->value->data.info, p->value->data.info_len-1, 1);
+    add_assoc_long(link, "ttl", (long)p->value->data.ttl);
 
     add_assoc_double(link, "num_hits", (double)p->num_hits);
     add_assoc_long(link, "mtime", p->key.mtime);
@@ -1301,7 +1287,7 @@ zend_bool apc_cache_busy(apc_cache_t* cache)
 zend_bool apc_cache_is_last_key(apc_cache_t* cache, apc_cache_key_t* key, time_t t TSRMLS_DC)
 {
     apc_keyid_t *lastkey = &cache->header->lastkey;
-    unsigned int keylen = key->data.user.identifier_len;
+    unsigned int keylen = key->data.identifier_len;
 #ifdef ZTS
     THREAD_T tid = tsrm_thread_id();
     #define FROM_DIFFERENT_THREAD(k) (memcmp(&((k)->tid), &tid, sizeof(THREAD_T))!=0)
@@ -1316,7 +1302,7 @@ zend_bool apc_cache_is_last_key(apc_cache_t* cache, apc_cache_key_t* key, time_t
         if(lastkey->mtime == t && FROM_DIFFERENT_THREAD(lastkey)) {
             /* potential cache slam */
             if(APCG(slam_defense)) {
-                apc_debug("Potential cache slam averted for key '%s'" TSRMLS_CC, key->data.user.identifier);
+                apc_debug("Potential cache slam averted for key '%s'" TSRMLS_CC, key->data.identifier);
                 return 1;
             }
         }

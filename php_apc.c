@@ -606,7 +606,7 @@ static int inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data)
 
     struct _inc_update_args *args = (struct _inc_update_args*) data;
     
-    zval* val = entry->data.user.val;
+    zval* val = entry->data.val;
 
     if(Z_TYPE_P(val) == IS_LONG) {
         Z_LVAL_P(val) += args->step;
@@ -679,7 +679,7 @@ static int cas_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data)
     long* vals = ((long*)data);
     long old = vals[0];
     long new = vals[1];
-    zval* val = entry->data.user.val;
+    zval* val = entry->data.val;
 
     if(Z_TYPE_P(val) == IS_LONG) {
         if(Z_LVAL_P(val) == old) {
@@ -759,7 +759,7 @@ PHP_FUNCTION(apc_fetch) {
         entry = apc_cache_user_find(apc_user_cache, strkey, (strkey_len + 1), t TSRMLS_CC);
         if(entry) {
             /* deep-copy returned shm zval to emalloc'ed return_value */
-            apc_cache_fetch_zval(return_value, entry->data.user.val, &ctxt TSRMLS_CC);
+            apc_cache_fetch_zval(return_value, entry->data.val, &ctxt TSRMLS_CC);
             apc_cache_release(apc_user_cache, entry TSRMLS_CC);
         } else {
             goto freepool;
@@ -778,7 +778,7 @@ PHP_FUNCTION(apc_fetch) {
             if(entry) {
                 /* deep-copy returned shm zval to emalloc'ed return_value */
                 MAKE_STD_ZVAL(result_entry);
-                apc_cache_fetch_zval(result_entry, entry->data.user.val, &ctxt TSRMLS_CC);
+                apc_cache_fetch_zval(result_entry, entry->data.val, &ctxt TSRMLS_CC);
                 apc_cache_release(apc_user_cache, entry TSRMLS_CC);
                 zend_hash_add(Z_ARRVAL_P(result), Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) +1, &result_entry, sizeof(zval*), NULL);
             } /* don't set values we didn't find */

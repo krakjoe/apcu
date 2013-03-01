@@ -42,25 +42,17 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, slo
     ALLOC_INIT_ZVAL(item->value);
     array_init(item->value);
 
-    if (APC_ITER_TYPE & iterator->format) {
-        if(slot->value->type == APC_CACHE_ENTRY_USER) {
-            add_assoc_string(item->value, "type", "user", 1);
-        }
-    }
     if (APC_ITER_KEY & iterator->format) {
         add_assoc_stringl(item->value, "key", item->key, (item->key_len - 1), 1);
     }
     if (APC_ITER_VALUE & iterator->format) {
-        if(slot->value->type == APC_CACHE_ENTRY_USER) {
+        ctxt.pool = apc_pool_create(APC_UNPOOL, apc_php_malloc, apc_php_free, NULL, NULL TSRMLS_CC);
+        ctxt.copy = APC_COPY_OUT_USER;
 
-            ctxt.pool = apc_pool_create(APC_UNPOOL, apc_php_malloc, apc_php_free, NULL, NULL TSRMLS_CC);
-            ctxt.copy = APC_COPY_OUT_USER;
-
-            MAKE_STD_ZVAL(zvalue);
-            apc_cache_fetch_zval(zvalue, slot->value->data.user.val, &ctxt TSRMLS_CC);
-            apc_pool_destroy(ctxt.pool TSRMLS_CC);
-            add_assoc_zval(item->value, "value", zvalue);
-        }
+        MAKE_STD_ZVAL(zvalue);
+        apc_cache_fetch_zval(zvalue, slot->value->data.val, &ctxt TSRMLS_CC);
+        apc_pool_destroy(ctxt.pool TSRMLS_CC);
+        add_assoc_zval(item->value, "value", zvalue);
     }
     if (APC_ITER_NUM_HITS & iterator->format) {
         add_assoc_long(item->value, "num_hits", slot->num_hits);
@@ -84,9 +76,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, slo
         add_assoc_long(item->value, "mem_size", slot->value->mem_size);
     }
     if (APC_ITER_TTL & iterator->format) {
-        if(slot->value->type == APC_CACHE_ENTRY_USER) {
-            add_assoc_long(item->value, "ttl", slot->value->data.user.ttl);
-        }
+        add_assoc_long(item->value, "ttl", slot->value->data.ttl);
     }
 
     return item;
@@ -181,12 +171,8 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, slot_t **slot) {
     int fname_key_len = 0;
     int rval = 1;
 
-    if ((*slot)->key.type == APC_CACHE_KEY_USER) {
-        key = (char*)(*slot)->key.data.user.identifier;
-        key_len = (*slot)->key.data.user.identifier_len;
-    } else {
-        return 0;
-    }
+    key = (char*)(*slot)->key.data.identifier;
+    key_len = (*slot)->key.data.identifier_len;
 
 #ifdef ITERATOR_PCRE
     if (iterator->regex) {
@@ -212,18 +198,14 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, slot_t **slot) {
 /* {{{ apc_iterator_check_expiry */
 static int apc_iterator_check_expiry(apc_cache_t* cache, slot_t **slot, time_t t)
 {
-    if((*slot)->value->type == APC_CACHE_ENTRY_USER) {
-        if((*slot)->value->data.user.ttl) {
-            if((time_t) ((*slot)->creation_time + (*slot)->value->data.user.ttl) < t) {
-                return 0;
-            }
-        } else if(cache->ttl) {
-            if((*slot)->creation_time + cache->ttl < t) {
-                return 0;
-            }
+    if((*slot)->value->data.ttl) {
+        if((time_t) ((*slot)->creation_time + (*slot)->value->data.ttl) < t) {
+            return 0;
         }
-    } else if((*slot)->access_time < (t - cache->ttl)) {
-        return 0;
+    } else if(cache->ttl) {
+        if((*slot)->creation_time + cache->ttl < t) {
+            return 0;
+        }
     }
 
     return 1;

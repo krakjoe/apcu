@@ -81,19 +81,9 @@ typedef dev_t apc_dev_t;
 #define T apc_cache_t*
 typedef struct apc_cache_t apc_cache_t; /* opaque cache type */
 
-typedef union _apc_cache_key_data_t {
-    struct {
-        apc_dev_t device;             /* the filesystem device */
-        apc_ino_t inode;              /* the filesystem inode */
-    } file;
-    struct {
-        const char *identifier;
-        int identifier_len;
-    } user;
-    struct {
-        const char *fullpath;
-        int fullpath_len;
-    } fpfile;
+typedef struct _apc_cache_key_data_t {
+    const char *identifier;
+    int identifier_len;
 } apc_cache_key_data_t;
 
 typedef struct apc_cache_key_t apc_cache_key_t;
@@ -102,9 +92,7 @@ struct apc_cache_key_t {
     unsigned long h;              /* pre-computed hash value */
     time_t mtime;                 /* the mtime of this cached entry */
     unsigned char type;
-    unsigned char md5[16];        /* md5 hash of the source file */
 };
-
 
 typedef struct apc_keyid_t apc_keyid_t;
 
@@ -121,19 +109,16 @@ struct apc_keyid_t {
 /* }}} */
 
 /* {{{ struct definition: apc_cache_entry_t */
-typedef union _apc_cache_entry_value_t {
-    struct {
+typedef struct _apc_cache_entry_value_t {
         char *info;
         int info_len;
         zval *val;
         unsigned int ttl;
-    } user;
 } apc_cache_entry_value_t;
 
 typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
     apc_cache_entry_value_t data;
-    unsigned char type;
     int ref_count;
     size_t mem_size;
     apc_pool *pool;
