@@ -118,8 +118,6 @@
       <file role="src" name="apc_windows_srwlock_kernel.h"/>
       <file role="src" name="apc_stack.c"/>
       <file role="src" name="apc_stack.h"/>
-      <file role="src" name="apc_zend.c"/>
-      <file role="src" name="apc_zend.h"/>
       <file role="src" name="apc_signal.c"/>
       <file role="src" name="apc_signal.h"/>
       <file role="src" name="apc_iterator.c"/>
