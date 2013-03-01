@@ -93,14 +93,8 @@ typedef void (*apc_swizzle_cb_t)(apc_bd_t *bd, zend_llist *ll, void *ptr TSRMLS_
 #endif
 
 static void _apc_swizzle_ptr(apc_bd_t *bd, zend_llist *ll, void **ptr, const char* file, int line TSRMLS_DC);
-static void apc_swizzle_function(apc_bd_t *bd, zend_llist *ll, zend_function *func TSRMLS_DC);
-static void apc_swizzle_class_entry(apc_bd_t *bd, zend_llist *ll, zend_class_entry *ce TSRMLS_DC);
 static void apc_swizzle_hashtable(apc_bd_t *bd, zend_llist *ll, HashTable *ht, apc_swizzle_cb_t swizzle_cb, int is_ptr TSRMLS_DC);
 static void apc_swizzle_zval(apc_bd_t *bd, zend_llist *ll, zval *zv TSRMLS_DC);
-static void apc_swizzle_op_array(apc_bd_t *bd, zend_llist *ll, zend_op_array *op_array TSRMLS_DC);
-static void apc_swizzle_property_info(apc_bd_t *bd, zend_llist *ll, zend_property_info *pi TSRMLS_DC);
-static void apc_swizzle_function_entry(apc_bd_t *bd, zend_llist *ll, const zend_function_entry *fe TSRMLS_DC);
-static void apc_swizzle_arg_info_array(apc_bd_t *bd, zend_llist *ll, const zend_arg_info* arg_info_array, uint num_args TSRMLS_DC);
 
 static apc_bd_t* apc_swizzle_bd(apc_bd_t* bd, zend_llist *ll TSRMLS_DC);
 static int apc_unswizzle_bd(apc_bd_t *bd, int flags TSRMLS_DC);
@@ -165,247 +159,6 @@ static void _apc_swizzle_ptr(apc_bd_t *bd, zend_llist *ll, void **ptr, const cha
             return;
         }
     }
-} /* }}} */
-
-/* {{{ apc_swizzle_op_array */
-static void apc_swizzle_op_array(apc_bd_t *bd, zend_llist *ll, zend_op_array *op_array TSRMLS_DC) {
-    uint i;
-
-#ifdef ZEND_ENGINE_2
-    apc_swizzle_arg_info_array(bd, ll, op_array->arg_info, op_array->num_args TSRMLS_CC);
-    apc_swizzle_ptr(bd, ll, &op_array->arg_info);
-#else
-    if (op_array->arg_types) {
-        apc_swizzle_ptr(bd, ll, &op_array->arg_types);
-    }
-#endif
-
-    apc_swizzle_ptr(bd, ll, &op_array->function_name);
-    apc_swizzle_ptr(bd, ll, &op_array->filename);
-    apc_swizzle_ptr(bd, ll, &op_array->refcount);
-#ifdef ZEND_ENGINE_2_4
-    if (op_array->last_literal) {
-        int j = 0;
-        apc_swizzle_ptr(bd, ll, &(op_array->literals));
-        for (; j<op_array->last_literal; j++) {
-            apc_swizzle_zval(bd, ll, &((op_array->literals[j]).constant) TSRMLS_CC);
-        }
-    }
-#endif
-
-    /* swizzle op_array */
-    for(i=0; i < op_array->last; i++) {
-#ifndef ZEND_ENGINE_2_4
-        if(op_array->opcodes[i].result.op_type == IS_CONST) {
-            apc_swizzle_zval(bd, ll, &op_array->opcodes[i].result.u.constant TSRMLS_CC);
-        }
-        if(op_array->opcodes[i].op1.op_type == IS_CONST) {
-            apc_swizzle_zval(bd, ll, &op_array->opcodes[i].op1.u.constant TSRMLS_CC);
-        }
-        if(op_array->opcodes[i].op2.op_type == IS_CONST) {
-            apc_swizzle_zval(bd, ll, &op_array->opcodes[i].op2.u.constant TSRMLS_CC);
-        }
-#else
-        if (op_array->opcodes[i].op1_type == IS_CONST) {
-            apc_swizzle_ptr(bd, ll, &op_array->opcodes[i].op1.literal);
-        }
-        if (op_array->opcodes[i].op2_type == IS_CONST) {
-            apc_swizzle_ptr(bd, ll, &op_array->opcodes[i].op2.literal);
-        }
-        if (op_array->opcodes[i].result_type == IS_CONST) {
-            apc_swizzle_ptr(bd, ll, &op_array->opcodes[i].result.literal);
-        }
-#endif
-        switch (op_array->opcodes[i].opcode) {
-#ifdef ZEND_ENGINE_2_3
-            case ZEND_GOTO:
-#endif
-            case ZEND_JMP:
-#ifdef ZEND_ENGINE_2_4
-                apc_swizzle_ptr(bd, ll, &op_array->opcodes[i].op1.jmp_addr);
-#else
-                apc_swizzle_ptr(bd, ll, &op_array->opcodes[i].op1.u.jmp_addr);
-#endif
-                break;
-            case ZEND_JMPZ:
-            case ZEND_JMPNZ:
-            case ZEND_JMPZ_EX:
-            case ZEND_JMPNZ_EX:
-#ifdef ZEND_ENGINE_2_3
-            case ZEND_JMP_SET:
-#endif
-#ifdef ZEND_ENGINE_2_4
-            case ZEND_JMP_SET_VAR:
-#endif
-#ifdef ZEND_ENGINE_2_4
-                apc_swizzle_ptr(bd, ll, &op_array->opcodes[i].op2.jmp_addr);
-#else
-                apc_swizzle_ptr(bd, ll, &op_array->opcodes[i].op2.u.jmp_addr);
-#endif
-        }
-    }
-    apc_swizzle_ptr(bd, ll, &op_array->opcodes);
-
-    /* break-continue array ptr */
-    if(op_array->brk_cont_array) {
-        apc_swizzle_ptr(bd, ll, &op_array->brk_cont_array);
-    }
-
-    /* static voriables */
-    if(op_array->static_variables) {
-        apc_swizzle_hashtable(bd, ll, op_array->static_variables, (apc_swizzle_cb_t)apc_swizzle_zval, 1 TSRMLS_CC);
-        apc_swizzle_ptr(bd, ll, &op_array->static_variables);
-    }
-
-#ifdef ZEND_ENGINE_2
-    /* try-catch */
-    if(op_array->try_catch_array) {
-        apc_swizzle_ptr(bd, ll, &op_array->try_catch_array);
-    }
-#endif
-
-#ifdef ZEND_ENGINE_2_1 /* PHP 5.1 */
-    /* vars */
-    if(op_array->vars) {
-        for(i=0; (signed int) i < op_array->last_var; i++) {
-            apc_swizzle_ptr(bd, ll, &op_array->vars[i].name);
-        }
-        apc_swizzle_ptr(bd, ll, &op_array->vars);
-    }
-#endif
-
-#ifdef ZEND_ENGINE_2
-    /* doc comment */
-    if(op_array->doc_comment) {
-        apc_swizzle_ptr(bd, ll, &op_array->doc_comment);
-    }
-#endif
-
-} /* }}} */
-
-/* {{{ apc_swizzle_function */
-static void apc_swizzle_function(apc_bd_t *bd, zend_llist *ll, zend_function *func TSRMLS_DC) {
-    apc_swizzle_op_array(bd, ll, &func->op_array TSRMLS_CC);
-#ifdef ZEND_ENGINE_2
-    if(func->common.scope) {
-        apc_swizzle_ptr(bd, ll, &func->common.scope);
-    }
-#endif
-} /* }}} */
-
-/* {{{ apc_swizzle_class_entry */
-static void apc_swizzle_class_entry(apc_bd_t *bd, zend_llist *ll, zend_class_entry *ce TSRMLS_DC) {
-
-    uint i;
-
-    if(ce->name) {
-        apc_swizzle_ptr(bd, ll, &ce->name);
-    }
-
-    if (ce->type == ZEND_USER_CLASS && ZEND_CE_DOC_COMMENT(ce)) {
-        apc_swizzle_ptr(bd, ll, &ZEND_CE_DOC_COMMENT(ce));
-    }
-
-#ifndef ZEND_ENGINE_2
-    apc_swizzle_ptr(bd, ll, &ce->refcount);
-#endif
-
-    apc_swizzle_hashtable(bd, ll, &ce->function_table, (apc_swizzle_cb_t)apc_swizzle_function, 0 TSRMLS_CC);
-#ifdef ZEND_ENGINE_2_4
-    if (ce->default_properties_table) {
-        apc_swizzle_ptr(bd, ll, &ce->default_properties_table);
-        for (i = 0; i < ce->default_properties_count; i++) {
-            if (ce->default_properties_table[i]) {
-                apc_swizzle_ptr(bd, ll, &ce->default_properties_table[i]);
-                apc_swizzle_zval(bd, ll, ce->default_properties_table[i] TSRMLS_CC);
-            }
-        }
-    }
-#else
-    apc_swizzle_hashtable(bd, ll, &ce->default_properties, (apc_swizzle_cb_t)apc_swizzle_zval, 1 TSRMLS_CC);
-#endif
-
-#ifdef ZEND_ENGINE_2
-    apc_swizzle_hashtable(bd, ll, &ce->properties_info, (apc_swizzle_cb_t)apc_swizzle_property_info, 0 TSRMLS_CC);
-#endif
-
-#ifdef ZEND_ENGINE_2_4
-    if (ce->default_static_members_table) {
-        apc_swizzle_ptr(bd, ll, &ce->default_static_members_table);
-        for (i = 0; i < ce->default_static_members_count; i++) {
-            if (ce->default_static_members_table[i]) {
-                apc_swizzle_ptr(bd, ll, &ce->default_static_members_table[i]);
-                apc_swizzle_zval(bd, ll, ce->default_static_members_table[i] TSRMLS_CC);
-            }
-        }
-    }
-    ce->static_members_table = ce->default_static_members_table;
-#else
-    apc_swizzle_hashtable(bd, ll, &ce->default_static_members, (apc_swizzle_cb_t)apc_swizzle_zval, 1 TSRMLS_CC);
-
-    if(ce->static_members != &ce->default_static_members) {
-        apc_swizzle_hashtable(bd, ll, ce->static_members, (apc_swizzle_cb_t)apc_swizzle_zval, 1 TSRMLS_CC);
-    } else {
-        apc_swizzle_ptr(bd, ll, &ce->static_members);
-    }
-#endif
-
-    apc_swizzle_hashtable(bd, ll, &ce->constants_table, (apc_swizzle_cb_t)apc_swizzle_zval, 1 TSRMLS_CC);
-
-    if(ce->type == ZEND_INTERNAL_CLASS &&  ZEND_CE_BUILTIN_FUNCTIONS(ce)) {
-        for(i=0; ZEND_CE_BUILTIN_FUNCTIONS(ce)[i].fname; i++) {
-            apc_swizzle_function_entry(bd, ll, &ZEND_CE_BUILTIN_FUNCTIONS(ce)[i] TSRMLS_CC);
-        }
-    }
-
-    apc_swizzle_ptr(bd, ll, &ce->constructor);
-    apc_swizzle_ptr(bd, ll, &ce->destructor);
-    apc_swizzle_ptr(bd, ll, &ce->clone);
-    apc_swizzle_ptr(bd, ll, &ce->__get);
-    apc_swizzle_ptr(bd, ll, &ce->__set);
-    apc_swizzle_ptr(bd, ll, &ce->__unset);
-    apc_swizzle_ptr(bd, ll, &ce->__isset);
-    apc_swizzle_ptr(bd, ll, &ce->__call);
-    apc_swizzle_ptr(bd, ll, &ce->serialize_func);
-    apc_swizzle_ptr(bd, ll, &ce->unserialize_func);
-
-#ifdef ZEND_ENGINE_2_2
-    apc_swizzle_ptr(bd, ll, &ce->__tostring);
-#endif
-
-    if (ce->type == ZEND_USER_CLASS) {
-        apc_swizzle_ptr(bd, ll, &ZEND_CE_FILENAME(ce));
-    }
-} /* }}} */
-
-/* {{{ apc_swizzle_property_info */
-static void apc_swizzle_property_info(apc_bd_t *bd, zend_llist *ll, zend_property_info *pi TSRMLS_DC) {
-    apc_swizzle_ptr(bd, ll, &pi->name);
-    apc_swizzle_ptr(bd, ll, &pi->doc_comment);
-
-#ifdef ZEND_ENGINE_2_2
-    apc_swizzle_ptr(bd, ll, &pi->ce);
-#endif
-} /* }}} */
-
-/* {{{ apc_swizzle_function_entry */
-static void apc_swizzle_function_entry(apc_bd_t *bd, zend_llist *ll, const zend_function_entry *fe TSRMLS_DC) {
-    apc_swizzle_ptr(bd, ll, &fe->fname);
-    apc_swizzle_arg_info_array(bd, ll, fe->arg_info, fe->num_args TSRMLS_CC);
-    apc_swizzle_ptr(bd, ll, &fe->arg_info);
-} /* }}} */
-
-/* {{{ apc_swizzle_arg_info_array */
-static void apc_swizzle_arg_info_array(apc_bd_t *bd, zend_llist *ll, const zend_arg_info* arg_info_array, uint num_args TSRMLS_DC) {
-    if(arg_info_array) {
-        uint i;
-
-        for(i=0; i < num_args; i++) {
-            apc_swizzle_ptr(bd, ll, &arg_info_array[i].name);
-            apc_swizzle_ptr(bd, ll, &arg_info_array[i].class_name);
-        }
-    }
-
 } /* }}} */
 
 /* {{{ apc_swizzle_hashtable */
@@ -622,43 +375,6 @@ static int apc_bin_checkfilter(HashTable *filter, const char *key, uint key_len)
     return 1;
 } /* }}} */
 
-/* {{{ apc_bin_fixup_op_array */
-static inline void apc_bin_fixup_op_array(zend_op_array *op_array) {
-    ulong i;
-    for (i = 0; i < op_array->last; i++) {
-        op_array->opcodes[i].handler = zend_opcode_handlers[APC_OPCODE_HANDLER_DECODE(&op_array->opcodes[i])];
-    }
-}
-/* }}} */
-
-/* {{{ apc_bin_fixup_class_entry */
-static inline void apc_bin_fixup_class_entry(zend_class_entry *ce) {
-    zend_function *fe;
-    HashPosition hpos;
-
-    /* fixup the opcodes in each method */
-    zend_hash_internal_pointer_reset_ex(&ce->function_table, &hpos);
-    while(zend_hash_get_current_data_ex(&ce->function_table, (void**)&fe, &hpos) == SUCCESS) {
-        apc_bin_fixup_op_array(&fe->op_array);
-        zend_hash_move_forward_ex(&ce->function_table, &hpos);
-    }
-
-    /* fixup hashtable destructor pointers */
-    ce->function_table.pDestructor = (dtor_func_t)zend_function_dtor;
-#ifndef ZEND_ENGINE_2_4
-    ce->default_properties.pDestructor = (dtor_func_t)zval_ptr_dtor_wrapper;
-#endif
-    ce->properties_info.pDestructor = (dtor_func_t)zval_ptr_dtor_wrapper;
-#ifndef ZEND_ENGINE_2_4
-    ce->default_static_members.pDestructor = (dtor_func_t)zval_ptr_dtor_wrapper;
-    if (ce->static_members) {
-        ce->static_members->pDestructor = (dtor_func_t)zval_ptr_dtor_wrapper;
-    }
-#endif
-    ce->constants_table.pDestructor = (dtor_func_t)zval_ptr_dtor_wrapper;
-}
-/* }}} */
-
 /* {{{ apc_bin_dump */
 apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     uint fcount;
@@ -701,7 +417,8 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
         apc_warning("Unable to allocate memory for pool." TSRMLS_CC);
         return NULL;
     }
-    ctxt.copy = APC_COPY_IN_OPCODE; /* avoid stupid ALLOC_ZVAL calls here, hack */
+
+    ctxt.copy = APC_NO_COPY; /* avoid stupid ALLOC_ZVAL calls here, hack */
     apc_bd_alloc_ex((void*)((long)bd + sizeof(apc_bd_t)), bd->size - sizeof(apc_bd_t) -1 TSRMLS_CC);
     bd->num_entries = count;
     bd->entries = apc_bd_alloc_ex(NULL, sizeof(apc_bd_entry_t) * count TSRMLS_CC);
@@ -737,7 +454,7 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
                     ep->val.user.val->type = IS_OBJECT;
                     /* a memleak can not be avoided: zval_ptr_dtor(&garbage); */
                     APCG(serializer) = NULL;
-                    ctxt.copy = APC_COPY_IN_OPCODE;
+                    ctxt.copy = APC_NO_COPY;
                 } else {
                     ep->val.user.val = apc_copy_zval(NULL, sp->value->data.user.val, &ctxt TSRMLS_CC);
                 }

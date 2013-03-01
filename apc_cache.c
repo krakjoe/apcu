@@ -966,16 +966,10 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
     }
 
 
-    if(ctxt->copy == APC_COPY_OUT_USER || ctxt->copy == APC_COPY_IN_USER) {
-        /* deep copies are refcount(1), but moved up for recursive 
-         * arrays,  which end up being add_ref'd during its copy. */
-        Z_SET_REFCOUNT_P(dst, 1);
-        Z_UNSET_ISREF_P(dst);
-    } else {
-        /* code uses refcount=2 for consts */
-        Z_SET_REFCOUNT_P(dst, Z_REFCOUNT_P((zval*)src));
-        Z_SET_ISREF_TO_P(dst, Z_ISREF_P((zval*)src));
-    }
+    /* deep copies are refcount(1), but moved up for recursive 
+     * arrays,  which end up being add_ref'd during its copy. */
+    Z_SET_REFCOUNT_P(dst, 1);
+    Z_UNSET_ISREF_P(dst);
 
     switch (src->type & IS_CONSTANT_TYPE_MASK) {
     case IS_RESOURCE:
