@@ -1,0 +1,407 @@
+Installation Instructions for APC
+---------------------------------
+
+This version of APC should work on PHP 4.3.0 - 4.4.x and
+5.1.0 - 5.2.x.  Yes, that means PHP 5.0.x is no longer 
+supported.  Upgrade to PHP 5.1.x or 5.2.x and you will 
+notice all sorts of performance increases.
+
+CVS Instructions
+----------------
+Building from CVS can be done like this:
+
+  svn co http://svn.php.net/repository/pecl/apc/trunk apc
+  cd apc
+  phpize
+  ./configure --with-php-config=/usr/local/php/bin/php-config
+  make
+  export TEST_PHP_ARGS='-n'
+  make test
+  make install
+
+Suggested Configuration (in your php.ini file)
+----------------------------------------------
+  extension=apc.so
+  apc.enabled=1
+  apc.shm_size=128M
+  apc.ttl=7200
+  apc.user_ttl=7200
+  apc.enable_cli=1
+
+These are fully described at the bottom of this file.
+
++---------------------+
+| QUICK INSTALL (DSO) |
++---------------------+
+
+These instructions assume your PHP installation is located in /usr/local/php and you
+want Apache optimizations (--with-apxs).
+
+$ gunzip -c apc_x.y.tar.gz | tar xf -
+$ cd apc_x.y
+$ /usr/local/php/bin/phpize
+$ ./configure --with-php-config=/usr/local/php/bin/php-config
+$ make
+$ make install
+
+You will probably need to run the final command (make install) as root.
+
+The above sequence of commands will install a .so file in your PHP
+installation extension directory. The output of make install should display
+that path to the screen.
+
+Next you must edit your php.ini file, which is normally located in
+/usr/local/php/lib/php.ini, and add the following line:
+
+    extension="apc.so"
+
+Replace "/path/to/php/extensions" with whatever path was displayed when you
+ran make install above.
+
+Then restart your web server and consult the output of phpinfo(). If there is
+an informational section for APC, the installation was successful.
+
++------------------------+
+| QUICK INSTALL (Static) |
++------------------------+
+
+APC will not successfully compile on all systems as a DSO. If you run into
+problems using the DSO quick install, you can try to compile it statically
+into PHP. (The DSO install is recommended, though.)
+
+These instructions assume the current directory is the root of the PHP source
+tree, and that you have already configured PHP by running its bundled
+configure script.
+
+$ cd ext
+$ gunzip -c apc_x.y.tar.gz | tar xf -
+$ cd ..
+$ ./buildconf
+$ ./config.nice
+$ make
+$ make install
+
+Once this is complete, simply restart your web server. You do not need to
+modify your php.ini file to enable APC.
+
++-----------------+
+| VERBOSE INSTALL |
++-----------------+
+
+These instructions assume your PHP installation is located in /usr/local/php.
+
+1.  Unpack your distribution file.
+
+    You will have downloaded a file named something like apc_x.y.tar.gz.
+    Unzip this file with a command like
+    
+        gunzip apc_x.y.tar.gz
+    
+    Next you have to untar it with
+    
+        tar xvf apc_x.y.tar
+
+    This will create an apc_x.y directory. cd into this new directory:
+
+        cd apc_x.y
+
+2.  Run phpize.
+
+    phpize is a script that should have been installed with PHP, and is
+    normally located in /usr/local/php/bin assuming you installed PHP in
+    /usr/local/php. (If you do not have the phpize script, you must reinstall
+    PHP and be sure not to disable PEAR.)
+
+    Run the phpize command:
+    
+        /usr/local/php/bin/phpize
+
+    Its output should resemble this:
+
+        autoheader: `config.h.in' is created
+        You should update your `aclocal.m4' by running aclocal.
+        Configuring for:
+          PHP Api Version:   20020918
+          Zend Module Api No:   20020429
+          Zend Extension Api No:   20021010
+ 
+    phpize should create a configure script in the current directory. If you
+    get errors instead, you might be missing some required development tools,
+    such as autoconf or libtool. You can try downloading the latest versions
+    of those tools and running phpize again.
+ 
+3.  Run the configure script.
+ 
+    phpize creates a configure script. The only option you need to specify is
+    the location of your php-config script:
+
+        ./configure --enable-apc
+
+    php-config should be located in the same directory as phpize.
+
+    If you prefer to use mmap instead of the default IPC shared memory support,
+    add --enable-apc-mmap to your configure line. 
+
+	If you prefer to use sysv IPC semaphores over the safer fcntl() locks, add
+	--enable-sem to your configure line.  If you don't have a problem
+	with your server segaulting, or any other unnatural accumulation of
+	semaphores on your system, the semaphore based locking is slightly faster.
+
+4.  Compile and install the files. Simply type: make install
+
+    (You may need to be root in order to install)
+
+    If you encounter errors from libtool or gcc during this step, please
+    contact the project maintainer (dcowgill@php.net).
+
+5.  Edit your php.ini
+
+    make install should have printed a line resembling the following:
+
+        Installing shared extensions: /path/to/extension/
+
+    Copy the path /path/to/extension/ and add the following line to your
+    php.ini file (normally located in /usr/local/php/lib/php.ini):
+
+        extension="apc.so"
+
+    If you don't have a php.ini file in that location, you can create it now.
+
+6.  Restart the web server and test the installation.
+
+    Restart your web server now (for apache, it's apachectl restart) and
+    create a small test PHP file in your document root. The file should
+    contain just the following line:
+
+        <?php phpinfo() ?>
+
+    Request that file in a web browser. If there is an entry for APC in the
+    list of installed modules, the installation was successful.
+
+    If APC is not listed, consult your web server error log. If it contains an
+    error message saying that it can't load the APC extension, your system
+    might not be able to load shared libraries created with PHP's build
+    system. One alternative would be to compile APC statically into PHP. See
+    the Quick Install (Static) instructions above.
+
+    You should consult your error log anyway to see if APC generated any
+    errors. On BSD-based platforms, it is typical for APC to be unable to
+    allocate the default-sized shared memory segment. See below for hints on
+    raising your system's shared memory limitations.
+
++-----------------+
+| CONFIGURING APC |
++-----------------+
+
+Although the default APC settings are fine for many installations, serious
+users should consider tuning the following parameters:
+
+    OPTION                  DESCRIPTION
+    ------------------      --------------------------------------------------
+    apc.enabled             This can be set to 0 to disable APC. This is
+                            primarily useful when APC is statically compiled
+                            into PHP, since there is no other way to disable
+                            it (when compiled as a DSO, the zend_extension
+                            line can just be commented-out).
+                            (Default: 1)
+                            
+    apc.shm_segments        The number of shared memory segments to allocate
+                            for the compiler cache. If APC is running out of
+                            shared memory but you have already set
+                            apc.shm_size as high as your system allows, you
+                            can try raising this value.  Setting this to a
+                            value other than 1 has no effect in mmap mode
+                            since mmap'ed shm segments don't have size limits.
+                            (Default: 1)
+                            
+    apc.shm_size            The size of each shared memory segment in MB.
+                            By default, some systems (including most BSD
+                            variants) have very low limits on the size of a
+                            shared memory segment. M/G suffixes must be used.
+                            (Default: 30)
+
+                            
+    apc.optimization        This option has been deprecated.
+                            (Default: 0)
+    
+    apc.num_files_hint      A "hint" about the number of distinct source files
+                            that will be included or requested on your web
+                            server. Set to zero or omit if you're not sure;
+                            this setting is mainly useful for sites that have
+                            many thousands of source files.
+                            (Default: 1000)
+
+    apc.user_entries_hint   Just like num_files_hint, a "hint" about the number
+                            of distinct user cache variables to store. 
+                            Set to zero or omit if you're not sure;
+                            (Default: 4096)
+
+    apc.ttl                 The number of seconds a cache entry is allowed to
+                            idle in a slot in case this cache entry slot is 
+                            needed by another entry.  Leaving this at zero
+                            means that your cache could potentially fill up
+                            with stale entries while newer entries won't be
+                            cached.  
+                            (Default: 0)
+
+    apc.user_ttl            The number of seconds a user cache entry is allowed 
+                            to idle in a slot in case this cache entry slot is 
+                            needed by another entry.  Leaving this at zero
+                            means that your cache could potentially fill up
+                            with stale entries while newer entries won't be
+                            cached.  
+                            (Default: 0)
+
+
+    apc.gc_ttl              The number of seconds that a cache entry may
+                            remain on the garbage-collection list. This value
+                            provides a failsafe in the event that a server
+                            process dies while executing a cached source file;
+                            if that source file is modified, the memory
+                            allocated for the old version will not be
+                            reclaimed until this TTL reached. Set to zero to
+                            disable this feature.
+                            (Default: 3600)
+
+    apc.cache_by_default    On by default, but can be set to off and used in
+                            conjunction with positive apc.filters so that files
+                            are only cached if matched by a positive filter.
+                            (Default: On)
+
+    apc.filters             A comma-separated list of POSIX extended regular
+                            expressions. If any pattern matches the source
+                            filename, the file will not be cached. Note that
+                            the filename used for matching is the one passed
+                            to include/require, not the absolute path.  If the
+                            first character of the expression is a + then the
+                            expression will be additive in the sense that any
+                            files matched by the expression will be cached, and
+                            if the first character is a - then anything matched
+                            will not be cached.  The - case is the default, so
+                            it can be left off.
+                            (Default: "")
+
+    apc.mmap_file_mask      If compiled with MMAP support by using --enable-mmap
+                            this is the mktemp-style file_mask to pass to the
+                            mmap module for determing whether your mmap'ed memory
+                            region is going to be file-backed or shared memory
+                            backed.  For straight file-backed mmap, set it to
+                            something like /tmp/apc.XXXXXX (exactly 6 X's).
+                            To use POSIX-style shm_open/mmap put a ".shm"
+                            somewhere in your mask.  eg.  "/apc.shm.XXXXXX"
+                            You can also set it to "/dev/zero" to use your 
+                            kernel's /dev/zero interface to anonymous mmap'ed 
+                            memory.  Leaving it undefined will force an 
+                            anonymous mmap.
+                            (Default: "")
+
+    apc.slam_defense        ** DEPRECATED - Use apc.write_lock instead **
+                            On very busy servers whenever you start the server or
+                            modify files you can create a race of many processes
+                            all trying to cache the same file at the same time.
+                            This option sets the percentage of processes that will
+                            skip trying to cache an uncached file.  Or think of it
+                            as the probability of a single process to skip caching.
+                            For example, setting this to 75 would mean that there is
+                            a 75% chance that the process will not cache an uncached
+                            file.  So the higher the setting the greater the defense
+                            against cache slams.  Setting this to 0 disables this
+                            feature.
+                            (Default: 0)
+
+    apc.file_update_protection
+                            When you modify a file on a live web server you really
+                            should do so in an atomic manner.  That is, write to a
+                            temporary file and rename (mv) the file into its permanent
+                            position when it is ready.  Many text editors, cp, tar and
+                            other such programs don't do this.  This means that there
+                            is a chance that a file is accessed (and cached) while it
+                            is still being written to.  This file_update_protection
+                            setting puts a delay on caching brand new files.  The
+                            default is 2 seconds which means that if the modification
+                            timestamp (mtime) on a file shows that it is less than 2
+                            seconds old when it is accessed, it will not be cached.  
+                            The unfortunate person who accessed this half-written file
+                            will still see weirdness, but at least it won't persist.
+                            If you are certain you always atomically update your files
+                            by using something like rsync which does this correctly, you
+                            can turn this protection off by setting it to 0.  If you
+                            have a system that is flooded with io causing some update
+                            procedure to take longer than 2 seconds, you may want to
+                            increase this a bit.
+                            (Default: 2)
+
+    apc.enable_cli          Mostly for testing and debugging.  Setting this enables APC
+                            for the CLI version of PHP.  Normally you wouldn't want to
+                            create, populate and tear down the APC cache on every CLI
+                            request, but for various test scenarios it is handy to be
+                            able to enable APC for the CLI version of APC easily.
+                            (Default: 0)
+
+    apc.max_file_size       Prevents large files from being cached.  
+                            (Default: 1M)
+
+    apc.stat                Whether to stat the main script file and the fullpath
+                            includes.  If you turn this off you will need to restart
+                            your server in order to update scripts.
+                            (Default: 1)
+
+    apc.canonicalize        Whether to canonicalize paths in stat=0 mode or
+                            fall back to stat behaviour if set to 0
+                            (Default: 0)
+
+    apc.write_lock          On busy servers when you first start up the server, or when
+                            many files are modified, you can end up with all your processes
+                            trying to compile and cache the same files.  With write_lock 
+                            enabled, only one process at a time will try to compile an
+                            uncached script while the other processes will run uncached
+                            instead of sitting around waiting on a lock.
+                            (Default: 1)
+
+    apc.report_autofilter   Logs any scripts that were automatically excluded from being
+                            cached due to early/late binding issues.
+                            (Default: 0)
+
+    apc.rfc1867             RFC1867 File Upload Progress hook handler is only available
+                            if you compiled APC against PHP 5.2.0 or later.  When enabled
+                            any file uploads which includes a field called 
+                            APC_UPLOAD_PROGRESS before the file field in an upload form
+                            will cause APC to automatically create an upload_<key>
+                            user cache entry where <key> is the value of the 
+                            APC_UPLOAD_PROGRESS form entry.
+
+                            Note that the file upload tracking is not threadsafe at this
+                            point, so new uploads that happen while a previous one is 
+                            still going will disable the tracking for the previous.
+                            (Default: 0)
+
+    apc.rfc1867_prefix      Key prefix to use for the user cache entry generated by
+                            rfc1867 upload progress functionality.  
+                            (Default: "upload_")
+
+    apc.rfc1867_name        Specify the hidden form entry name that activates APC upload
+                            progress and specifies the user cache key suffix.
+                            (Default: "APC_UPLOAD_PROGRESS")
+
+    apc.rfc1867_freq        The frequency that updates should be made to the user cache
+                            entry for upload progress.  This can take the form of a 
+                            percentage of the total file size or a size in bytes 
+                            optionally suffixed with 'k', 'm', or 'g' for kilobytes, 
+                            megabytes, or gigabytes respectively (case insensitive).  
+                            A setting of 0 updates as often as possible, which may cause 
+                            slower uploads.
+                            (Default: 0)
+
+    apc.localcache         ** REMOVED 
+    apc.localcache.size    ** REMOVED
+    
+    apc.include_once_override 
+                            Optimize include_once and require_once calls and avoid the 
+                            expensive system calls used.
+                            (Default: 0)
+
+    apc.serializer 
+                            Defines which serializer should be used. Default is the 
+                            standard PHP serializer. Other can be used without having
+                            to re compile apc, like igbinary for example.
+                            (apc.serializer=igbinary)

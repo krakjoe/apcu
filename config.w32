@@ -1,0 +1,60 @@
+// $Id: config.w32 309203 2011-03-14 06:47:16Z pajoye $
+// vim:ft=javascript
+
+ARG_ENABLE('apc', 'Whether to enable APC support', 'no');
+ARG_ENABLE('apc-debug', 'Whether to enable APC debugging', 'no');
+ARG_ENABLE('apc-filehits', 'Whether to enable cache request file info', 'no');
+ARG_ENABLE('apc-spinlocks', 'Whether to use spin locks (experimental)', 'no');
+ARG_ENABLE('apc-memprotect', 'Whether to enable memory protection (experimental)', 'no');
+ARG_ENABLE('apc-srwlock-native', 'Whether to use SRWLOCK locks native (win7/2008 only)', 'no');
+ARG_ENABLE('apc-srwlock-kernel', 'Whether to use SRWLOCK locks (loaded at runtime)', 'no');
+
+if(PHP_APC != 'no')
+{
+	var apc_sources = 	'apc.c php_apc.c apc_cache.c apc_compile.c apc_debug.c ' + 
+				'apc_fcntl_win32.c apc_iterator.c apc_main.c apc_shm.c ' + 
+				'apc_sma.c apc_stack.c apc_rfc1867.c apc_zend.c apc_pool.c ' +
+				'apc_bin.c apc_string.c';
+
+	if(PHP_APC_DEBUG != 'no')
+	{
+		ADD_FLAG('CFLAGS_APC', '/D __DEBUG_APC__=1');
+	}
+
+	if(PHP_APC_FILEHITS != 'no')
+	{
+		AC_DEFINE('APC_FILEHITS', 1);
+	}
+
+	if(PHP_APC_MEMPROTECT != 'no')
+	{
+		AC_DEFINE('APC_MEMPROTECT', 1);
+	}
+
+	if(PHP_APC_SRWLOCK_NATIVE != 'no') {
+		AC_DEFINE('APC_SRWLOCK_NATIVE', 1);
+	} else {
+		if(PHP_APC_SRWLOCK_KERNEL != 'no') {
+			AC_DEFINE('APC_SRWLOCK_KERNEL', 1);
+			ADD_FLAG('CFLAGS_APC', '/D WIN32_ONLY_COMPILER=1');
+
+			apc_sources += ' apc_windows_srwlock_kernel.c';
+		} else {
+			if(PHP_APC_SPINLOCKS != 'no') {
+				AC_DEFINE('APC_SPIN_LOCKS', 1);
+				ADD_FLAG('CFLAGS_APC', '/D WIN32_ONLY_COMPILER=1');
+
+				apc_sources += ' apc_spin.c pgsql_s_lock.c';
+			} else {
+				AC_DEFINE('APC_FCNTL_LOCKS', 1);
+			}
+		}
+	}
+
+	AC_DEFINE('HAVE_APC', 1);
+	AC_DEFINE('HAVE_ATOMIC_OPERATIONS', 1);
+
+	PHP_INSTALL_HEADERS("ext/apc", "apc_serializer.h");
+
+	EXTENSION('apc', apc_sources);
+}

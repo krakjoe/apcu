@@ -1,0 +1,249 @@
+
+3.1.2 : 2008-12-12
+
+- pecl package.xml/build fixes (bjori)
+
+3.1.1 : 2008-12-12
+
+- PHP4 compatibilty break
+- apc_pool allocator (Gopal) 
+- doubly-linked sma allocator (Shire)
+- php 5.3 gc compatibility (Gopal)
+- APCIterator for easy access (Shire)
+- apc_delete_file (Shire)
+- apc_inc/apc_dec/apc_cas functions (Shire)
+- apc.canonicalize (Gopal)
+- apc.preload_path (Gopal)
+- apc.rfc1867_ttl  (Shire)
+- apc.file_md5     (Shire)
+- consolidate locking macros (Shire)
+- remove futex/TSRM locks  (Shire)
+- non-blocking semaphore locks  (Shire)
+- zval* object rework (Gopal)
+
+3.0.19: 2008-05-14
+- Safe-mode and fast-cgi fixes
+- Fix double-free of builtin_functions
+- php 5.3 fixes
+
+3.0.18: 2008-03-29
+- Revert apc_expunge_cb bug-fix
+- Misc memleaks
+
+3.0.17: 2008-03-26
+- Crash fixes
+- Fix apc_add() cache expunge bug (Rasmus)
+- Added parameter to apc_fetch to determine success/failure when fetching booleans (shire)
+- Fix misc. memleaks (shire)
+  
+3.0.16: 2007-12-26
+- Fix for longstanding cache-full crash (Christian Seiler)
+  http://news.php.net/php.pecl.dev/4951 for the details
+- Added optional shm unmap on a fatal signal feature (Lucas Nealan)
+- Added PTHREAD_MUTEX_ADAPTIVE_NP option pthread locks (Paul Saab)
+- Minor cleanups (Lucas Nealan)
+- Added configure option to enable apc_cache_info('filehits') (Shire)
+
+3.0.15: 2007-10-18
+- Eliminate a per-request time() syscall (Rasmus)
+- Added rfc1867 prefix, name, and freq ini options (Shire)
+- Allow deletion of individual user cache entries via apc.php (Sara)
+- Fix overzealous cleanup during RSHUTDOWN (Gopal)
+- Fix memory alignment and locking issues (Gopal) 
+- Make apc_compile insert/replace entries (Shire)
+- Make mixed inheritance recompile & cache afresh  (Gopal)
+- Make nostat mode search include_path for canonicalization (Gopal)
+- ZTS & other compile fixes (Gopal, Edin, Shire)
+  
+3.0.14: 2007-03-21
+- Build fix (Shire)
+- Don't hook the upload hook if APC is disabled (Rasmus)
+- Local shadow cache support (Gopal)
+- Avoid uneccessary loops over op_arrays for "known" auto-globals (Gopal)
+- Fix apc_add() to overwrite timed out user entries (Rasmus)
+- Fix double inclusion of files with conditional classes in php4 (Gopal)
+- Allocator fixes to reduce fragmentation (Gopal)
+
+3.0.13: 2007-02-24
+- File upload progress (Rasmus)
+- Pthread mutex and spin locks (Shire)
+- Recursive zval support for apc_fetch/_store (Shire, Gopal)
+- apc.stat_ctime flag for ctime checks (Rasmus)
+- Multiple key fetches with apc_fetch (Shire)
+- Canary checks for shm memory deallocation (Gopal)
+- Add hooks for external optimizer (Shire)
+- Obsolete and remove apc optimizer (Gopal)
+- APC info changes - cache insert rate, hit and miss rates (Shire)
+- Fix apc_load_constants (Gopal)
+- Rewrite dump opcode code to use vld (Gopal)
+- Use apc_[ewn]print functions for error reporting (Shire) 
+- Auto global fixes and refactoring (Gopal, Shire)
+- Fix memory leaks in object serialization (Ilia)
+- Memory cleanup code for destructor order (Gopal)
+- Win32 build fixes (Ilia, Wez)
+- ZTS and Php 4 build fixes (Bjori)
+- Add apc_add() function (Rasmus)
+- Add optional limited flag to apc_sma_info() (Rasmus)
+
+3.0.12p2: 2006-09-05
+- Package version up
+
+3.0,12p1: 2006-09-05
+- PHP4 build fixes
+
+3.0.12: 2006-09-05
+- PHP 5.2 compatibility (Gopal)
+- TSRM fixes (Gopal)
+- Add extra flags to op_array->reserved to improve op array 
+  processing code (Gopal)
+- Fix crashes in optimizer and cli mode (Ilia)
+- Optimizer fixes for PHP5 (Ilia, Gopal)
+- Allow multiple inclusions of a file with a dynamic class (Gopal)
+- Php 4 function table and properties fixes (Gopal)
+- Fix memory leaks in apc_cache_info (Gopal)
+
+3.0.11: 2006-08-16
+- Made --enable-apc-mmap the default compile option (for real this time)
+- Add an optional flag to apc_cache_info() and some apc.php tweaks to make it
+  only fetch header information to make it useful when you have tens of
+  thousands of entries.  (Brian Shire)
+- 64-bit fixes (George)
+- Don't mix Full Path and Inode keys (George)
+- Override ZEND_INCLUDE_OR_EVAL opcode (when possible) to speed up use of
+  require_once() and include_once() statements. (Sara)
+- Add a non-blocking write_lock for cache inserts.  This is a better approach
+  to prevent cache slams and deprecates the slam_defense setting. (Rasmus)
+- A bit of work on the optimizer.  (Sara)
+- Various memory issues resolved. (Gopal)
+
+3.0.10: 2006-03-11
+- Add apc.stat ini flag which defaults to 1.  If set to 0, the main script and any fullpath
+  includes will not be stat'ed for any changes.  You will have to restart the server if you
+  change anything.  This mode increases performance quite a bit, especially if you have a
+  lot of includes.
+
+- Get rid of the lock safety net hack I added in 3.0.9.  It seems to cause more problems
+  than it solves.  I'll need to revisit locking and signal handling at some point soon.
+
+3.0.9: 2006-03-04
+- Eliminate rand() call when slam_defense is not set (Rasmus)
+- Fix for __isset problem (Gopal)
+- Rewrite allocator from a "best fit" to a "next fit" algorithm (Rasmus)
+- Added a Cache Full counter so we have an idea how many times the segment has filled up causing an expunge (Rasmus)
+- Report back the correct number of available bytes in the segment instead of the allocated bytes. (Rasmus)
+- Add cache busy flag which is set when an expunge is underway (Rasmus)
+- Add automatic serialization of objects in apc_store() (Marcus)
+- 64-bit .ini flag fix (Rasmus)
+- Static members fix (Gopal)
+- sma_cleanup() mem leak fix (Rasmus)
+- Fix for http://pecl.php.net/bugs/5311 (Rasmus)
+- Fix autoglobals JIT bug (Gopal)
+- Fix instance bug (Gopal)
+- Add a lock cleanup safety net to request shutdown (Rasmus)
+- Fix apc.slam_defense edge-case bug (Rasmus)
+- User entry memory usage tracking support (Ilia)
+- Allow keys used in apc_store/apc_fetch/apc_delete to be binary safe and prevent conflicts between keys that are found at the start of other keys. (Ilia)
+
+3.0.8: 2005-08-24
+Fix invalid free in globals destructor introduced in 3.0.7 (Rasmus)
+Cache corruption fix in cache-full cleanup code (Gopal)
+
+3.0.7: 2005-08-16
+- Fix to apc.php to show final segment in frag chart. (Ilia)
+- A couple of win32 fixes. (Frank)
+- Add apc.enable_cli ini directive. (Rasmus)
+- Add test cases. (Marcus)
+- Fix apc_define_constants() bug - http://pecl.php.net/bugs/5084 (Rasmus)
+- Simplify user cache handling by removing the user_cache_stack (Rasmus)
+- Fix apc_fetch() memory corruption (Andrei,Rasmus)
+- Added apc.max_file_size INI setting that allows exclusion of large files from being cached. Default file size limit, 1 megabyte. (Ilia)
+
+3.0.6: 2005-07-30
+- Added apc.php to package.xml file.
+- Track per-entry memory usage. (Val)
+- Various apc.php fixes and enhancements. (Ralf, Ilia, Rasmus)
+- fcntl locking robustness fixes. (Rasmus)
+- Shared read-locks where possible. (Rasmus)
+- Added file_update_protection configuration parameter. (Rasmus)
+- Windows ZTS fixes (Frank)
+
+3.0.5: 2005-07-27
+- Make it easier for sapis that only populate file_handle->filename to use APC. (Rasmus)
+- Support extensions such as bcompiler that need to hook into compile_file. (Val)
+- Ralf Becker's apcgui code has now become the default apc.php status page. (Ralf, Rasmus, Ilia)
+- Segfault in cache cleanup code (Ilia, Rasmus)
+
+3.0.4: 2005-07-18
+- Add win32 support (Edin )
+- Add --with-apxs switch to work around problem when loading APC into Apache binary compiled with LFS switches (Rasmus)
+- A couple of other minor fixes
+
+3.0.3: 2005-07-05
+- Fix compile problem against PHP 5.0.x
+
+3.0.2: 2005-07-05
+- Better shm error message
+
+3.0.1: 2005-07-05
+- PHP4 build fix
+
+3.0: 2005-06-23
+- PHP 5.1 support (Arun, Gopal, Rasmus)
+- Major Inheritance bug fix (Arun, Gopal)
+
+2.0: 2003-02-10
+- ground-up rewrite sharing none of the original source code (djc)
+
+1.0.10:
+- merge mmap / shm code to be in one file, module supports both modes now [mpb 2001-05-15]
+- added apc.mode config parameter [mpb 2001-05-15] NOTE: You'll have to add
+  this parameter to your php.ini file to activate apc shm or mmap caching
+- generic source cleanup (missing includes, PATH_MAX usage etc) [mpb
+  2001-05-15]
+- fixed: realpath return result checking in generate_key [mpb 2001-05-15]
+- updated: gui updated (extras/apc_gui-1.0.2.tar.gz)
+- experminental 'fast' cache-retrieval [djc 2001-05-20]
+- fixed regex support [gws 2001-05-16]
+- enhanced reader-writer lock support [rg 2001-05-07]
+
+1.0.9:
+- fixed (?) memory alignment bug on 64 bit archiecures 
+- added many cache visibiliy functions 
+- added opional fcntl locks under shm version 
+- numerous bug fixes 
+
+1.0.8:
+- added ability to detect and decompile compiled files placed as 'source'
+  [gws,dw 2001-01-30]
+- fixed apc_rstat bug [gws 2001-01-29]
+- added hack to support included urls [gws 2001-01-30]
+- fixed apc_cache_index [mb 2001-01-31]
+- added multiple regex support [gs 2001-02-03]
+- added apc_cache_info [mb,gs 2001-02-03]
+
+1.0.7:
+- partially fixed for Solaris [gws 2001-01-29]
+- fixed mtime support for relative includes [gws 2001-01-29]
+- code cleanup [yg,ta,gws 2001-01-29]
+
+1.0.6:
+- support for mtime in mmap [yg,gws 2001-01-27]
+- fixed indexed-array initialization bug [djc,gws 2001-01-27]
+
+1.0.5:
+- support for relative include paths [djc,gws 2001-01-19]
+- class member array support fixed [djc 2001-01-18]
+- added apc_cache_index [gws 2001-01-18]
+
+1.0.4:
+- support for class hierarchies greater than two levels deep [djc 2001-01-17]
+
+1.0.3:
+- fixed support for class inheritance [djc 2001-01-16]
+
+1.0.2:
+- support for inherited classes [gws 2001-01-15]
+- support for intialization of class variables and objects [gws 2001-01-13]
+
+1.0.1:
+- added optional file modification time check [djc 2001-01-12]

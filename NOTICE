@@ -1,0 +1,43 @@
+This is the NOTICE file that holds acknowledgements and stuff.
+
+The Alternative PHP Cache (APC) is a free and open opcode cache for PHP.
+This extension is being released under the PHP License for complete compliance
+with PHP and to encourage wide-spread use.  It is our intention that this
+project be kept open source and that all commercial spin-offs contribute their
+modifications back into the public source-tree.
+
+Creators:
+    Daniel Cowgill
+    George Schlossnagle
+
+PHP5 support and major features by:
+    Arun C. Murthy 
+    Gopal Vijayaraghavan
+    Rasmus Lerdorf
+
+This software was contributed to PHP by Community Connect Inc. in 2002
+and revised in 2005 by Yahoo! Inc. to add support for PHP 5.1.
+Future revisions and derivatives of this source code must acknowledge
+Community Connect Inc. as the original contributor of this module by
+leaving this note intact in the source code.
+
+All other licensing and usage conditions are those of the PHP Group.
+
+We would like to thank Community Connect Inc. and Yahoo! Inc. for supporting 
+this project and providing a challenging and stimulating environment in 
+which exciting projects can happen.
+
+Contributors:
+    Mike Bretz          bug fixes, GUI, and lots of work
+    Ricardo Galli       changed read-write locks to prefer readers
+    Yann Grossel        bug fixes
+    Thies Arntzen       bug fixes
+    Sara Golemon        optimizer work
+
+Special Thanks:
+    Florian Baumert     help debugging phplib problems
+    Thomas Duffey       help debugging inheritance issues
+    Vibol Hou           help debugging phplib problems
+    Angel Li            diffs for ANSI comment compliance
+    Christian Rishøj    help debugging phplib problems
+    Sascha Schumann     memory error bug fix

@@ -1,0 +1,361 @@
+APC Quick-Start Braindump
+
+This is a rapidly written braindump of how APC currently works in the
+form of a quick-start guide to start hacking on APC.
+
+1. Install and use APC a bit so you know what it does from the end-user's
+   perspective.  
+   user-space functions are all explained here: 
+
+2. Grab the current APC code from CVS:
+    
+    cvs -d:pserver:cvsread@cvs.php.net:/repository login
+    Password: phpfi
+    cvs -d:pserver:cvsread@cvs.php.net:/repository co pecl/apc
+
+   apc/php_apc.c has most of the code for the user-visible stuff.  It is
+   also a regular PHP extension in the sense that there are MINIT, MINFO, 
+   MSHUTDOWN, RSHUTDOWN, etc. functions.  
+
+3. Build it.
+
+   cd pecl/apc
+   phpize
+   ./configure --enable-apc --enable-mmap
+   make
+   cp modules/apc.so /usr/local/lib/php
+   apachectl restart
+
+4. Debugging Hints
+
+     apachectl stop
+     gdb /usr/bin/httpd
+     break ??
+     run -X
+
+   Grab the .gdbinit from the PHP source tree and have a look at the macros.
+
+5. Look through apc/apc_sma.c
+   It is a pretty standard memory allocator.
+
+   apc_sma_malloc, apc_sma_realloc, apc_sma_strdup and apc_sma_free behave to the
+   caller just like malloc, realloc, strdup and free
+
+   On server startup the MINIT hook in php_apc.c calls apc_module_init() in
+   apc_main.c which in turn calls apc_sma_init().  apc_sma_init calls into
+   apc_mmap.c to mmap the specified sized segment (I tend to just use a single
+   segment).  apc_mmap.c should be self-explanatory.  It mmaps a temp file and
+   then unlinks that file right after the mmap to provide automatic shared memory
+   cleanup in case the process dies.
+
+   Once the region has been initialized we stick a header_t at the beginning
+   of the region.  It contains the total size in header->segsize and the number 
+   of bytes available in header->avail.  
+
+   After the header comes a bit of a hack.  A zero-sized block is inserted just
+   to make things easier later on.  And then a huge block that is basically
+   the size of the entire segment minus the two (for the 0-sized block, and this one)
+   block headers.
+
+   The code for this is:
+
+     header = (header_t*) shmaddr;
+     header->segsize = sma_segsize;
+     header->avail = sma_segsize - sizeof(header_t) - sizeof(block_t) - alignword(sizeof(int));
+     memset(&header->lock,0,sizeof(header->lock));
+     sma_lock = &header->lock;
+     block = BLOCKAT(sizeof(header_t));
+     block->size = 0;
+     block->next = sizeof(header_t) + sizeof(block_t);
+     block = BLOCKAT(block->next);
+     block->size = header->avail;
+     block->next = 0;
+
+   So the shared memory looks like this:
+
+     +--------+-------+---------------------------------+
+     | header | block |             block               |
+     +--------+-------+---------------------------------+
+
+   sma_shmaddrs[0] gives you the address of header
+
+   The blocks are just a simple offset-based linked list (so no pointers):
+
+     typedef struct block_t block_t;
+     struct block_t {
+         size_t size;       /* size of this block */
+         size_t next;       /* offset in segment of next free block */
+         size_t canary;     /* canary to check for memory overwrites */
+#ifdef __APC_SMA_DEBUG__
+         int id;         /* identifier for the memory block */
+#endif
+     };
+
+   The BLOCKAT macro turns an offset into an actual address for you:
+
+     #define BLOCKAT(offset) ((block_t*)((char *)shmaddr + offset))
+
+   where shmaddr = sma_shaddrs[0]
+
+   And the OFFSET macro goes the other way:
+
+     #define OFFSET(block) ((int)(((char*)block) - (char*)shmaddr))
+
+   Allocating a block with a call to apc_sma_allocate() walks through the
+   linked list of blocks until it finds one that is >= to the requested size.
+   The first call to apc_sma_allocate() will hit the second block.  We then
+   chop up that block so it looks like this:
+
+     +--------+-------+-------+-------------------------+
+     | header | block | block |         block           |
+     +--------+-------+-------+-------------------------+
+
+   Then we unlink that block from the linked list so it won't show up
+   as an available block on the next allocate.  So we actually have:
+
+     +--------+-------+       +-------------------------+
+     | header | block |------>|         block           |
+     +--------+-------+       +-------------------------+
+
+   And header->avail along with block->size of the remaining large
+   block are updated accordingly.  The arrow there representing the
+   link which now points to a block with an offset further along in
+   the segment.
+
+   When the block is freed using apc_sma_deallocate() the steps are
+   basically just reversed.  The block is put back and then the deallocate
+   code looks at the block before and after to see if the block immediately
+   before and after are free and if so the blocks are combined.  So you never
+   have 2 free blocks next to each other, apart from at the front with that
+   0-sized dummy block.  This mostly prevents fragmentation.  I have been
+   toying with the idea of always allocating block at 2^n boundaries to make
+   it more likely that they will be re-used to cut down on fragmentation further.
+   That's what the POWER_OF_TWO_BLOCKSIZE you see in apc_sma.c is all about.
+  
+   Of course, anytime we fiddle with our shared memory segment we lock using
+   the locking macros, LOCK() and UNLOCK().
+
+   That should mostly take care of the low-level shared memory handling.
+
+6. Next up is apc_main.c and apc_cache.c which implement the meat of the
+   cache logic.
+
+   The apc_main.c file mostly calls functions in apc_sma.c to allocate memory
+   and apc_cache.c for actual cache manipulation.  
+  
+   After the shared memory segment is created and the caches are initialized,
+   apc_module_init() installs the my_compile_file() function overriding Zend's
+   version.  I'll talk about my_compile_file() and the rest of apc_compile.c
+   in the next section.  For now I will stick with apc_main.c and apc_cache.c
+   and talk about the actual caches.  A cache consists of a block of shared
+   memory returned by apc_sma_allocate() via apc_sma_malloc().  You will 
+   notice references to apc_emalloc().  apc_emalloc() is just a thin wrapper
+   around PHP's own emalloc() function which allocates per-process memory from
+   PHP's pool-based memory allocator.  Don't confuse apc_emalloc() and 
+   apc_sma_malloc() as the first is per-process and the second is shared memory.
+
+   The cache is stored in/described by this struct allocated locally using
+   emalloc():
+
+     struct apc_cache_t {
+         void* shmaddr;              /* process (local) address of shared cache */
+         header_t* header;           /* cache header (stored in SHM) */
+         slot_t** slots;             /* array of cache slots (stored in SHM) */
+         int num_slots;              /* number of slots in cache */
+         int gc_ttl;                 /* maximum time on GC list for a slot */
+         int ttl;                    /* if slot is needed and entry's access time is older than this ttl, remove it */
+     };
+
+   Whenever you see functions that take a 'cache' argument, this is what they
+   take.  And apc_cache_create() returns a pointer to this populated struct.
+
+   At the beginning of the cache we have a header.  Remember, we are down a level now
+   from the sma stuff.  The sma stuff is the low-level shared-memory allocator which
+   has its own header which is completely separate and invisible to apc_cache.c.  
+   As far as apc_cache.c is concerned the block of memory it is working with could 
+   have come from a call to malloc().
+
+   The header looks like this:
+
+     typedef struct header_t header_t;
+     struct header_t {
+         int num_hits;               /* total successful hits in cache */
+         int num_misses;             /* total unsuccessful hits in cache */
+         slot_t* deleted_list;       /* linked list of to-be-deleted slots */
+     };
+
+   Since this is at the start of the shared memory segment, these values are accessible
+   across all the apache processes and hence access to them has to be locked.
+
+   After the header we have an array of slots.  The number of slots is user-defined
+   through the apc.num_slots ini hint.  Each slot is described by:
+
+     typedef struct slot_t slot_t;
+     struct slot_t {
+         apc_cache_key_t key;        /* slot key */
+         apc_cache_entry_t* value;   /* slot value */
+         slot_t* next;               /* next slot in linked list */
+         int num_hits;               /* number of hits to this bucket */
+	 time_t creation_time;       /* time slot was initialized */
+	 time_t deletion_time;       /* time slot was removed from cache */
+	 time_t access_time;         /* time slot was last accessed */
+     };
+
+   The slot_t *next there is a linked list to other slots that happened to hash to the
+   same array position.
+
+   apc_cache_insert() shows what happens on a new cache insert.
+
+     slot = &cache->slots[hash(key) % cache->num_slots];
+
+   cache->slots is our array of slots in the segment.  hash() is simply:
+
+     static unsigned int hash(apc_cache_key_t key)
+     {
+         return key.data.file.device + key.data.file.inode;
+     }
+
+   That is, we use the file's device and inode to uniquely identify it.  Initially
+   we had used the file's full path, but getting that requires a realpath() call which
+   is amazingly expensive since it has to stat each component of the path to resolve
+   symlinks and get rid of relative path components.  By using the device+inode we
+   can uniquely identify a file with a single stat.
+
+   So, on an insert we find the array position in the slots array by hashing the device+inode.
+   If there are currently no other slots there, we just create the slot and stick it into
+   the array:
+
+     *slot = make_slot(key, value, *slot, t)
+
+   If there are other slots already at this position we walk the link list to get to
+   the end.  Here is the loop:
+
+     while (*slot) {
+         if (key_equals((*slot)->key.data.file, key.data.file)) {
+	     /* If existing slot for the same device+inode is different, remove it and insert the new version */
+	     if ((*slot)->key.mtime != key.mtime) {
+	         remove_slot(cache, slot);
+	         break;
+	     }
+	     UNLOCK(cache);
+	     return 0;
+	 } else if(cache->ttl && (*slot)->access_time < (t - cache->ttl)) {
+             remove_slot(cache, slot);
+             continue;
+         }
+         slot = &(*slot)->next;
+     }
+
+   That first key_equals() check sees if we have an exact match meaning the file
+   is already in the cache.  Since we try to find the file in the cache before doing
+   an insert, this will generally only happen if another process managed to beat us
+   to inserting it.  If we have a newer version of the file at this point we remove
+   it an insert the new version.  If our version is not newer we just return without
+   doing anything.
+
+   While walking the linked list we also check to see if the cache has a TTL defined.
+   If while walking the linked list we see a slot that has expired, we remove it
+   since we are right there looking at it.  This is the only place we remove stale
+   entries unless the shared memory segment fills up and we force a full expunge via
+   apc_cache_expunge().  apc_cache_expunge() walks the entire slots array and walks
+   down every linked list removing stale slots to free up room.  This is obviously
+   slow and thus only happens when we have run out of room.
+
+   apc_cache_find() simply hashes and returns the entry if it is there.  If it is there
+   but older than the mtime in the entry we are looking for, we delete the one that is
+   there and return indicating we didn't find it.
+
+   Next we need to understand what an actual cache entry looks like.  Have a look at
+   apc_cache.h for the structs.  I sort of glossed over the key part earlier saying
+   that we just used the device+inode to find a hash slot.  It is actually a bit more
+   complex than that because we have two kinds of caches.  We have the standard file
+   cache containing opcode arrays, but we also have a user-controlled cache that the
+   user can insert whatever they want into via apc_store().  For the user cache we
+   obviously don't have a device+inode.  The actual identifier is provided by the user
+   as a char *.  So the key is actually a union that looks like this:
+
+     typedef union _apc_cache_key_data_t {
+         struct {
+             int device;             /* the filesystem device */
+             int inode;              /* the filesystem inode */
+         } file;
+         struct {
+             char *identifier;
+         } user;
+     } apc_cache_key_data_t;
+
+     struct apc_cache_key_t {
+         apc_cache_key_data_t data;
+         int mtime;                  /* the mtime of this cached entry */
+     };   
+
+   And we have two sets of functions to do inserts and finds.  apc_cache_user_find() 
+   and apc_cache_user_insert() operate on the user cache.
+
+   Ok, on to the actual cache entry.  Again, because we have two kinds of caches, we
+   also have the corresponding two kinds of cache entries described by this union:
+
+     typedef union _apc_cache_entry_value_t {
+         struct {
+             char *filename;             /* absolute path to source file */
+             zend_op_array* op_array;    /* op_array allocated in shared memory */
+             apc_function_t* functions;  /* array of apc_function_t's */
+             apc_class_t* classes;       /* array of apc_class_t's */
+         } file;
+         struct {
+             char *info;
+             zval *val;
+             unsigned int ttl;
+         } user;
+     } apc_cache_entry_value_t;
+
+   And then the actual cache entry:
+
+     struct apc_cache_entry_t {
+         apc_cache_entry_value_t data;
+         unsigned char type;
+         int ref_count;
+     };
+
+   The user entry is pretty simple and not all that important for now.  I will
+   concentrate on the file entries since that is what holds the actual compiled
+   opcode arrays along with the functions and classes required by the executor.
+
+   apc_cache_make_file_entry() in apc_cache.c shows how an entry is constructed.
+   The main thing to understand here is that we need more than just the opcode
+   array, we also need the functions and classes created by the compiler when it
+   created the opcode array.  As far as the executor is concerned, it doesn't know
+   that it isn't operating in normal mode being called right after the parse/compile
+   phase, so we need to recreate everything so it looks exactly like it would at
+   that point. 
+
+7. my_compile_file() and apc_compile.c
+
+   my_compile_file() in apc_main.c controls where we get the opcodes from.  If
+   the user-specified filters exclude the file from being cached, then we just
+   call the original compile function and return.  Otherwise we fetch the request
+   time from Apache to avoid an extra syscall, create the key so we can look up
+   the file in the cache.  If we find it we stick it on a local stack which we
+   use at cleanup time to make sure we return everything back to normal after a 
+   request and call cached_compile() which installs the functions and classes
+   associated with the op_array in this entry and then copy the op_array down
+   into our memory space for execution.
+
+   If we didn't find the file in the cache, we need to compile it and insert it.
+   To compile it we simply call the original compile function:
+
+      op_array = old_compile_file(h, type TSRMLS_CC);
+
+   To do the insert we need to copy the functions, classes and the opcode array
+   the compile phase created into shared memory.  This all happens in apc_compile.c
+   in the apc_copy_op_array(), apc_copy_new_functions() and apc_copy_new_classes()
+   functions.  Then we make the file entry and do the insert.  Both of these
+   operations were described in the previous section.  
+
+8. The Optimizer
+   
+   The optimizer has been deprecated.
+
+If you made it to the end of this, you should have a pretty good idea of where things are in
+the code.  I skimmed over a lot of things, so plan on spending some time reading through the code.
+
