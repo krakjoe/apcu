@@ -390,8 +390,8 @@ PHP_FUNCTION(apc_sma_info)
         php_error_docref(NULL TSRMLS_CC, E_WARNING, "No APC SMA info available.  Perhaps APC is disabled via apc.enabled?");
         RETURN_FALSE;
     }
-
     array_init(return_value);
+
     add_assoc_long(return_value, "num_seg", info->num_seg);
     add_assoc_double(return_value, "seg_size", (double)info->seg_size);
     add_assoc_double(return_value, "avail_mem", (double)apc_sma_get_avail_mem());
