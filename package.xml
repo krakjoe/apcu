@@ -90,8 +90,6 @@
       <file role="src" name="apc_bin.h"/>
       <file role="src" name="apc_cache.c"/>
       <file role="src" name="apc_cache.h"/>
-      <file role="src" name="apc_compile.c"/>
-      <file role="src" name="apc_compile.h"/>
       <file role="src" name="apc_debug.c"/>
       <file role="src" name="apc_debug.h"/>
       <file role="src" name="apc_fcntl.c"/>
@@ -120,8 +118,6 @@
       <file role="src" name="apc_windows_srwlock_kernel.h"/>
       <file role="src" name="apc_stack.c"/>
       <file role="src" name="apc_stack.h"/>
-      <file role="src" name="apc_string.h"/>
-      <file role="src" name="apc_string.c"/>
       <file role="src" name="apc_zend.c"/>
       <file role="src" name="apc_zend.h"/>
       <file role="src" name="apc_signal.c"/>

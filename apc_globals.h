@@ -90,11 +90,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apc)
 	char *preload_path;
     HashTable copied_zvals;      /* my_copy recursion detection list */
     zend_bool coredump_unmap;    /* Trap signals that coredump and unmap shared memory */
-    apc_cache_t *current_cache;  /* current cache being modified/read */
     zend_bool use_request_time;  /* use the SAPI request start time for TTL */
-#ifdef ZEND_ENGINE_2_4
-    long shm_strings_buffer;
-#endif
     char *serializer_name;       /* the serializer config option */
     apc_serializer_t *serializer;/* the actual serializer in use */
 ZEND_END_MODULE_GLOBALS(apc)
@@ -109,7 +105,7 @@ ZEND_EXTERN_MODULE_GLOBALS(apc)
 #endif
 
 /* True globals */
-extern apc_cache_t* apc_user_cache;  /* the global user content cache */
+extern apc_cache_t* apc_user_cache;  /* the global cache */
 #endif
 
 /*

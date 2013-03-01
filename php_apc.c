@@ -199,9 +199,6 @@ PHP_INI_BEGIN()
 STD_PHP_INI_BOOLEAN("apc.enabled",      "1",    PHP_INI_SYSTEM, OnUpdateBool,              enabled,         zend_apc_globals, apc_globals)
 STD_PHP_INI_ENTRY("apc.shm_segments",   "1",    PHP_INI_SYSTEM, OnUpdateShmSegments,       shm_segments,    zend_apc_globals, apc_globals)
 STD_PHP_INI_ENTRY("apc.shm_size",       "32M",  PHP_INI_SYSTEM, OnUpdateShmSize,           shm_size,        zend_apc_globals, apc_globals)
-#ifdef ZEND_ENGINE_2_4
-STD_PHP_INI_ENTRY("apc.shm_strings_buffer", "4M",   PHP_INI_SYSTEM, OnUpdateLong,           shm_strings_buffer,        zend_apc_globals, apc_globals)
-#endif
 STD_PHP_INI_ENTRY("apc.user_entries_hint", "4096", PHP_INI_SYSTEM, OnUpdateLong,          user_entries_hint, zend_apc_globals, apc_globals)
 STD_PHP_INI_ENTRY("apc.gc_ttl",         "3600", PHP_INI_SYSTEM, OnUpdateLong,            gc_ttl,           zend_apc_globals, apc_globals)
 STD_PHP_INI_ENTRY("apc.ttl",            "0",    PHP_INI_SYSTEM, OnUpdateLong,            ttl,              zend_apc_globals, apc_globals)
@@ -455,14 +452,12 @@ int _apc_update(char *strkey, int strkey_len, apc_cache_updater_t updater, void*
     }
 
     HANDLE_BLOCK_INTERRUPTIONS();
-    APCG(current_cache) = apc_user_cache;
     
     if (!_apc_cache_user_update(apc_user_cache, strkey, strkey_len + 1, updater, data TSRMLS_CC)) {
         HANDLE_UNBLOCK_INTERRUPTIONS();
         return 0;
     }
 
-    APCG(current_cache) = NULL;
     HANDLE_UNBLOCK_INTERRUPTIONS();
 
     return 1;
@@ -487,8 +482,6 @@ int _apc_store(char *strkey, int strkey_len, const zval *val, const unsigned int
     }
 
     HANDLE_BLOCK_INTERRUPTIONS();
-
-    APCG(current_cache) = apc_user_cache;
 
     ctxt.pool = apc_pool_create(APC_SMALL_POOL, apc_sma_malloc, apc_sma_free, apc_sma_protect, apc_sma_unprotect TSRMLS_CC);
     if (!ctxt.pool) {
@@ -523,9 +516,6 @@ freepool:
     }
 
 nocache:
-
-    APCG(current_cache) = NULL;
-
     HANDLE_UNBLOCK_INTERRUPTIONS();
 
     return ret;

@@ -451,10 +451,11 @@ restart:
 
     off = sma_allocate(SMA_HDR(sma_lastseg), n, fragment, allocated);
 
-    if(off == -1 && APCG(current_cache)) { 
+    if(off == -1) { 
         /* retry failed allocation after we expunge */
         UNLOCK(SMA_LCK(sma_lastseg));
-        APCG(current_cache)->expunge_cb(APCG(current_cache), (n+fragment) TSRMLS_CC);
+		apc_user_cache->expunge_cb(
+			apc_user_cache, (n+fragment) TSRMLS_CC);
         LOCK(SMA_LCK(sma_lastseg));
         off = sma_allocate(SMA_HDR(sma_lastseg), n, fragment, allocated);
     }
@@ -476,10 +477,11 @@ restart:
         }
         LOCK(SMA_LCK(i));
         off = sma_allocate(SMA_HDR(i), n, fragment, allocated);
-        if(off == -1 && APCG(current_cache)) { 
+        if(off == -1) { 
             /* retry failed allocation after we expunge */
             UNLOCK(SMA_LCK(i));
-            APCG(current_cache)->expunge_cb(APCG(current_cache), (n+fragment) TSRMLS_CC);
+			apc_user_cache->expunge_cb(
+				apc_user_cache, (n+fragment) TSRMLS_CC);
             LOCK(SMA_LCK(i));
             off = sma_allocate(SMA_HDR(i), n, fragment, allocated);
         }

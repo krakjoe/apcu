@@ -47,10 +47,6 @@ typedef int (*ht_check_copy_fun_t)(Bucket*, va_list);
 
 #define CHECK(p) { if ((p) == NULL) return NULL; }
 
-/* {{{ key_equals */
-#define key_equals(a, b) (a.inode==b.inode && a.device==b.device)
-/* }}} */
-
 static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC);
 
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC);
@@ -136,23 +132,6 @@ static int make_prime(int n)
         k++;
     }
     return *(k-1);
-}
-/* }}} */
-
-/* {{{ apc_string_pmemcpy */
-static char *apc_string_pmemcpy(char *str, size_t len, apc_pool* pool TSRMLS_DC)
-{	
-#ifdef ZEND_ENGINE_2_4
-#ifndef ZTS
-    if (pool->type != APC_UNPOOL) {
-        char * ret = (char*)apc_new_interned_string((const char*)str, len TSRMLS_CC);
-        if (ret) {
-            return ret;
-        }
-    }
-#endif
-#endif
-    return apc_pmemcpy(str, len, pool TSRMLS_CC);
 }
 /* }}} */
 
@@ -1010,7 +989,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
     case IS_CONSTANT:
     case IS_STRING:
         if (src->value.str.val) {
-            CHECK(dst->value.str.val = apc_string_pmemcpy(src->value.str.val,
+            CHECK(dst->value.str.val = apc_pmemcpy(src->value.str.val,
                                                    src->value.str.len+1,
                                                    pool TSRMLS_CC));
         }

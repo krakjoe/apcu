@@ -84,22 +84,6 @@ extern char* apc_append(const char* s, const char* t TSRMLS_DC);
 extern char* apc_substr(const char* s, int start, int length TSRMLS_DC);
 extern char** apc_tokenize(const char* s, char delim TSRMLS_DC);
 
-/* filesystem functions */
-
-typedef struct apc_fileinfo_t 
-{
-    char *fullpath;
-    char path_buf[MAXPATHLEN];
-    php_stream_statbuf st_buf;
-} apc_fileinfo_t;
-
-extern int apc_search_paths(const char* filename, const char* path, apc_fileinfo_t* fileinfo TSRMLS_DC);
-
-/* regular expression wrapper functions */
-extern void* apc_regex_compile_array(char* patterns[] TSRMLS_DC);
-extern void apc_regex_destroy_array(void* p TSRMLS_DC);
-extern int apc_regex_match_array(void* p, const char* input);
-
 /* apc_crc32: returns the CRC-32 checksum of the first len bytes in buf */
 extern unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
 
