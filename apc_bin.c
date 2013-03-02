@@ -377,13 +377,11 @@ static int apc_bin_checkfilter(HashTable *filter, const char *key, uint key_len)
 
 /* {{{ apc_bin_dump */
 apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
-    uint fcount;
     slot_t *sp;
     apc_bd_entry_t *ep;
     int i, count=0;
     apc_bd_t *bd;
     zend_llist ll;
-    zend_function *efp, *sfp;
     size_t size=0;
     apc_context_t ctxt;
     void *pool_ptr;
@@ -498,11 +496,8 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
 /* {{{ apc_bin_load */
 int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
     apc_bd_entry_t *ep;
-    uint i, i2;
-    int ret;
+    uint i;
     time_t t;
-    apc_cache_entry_t *cache_entry;
-    apc_cache_key_t cache_key;
     apc_context_t ctxt;
 
     if (bd->swizzled) {

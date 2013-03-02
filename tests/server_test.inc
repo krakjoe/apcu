@@ -25,7 +25,7 @@ function server_start_one($host, $port, $code = 'echo "Hello world";', $php_opts
 
 	$php_args = getenv('TEST_PHP_ARGS');
 	if (empty($php_args)) {
-		$ext = (substr(PHP_OS, 0, 3) == 'WIN') ? 'php_apc.dll' : 'apc.so';
+		$ext = (substr(PHP_OS, 0, 3) == 'WIN') ? 'php_apcu.dll' : 'apcu.so';
 		$php_args = "-d extension_dir=$doc_root/../modules -d extension=$ext";
 	}
 	if ($php_opts) {

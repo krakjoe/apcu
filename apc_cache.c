@@ -1120,7 +1120,6 @@ apc_cache_entry_t* apc_cache_make_user_entry(const char* info, int info_len, con
 static zval* apc_cache_link_info(apc_cache_t *cache, slot_t* p TSRMLS_DC)
 {
     zval *link = NULL;
-    char md5str[33];
 
     ALLOC_INIT_ZVAL(link);
 

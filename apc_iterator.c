@@ -33,7 +33,6 @@ zend_object_handlers apc_iterator_object_handlers;
 /* {{{ apc_iterator_item */
 static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, slot_t **slot_pp TSRMLS_DC) {
     zval *zvalue;
-    char md5str[33];
     slot_t *slot = *slot_pp;
     apc_context_t ctxt = {0, };
     apc_iterator_item_t *item = ecalloc(1, sizeof(apc_iterator_item_t));
