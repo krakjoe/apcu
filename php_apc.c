@@ -484,17 +484,13 @@ int _apc_store(char *strkey, int strkey_len, const zval *val, const unsigned int
 
     ctxt.pool = apc_pool_create(APC_SMALL_POOL, apc_sma_malloc, apc_sma_free, apc_sma_protect, apc_sma_unprotect TSRMLS_CC);
     if (!ctxt.pool) {
-        HANDLE_UNBLOCK_INTERRUPTIONS();
         apc_warning("Unable to allocate memory for pool." TSRMLS_CC);
-        return 0;
-    }
-    ctxt.copy = APC_COPY_IN_USER;
-    ctxt.force_update = 0;
-
-    if(!ctxt.pool) {
         ret = 0;
         goto nocache;
     }
+
+    ctxt.copy = APC_COPY_IN_USER;
+    ctxt.force_update = 0;
 
     if (!apc_cache_make_user_key(&key, strkey, strkey_len, t)) {
         goto freepool;
