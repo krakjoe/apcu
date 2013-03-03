@@ -537,7 +537,6 @@ void* _apc_async_store(void *data) {
 			/* do something insertion failed */
 		}
 		
-
 		/* temporary measure */
 		apc_pool_destroy(insert->ctx.pool TSRMLS_CC);
 		apc_sma_free(insert);
@@ -565,7 +564,8 @@ int _apc_store_async(char *strkey, int strkey_len, const zval *val, const unsign
 		apc_async_insert_t *insert = apc_cache_make_async_insert(strkey, strkey_len, val, ttl, exclusive TSRMLS_CC);
 
 		if (insert) {
-			if (pthread_create(&insert->thread, NULL, (apc_async_worker_t) _apc_async_store, insert) != SUCCESS) {
+			pthread_t pthread;
+			if (pthread_create(&pthread, NULL, (apc_async_worker_t) _apc_async_store, insert) != SUCCESS) {
 				ret = 0;
 			}
 		} else {

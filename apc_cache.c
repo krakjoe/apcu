@@ -486,7 +486,6 @@ int apc_cache_user_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_ent
     /* we do not reset lastkey after the insert. Whether it is inserted 
      * or not, another insert in the same second is always a bad idea. 
      */
-
     process_pending_removals(cache TSRMLS_CC);
     
     slot = &cache->slots[key.h % cache->num_slots];
