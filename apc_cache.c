@@ -1117,6 +1117,7 @@ apc_cache_entry_t* apc_cache_make_user_entry(const char* info, int info_len, con
     return entry;
 }
 /* }}} */
+
 #if !defined(_WIN32) && !defined(ZTS)
 apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, const zval *val, const unsigned int ttl TSRMLS_DC) 
 {
@@ -1159,6 +1160,7 @@ apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, co
 	return insert;
 }
 #endif
+
 /* {{{ apc_cache_link_info */
 static zval* apc_cache_link_info(apc_cache_t *cache, slot_t* p TSRMLS_DC)
 {

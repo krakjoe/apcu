@@ -628,8 +628,18 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive, 
         return;
     } else if (Z_TYPE_P(key) == IS_STRING) {
         if (!val) RETURN_FALSE;
-        if(_apc_store_async(Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
+#if !defined(_WIN32) && !defined(ZTS)
+		if (async) {
+			if(_apc_store_async(Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
+            	RETURN_TRUE;
+		} else {
+			if(_apc_store(Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
+            	RETURN_TRUE;
+		}
+#else
+		if(_apc_store(Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
             RETURN_TRUE;
+#endif
     } else {
         apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs." TSRMLS_CC);
     }
