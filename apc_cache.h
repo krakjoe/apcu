@@ -260,6 +260,7 @@ struct apc_cache_t {
 };
 /* }}} */
 
+#if !defined(_WIN32) && !defined(ZTS)
 /* {{{ struct definition: apc_async_insert_t */
 typedef struct _apc_async_insert {
 	apc_cache_t* cache;			 /* the cache to insert into */
@@ -277,6 +278,7 @@ typedef void* (*apc_async_worker_t) (void *insert);
 * apc_cache_make_async_insert creates an apc_async_insert_t to be inserted in a separate context
 */
 extern apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, const zval *val, const unsigned int ttl TSRMLS_DC);
+#endif
 
 extern zval* apc_cache_info(T cache, zend_bool limited TSRMLS_DC);
 extern void apc_cache_unlock(apc_cache_t* cache TSRMLS_DC);

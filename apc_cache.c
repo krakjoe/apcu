@@ -1117,10 +1117,10 @@ apc_cache_entry_t* apc_cache_make_user_entry(const char* info, int info_len, con
     return entry;
 }
 /* }}} */
-
+#if !defined(_WIN32) && !defined(ZTS)
 apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, const zval *val, const unsigned int ttl TSRMLS_DC) 
 {
-	apc_async_insert_t *insert = apc_emalloc(sizeof(apc_async_insert_t));
+	apc_async_insert_t *insert = apc_emalloc(sizeof(apc_async_insert_t) TSRMLS_CC);
 		
 	if (!insert)
 		return NULL;
@@ -1131,7 +1131,7 @@ apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, co
 	
 	if (!apc_cache_make_user_key(&insert->key, strkey, strkey_len, insert->ctime) ||
 		apc_cache_is_last_key(insert->cache, &insert->key, insert->ctime TSRMLS_CC)) {
-		apc_efree(insert);
+		apc_efree(insert TSRMLS_CC);
 		
 		return NULL;
 	}
@@ -1139,7 +1139,7 @@ apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, co
 	insert->ctx.pool = apc_pool_create(APC_SMALL_POOL, apc_sma_malloc, apc_sma_free, apc_sma_protect, apc_sma_unprotect TSRMLS_CC);
 
 	if (!insert->ctx.pool) {
-		apc_efree(insert);
+		apc_efree(insert TSRMLS_CC);
 		
 		return NULL;
 	}
@@ -1151,14 +1151,14 @@ apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, co
 
 	if (!insert->entry) {
 		apc_pool_destroy(insert->ctx.pool TSRMLS_CC);
-		apc_efree(insert);
+		apc_efree(insert TSRMLS_CC);
 		
 		return NULL;
 	}
 
 	return insert;
 }
-
+#endif
 /* {{{ apc_cache_link_info */
 static zval* apc_cache_link_info(apc_cache_t *cache, slot_t* p TSRMLS_DC)
 {
