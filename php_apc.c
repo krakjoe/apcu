@@ -523,24 +523,25 @@ nocache:
 /* {{{ _apc_async_store(apc_async_insert_t *data)
  Avoids incurring cache locking in the thread calling store by making the insert in a separate context to the generation of key/entry
  This may develop into more of a worker kind of functionality, right now, thread per set ...
+ This (or the locks it manipulates) is buggy, causes apc_cache_user_find to deadlock
 */
 void* _apc_async_store(void *data) {
 	/* grab the insert data */
 	apc_async_insert_t *insert = (apc_async_insert_t*) data;
 	
 	if (insert) {
-		
 		HANDLE_BLOCK_INTERRUPTIONS();
-		
+
 		/* make the insert */
-		if (!apc_cache_user_insert(insert->cache, insert->key, insert->entry, &insert->ctx, insert->ctime, 0 TSRMLS_CC)) {
+		if (!apc_cache_user_insert(insert->cache, insert->key, insert->entry, &insert->ctx, insert->ctime, insert->exclusive TSRMLS_CC)) {
 			/* do something insertion failed */
 		}
+		
 
 		/* temporary measure */
 		apc_pool_destroy(insert->ctx.pool TSRMLS_CC);
-		apc_efree(insert);
-		
+		apc_sma_free(insert);
+
 		HANDLE_UNBLOCK_INTERRUPTIONS();
 	}
 
@@ -548,7 +549,7 @@ void* _apc_async_store(void *data) {
 	pthread_exit(NULL);
 } /* }}} */
 
-/* {{{ _apc_store */
+/* {{{ _apc_store_async */
 int _apc_store_async(char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC) {
 	int ret = 1;
 	
@@ -558,14 +559,13 @@ int _apc_store_async(char *strkey, int strkey_len, const zval *val, const unsign
         /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
         APCG(serializer) = apc_find_serializer(APCG(serializer_name) TSRMLS_CC);
     }
-
+	
 	HANDLE_BLOCK_INTERRUPTIONS();
 	{
-		apc_async_insert_t *insert = apc_cache_make_async_insert(strkey, strkey_len, val, ttl TSRMLS_CC);
+		apc_async_insert_t *insert = apc_cache_make_async_insert(strkey, strkey_len, val, ttl, exclusive TSRMLS_CC);
 
 		if (insert) {
-			pthread_t pthread;
-			if (pthread_create(&pthread, NULL, (apc_async_worker_t) _apc_async_store, insert) != SUCCESS) {
+			if (pthread_create(&insert->thread, NULL, (apc_async_worker_t) _apc_async_store, insert) != SUCCESS) {
 				ret = 0;
 			}
 		} else {

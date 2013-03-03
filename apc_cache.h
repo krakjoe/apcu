@@ -269,6 +269,7 @@ typedef struct _apc_async_insert {
 	apc_cache_entry_t *entry;	 /* the value to insert */
 	time_t ctime;				 /* ctime for the entry */
 	int ttl;                     /* ttl for entry */
+	int exclusive;         		 /* exclusivity: add/store */
 	pthread_t thread;            /* the thread doing the work */
 } apc_async_insert_t; /* }}} */
 
@@ -277,7 +278,7 @@ typedef void* (*apc_async_worker_t) (void *insert);
 /*
 * apc_cache_make_async_insert creates an apc_async_insert_t to be inserted in a separate context
 */
-extern apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, const zval *val, const unsigned int ttl TSRMLS_DC);
+extern apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC);
 #endif
 
 extern zval* apc_cache_info(T cache, zend_bool limited TSRMLS_DC);
