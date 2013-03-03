@@ -246,7 +246,6 @@ static PHP_MINFO_FUNCTION(apcu)
 #else
     php_info_print_table_row(2, "MMAP Support", "Disabled");
 #endif
-    php_info_print_table_row(2, "Locking type", APC_LOCK_TYPE);
 
     for( i = 0, serializer = apc_get_serializers(TSRMLS_C); 
                 serializer->name != NULL; 

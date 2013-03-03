@@ -270,18 +270,13 @@ if test "$PHP_APCU" != "no"; then
   		[AC_DEFINE([HAVE_VALGRIND_MEMCHECK_H],1, [enable valgrind memchecks])])
   ])
 
-  apc_sources="apc.c php_apc.c \
+  apc_sources="apc.c apc_lock.c php_apc.c \
                apc_cache.c \
                apc_debug.c \
-               apc_fcntl.c \
                apc_main.c \
                apc_mmap.c \
                apc_sem.c \
                apc_shm.c \
-               apc_pthreadmutex.c \
-               apc_pthreadrwlock.c \
-               apc_spin.c \
-               pgsql_s_lock.c \
                apc_sma.c \
                apc_stack.c \
                apc_rfc1867.c \

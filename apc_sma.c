@@ -52,7 +52,7 @@ static int sma_lastseg = 0;         /* index of MRU segment */
 
 typedef struct sma_header_t sma_header_t;
 struct sma_header_t {
-    apc_lck_t sma_lock;     /* segment lock, MUST BE ALIGNED for futex locks */
+    apc_lock_t sma_lock;    /* segment lock, MUST BE ALIGNED for futex locks */
     size_t segsize;         /* size of entire segment */
     size_t avail;           /* bytes available (not necessarily contiguous) */
 #if ALLOC_DISTRIBUTION
@@ -378,7 +378,7 @@ void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC)
         shmaddr = sma_segments[i].shmaddr;
 
         header = (sma_header_t*) shmaddr;
-        apc_lck_create(NULL, 0, 1, header->sma_lock);
+        CREATE_LOCK(&header->sma_lock);
         header->segsize = sma_segsize;
         header->avail = sma_segsize - ALIGNWORD(sizeof(sma_header_t)) - ALIGNWORD(sizeof(block_t)) - ALIGNWORD(sizeof(block_t));
 #if ALLOC_DISTRIBUTION
@@ -426,7 +426,7 @@ void apc_sma_cleanup(TSRMLS_D)
     assert(sma_initialized);
 
     for (i = 0; i < sma_numseg; i++) {
-        apc_lck_destroy(SMA_LCK(i));
+        DESTROY_LOCK(&SMA_LCK(i));
 #if APC_MMAP
         apc_unmap(&sma_segments[i] TSRMLS_CC);
 #else
@@ -447,54 +447,54 @@ void* apc_sma_malloc_ex(size_t n, size_t fragment, size_t* allocated TSRMLS_DC)
 
 restart:
     assert(sma_initialized);
-    LOCK(SMA_LCK(sma_lastseg));
+    LOCK(&SMA_LCK(sma_lastseg));
 
     off = sma_allocate(SMA_HDR(sma_lastseg), n, fragment, allocated);
 
     if(off == -1) { 
         /* retry failed allocation after we expunge */
-        UNLOCK(SMA_LCK(sma_lastseg));
+        UNLOCK(&SMA_LCK(sma_lastseg));
 		apc_user_cache->expunge_cb(
 			apc_user_cache, (n+fragment) TSRMLS_CC);
-        LOCK(SMA_LCK(sma_lastseg));
+        LOCK(&SMA_LCK(sma_lastseg));
         off = sma_allocate(SMA_HDR(sma_lastseg), n, fragment, allocated);
     }
 
     if (off != -1) {
         void* p = (void *)(SMA_ADDR(sma_lastseg) + off);
-        UNLOCK(SMA_LCK(sma_lastseg));
+        UNLOCK(&SMA_LCK(sma_lastseg));
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
         VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
         return p;
     }
     
-    UNLOCK(SMA_LCK(sma_lastseg));
+    UNLOCK(&SMA_LCK(sma_lastseg));
 
     for (i = 0; i < sma_numseg; i++) {
         if (i == sma_lastseg) {
             continue;
         }
-        LOCK(SMA_LCK(i));
+        LOCK(&SMA_LCK(i));
         off = sma_allocate(SMA_HDR(i), n, fragment, allocated);
         if(off == -1) { 
             /* retry failed allocation after we expunge */
-            UNLOCK(SMA_LCK(i));
+            UNLOCK(&SMA_LCK(i));
 			apc_user_cache->expunge_cb(
 				apc_user_cache, (n+fragment) TSRMLS_CC);
-            LOCK(SMA_LCK(i));
+            LOCK(&SMA_LCK(i));
             off = sma_allocate(SMA_HDR(i), n, fragment, allocated);
         }
         if (off != -1) {
             void* p = (void *)(SMA_ADDR(i) + off);
-            UNLOCK(SMA_LCK(i));
+            UNLOCK(&SMA_LCK(i));
             sma_lastseg = i;
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
             VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
             return p;
         }
-        UNLOCK(SMA_LCK(i));
+        UNLOCK(&SMA_LCK(i));
     }
 
     /* I've tried being nice, but now you're just asking for it */
@@ -560,9 +560,9 @@ void apc_sma_free(void* p TSRMLS_DC)
     for (i = 0; i < sma_numseg; i++) {
         offset = (size_t)((char *)p - SMA_ADDR(i));
         if (p >= (void*)SMA_ADDR(i) && offset < sma_segsize) {
-            LOCK(SMA_LCK(i));
+            LOCK(&SMA_LCK(i));
             sma_deallocate(SMA_HDR(i), offset);
-            UNLOCK(SMA_LCK(i));
+            UNLOCK(&SMA_LCK(i));
 #ifdef VALGRIND_FREELIKE_BLOCK
             VALGRIND_FREELIKE_BLOCK(p, 0);
 #endif
@@ -668,7 +668,7 @@ apc_sma_info_t* apc_sma_info(zend_bool limited TSRMLS_DC)
 
     /* For each segment */
     for (i = 0; i < sma_numseg; i++) {
-        RDLOCK(SMA_LCK(i));
+        RLOCK(&SMA_LCK(i));
         shmaddr = SMA_ADDR(i);
         prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
 

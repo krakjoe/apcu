@@ -297,10 +297,9 @@ apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl TSRMLS_DC)
     cache->num_slots = num_slots;
     cache->gc_ttl = gc_ttl;
     cache->ttl = ttl;
-    CREATE_LOCK(cache->header->lock);
-#if NONBLOCKING_LOCK_AVAILABLE
-    CREATE_LOCK(cache->header->wrlock);
-#endif
+
+    CREATE_LOCK(&cache->header->lock);
+
     memset(cache->slots, 0, sizeof(slot_t*)*num_slots);
     cache->expunge_cb = apc_cache_expunge;
     cache->has_lock = 0;
@@ -312,17 +311,14 @@ apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl TSRMLS_DC)
 /* {{{ apc_cache_release */
 void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry TSRMLS_DC)
 {
-    CACHE_SAFE_DEC(cache, entry->ref_count);
+    entry->ref_count--;
 }
 /* }}} */
 
 /* {{{ apc_cache_destroy */
 void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC)
 {
-    DESTROY_LOCK(cache->header->lock);
-#if NONBLOCKING_LOCK_AVAILABLE
-    DESTROY_LOCK(cache->header->wrlock);
-#endif
+    DESTROY_LOCK(&cache->header->lock);
 
 	/* XXX this is definitely a leak, but freeing this causes all the apache
 		children to freeze. It might be because the segment is shared between
@@ -376,11 +372,11 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
          * If cache->ttl is not set, we wipe out the entire cache when
          * we run out of space.
          */
-        CACHE_SAFE_LOCK(cache);
+        WLOCK(&cache->header->lock);
         process_pending_removals(cache TSRMLS_CC);
         if (apc_sma_get_avail_mem() > (size_t)(APCG(shm_size)/2)) {
             /* probably a queued up expunge, we don't need to do this */
-            CACHE_SAFE_UNLOCK(cache);
+            WUNLOCK(&cache->header->lock);
             return;
         }
         cache->header->busy = 1;
@@ -395,7 +391,7 @@ clear_all:
         }
         memset(&cache->header->lastkey, 0, sizeof(apc_keyid_t));
         cache->header->busy = 0;
-        CACHE_SAFE_UNLOCK(cache);
+        WUNLOCK(&cache->header->lock);
     } else {
         slot_t **p;
         /*
@@ -407,11 +403,11 @@ clear_all:
          * on insert
          */
 
-        CACHE_SAFE_LOCK(cache);
+        WLOCK(&cache->header->lock);
         process_pending_removals(cache TSRMLS_CC);
         if (apc_sma_get_avail_mem() > (size_t)(APCG(shm_size)/2)) {
             /* probably a queued up expunge, we don't need to do this */
-            CACHE_SAFE_UNLOCK(cache);
+            WUNLOCK(&cache->header->lock);
             return;
         }
         cache->header->busy = 1;
@@ -444,7 +440,7 @@ clear_all:
         }
         memset(&cache->header->lastkey, 0, sizeof(apc_keyid_t));
         cache->header->busy = 0;
-        CACHE_SAFE_UNLOCK(cache);
+        WUNLOCK(&cache->header->lock);
     }
 }
 /* }}} */
@@ -462,11 +458,6 @@ int apc_cache_user_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_ent
     
     if(apc_cache_busy(cache)) {
         /* cache cleanup in progress, do not wait */ 
-        return 0;
-    }
-
-    if(apc_cache_is_last_key(cache, &key, t TSRMLS_CC)) {
-        /* potential cache slam */
         return 0;
     }
 
@@ -558,7 +549,7 @@ apc_cache_entry_t* apc_cache_user_find(apc_cache_t* cache, char *strkey, int key
         return NULL;
     }
 
-    CACHE_RDLOCK(cache);
+    RLOCK(&cache->header->lock);
 
     h = string_nhash_8(strkey, keylen);
 
@@ -576,25 +567,28 @@ apc_cache_entry_t* apc_cache_user_find(apc_cache_t* cache, char *strkey, int key
                  */
                 remove_slot(cache, slot TSRMLS_CC);
                 #endif
-                CACHE_FAST_INC(cache, cache->header->num_misses);
-                CACHE_RDUNLOCK(cache);
+                cache->header->num_misses++;
+
+                RUNLOCK(&cache->header->lock);
                 return NULL;
             }
+
             /* Otherwise we are fine, increase counters and return the cache entry */
-            CACHE_SAFE_INC(cache, (*slot)->num_hits);
-            CACHE_SAFE_INC(cache, (*slot)->value->ref_count);
+            (*slot)->num_hits++;
+            (*slot)->value->ref_count++;
             (*slot)->access_time = t;
 
-            CACHE_FAST_INC(cache, cache->header->num_hits);
+            cache->header->num_hits++;
+
             value = (*slot)->value;
-            CACHE_RDUNLOCK(cache);
+            RUNLOCK(&cache->header->lock);
             return (apc_cache_entry_t*)value;
         }
         slot = &(*slot)->next;
     }
  
     CACHE_FAST_INC(cache, cache->header->num_misses);
-    CACHE_RDUNLOCK(cache);
+    RUNLOCK(&cache->header->lock);
     return NULL;
 }
 /* }}} */
@@ -612,7 +606,7 @@ apc_cache_entry_t* apc_cache_user_exists(apc_cache_t* cache, char *strkey, int k
         return NULL;
     }
 
-    CACHE_RDLOCK(cache);
+    RLOCK(&cache->header->lock);
 
     h = string_nhash_8(strkey, keylen);
 
@@ -628,12 +622,12 @@ apc_cache_entry_t* apc_cache_user_exists(apc_cache_t* cache, char *strkey, int k
             }
             /* Return the cache entry ptr */
             value = (*slot)->value;
-            CACHE_RDUNLOCK(cache);
+            RUNLOCK(&cache->header->lock);
             return (apc_cache_entry_t*)value;
         }
         slot = &(*slot)->next;
     }
-    CACHE_RDUNLOCK(cache);
+    RUNLOCK(&cache->header->lock);
     return NULL;
 }
 /* }}} */
@@ -1201,12 +1195,12 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 
     if(!cache) return NULL;
 
-    CACHE_RDLOCK(cache);
+    RLOCK(&cache->header->lock);
 
     ALLOC_INIT_ZVAL(info);
 
     if(!info) {
-        CACHE_RDUNLOCK(cache);
+        RUNLOCK(&cache->header->lock);
         return NULL;
     }
 
@@ -1232,7 +1226,6 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 #else
     add_assoc_stringl(info, "memory_type", "IPC shared", sizeof("IPC shared")-1, 1);
 #endif
-    add_assoc_stringl(info, "locking_type", APC_LOCK_TYPE, sizeof(APC_LOCK_TYPE)-1, 1);
 
     if(!limited) {
         /* For each hashtable slot */
@@ -1269,7 +1262,7 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
         add_assoc_zval(info, "slot_distribution", slots);
     }
 
-    CACHE_RDUNLOCK(cache);
+    RUNLOCK(&cache->header->lock);
     return info;
 }
 /* }}} */
@@ -1277,7 +1270,7 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 /* {{{ apc_cache_unlock */
 void apc_cache_unlock(apc_cache_t* cache TSRMLS_DC)
 {
-    CACHE_UNLOCK(cache);
+    WUNLOCK(&cache->header->lock);
 }
 /* }}} */
 
@@ -1315,22 +1308,6 @@ zend_bool apc_cache_is_last_key(apc_cache_t* cache, apc_cache_key_t* key, time_t
     return 0;
 }
 /* }}} */
-
-#if NONBLOCKING_LOCK_AVAILABLE
-/* {{{ apc_cache_write_lock */
-zend_bool apc_cache_write_lock(apc_cache_t* cache TSRMLS_DC)
-{
-    return apc_lck_nb_lock(cache->header->wrlock);
-}
-/* }}} */
-
-/* {{{ apc_cache_write_unlock */
-void apc_cache_write_unlock(apc_cache_t* cache TSRMLS_DC)
-{
-    apc_lck_unlock(cache->header->wrlock);
-}
-/* }}} */
-#endif
 
 /*
  * Local variables:

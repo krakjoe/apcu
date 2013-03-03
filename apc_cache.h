@@ -51,25 +51,10 @@ typedef dev_t apc_dev_t;
 #endif
 
 /* {{{ cache locking macros */
-#define CACHE_LOCK(cache)        { LOCK(cache->header->lock);   cache->has_lock = 1; }
-#define CACHE_UNLOCK(cache)      { UNLOCK(cache->header->lock); cache->has_lock = 0; }
-#define CACHE_SAFE_LOCK(cache)   { if ((++cache->has_lock) == 1) LOCK(cache->header->lock); }
-#define CACHE_SAFE_UNLOCK(cache) { if ((--cache->has_lock) == 0) UNLOCK(cache->header->lock); }
-
-#if (RDLOCK_AVAILABLE == 1) && defined(HAVE_ATOMIC_OPERATIONS)
-#define USE_READ_LOCKS 1
-#define CACHE_RDLOCK(cache)        { RDLOCK(cache->header->lock);  cache->has_lock = 0; }
-#define CACHE_RDUNLOCK(cache)      { RDUNLOCK(cache->header->lock);  cache->has_lock = 0; }
-#define CACHE_SAFE_INC(cache, obj) { ATOMIC_INC(obj); }
-#define CACHE_SAFE_DEC(cache, obj) { ATOMIC_DEC(obj); }
-#else
-#define USE_READ_LOCKS 0
-#define CACHE_RDLOCK(cache)        { LOCK(cache->header->lock);  cache->has_lock = 1; }
-#define CACHE_RDUNLOCK(cache)      { UNLOCK(cache->header->lock);  cache->has_lock = 0; }
-#define CACHE_SAFE_INC(cache, obj) { CACHE_SAFE_LOCK(cache); obj++; CACHE_SAFE_UNLOCK(cache);}
-#define CACHE_SAFE_DEC(cache, obj) { CACHE_SAFE_LOCK(cache); obj--; CACHE_SAFE_UNLOCK(cache);}
-#endif
-
+#define CACHE_LOCK(cache)        { WLOCK(&cache->header->lock);   cache->has_lock = 1; }
+#define CACHE_UNLOCK(cache)      { WUNLOCK(&cache->header->lock); cache->has_lock = 0; }
+#define CACHE_SAFE_LOCK(cache)   CACHE_LOCK(&cache->header->lock)
+#define CACHE_SAFE_UNLOCK(cache) CACHE_UNLOCK(&cache->header->lock)
 #define CACHE_FAST_INC(cache, obj) { obj++; }
 #define CACHE_FAST_DEC(cache, obj) { obj--; }
 /* }}} */
@@ -230,8 +215,7 @@ struct slot_t {
    Any values that must be shared among processes should go in here. */
 typedef struct cache_header_t cache_header_t;
 struct cache_header_t {
-    apc_lck_t lock;             /* read/write lock (exclusive blocking cache lock) */
-    apc_lck_t wrlock;           /* write lock (non-blocking used to prevent cache slams) */
+    apc_lock_t lock;            /* read/write lock (exclusive blocking cache lock) */
     unsigned long num_hits;     /* total successful hits in cache */
     unsigned long num_misses;   /* total unsuccessful hits in cache */
     unsigned long num_inserts;  /* total successful inserts in cache */
