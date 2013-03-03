@@ -63,7 +63,7 @@ PHP_FUNCTION(apc_inc);
 PHP_FUNCTION(apc_dec);
 PHP_FUNCTION(apc_cas);
 PHP_FUNCTION(apc_exists);
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(ZTS)
 PHP_FUNCTION(apc_store_async);
 #endif
 PHP_FUNCTION(apc_bin_dump);
@@ -519,7 +519,7 @@ nocache:
 }
 /* }}} */
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(ZTS)
 /* {{{ _apc_async_store(apc_async_insert_t *data)
  Avoids incurring cache locking in the thread calling store by making the insert in a separate context to the generation of key/entry
  This may develop into more of a worker kind of functionality, right now, thread per set ...
@@ -606,7 +606,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive, 
         while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
             zend_hash_get_current_key_ex(hash, &hkey, &hkey_len, &hkey_idx, 0, &hpos);
             if (hkey) {
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(ZTS)
                 if (async) {
 					if(!_apc_store_async(hkey, hkey_len, *hentry, (unsigned int)ttl, exclusive TSRMLS_CC)) {
 		                add_assoc_long_ex(return_value, hkey, hkey_len, -1);  /* -1: insertion error */
@@ -645,7 +645,7 @@ PHP_FUNCTION(apc_store) {
 }
 /* }}} */
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(ZTS)
 /* {{{ proto int apc_store_async(mixed key, mixed var [, long ttl]) 
 */
 PHP_FUNCTION(apc_store_async) {
@@ -1271,7 +1271,7 @@ zend_function_entry apcu_functions[] = {
     PHP_FE(apc_dec,                 arginfo_apc_inc)
     PHP_FE(apc_cas,                 arginfo_apc_cas)
     PHP_FE(apc_exists,              arginfo_apc_exists)
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(ZTS)
 	PHP_FE(apc_store_async,			arginfo_apc_store)
 #endif
     PHP_FE(apc_bin_dump,            arginfo_apc_bin_dump)
