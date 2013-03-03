@@ -63,6 +63,7 @@ PHP_FUNCTION(apc_inc);
 PHP_FUNCTION(apc_dec);
 PHP_FUNCTION(apc_cas);
 PHP_FUNCTION(apc_exists);
+PHP_FUNCTION(apc_store_async);
 
 PHP_FUNCTION(apc_bin_dump);
 PHP_FUNCTION(apc_bin_load);
@@ -517,9 +518,67 @@ nocache:
 }
 /* }}} */
 
+/* {{{ _apc_async_store(apc_async_insert_t *data)
+ Avoids incurring cache locking in the thread calling store by making the insert in a separate context to the generation of key/entry
+ This may develop into more of a worker kind of functionality, right now, thread per set ...
+*/
+void* _apc_async_store(void *data) {
+	/* grab the insert data */
+	apc_async_insert_t *insert = (apc_async_insert_t*) data;
+	
+	if (insert) {
+		
+		HANDLE_BLOCK_INTERRUPTIONS();
+		
+		/* make the insert */
+		if (!apc_cache_user_insert(insert->cache, insert->key, insert->entry, &insert->ctx, insert->ctime, 0 TSRMLS_CC)) {
+			/* do something insertion failed */
+		}
+
+		/* temporary measure */
+		apc_pool_destroy(insert->ctx.pool TSRMLS_CC);
+		apc_efree(insert);
+		
+		HANDLE_UNBLOCK_INTERRUPTIONS();
+	}
+
+	/* no future, yet */
+	pthread_exit(NULL);
+} /* }}} */
+
+/* {{{ _apc_store */
+int _apc_store_async(char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC) {
+	int ret = 1;
+	
+    if(!APCG(enabled)) return 0;
+
+    if (!APCG(serializer) && APCG(serializer_name)) {
+        /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
+        APCG(serializer) = apc_find_serializer(APCG(serializer_name) TSRMLS_CC);
+    }
+
+	HANDLE_BLOCK_INTERRUPTIONS();
+	{
+		apc_async_insert_t *insert = apc_cache_make_async_insert(strkey, strkey_len, val, ttl TSRMLS_CC);
+
+		if (insert) {
+			pthread_t pthread;
+			if (pthread_create(&pthread, NULL, (apc_async_worker_t) _apc_async_store, insert) != SUCCESS) {
+				ret = 0;
+			}
+		} else {
+			ret = 0;		
+		}
+	}
+	HANDLE_UNBLOCK_INTERRUPTIONS();
+
+    return ret;
+}
+/* }}} */
+
 /* {{{ apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
  */
-static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
+static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive, const int async)
 {
     zval *key = NULL;
     zval *val = NULL;
@@ -544,7 +603,11 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
         while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
             zend_hash_get_current_key_ex(hash, &hkey, &hkey_len, &hkey_idx, 0, &hpos);
             if (hkey) {
-                if(!_apc_store(hkey, hkey_len, *hentry, (unsigned int)ttl, exclusive TSRMLS_CC)) {
+                if (async) {
+					if(!_apc_store_async(hkey, hkey_len, *hentry, (unsigned int)ttl, exclusive TSRMLS_CC)) {
+		                add_assoc_long_ex(return_value, hkey, hkey_len, -1);  /* -1: insertion error */
+		            }
+				} else if(!_apc_store(hkey, hkey_len, *hentry, (unsigned int)ttl, exclusive TSRMLS_CC)) {
                     add_assoc_long_ex(return_value, hkey, hkey_len, -1);  /* -1: insertion error */
                 }
                 hkey = NULL;
@@ -556,7 +619,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
         return;
     } else if (Z_TYPE_P(key) == IS_STRING) {
         if (!val) RETURN_FALSE;
-        if(_apc_store(Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
+        if(_apc_store_async(Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
             RETURN_TRUE;
     } else {
         apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs." TSRMLS_CC);
@@ -569,14 +632,20 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
 /* {{{ proto int apc_store(mixed key, mixed var [, long ttl ])
  */
 PHP_FUNCTION(apc_store) {
-    apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 0);
+    apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 0, 0);
 }
 /* }}} */
+
+/* {{{ proto int apc_store_async(mixed key, mixed var [, long ttl]) 
+*/
+PHP_FUNCTION(apc_store_async) {
+	apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 0, 1);
+} /* }}} */
 
 /* {{{ proto int apc_add(mixed key, mixed var [, long ttl ])
  */
 PHP_FUNCTION(apc_add) {
-    apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1);
+    apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1, 0);
 }
 /* }}} */
 
@@ -1191,6 +1260,7 @@ zend_function_entry apcu_functions[] = {
     PHP_FE(apc_dec,                 arginfo_apc_inc)
     PHP_FE(apc_cas,                 arginfo_apc_cas)
     PHP_FE(apc_exists,              arginfo_apc_exists)
+	PHP_FE(apc_store_async,			arginfo_apc_store)
 
     PHP_FE(apc_bin_dump,            arginfo_apc_bin_dump)
     PHP_FE(apc_bin_load,            arginfo_apc_bin_load)

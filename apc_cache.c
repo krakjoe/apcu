@@ -544,6 +544,8 @@ fail:
 }
 /* }}} */
 
+
+
 /* {{{ apc_cache_user_find */
 apc_cache_entry_t* apc_cache_user_find(apc_cache_t* cache, char *strkey, int keylen, time_t t TSRMLS_DC)
 {
@@ -840,7 +842,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable_ex(HashTable* dst,
         } else if (pool->type != APC_UNPOOL) {
             char *arKey;
 
-            arKey = (char *)apc_new_interned_string(curr->arKey, curr->nKeyLength TSRMLS_CC);
+            arKey = (char *) zend_new_interned_string(curr->arKey, curr->nKeyLength, 0 TSRMLS_CC);
             if (!arKey) {
                 /* this is ugly, but the old arkey[1] is gone, so we allocate all of the bytes as a tail-fragment (see IS_TAILED) */
                 CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket) + curr->nKeyLength, pool TSRMLS_CC)));
@@ -1116,6 +1118,47 @@ apc_cache_entry_t* apc_cache_make_user_entry(const char* info, int info_len, con
 }
 /* }}} */
 
+apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, const zval *val, const unsigned int ttl TSRMLS_DC) 
+{
+	apc_async_insert_t *insert = apc_emalloc(sizeof(apc_async_insert_t));
+		
+	if (!insert)
+		return NULL;
+
+	insert->cache = apc_user_cache;
+	insert->ctime = apc_time();
+	insert->ttl   = ttl;
+	
+	if (!apc_cache_make_user_key(&insert->key, strkey, strkey_len, insert->ctime) ||
+		apc_cache_is_last_key(insert->cache, &insert->key, insert->ctime TSRMLS_CC)) {
+		apc_efree(insert);
+		
+		return NULL;
+	}
+	
+	insert->ctx.pool = apc_pool_create(APC_SMALL_POOL, apc_sma_malloc, apc_sma_free, apc_sma_protect, apc_sma_unprotect TSRMLS_CC);
+
+	if (!insert->ctx.pool) {
+		apc_efree(insert);
+		
+		return NULL;
+	}
+
+	insert->ctx.copy = APC_COPY_IN_USER;
+	insert->ctx.force_update = 0;
+	
+	insert->entry = apc_cache_make_user_entry(strkey, strkey_len, val, &insert->ctx, insert->ttl TSRMLS_CC);	
+
+	if (!insert->entry) {
+		apc_pool_destroy(insert->ctx.pool TSRMLS_CC);
+		apc_efree(insert);
+		
+		return NULL;
+	}
+
+	return insert;
+}
+
 /* {{{ apc_cache_link_info */
 static zval* apc_cache_link_info(apc_cache_t *cache, slot_t* p TSRMLS_DC)
 {
@@ -1255,7 +1298,6 @@ zend_bool apc_cache_is_last_key(apc_cache_t* cache, apc_cache_key_t* key, time_t
     pid_t pid = getpid();
     #define FROM_DIFFERENT_THREAD(k) (pid != (k)->pid) 
 #endif
-
 
     /* unlocked reads, but we're not shooting for 100% success with this */
     if(lastkey->h == key->h && keylen == lastkey->keylen) {

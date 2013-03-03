@@ -260,6 +260,24 @@ struct apc_cache_t {
 };
 /* }}} */
 
+/* {{{ struct definition: apc_async_insert_t */
+typedef struct _apc_async_insert {
+	apc_cache_t* cache;			 /* the cache to insert into */
+	apc_context_t  ctx;          /* context in which the insertion is made */
+	apc_cache_key_t key;		 /* the key to insert */
+	apc_cache_entry_t *entry;	 /* the value to insert */
+	time_t ctime;				 /* ctime for the entry */
+	int ttl;                     /* ttl for entry */
+	pthread_t thread;            /* the thread doing the work */
+} apc_async_insert_t; /* }}} */
+
+typedef void* (*apc_async_worker_t) (void *insert);
+
+/*
+* apc_cache_make_async_insert creates an apc_async_insert_t to be inserted in a separate context
+*/
+extern apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, const zval *val, const unsigned int ttl TSRMLS_DC);
+
 extern zval* apc_cache_info(T cache, zend_bool limited TSRMLS_DC);
 extern void apc_cache_unlock(apc_cache_t* cache TSRMLS_DC);
 extern zend_bool apc_cache_busy(apc_cache_t* cache);
