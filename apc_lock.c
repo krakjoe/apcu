@@ -9,12 +9,7 @@
  APC locks are a generic implementation of a read/write lock using the most suitable primitives available on the operating system
 */
 int apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
-	lock = apc_emalloc(sizeof(apc_lock_t));
-	
-	if (!lock)
-		return 0;
-
-#ifndef _WIN32
+	#ifndef _WIN32
 	{
 		/*
 		 Initialize attributes suitable for APC locks to function in all environments
@@ -36,9 +31,8 @@ int apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
 			
 			default:
 				apc_error("pthread mutex error: APC failed to initialize lock attributes." TSRMLS_CC);
-				apc_efree(lock);
 		}
-	}	
+	}
 #else
 
 #endif	
@@ -126,7 +120,6 @@ void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC) {
 	/* this should be checked, and will be */
 	//pthread_mutex_destroy(&lock->read);
 	//pthread_mutex_destroy(&lock->write);
-	//apc_efree(lock);
 #else
 	
 #endif
