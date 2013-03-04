@@ -1129,9 +1129,6 @@ apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, co
 	insert->ctime = apc_time();
 	insert->ttl   = ttl;
 	insert->exclusive = exclusive;	
-#ifdef ZTS
-	insert->tsrm = TSRMLS_C;
-#endif
 
 	if (!apc_cache_make_user_key(&insert->key, strkey, strkey_len, insert->ctime) ||
 		apc_cache_is_last_key(insert->cache, &insert->key, insert->ctime TSRMLS_CC)) {
