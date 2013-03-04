@@ -695,7 +695,7 @@ apc_sma_info_t* apc_sma_info(zend_bool limited TSRMLS_DC)
 #endif
 
         }
-        RDUNLOCK(SMA_LCK(i));
+        RUNLOCK(&SMA_LCK(i));
     }
 
     return info;
