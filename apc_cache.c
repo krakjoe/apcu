@@ -171,14 +171,16 @@ static void free_slot(slot_t* slot TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ remove_slot */
+/* {{{ remove_slot 
+ Must never be called outside of a lock */
 static void remove_slot(apc_cache_t* cache, slot_t** slot TSRMLS_DC)
 {
     slot_t* dead = *slot;
     *slot = (*slot)->next;
 
     cache->header->mem_size -= dead->value->mem_size;
-    CACHE_FAST_DEC(cache, cache->header->num_entries);
+    cache->header->num_entries--;
+	
     if (dead->value->ref_count <= 0) {
         free_slot(dead TSRMLS_CC);
     }
@@ -380,7 +382,8 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
             return;
         }
         cache->header->busy = 1;
-        CACHE_FAST_INC(cache, cache->header->expunges);
+        cache->header->expunges++;
+
 clear_all:
         for (i = 0; i < cache->num_slots; i++) {
             slot_t* p = cache->slots[i];
@@ -410,8 +413,10 @@ clear_all:
             WUNLOCK(&cache->header->lock);
             return;
         }
+
         cache->header->busy = 1;
-        CACHE_FAST_INC(cache, cache->header->expunges);
+        cache->header->expunges++;
+		
         for (i = 0; i < cache->num_slots; i++) {
             p = &cache->slots[i];
             while(*p) {
@@ -520,8 +525,8 @@ int apc_cache_user_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_ent
     value->mem_size = ctxt->pool->size;
     cache->header->mem_size += ctxt->pool->size;
 
-    CACHE_FAST_INC(cache, cache->header->num_entries);
-    CACHE_FAST_INC(cache, cache->header->num_inserts);
+    cache->header->num_entries++;
+    cache->header->num_inserts++;
 
     CACHE_UNLOCK(cache);
 
@@ -587,7 +592,8 @@ apc_cache_entry_t* apc_cache_user_find(apc_cache_t* cache, char *strkey, int key
         slot = &(*slot)->next;
     }
  
-    CACHE_FAST_INC(cache, cache->header->num_misses);
+    cache->header->num_misses++;
+	
     RUNLOCK(&cache->header->lock);
     return NULL;
 }

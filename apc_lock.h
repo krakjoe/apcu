@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | APCu                                                                 |
   +----------------------------------------------------------------------+
-  | Copyright (c) 2006-2011 The PHP Group                                |
+  | Copyright (c) 2013 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -25,9 +25,11 @@
 
 #include "apc.h"
 
-/* Generic implementation of read/write locks for APC */
 #ifndef _WIN32
-#include "pthread.h"
+# include "pthread.h"
+/*
+ Note: this is not an MRL
+*/
 typedef struct _apc_lock_t {
 	pthread_mutex_t read;
 	pthread_mutex_t write;

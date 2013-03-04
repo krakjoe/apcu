@@ -42,21 +42,9 @@
 #include "apc_main.h"
 #include "TSRM.h"
 
-#ifdef PHP_WIN32
-typedef unsigned __int64 apc_ino_t;
-typedef unsigned __int64 apc_dev_t;
-#else
-typedef ino_t apc_ino_t;
-typedef dev_t apc_dev_t;
-#endif
-
 /* {{{ cache locking macros */
-#define CACHE_LOCK(cache)        { WLOCK(&cache->header->lock);   cache->has_lock = 1; }
-#define CACHE_UNLOCK(cache)      { WUNLOCK(&cache->header->lock); cache->has_lock = 0; }
-#define CACHE_SAFE_LOCK(cache)   CACHE_LOCK(&cache->header->lock)
-#define CACHE_SAFE_UNLOCK(cache) CACHE_UNLOCK(&cache->header->lock)
-#define CACHE_FAST_INC(cache, obj) { obj++; }
-#define CACHE_FAST_DEC(cache, obj) { obj--; }
+#define CACHE_LOCK(cache)        WLOCK(&cache->header->lock)
+#define CACHE_UNLOCK(cache)      WUNLOCK(&cache->header->lock)
 /* }}} */
 
 /* {{{ struct definition: apc_cache_key_t */
