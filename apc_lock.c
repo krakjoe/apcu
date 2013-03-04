@@ -90,8 +90,8 @@ int apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
 			apc_error("pthread mutex error: APC failed to acquire write lock (%i)", rc TSRMLS_CC);
 	}
 #else
-
-#endif	
+	
+#endif
 	return 0;
 }
 
@@ -142,10 +142,3 @@ void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC) {
 } 
 #endif
 
-void apc_lock_test(TSRMLS_DC) {
-#ifndef _WIN32
-
-#else
-
-#endif
-}

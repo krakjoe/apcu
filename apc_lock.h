@@ -45,8 +45,6 @@ int apc_lock_runlock(apc_lock_t *lock TSRMLS_DC);
 int apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC);
 void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC);
 
-void apc_lock_test(TSRMLS_DC);
-
 /* {{{ generic locking macros */
 #define CREATE_LOCK(lock)     apc_lock_create(lock TSRMLS_CC)
 #define DESTROY_LOCK(lock)    apc_lock_destroy(lock TSRMLS_CC)
