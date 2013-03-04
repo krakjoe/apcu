@@ -228,7 +228,6 @@ struct apc_cache_t {
     int gc_ttl;                   /* maximum time on GC list for a slot */
     int ttl;                      /* if slot is needed and entry's access time is older than this ttl, remove it */
     apc_expunge_cb_t expunge_cb;  /* cache specific expunge callback to free up sma memory */
-    uint has_lock;                /* flag for possible recursive locks within the same process */
 };
 /* }}} */
 
