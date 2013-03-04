@@ -1,7 +1,11 @@
 --TEST--
 APC: apc_store_async/fetch with strings
 --SKIPIF--
-<?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
+<?php 
+	require_once(dirname(__FILE__) . '/skipif.inc'); 
+	if (PHP_ZTS)
+		die("skip no async api in ZTS");
+?>
 --INI--
 apc.enabled=1
 apc.enable_cli=1

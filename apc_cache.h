@@ -253,11 +253,8 @@ typedef void* (*apc_async_worker_t) (void *insert);
 extern apc_async_insert_t* apc_cache_make_async_insert(char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC);
 #endif
 
-extern zval* apc_cache_info(T cache, zend_bool limited TSRMLS_DC);
-extern void apc_cache_unlock(apc_cache_t* cache TSRMLS_DC);
+extern zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC);
 extern zend_bool apc_cache_busy(apc_cache_t* cache);
-extern zend_bool apc_cache_write_lock(apc_cache_t* cache TSRMLS_DC);
-extern void apc_cache_write_unlock(apc_cache_t* cache TSRMLS_DC);
 extern zend_bool apc_cache_is_last_key(apc_cache_t* cache, apc_cache_key_t* key, time_t t TSRMLS_DC);
 
 /* used by apc_rfc1867 to update data in-place - not to be used elsewhere */

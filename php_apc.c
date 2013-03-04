@@ -63,9 +63,12 @@ PHP_FUNCTION(apc_inc);
 PHP_FUNCTION(apc_dec);
 PHP_FUNCTION(apc_cas);
 PHP_FUNCTION(apc_exists);
+
 #if !defined(_WIN32) && !defined(ZTS)
 PHP_FUNCTION(apc_store_async);
+PHP_FUNCTION(apc_add_async);
 #endif
+
 PHP_FUNCTION(apc_bin_dump);
 PHP_FUNCTION(apc_bin_load);
 PHP_FUNCTION(apc_bin_dumpfile);
@@ -81,7 +84,6 @@ apc_cache_t* apc_user_cache = NULL;
 static void php_apc_init_globals(zend_apcu_globals* apcu_globals TSRMLS_DC)
 {
     apcu_globals->initialized = 0;
-    apcu_globals->write_lock = 1;
     apcu_globals->slam_defense = 1;
 #ifdef MULTIPART_EVENT_FORMDATA
     apcu_globals->rfc1867 = 0;
@@ -208,7 +210,6 @@ STD_PHP_INI_ENTRY("apc.user_ttl",       "0",    PHP_INI_SYSTEM, OnUpdateLong,   
 STD_PHP_INI_ENTRY("apc.mmap_file_mask",  NULL,  PHP_INI_SYSTEM, OnUpdateString,         mmap_file_mask,   zend_apcu_globals, apcu_globals)
 #endif
 STD_PHP_INI_BOOLEAN("apc.enable_cli", "0",      PHP_INI_SYSTEM, OnUpdateBool,           enable_cli,       zend_apcu_globals, apcu_globals)
-STD_PHP_INI_BOOLEAN("apc.write_lock", "1",      PHP_INI_SYSTEM, OnUpdateBool,           write_lock,       zend_apcu_globals, apcu_globals)
 STD_PHP_INI_BOOLEAN("apc.slam_defense", "1",    PHP_INI_SYSTEM, OnUpdateBool,           slam_defense,     zend_apcu_globals, apcu_globals)
 #ifdef MULTIPART_EVENT_FORMDATA
 STD_PHP_INI_BOOLEAN("apc.rfc1867", "0", PHP_INI_SYSTEM, OnUpdateBool, rfc1867, zend_apcu_globals, apcu_globals)
@@ -538,7 +539,7 @@ void* _apc_async_store(void *data) {
 		
 		/* temporary measure */
 		apc_pool_destroy(insert->ctx.pool TSRMLS_CC);
-		apc_sma_free(insert);
+		apc_sma_free(insert TSRMLS_CC);
 
 		HANDLE_UNBLOCK_INTERRUPTIONS();
 	}
@@ -605,7 +606,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive, 
         while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
             zend_hash_get_current_key_ex(hash, &hkey, &hkey_len, &hkey_idx, 0, &hpos);
             if (hkey) {
-#if !defined(_WIN32) && !defined(ZTS)
+#if !defined(_WIN32)
                 if (async) {
 					if(!_apc_store_async(hkey, hkey_len, *hentry, (unsigned int)ttl, exclusive TSRMLS_CC)) {
 		                add_assoc_long_ex(return_value, hkey, hkey_len, -1);  /* -1: insertion error */
@@ -627,7 +628,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive, 
         return;
     } else if (Z_TYPE_P(key) == IS_STRING) {
         if (!val) RETURN_FALSE;
-#if !defined(_WIN32) && !defined(ZTS)
+#if !defined(_WIN32)
 		if (async) {
 			if(_apc_store_async(Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
             	RETURN_TRUE;
@@ -654,7 +655,7 @@ PHP_FUNCTION(apc_store) {
 }
 /* }}} */
 
-#if !defined(_WIN32) && !defined(ZTS)
+#if !defined(_WIN32)
 /* {{{ proto int apc_store_async(mixed key, mixed var [, long ttl]) 
 */
 PHP_FUNCTION(apc_store_async) {
@@ -666,6 +667,13 @@ PHP_FUNCTION(apc_store_async) {
  */
 PHP_FUNCTION(apc_add) {
     apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1, 0);
+}
+/* }}} */
+
+/* {{{ proto int apc_add_async(mixed key, mixed var [, long ttl ])
+ */
+PHP_FUNCTION(apc_add_async) {
+    apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1, 1);
 }
 /* }}} */
 
@@ -1282,6 +1290,7 @@ zend_function_entry apcu_functions[] = {
     PHP_FE(apc_exists,              arginfo_apc_exists)
 #if !defined(_WIN32) && !defined(ZTS)
 	PHP_FE(apc_store_async,			arginfo_apc_store)
+	PHP_FE(apc_add_async,			arginfo_apc_store)
 #endif
     PHP_FE(apc_bin_dump,            arginfo_apc_bin_dump)
     PHP_FE(apc_bin_load,            arginfo_apc_bin_load)

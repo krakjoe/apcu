@@ -77,7 +77,6 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
     /* module variables */
     zend_bool initialized;       /* true if module was initialized */
     zend_bool enable_cli;        /* Flag to override turning APC off for CLI */
-    zend_bool write_lock;        /* true for a global write lock */
     zend_bool slam_defense;      /* true for user cache slam defense */ 
 #ifdef MULTIPART_EVENT_FORMDATA
     zend_bool rfc1867;            /* Flag to enable rfc1867 handler */
