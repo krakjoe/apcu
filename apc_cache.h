@@ -45,6 +45,8 @@
 /* {{{ cache locking macros */
 #define CACHE_LOCK(cache)        WLOCK(&cache->header->lock)
 #define CACHE_UNLOCK(cache)      WUNLOCK(&cache->header->lock)
+#define CACHE_RLOCK(cache)       RLOCK(&cache->header->lock)
+#define CACHE_RUNLOCK(cache)     RUNLOCK(&cache->header->lock)
 /* }}} */
 
 /* {{{ used for slam defense to determine the context which created any key */

@@ -509,7 +509,7 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
         return NULL;
     }
 
-    RLOCK(&cache->header->lock);
+    CACHE_RLOCK(cache);
 
     h = string_nhash_8(strkey, keylen);
 
@@ -520,16 +520,12 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
             !memcmp((*slot)->key.identifier, strkey, keylen)) {
             /* Check to make sure this entry isn't expired by a hard TTL */
             if((*slot)->value->ttl && (time_t) ((*slot)->creation_time + (*slot)->value->ttl) < t) {
-                #if (USE_READ_LOCKS == 0) 
-                /* this is merely a memory-friendly optimization, if we do have a write-lock
-                 * might as well move this to the deleted_list right-away. Otherwise an insert
-                 * of the same key wil do it (or an expunge, *eventually*).
-                 */
-                remove_slot(cache, slot TSRMLS_CC);
-                #endif
+                remove_slot(
+					cache, slot TSRMLS_CC);
+
                 cache->header->num_misses++;
 
-                RUNLOCK(&cache->header->lock);
+                CACHE_RUNLOCK(cache);
                 return NULL;
             }
 
@@ -541,7 +537,9 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
             cache->header->num_hits++;
 
             value = (*slot)->value;
-            RUNLOCK(&cache->header->lock);
+
+            CACHE_RUNLOCK(cache);
+
             return (apc_cache_entry_t*)value;
         }
         slot = &(*slot)->next;
@@ -549,7 +547,7 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
  
     cache->header->num_misses++;
 	
-    RUNLOCK(&cache->header->lock);
+    CACHE_RUNLOCK(cache);
     return NULL;
 }
 /* }}} */
@@ -567,7 +565,7 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
         return NULL;
     }
 
-    RLOCK(&cache->header->lock);
+    CACHE_RLOCK(cache);
 
     h = string_nhash_8(strkey, keylen);
 
@@ -578,17 +576,18 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
             !memcmp((*slot)->key.identifier, strkey, keylen)) {
             /* Check to make sure this entry isn't expired by a hard TTL */
             if((*slot)->value->ttl && (time_t) ((*slot)->creation_time + (*slot)->value->ttl) < t) {
-                CACHE_UNLOCK(cache);
+                CACHE_RUNLOCK(cache);
                 return NULL;
             }
             /* Return the cache entry ptr */
             value = (*slot)->value;
-            RUNLOCK(&cache->header->lock);
+            CACHE_RUNLOCK(cache);
             return (apc_cache_entry_t*)value;
         }
         slot = &(*slot)->next;
     }
-    RUNLOCK(&cache->header->lock);
+
+    CACHE_RUNLOCK(cache);
     return NULL;
 }
 /* }}} */
@@ -1110,12 +1109,12 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 
     if(!cache) return NULL;
 
-    RLOCK(&cache->header->lock);
+    CACHE_RLOCK(cache);
 
     ALLOC_INIT_ZVAL(info);
 
     if(!info) {
-        RUNLOCK(&cache->header->lock);
+        CACHE_RUNLOCK(cache);
         return NULL;
     }
 
@@ -1177,7 +1176,7 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
         add_assoc_zval(info, "slot_distribution", slots);
     }
 
-    RUNLOCK(&cache->header->lock);
+    CACHE_RUNLOCK(cache);
     return info;
 }
 /* }}} */
@@ -1192,8 +1191,6 @@ zend_bool apc_cache_busy(apc_cache_t* cache)
 /* {{{ apc_cache_defense */
 zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 {
-    apc_cache_key_t *lastkey = &cache->header->lastkey;
-
 	/* in ZTS mode, we use the current TSRM context to determine the owner */
 #ifdef ZTS
 # define FROM_DIFFERENT_THREAD(k) ((key->owner = TSRMLS_C) != (k)->owner) 
@@ -1201,19 +1198,21 @@ zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 # define FROM_DIFFERENT_THREAD(k) ((key->owner = getpid()) != (k)->owner) 
 #endif
 
-    /* check the hash and identifier length match */
-    if( lastkey->h == key->h && 
-		lastkey->identifier_len == key->identifier_len) {
-		/* check the time ( last second considered slam ) and context */
-        if(lastkey->mtime == key->mtime && 
-		   FROM_DIFFERENT_THREAD(lastkey)) {
-            /* potential cache slam */
-            if(APCG(slam_defense)) {
-                apc_debug("Potential cache slam averted for key '%s'" TSRMLS_CC, key->identifier);
-                return 1;
-            }
-        }
-    }
+	if (APCG(slam_defense)) {
+		apc_cache_key_t *lastkey = &cache->header->lastkey;
+
+		/* check the hash and identifier length match */
+		if( lastkey->h == key->h && 
+			lastkey->identifier_len == key->identifier_len) {
+			/* check the time ( last second considered slam ) and context */
+		    if(lastkey->mtime == key->mtime && 
+			   FROM_DIFFERENT_THREAD(lastkey)) {
+		        /* potential cache slam */
+		        apc_debug("Potential cache slam averted for key '%s'" TSRMLS_CC, key->identifier);
+		        return 1;
+		    }
+		}
+	}
 
     return 0;
 }
