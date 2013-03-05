@@ -153,9 +153,9 @@ struct apc_cache_t {
  * is needed.  This helps in cleaning up the cache and ensuring that entries 
  * hit frequently stay cached and ones not hit very often eventually disappear.
  */
-extern apc_cache_t* apc_cache_create(int size_hint, 
-									 int gc_ttl,
-									 int ttl TSRMLS_DC);
+extern apc_cache_t* apc_cache_create(int size_hint,
+                                     int gc_ttl,
+                                     int ttl TSRMLS_DC);
 
 /*
  * apc_cache_destroy releases any OS resources associated with a cache object.
@@ -181,21 +181,21 @@ extern void apc_cache_clear(apc_cache_t* cache TSRMLS_DC);
  * value is a cache entry returned by apc_cache_make_entry (see below).
  */
 extern int apc_cache_insert(apc_cache_t* cache, 
-							apc_cache_key_t key,
+                            apc_cache_key_t key,
                             apc_cache_entry_t* value, 
-							apc_context_t* ctxt, 
-							time_t t, 
-							int exclusive TSRMLS_DC);
+                            apc_context_t* ctxt, 
+                            time_t t, 
+                            int exclusive TSRMLS_DC);
 
 /*
  * apc_cache_find searches for a cache entry by its hashed identifier,
  * and returns a pointer to the entry if found, NULL otherwise.
  *
  */
-extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, 
-										 char* strkey, 	
-										 int keylen, 
-										 time_t t TSRMLS_DC);
+extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
+                                         char* strkey, 	
+                                         int keylen, 
+                                         time_t t TSRMLS_DC);
 
 /*
  * apc_cache_exists searches for a cache entry by its hashed identifier,
@@ -204,25 +204,25 @@ extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
  * shared memory segment in any way.
  *
  */
-extern apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, 
-										   char* strkey, 
-										   int keylen, 
-										   time_t t TSRMLS_DC);
+extern apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache,
+                                           char* strkey, 
+                                           int keylen, 
+                                           time_t t TSRMLS_DC);
 
 /*
  * apc_cache_delete and apc_cache_delete finds an entry in the cache and deletes it.
  */
 extern int apc_cache_delete(apc_cache_t* cache,
-							char *strkey,
-							int keylen TSRMLS_DC);
+                            char *strkey,
+                            int keylen TSRMLS_DC);
 
 /* apc_cach_fetch_zval takes a zval in the cache and reconstructs a runtime
  * zval from it.
  *
  */
 zval* apc_cache_fetch_zval(zval* dst, 
-						   const zval* src, 
-						   apc_context_t* ctxt TSRMLS_DC);
+                           const zval* src, 
+                           apc_context_t* ctxt TSRMLS_DC);
 
 /*
  * apc_cache_release decrements the reference count associated with a cache
@@ -234,27 +234,27 @@ zval* apc_cache_fetch_zval(zval* dst,
  * entry is the cache entry whose ref count you want to decrement.
  */
 extern void apc_cache_release(apc_cache_t* cache,
-							  apc_cache_entry_t* entry TSRMLS_DC);
+                              apc_cache_entry_t* entry TSRMLS_DC);
 
 /*
 * apc_cache_make_key creates an apc_cache_key_t from an identifier, it's length and the current time
 */
 extern int apc_cache_make_key(apc_cache_key_t* key,
-							  char* identifier,
-							  int identifier_len TSRMLS_DC);
+                              char* identifier,
+                              int identifier_len TSRMLS_DC);
 
 /*
  * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
  */
 extern apc_cache_entry_t* apc_cache_make_entry(const zval *val,
-											   apc_context_t* ctxt,
-											   const unsigned int ttl TSRMLS_DC);
+                                               apc_context_t* ctxt,
+                                               const unsigned int ttl TSRMLS_DC);
 
 /*
  fetches information about the cache provided for userland status functions
 */
 extern zval* apc_cache_info(apc_cache_t* cache, 
-							zend_bool limited TSRMLS_DC);
+                            zend_bool limited TSRMLS_DC);
 
 /*
 * apc_cache_busy returns true while the cache is being cleaned
@@ -271,16 +271,16 @@ extern zend_bool apc_cache_busy(apc_cache_t* cache);
 * Note: this function sets the owner of key during execution
 */
 extern zend_bool apc_cache_defense(apc_cache_t* cache,
-								   apc_cache_key_t* key TSRMLS_DC);
+                                   apc_cache_key_t* key TSRMLS_DC);
 
 /* {{{ rfc1867 */
 typedef int (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void* data);
 
 extern int _apc_cache_update(apc_cache_t* cache, 	
-							 char *strkey, 
-							 int keylen,
+                             char *strkey, 
+                             int keylen,
                              apc_cache_updater_t updater, 
-							 void* data TSRMLS_DC);
+                             void* data TSRMLS_DC);
 /* }}} */
 #endif
 
