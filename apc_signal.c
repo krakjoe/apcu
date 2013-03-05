@@ -47,6 +47,9 @@ static apc_signal_info_t apc_signal_info = {0};
 static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*) TSRMLS_DC);
 static void apc_rehandle_signal(int signo, siginfo_t *siginfo, void *context);
 static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context);
+static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context);
+
+extern apc_cache_t* apc_user_cache;
 
 /* {{{ apc_core_unmap 
  *  Coredump signal handler, unmaps shm and calls previously installed handlers 
@@ -63,6 +66,16 @@ static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 #else
     raise(signo);
 #endif
+} /* }}} */
+
+/* {{{ apc_reload_cache */
+static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
+	TSRMLS_FETCH();
+	
+	if (apc_user_cache) {	
+		apc_cache_clear(
+			apc_user_cache TSRMLS_CC);
+	}
 } /* }}} */
 
 /* {{{ apc_rehandle_signal
@@ -169,6 +182,9 @@ void apc_set_signals(TSRMLS_D)
         apc_register_signal(SIGXFSZ, apc_core_unmap TSRMLS_CC);
 #endif
     }
+#ifdef SIGUSR1
+	apc_register_signal(SIGUSR1, apc_clear_cache TSRMLS_CC);
+#endif
 } /* }}} */
 
 /* {{{ apc_set_signals
