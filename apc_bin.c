@@ -30,12 +30,9 @@
 #include "apc_php.h"
 #include "apc_sma.h"
 #include "apc_pool.h"
+#include "apc_cache.h"
+
 #include "ext/standard/md5.h"
-
-extern apc_cache_t* apc_user_cache;
-
-extern int _apc_store(char *strkey, int strkey_len, const zval *val, const uint ttl, const int exclusive TSRMLS_DC); /* this is hacky */
-extern zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC);
 
 #define APC_BINDUMP_DEBUG 0
 
@@ -397,9 +394,9 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     for(i=0; i < apc_user_cache->num_slots; i++) {
         sp = apc_user_cache->slots[i];
         for(; sp != NULL; sp = sp->next) {
-            if(apc_bin_checkfilter(user_vars, sp->key.data.identifier, sp->key.data.identifier_len)) {
+            if(apc_bin_checkfilter(user_vars, sp->key.identifier, sp->key.identifier_len)) {
                 size += sizeof(apc_bd_entry_t*) + sizeof(apc_bd_entry_t);
-                size += sp->value->mem_size - (sizeof(apc_cache_entry_t) - sizeof(apc_cache_entry_value_t));
+                size += sp->value->mem_size - (sizeof(apc_cache_entry_t));
                 count++;
             }
         }
@@ -427,24 +424,21 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     for(i=0; i < apc_user_cache->num_slots; i++) {
         sp = apc_user_cache->slots[i];
         for(; sp != NULL; sp = sp->next) {
-            if(apc_bin_checkfilter(user_vars, sp->key.data.identifier, sp->key.data.identifier_len)) {
+            if(apc_bin_checkfilter(user_vars, sp->key.identifier, sp->key.identifier_len)) {
                 ep = &bd->entries[count];
-                ep->val.info = apc_bd_alloc(sp->value->data.info_len TSRMLS_CC);
-                memcpy(ep->val.info, sp->value->data.info, sp->value->data.info_len);
-                ep->val.info_len = sp->value->data.info_len;
-                if ((Z_TYPE_P(sp->value->data.val) == IS_ARRAY && APCG(serializer))
-                        || Z_TYPE_P(sp->value->data.val) == IS_OBJECT) {
+                if ((Z_TYPE_P(sp->value->val) == IS_ARRAY && APCG(serializer))
+                        || Z_TYPE_P(sp->value->val) == IS_OBJECT) {
                     /* avoiding hash copy, hack */
-                    uint type = Z_TYPE_P(sp->value->data.val);
-                    Z_TYPE_P(sp->value->data.val) = IS_STRING;
-                    ep->val.val = apc_copy_zval(NULL, sp->value->data.val, &ctxt TSRMLS_CC);
+                    uint type = Z_TYPE_P(sp->value->val);
+                    Z_TYPE_P(sp->value->val) = IS_STRING;
+                    ep->val.val = apc_copy_zval(NULL, sp->value->val, &ctxt TSRMLS_CC);
                     Z_TYPE_P(ep->val.val) = IS_OBJECT;
-                    sp->value->data.val->type = type;
-                } else if (Z_TYPE_P(sp->value->data.val) == IS_ARRAY && !APCG(serializer)) {
+                    sp->value->val->type = type;
+                } else if (Z_TYPE_P(sp->value->val) == IS_ARRAY && !APCG(serializer)) {
                     /* this is a little complicated, we have to unserialize it first, then serialize it again */
                     zval *garbage;
                     ctxt.copy = APC_COPY_OUT_USER;
-                    garbage = apc_copy_zval(NULL, sp->value->data.val, &ctxt TSRMLS_CC);
+                    garbage = apc_copy_zval(NULL, sp->value->val, &ctxt TSRMLS_CC);
                     APCG(serializer) = apc_find_serializer("php" TSRMLS_CC);
                     ctxt.copy = APC_COPY_IN_USER;
                     ep->val.val = apc_copy_zval(NULL, garbage, &ctxt TSRMLS_CC);
@@ -453,12 +447,11 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
                     APCG(serializer) = NULL;
                     ctxt.copy = APC_COPY_OTHER;
                 } else {
-                    ep->val.val = apc_copy_zval(NULL, sp->value->data.val, &ctxt TSRMLS_CC);
+                    ep->val.val = apc_copy_zval(NULL, sp->value->val, &ctxt TSRMLS_CC);
                 }
-                ep->val.ttl = sp->value->data.ttl;
+                ep->val.ttl = sp->value->ttl;
 
                 /* swizzle pointers */
-                apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.info);
                 zend_hash_clean(&APCG(copied_zvals));
                 if (ep->val.val->type == IS_OBJECT) {
                     apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.val->value.str.val);
@@ -529,7 +522,8 @@ int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
                 break;
             }
             ctxt.copy = APC_COPY_IN_USER;
-            _apc_store(ep->val.info, ep->val.info_len, data, ep->val.ttl, 0 TSRMLS_CC);
+			/* TODO no info/info_len */
+            //_apc_store(ep->val.key->identifier, ep->val->key->identifier_len, data, ep->val.ttl, 0 TSRMLS_CC);
             if (use_copy) {
                 zval_ptr_dtor(&data);
             }

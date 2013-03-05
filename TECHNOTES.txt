@@ -275,13 +275,8 @@ form of a quick-start guide to start hacking on APC.
    as a char *.  So the key is actually a union that looks like this:
 
      typedef union _apc_cache_key_data_t {
-         struct {
-             int device;             /* the filesystem device */
-             int inode;              /* the filesystem inode */
-         } file;
-         struct {
-             char *identifier;
-         } user;
+         char *identifier;
+	 	 int identifier_len;
      } apc_cache_key_data_t;
 
      struct apc_cache_key_t {
@@ -289,8 +284,8 @@ form of a quick-start guide to start hacking on APC.
          int mtime;                  /* the mtime of this cached entry */
      };   
 
-   And we have two sets of functions to do inserts and finds.  apc_cache_user_find() 
-   and apc_cache_user_insert() operate on the user cache.
+   And we have two sets of functions to do inserts and finds.  apc_cache_find() 
+   and apc_cache_insert() operate on the user cache.
 
    Ok, on to the actual cache entry.  Again, because we have two kinds of caches, we
    also have the corresponding two kinds of cache entries described by this union:

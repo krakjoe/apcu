@@ -34,7 +34,7 @@ typedef struct _apc_bd_entry_t {
     unsigned char type;
     uint num_functions;
     uint num_classes;
-    apc_cache_entry_value_t val;
+    apc_cache_entry_t val;
     unsigned char file_md5[16]; /* only sensible for file entries */
 } apc_bd_entry_t;
 

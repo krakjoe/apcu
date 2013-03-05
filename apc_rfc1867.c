@@ -41,7 +41,7 @@ extern int _apc_update(char *strkey, int strkey_len, apc_cache_updater_t updater
 
 static int update_bytes_processed(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
     int *bytes_ptr = (int*)data;
-    zval* val = entry->data.val;
+    zval* val = entry->val;
 
     if(Z_TYPE_P(val) == IS_ARRAY) {
         HashTable *ht = val->value.ht;

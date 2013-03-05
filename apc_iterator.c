@@ -41,8 +41,8 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, slo
     array_init(item->value);
 
 	item->key = estrndup(
-		slot->key.data.identifier, slot->key.data.identifier_len);
-	item->key_len = slot->key.data.identifier_len;	
+		slot->key.identifier, slot->key.identifier_len);
+	item->key_len = slot->key.identifier_len;	
 	
     if (APC_ITER_KEY & iterator->format) {
         add_assoc_stringl(item->value, "key", item->key, (item->key_len - 1), 1);
@@ -52,7 +52,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, slo
         ctxt.copy = APC_COPY_OUT_USER;
 
         MAKE_STD_ZVAL(zvalue);
-        apc_cache_fetch_zval(zvalue, slot->value->data.val, &ctxt TSRMLS_CC);
+        apc_cache_fetch_zval(zvalue, slot->value->val, &ctxt TSRMLS_CC);
         apc_pool_destroy(ctxt.pool TSRMLS_CC);
         add_assoc_zval(item->value, "value", zvalue);
     }
@@ -78,7 +78,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, slo
         add_assoc_long(item->value, "mem_size", slot->value->mem_size);
     }
     if (APC_ITER_TTL & iterator->format) {
-        add_assoc_long(item->value, "ttl", slot->value->data.ttl);
+        add_assoc_long(item->value, "ttl", slot->value->ttl);
     }
 
     return item;
@@ -171,8 +171,8 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, slot_t **slot) {
     int fname_key_len = 0;
     int rval = 1;
 
-    key = (char*)(*slot)->key.data.identifier;
-    key_len = (*slot)->key.data.identifier_len;
+    key = (char*)(*slot)->key.identifier;
+    key_len = (*slot)->key.identifier_len;
 
 #ifdef ITERATOR_PCRE
     if (iterator->regex) {
@@ -198,8 +198,8 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, slot_t **slot) {
 /* {{{ apc_iterator_check_expiry */
 static int apc_iterator_check_expiry(apc_cache_t* cache, slot_t **slot, time_t t)
 {
-    if((*slot)->value->data.ttl) {
-        if((time_t) ((*slot)->creation_time + (*slot)->value->data.ttl) < t) {
+    if((*slot)->value->ttl) {
+        if((time_t) ((*slot)->creation_time + (*slot)->value->ttl) < t) {
             return 0;
         }
     } else if(cache->ttl) {
@@ -627,7 +627,7 @@ int apc_iterator_delete(zval *zobj TSRMLS_DC) {
     while (iterator->fetch(iterator TSRMLS_CC)) {
         while (iterator->stack_idx < apc_stack_size(iterator->stack)) {
             item = apc_stack_get(iterator->stack, iterator->stack_idx++);
-            apc_cache_user_delete(
+            apc_cache_delete(
 				apc_user_cache, item->key, item->key_len TSRMLS_CC);
         }
     }

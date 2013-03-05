@@ -454,7 +454,7 @@ int _apc_update(char *strkey, int strkey_len, apc_cache_updater_t updater, void*
 
     HANDLE_BLOCK_INTERRUPTIONS();
     
-    if (!_apc_cache_user_update(apc_user_cache, strkey, strkey_len + 1, updater, data TSRMLS_CC)) {
+    if (!_apc_cache_update(apc_user_cache, strkey, strkey_len + 1, updater, data TSRMLS_CC)) {
         HANDLE_UNBLOCK_INTERRUPTIONS();
         return 0;
     }
@@ -472,8 +472,6 @@ int _apc_store(char *strkey, int strkey_len, const zval *val, const unsigned int
     time_t t;
     apc_context_t ctxt={0,};
     int ret = 1;
-
-    t = apc_time();
 
     if(!APCG(enabled)) return 0;
 
@@ -494,19 +492,19 @@ int _apc_store(char *strkey, int strkey_len, const zval *val, const unsigned int
     ctxt.copy = APC_COPY_IN_USER;
     ctxt.force_update = 0;
 
-    if (!apc_cache_make_user_key(&key, strkey, strkey_len, t)) {
+    if (!apc_cache_make_key(&key, strkey, strkey_len TSRMLS_CC)) {
         goto freepool;
     }
 
-    if (apc_cache_is_last_key(apc_user_cache, &key, t TSRMLS_CC)) {
+    if (apc_cache_defense(apc_user_cache, &key TSRMLS_CC)) {
         goto freepool;
     }
 
-    if (!(entry = apc_cache_make_user_entry(strkey, strkey_len, val, &ctxt, ttl TSRMLS_CC))) {
+    if (!(entry = apc_cache_make_entry(val, &ctxt, ttl TSRMLS_CC))) {
         goto freepool;
     }
 
-    if (!apc_cache_user_insert(apc_user_cache, key, entry, &ctxt, t, exclusive TSRMLS_CC)) {
+    if (!apc_cache_insert(apc_user_cache, key, entry, &ctxt, t, exclusive TSRMLS_CC)) {
 freepool:
         apc_pool_destroy(ctxt.pool TSRMLS_CC);
         ret = 0;
@@ -522,8 +520,6 @@ nocache:
 #if !defined(_WIN32) && !defined(ZTS)
 /* {{{ _apc_async_store(apc_async_insert_t *data)
  Avoids incurring cache locking in the thread calling store by making the insert in a separate context to the generation of key/entry
- This may develop into more of a worker kind of functionality, right now, thread per set ...
- This (or the locks it manipulates) is buggy, causes apc_cache_user_find to deadlock
 */
 void* _apc_async_store(void *data) {
 	/* grab the insert data */
@@ -533,10 +529,10 @@ void* _apc_async_store(void *data) {
 		HANDLE_BLOCK_INTERRUPTIONS();
 
 		/* make the insert */
-		if (!apc_cache_user_insert(insert->cache, insert->key, insert->entry, &insert->ctx, insert->ctime, insert->exclusive TSRMLS_CC)) {
+		if (!apc_cache_insert(insert->cache, insert->key, insert->entry, &insert->ctx, insert->ctime, insert->exclusive TSRMLS_CC)) {
 			/* do something insertion failed */
 		}
-		
+
 		/* temporary measure */
 		apc_pool_destroy(insert->ctx.pool TSRMLS_CC);
 		apc_sma_free(insert TSRMLS_CC);
@@ -569,7 +565,7 @@ int _apc_store_async(char *strkey, int strkey_len, const zval *val, const unsign
 				ret = 0;
 			}
 		} else {
-			ret = 0;		
+			ret = 0;
 		}
 	}
 	HANDLE_UNBLOCK_INTERRUPTIONS();
@@ -606,7 +602,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive, 
         while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
             zend_hash_get_current_key_ex(hash, &hkey, &hkey_len, &hkey_idx, 0, &hpos);
             if (hkey) {
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(ZTS)
                 if (async) {
 					if(!_apc_store_async(hkey, hkey_len, *hentry, (unsigned int)ttl, exclusive TSRMLS_CC)) {
 		                add_assoc_long_ex(return_value, hkey, hkey_len, -1);  /* -1: insertion error */
@@ -628,7 +624,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive, 
         return;
     } else if (Z_TYPE_P(key) == IS_STRING) {
         if (!val) RETURN_FALSE;
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(ZTS)
 		if (async) {
 			if(_apc_store_async(Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
             	RETURN_TRUE;
@@ -655,7 +651,7 @@ PHP_FUNCTION(apc_store) {
 }
 /* }}} */
 
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(ZTS)
 /* {{{ proto int apc_store_async(mixed key, mixed var [, long ttl]) 
 */
 PHP_FUNCTION(apc_store_async) {
@@ -670,12 +666,14 @@ PHP_FUNCTION(apc_add) {
 }
 /* }}} */
 
+#if !defined(_WIN32) && !defined(ZTS)
 /* {{{ proto int apc_add_async(mixed key, mixed var [, long ttl ])
  */
 PHP_FUNCTION(apc_add_async) {
     apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1, 1);
 }
 /* }}} */
+#endif
 
 /* {{{ inc_updater */
 
@@ -688,7 +686,7 @@ static int inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data)
 
     struct _inc_update_args *args = (struct _inc_update_args*) data;
     
-    zval* val = entry->data.val;
+    zval* val = entry->val;
 
     if(Z_TYPE_P(val) == IS_LONG) {
         Z_LVAL_P(val) += args->step;
@@ -761,7 +759,7 @@ static int cas_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data)
     long* vals = ((long*)data);
     long old = vals[0];
     long new = vals[1];
-    zval* val = entry->data.val;
+    zval* val = entry->val;
 
     if(Z_TYPE_P(val) == IS_LONG) {
         if(Z_LVAL_P(val) == old) {
@@ -838,10 +836,10 @@ PHP_FUNCTION(apc_fetch) {
         strkey = Z_STRVAL_P(key);
         strkey_len = Z_STRLEN_P(key);
         if(!strkey_len) RETURN_FALSE;
-        entry = apc_cache_user_find(apc_user_cache, strkey, (strkey_len + 1), t TSRMLS_CC);
+        entry = apc_cache_find(apc_user_cache, strkey, (strkey_len + 1), t TSRMLS_CC);
         if(entry) {
             /* deep-copy returned shm zval to emalloc'ed return_value */
-            apc_cache_fetch_zval(return_value, entry->data.val, &ctxt TSRMLS_CC);
+            apc_cache_fetch_zval(return_value, entry->val, &ctxt TSRMLS_CC);
             apc_cache_release(apc_user_cache, entry TSRMLS_CC);
         } else {
             goto freepool;
@@ -856,11 +854,11 @@ PHP_FUNCTION(apc_fetch) {
                 apc_warning("apc_fetch() expects a string or array of strings." TSRMLS_CC);
                 goto freepool;
             }
-            entry = apc_cache_user_find(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1), t TSRMLS_CC);
+            entry = apc_cache_find(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1), t TSRMLS_CC);
             if(entry) {
                 /* deep-copy returned shm zval to emalloc'ed return_value */
                 MAKE_STD_ZVAL(result_entry);
-                apc_cache_fetch_zval(result_entry, entry->data.val, &ctxt TSRMLS_CC);
+                apc_cache_fetch_zval(result_entry, entry->val, &ctxt TSRMLS_CC);
                 apc_cache_release(apc_user_cache, entry TSRMLS_CC);
                 zend_hash_add(Z_ARRVAL_P(result), Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) +1, &result_entry, sizeof(zval*), NULL);
             } /* don't set values we didn't find */
@@ -913,7 +911,7 @@ PHP_FUNCTION(apc_exists) {
         strkey = Z_STRVAL_P(key);
         strkey_len = Z_STRLEN_P(key);
         if(!strkey_len) RETURN_FALSE;
-        entry = apc_cache_user_exists(apc_user_cache, strkey, strkey_len + 1, t TSRMLS_CC);
+        entry = apc_cache_exists(apc_user_cache, strkey, strkey_len + 1, t TSRMLS_CC);
         if(entry) {
             RETURN_TRUE;
         }
@@ -928,7 +926,7 @@ PHP_FUNCTION(apc_exists) {
                 RETURN_FALSE;
             }
 
-            entry = apc_cache_user_exists(apc_user_cache, Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) + 1, t TSRMLS_CC);
+            entry = apc_cache_exists(apc_user_cache, Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) + 1, t TSRMLS_CC);
             if(entry) {
                 MAKE_STD_ZVAL(result_entry);
                 ZVAL_BOOL(result_entry, 1);
@@ -958,7 +956,7 @@ PHP_FUNCTION(apc_delete) {
 
     if (Z_TYPE_P(keys) == IS_STRING) {
         if (!Z_STRLEN_P(keys)) RETURN_FALSE;
-        if(apc_cache_user_delete(apc_user_cache, Z_STRVAL_P(keys), (Z_STRLEN_P(keys) + 1) TSRMLS_CC)) {
+        if(apc_cache_delete(apc_user_cache, Z_STRVAL_P(keys), (Z_STRLEN_P(keys) + 1) TSRMLS_CC)) {
             RETURN_TRUE;
         } else {
             RETURN_FALSE;
@@ -974,7 +972,7 @@ PHP_FUNCTION(apc_delete) {
                 apc_warning("apc_delete() expects a string, array of strings, or APCIterator instance." TSRMLS_CC);
                 add_next_index_zval(return_value, *hentry);
                 Z_ADDREF_PP(hentry);
-            } else if(apc_cache_user_delete(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1) TSRMLS_CC) != 1) {
+            } else if(apc_cache_delete(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1) TSRMLS_CC) != 1) {
                 add_next_index_zval(return_value, *hentry);
                 Z_ADDREF_PP(hentry);
             }
