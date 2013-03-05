@@ -57,20 +57,35 @@ typedef enum {
 #define APC_POOL_HAS_REDZONES(pool) (0)
 #endif
 
-
 typedef struct _apc_pool apc_pool;
 
+/* 
+ pcleanup is called during apc_pool_destroy before free
+*/
 typedef void  (*apc_pcleanup_t)(apc_pool *pool TSRMLS_DC);
-
+/*
+ palloc is called to allocate memory from the pool
+*/
 typedef void* (*apc_palloc_t)(apc_pool *pool, size_t size TSRMLS_DC);
+/*
+ pfree is called to free memory from the pool, and during apc_pool_destroy
+*/
 typedef void  (*apc_pfree_t) (apc_pool *pool, void* p TSRMLS_DC);
-
+/*
+ protect is called to protect a block allocated from the pool
+*/
 typedef void* (*apc_protect_t)  (void *p);
+/*
+ unprotect is called to unprotect a block allocated from the pool
+*/
 typedef void* (*apc_unprotect_t)(void *p);
 
+/* {{{ structure definition: apc_pool */ 
 struct _apc_pool {
+	/* denotes the size and debug flags for a pool */
     apc_pool_type   type;
-
+	
+	/* handler functions */
     apc_malloc_t    allocate;
     apc_free_t      deallocate;
 
@@ -82,33 +97,57 @@ struct _apc_pool {
 
     apc_pcleanup_t  cleanup;
 
+	/* total */
     size_t          size;
+	/* remaining */
     size_t          used;
 
     /* apc_realpool and apc_unpool add more here */
-};
+}; /* }}} */
 
-#define apc_pool_alloc(pool, size)  ((void *) pool->palloc(pool, size TSRMLS_CC))
-#define apc_pool_free(pool, ptr) 	((void)   pool->pfree (pool, ptr TSRMLS_CC))
-
-#define apc_pool_protect(pool, ptr)  (pool->protect ? \
-										(pool)->protect((ptr)) : (ptr))
-
-#define apc_pool_unprotect(pool, ptr)  (pool->unprotect ? \
-											(pool)->unprotect((ptr)) : (ptr))
-
+/*
+ performs alignment checking on pool internals
+*/
 extern void apc_pool_init();
 
+/*
+ apc_pool_create creates a pool of the specified type, setting the handlers passed on the pool, returns apc_pool*
+*/
 extern apc_pool* apc_pool_create(apc_pool_type pool_type,
-                            apc_malloc_t allocate,
-                            apc_free_t deallocate,
-							apc_protect_t protect,
-							apc_unprotect_t unprotect
-							TSRMLS_DC);
+                                 apc_malloc_t allocate,
+                                 apc_free_t deallocate,
+                                 apc_protect_t protect,
+                                 apc_unprotect_t unprotect TSRMLS_DC);
 
+/* apc_pool_alloc performs alloc, using the handler provided to apc_pool_create */
+#define apc_pool_alloc(pool, size) ((void *) pool->palloc(pool, size TSRMLS_CC))
+
+/* apc_pool_alloc performs free, using the handler provided to apc_pool_create */
+#define apc_pool_free(pool, ptr) ((void)   pool->pfree (pool, ptr TSRMLS_CC))
+
+/* apc_pool_alloc performs mprotect, using the handler provided to apc_pool_create, where applicable */
+#define apc_pool_protect(pool, ptr) (pool->protect ? (pool)->protect((ptr)) : (ptr))
+
+/* apc_pool_alloc performs munprotect, using the handler provided to apc_pool_create, where applicable */
+#define apc_pool_unprotect(pool, ptr) (pool->unprotect ? (pool)->unprotect((ptr)) : (ptr))
+
+/*
+ apc_pool_destroy first calls apc_cleanup_t set during apc_pool_create, then apc_free_t
+*/
 extern void apc_pool_destroy(apc_pool* pool TSRMLS_DC);
 
-extern void* apc_pmemcpy(const void* p, size_t n, apc_pool* pool TSRMLS_DC);
-extern void* apc_pstrdup(const char* s, apc_pool* pool TSRMLS_DC);
+/*
+ apc_pmemcpy performs memcpy using resources provided by pool
+*/
+extern void* apc_pmemcpy(const void* p, 
+                         size_t n, 
+                         apc_pool* pool TSRMLS_DC);
+
+/*
+ apc_pstrdup performs strdup using resources provided by pool
+*/
+extern void* apc_pstrdup(const char* s, 
+                         apc_pool* pool TSRMLS_DC);
 
 #endif
+

@@ -31,8 +31,10 @@
 #include "apc_pool.h"
 #include <assert.h>
 
-#ifdef HAVE_VALGRIND_MEMCHECK_H
-#include <valgrind/memcheck.h>
+#ifdef APC_POOL_DEBUG
+# ifdef HAVE_VALGRIND_MEMCHECK_H
+#  include <valgrind/memcheck.h>
+# endif
 #endif
 
 /* {{{ forward references */
@@ -42,19 +44,16 @@ static apc_pool* apc_realpool_create(apc_pool_type type, apc_malloc_t, apc_free_
 
 /* {{{ apc_pool_create */
 apc_pool* apc_pool_create(apc_pool_type pool_type, 
-                            apc_malloc_t allocate, 
-                            apc_free_t deallocate,
-                            apc_protect_t protect,
-                            apc_unprotect_t unprotect
-			    TSRMLS_DC)
+                          apc_malloc_t allocate, 
+                          apc_free_t deallocate,
+                          apc_protect_t protect,
+                          apc_unprotect_t unprotect TSRMLS_DC) 
 {
     if(pool_type == APC_UNPOOL) {
-        return apc_unpool_create(pool_type, allocate, deallocate,
-                                            protect, unprotect TSRMLS_CC);
+        return apc_unpool_create(pool_type, allocate, deallocate, protect, unprotect TSRMLS_CC);
     }
 
-    return apc_realpool_create(pool_type, allocate, deallocate, 
-                                          protect,  unprotect TSRMLS_CC);
+    return apc_realpool_create(pool_type, allocate, deallocate, protect,  unprotect TSRMLS_CC);
 }
 /* }}} */
 
@@ -78,7 +77,8 @@ struct _apc_unpool {
     /* apc_unpool is a lie! */
 };
 
-static void* apc_unpool_alloc(apc_pool* pool, size_t size TSRMLS_DC) 
+static void* apc_unpool_alloc(apc_pool* pool, 
+                              size_t size TSRMLS_DC) 
 {
     apc_unpool *upool = (apc_unpool*)pool;
 
@@ -90,7 +90,8 @@ static void* apc_unpool_alloc(apc_pool* pool, size_t size TSRMLS_DC)
     return allocate(size TSRMLS_CC);
 }
 
-static void apc_unpool_free(apc_pool* pool, void *ptr TSRMLS_DC)
+static void apc_unpool_free(apc_pool* pool, 
+                            void *ptr TSRMLS_DC)
 {
     apc_unpool *upool = (apc_unpool*) pool;
 
@@ -104,9 +105,10 @@ static void apc_unpool_cleanup(apc_pool* pool TSRMLS_DC)
 }
 
 static apc_pool* apc_unpool_create(apc_pool_type type, 
-                    apc_malloc_t allocate, apc_free_t deallocate,
-                    apc_protect_t protect, apc_unprotect_t unprotect
-		    TSRMLS_DC)
+                                   apc_malloc_t allocate, 
+                                   apc_free_t deallocate,
+                                   apc_protect_t protect, 
+                                   apc_unprotect_t unprotect TSRMLS_DC)
 {
     apc_unpool* upool = allocate(sizeof(apc_unpool) TSRMLS_CC);
 
@@ -206,7 +208,8 @@ static const unsigned char decaff[] =  {
 } while(0)
 
 /* {{{ create_pool_block */
-static pool_block* create_pool_block(apc_realpool *rpool, size_t size TSRMLS_DC)
+static pool_block* create_pool_block(apc_realpool *rpool, 
+                                     size_t size TSRMLS_DC)
 {
     apc_malloc_t allocate = rpool->parent.allocate;
 
@@ -229,7 +232,8 @@ static pool_block* create_pool_block(apc_realpool *rpool, size_t size TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_realpool_alloc */
-static void* apc_realpool_alloc(apc_pool *pool, size_t size TSRMLS_DC)
+static void* apc_realpool_alloc(apc_pool *pool, 
+                                size_t size TSRMLS_DC)
 {
     apc_realpool *rpool = (apc_realpool*)pool;
     unsigned char *p = NULL;
@@ -377,11 +381,10 @@ static APC_USED int apc_realpool_check_integrity(apc_realpool *rpool)
 
 /* {{{ apc_realpool_free */
 /*
- * free does not do anything other than
- * check for redzone values when free'ing
- * data areas.
+ * free does not do anything
  */
-static void apc_realpool_free(apc_pool *pool, void *p TSRMLS_DC)
+static void apc_realpool_free(apc_pool *pool, 
+                              void *p TSRMLS_DC)
 {
 }
 /* }}} */
@@ -407,9 +410,11 @@ static void apc_realpool_cleanup(apc_pool *pool TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_realpool_create */
-static apc_pool* apc_realpool_create(apc_pool_type type, apc_malloc_t allocate, apc_free_t deallocate, 
-                                                         apc_protect_t protect, apc_unprotect_t unprotect
-                                                         TSRMLS_DC)
+static apc_pool* apc_realpool_create(apc_pool_type type, 
+                                     apc_malloc_t allocate, 
+                                     apc_free_t deallocate, 
+                                     apc_protect_t protect, 
+                                     apc_unprotect_t unprotect TSRMLS_DC)
 {
 
     size_t dsize = 0;
@@ -480,14 +485,17 @@ void apc_pool_init()
 /* }}} */
 
 /* {{{ apc_pstrdup */
-void* APC_ALLOC apc_pstrdup(const char* s, apc_pool* pool TSRMLS_DC)
+void* APC_ALLOC apc_pstrdup(const char* s, 
+                            apc_pool* pool TSRMLS_DC)
 {
     return s != NULL ? apc_pmemcpy(s, (strlen(s) + 1), pool TSRMLS_CC) : NULL;
 }
 /* }}} */
 
 /* {{{ apc_pmemcpy */
-void* APC_ALLOC apc_pmemcpy(const void* p, size_t n, apc_pool* pool TSRMLS_DC)
+void* APC_ALLOC apc_pmemcpy(const void* p, 
+                            size_t n, 
+                            apc_pool* pool TSRMLS_DC)
 {
     void* q;
 
