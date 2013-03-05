@@ -776,7 +776,7 @@ EOB;
 
 	echo <<<EOB
 		<tr class=tr-0><td class=td-0>Shared Memory</td><td>{$mem['num_seg']} Segment(s) with $seg_size 
-    <br/> ({$cache['memory_type']} memory, {$cache['locking_type']} locking)
+    <br/> ({$cache['memory_type']})
     </td></tr>
 EOB;
 	echo   '<tr class=tr-1><td class=td-0>Start Time</td><td>',date(DATE_FORMAT,$cache['start_time']),'</td></tr>';
@@ -787,17 +787,18 @@ EOB;
 		</div>
 
 		<div class="info div1"><h2>Cache Information</h2>
-		<table cellspacing=0><tbody>
-    <tr class=tr-0><td class=td-0>Cached Variables</td><td>$number_vars ($size_vars)</td></tr>
-		<tr class=tr-1><td class=td-0>Hits</td><td>{$cache['num_hits']}</td></tr>
-		<tr class=tr-0><td class=td-0>Misses</td><td>{$cache['num_misses']}</td></tr>
-		<tr class=tr-1><td class=td-0>Request Rate (hits, misses)</td><td>$req_rate_user cache requests/second</td></tr>
-		<tr class=tr-0><td class=td-0>Hit Rate</td><td>$hit_rate_user cache requests/second</td></tr>
-		<tr class=tr-1><td class=td-0>Miss Rate</td><td>$miss_rate_user cache requests/second</td></tr>
-		<tr class=tr-0><td class=td-0>Insert Rate</td><td>$insert_rate_user cache requests/second</td></tr>
-		<tr class=tr-1><td class=td-0>Cache full count</td><td>{$cache['expunges']}</td></tr>
-
-		</tbody></table>
+		<table cellspacing=0>
+		<tbody>
+    		<tr class=tr-0><td class=td-0>Cached Variables</td><td>$number_vars/{$cache['num_slots']} ($size_vars)</td></tr>
+			<tr class=tr-1><td class=td-0>Hits</td><td>{$cache['num_hits']}</td></tr>
+			<tr class=tr-0><td class=td-0>Misses</td><td>{$cache['num_misses']}</td></tr>
+			<tr class=tr-1><td class=td-0>Request Rate (hits, misses)</td><td>$req_rate_user cache requests/second</td></tr>
+			<tr class=tr-0><td class=td-0>Hit Rate</td><td>$hit_rate_user cache requests/second</td></tr>
+			<tr class=tr-1><td class=td-0>Miss Rate</td><td>$miss_rate_user cache requests/second</td></tr>
+			<tr class=tr-0><td class=td-0>Insert Rate</td><td>$insert_rate_user cache requests/second</td></tr>
+			<tr class=tr-1><td class=td-0>Cache full count</td><td>{$cache['expunges']}</td></tr>
+		</tbody>
+		</table>
 		</div>
 
 		<div class="info div2"><h2>Runtime Settings</h2><table cellspacing=0><tbody>
