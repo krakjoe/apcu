@@ -86,25 +86,10 @@ struct slot_t {
 };
 /* }}} */
 
-/* {{{ define async signal */
-#if !defined(_WIN32) && !defined(ZTS)
-/* {{{ struct definition: apc_async_signal_t */
-typedef struct _apc_async_signal {
-	apc_lock_t 		lock;
-	pthread_cond_t  wait;
-	zend_llist      inserts;
-	zend_bool       ready;
-	zend_bool       working;
-} apc_async_signal_t; /* }}} */
-#endif /* }}} */
-
 /* {{{ struct definition: cache_header_t
    Any values that must be shared among processes should go in here. */
 typedef struct _cache_header_t {
     apc_lock_t lock;            /* APC lock */
-#if !defined(_WIN32) && !defined(ZTS)
-	apc_async_signal_t async;          /* APC async */
-#endif
     unsigned long num_hits;     /* total successful hits in cache */
     unsigned long num_misses;   /* total unsuccessful hits in cache */
     unsigned long num_inserts;  /* total successful inserts in cache */
@@ -130,10 +115,6 @@ struct apc_cache_t {
     int ttl;                      /* if slot is needed and entry's access time is older than this ttl, remove it */
     apc_expunge_cb_t expunge_cb;  /* cache specific expunge callback to free up sma memory */
 };
-
-#if !defined(_WIN32) && !defined(ZTS)
-# include "apc_async.h"
-#endif
 /* }}} */
 
 /*

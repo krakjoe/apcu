@@ -98,7 +98,7 @@ if test "$PHP_APCU" != "no"; then
   		[AC_DEFINE([HAVE_VALGRIND_MEMCHECK_H],1, [enable valgrind memchecks])])
   ])
 
-  apc_sources="apc.c apc_lock.c apc_async.c php_apc.c \
+  apc_sources="apc.c apc_lock.c php_apc.c \
                apc_cache.c \
                apc_debug.c \
                apc_main.c \

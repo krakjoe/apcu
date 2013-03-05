@@ -42,8 +42,6 @@
 typedef void* (*ht_copy_fun_t)(void*, void*, apc_context_t* TSRMLS_DC);
 typedef int (*ht_check_copy_fun_t)(Bucket*, va_list);
 
-/* TODO: rehash when load factor exceeds threshold */
-
 #define CHECK(p) { if ((p) == NULL) return NULL; }
 
 static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC);
@@ -261,10 +259,6 @@ apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl TSRMLS_DC)
     cache->ttl = ttl;
 
     CREATE_LOCK(&cache->header->lock);
-	
-#if !defined(_WIN32) && !defined(ZTS)
-	apc_async_signal_init(&cache->header->async TSRMLS_CC);
-#endif	
 	
     memset(cache->slots, 0, sizeof(slot_t*)*num_slots);
     cache->expunge_cb = apc_cache_expunge;
