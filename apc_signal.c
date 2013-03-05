@@ -147,44 +147,46 @@ static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*
  *  Install our signal handlers */
 void apc_set_signals(TSRMLS_D) 
 {
-    if (APCG(coredump_unmap) && apc_signal_info.installed == 0) {
-        /* ISO C standard signals that coredump */
-        apc_register_signal(SIGSEGV, apc_core_unmap TSRMLS_CC);
-        apc_register_signal(SIGABRT, apc_core_unmap TSRMLS_CC);
-        apc_register_signal(SIGFPE, apc_core_unmap TSRMLS_CC);
-        apc_register_signal(SIGILL, apc_core_unmap TSRMLS_CC);
-        /* extended signals that coredump */
+	if (apc_signal_info.installed == 0) {
+#ifdef SIGUSR1
+		apc_register_signal(SIGUSR1, apc_clear_cache TSRMLS_CC);
+#endif
+		if (APCG(coredump_unmap)) {
+		    /* ISO C standard signals that coredump */
+		    apc_register_signal(SIGSEGV, apc_core_unmap TSRMLS_CC);
+		    apc_register_signal(SIGABRT, apc_core_unmap TSRMLS_CC);
+		    apc_register_signal(SIGFPE, apc_core_unmap TSRMLS_CC);
+		    apc_register_signal(SIGILL, apc_core_unmap TSRMLS_CC);
+/* extended signals that coredump */
 #ifdef SIGBUS
-        apc_register_signal(SIGBUS, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGBUS, apc_core_unmap TSRMLS_CC);
 #endif
 #ifdef SIGABORT
-        apc_register_signal(SIGABORT, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGABORT, apc_core_unmap TSRMLS_CC);
 #endif
 #ifdef SIGEMT
-        apc_register_signal(SIGEMT, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGEMT, apc_core_unmap TSRMLS_CC);
 #endif
 #ifdef SIGIOT
-        apc_register_signal(SIGIOT, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGIOT, apc_core_unmap TSRMLS_CC);
 #endif
 #ifdef SIGQUIT
-        apc_register_signal(SIGQUIT, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGQUIT, apc_core_unmap TSRMLS_CC);
 #endif
 #ifdef SIGSYS
-        apc_register_signal(SIGSYS, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGSYS, apc_core_unmap TSRMLS_CC);
 #endif
 #ifdef SIGTRAP
-        apc_register_signal(SIGTRAP, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGTRAP, apc_core_unmap TSRMLS_CC);
 #endif
 #ifdef SIGXCPU
-        apc_register_signal(SIGXCPU, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGXCPU, apc_core_unmap TSRMLS_CC);
 #endif
 #ifdef SIGXFSZ
-        apc_register_signal(SIGXFSZ, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGXFSZ, apc_core_unmap TSRMLS_CC);
 #endif
-    }
-#ifdef SIGUSR1
-	apc_register_signal(SIGUSR1, apc_clear_cache TSRMLS_CC);
-#endif
+    	}
+	}
 } /* }}} */
 
 /* {{{ apc_set_signals
@@ -198,7 +200,7 @@ void apc_shutdown_signals(TSRMLS_D)
         }
         apc_efree(apc_signal_info.prev TSRMLS_CC);
         apc_signal_info.installed = 0; /* just in case */
-    }
+	}
 }
 /* }}} */
 
