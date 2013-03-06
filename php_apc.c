@@ -93,42 +93,6 @@ static void php_apc_init_globals(zend_apcu_globals* apcu_globals TSRMLS_DC)
     apcu_globals->serializer_name = NULL;
     apcu_globals->serializer = NULL;
 }
-
-static long apc_atol(const char *str, int str_len)
-{
-#if PHP_MAJOR_VERSION >= 6 || PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION >= 3
-    return zend_atol(str, str_len);
-#else
-    /* Re-implement zend_atol() for 5.2.x */
-    long retval;
-
-    if (!str_len) {
-        str_len = strlen(str);
-    }
-
-    retval = strtol(str, NULL, 0);
-
-    if (str_len > 0) {
-        switch (str[str_len - 1]) {
-            case 'g':
-            case 'G':
-                retval *= 1024;
-                /* break intentionally missing */
-            case 'm':
-            case 'M':
-                retval *= 1024;
-                /* break intentionally missing */
-            case 'k':
-            case 'K':
-                retval *= 1024;
-                break;
-        }
-    }
-
-    return retval;
-#endif
-}
-
 /* }}} */
 
 /* {{{ PHP_INI */
@@ -149,7 +113,7 @@ static PHP_INI_MH(OnUpdateShmSegments) /* {{{ */
 
 static PHP_INI_MH(OnUpdateShmSize) /* {{{ */
 {
-    long s = apc_atol(new_value, new_value_length);
+    long s = zend_atol(new_value, new_value_length);
 
     if(s <= 0) {
         return FAILURE;
@@ -157,7 +121,8 @@ static PHP_INI_MH(OnUpdateShmSize) /* {{{ */
 
     if(s < 1048576L) {
         /* if it's less than 1Mb, they are probably using the old syntax */
-        php_error_docref(NULL TSRMLS_CC, E_WARNING, "apc.shm_size now uses M/G suffixes, please update your ini files");
+        php_error_docref(	
+			NULL TSRMLS_CC, E_WARNING, "apc.shm_size now uses M/G suffixes, please update your ini files");
         s = s * 1048576L;
     }
 
@@ -597,12 +562,17 @@ PHP_FUNCTION(apc_inc) {
 		zval_dtor(success);
 	}
 
-    if(php_apc_update(strkey, strkey_len, php_inc_updater, &args TSRMLS_CC)) {
-        if(success) ZVAL_TRUE(success);
+    if (php_apc_update(strkey, strkey_len, php_inc_updater, &args TSRMLS_CC)) {
+        if (success) {
+			ZVAL_TRUE(success);
+		}
+
         RETURN_LONG(args.lval);
     }
     
-    if(success) ZVAL_FALSE(success);
+    if (success) {
+		ZVAL_FALSE(success);
+	}
     
     RETURN_FALSE;
 }
@@ -631,7 +601,9 @@ PHP_FUNCTION(apc_dec) {
         RETURN_LONG(args.lval);
     }
     
-    if(success) ZVAL_FALSE(success);
+    if (success) {
+		ZVAL_FALSE(success);
+	}
     
     RETURN_FALSE;
 }
@@ -687,7 +659,7 @@ PHP_FUNCTION(apc_fetch) {
     time_t t;
     apc_context_t ctxt = {0,};
 
-    if(!APCG(enabled)) {
+    if (!APCG(enabled)) {
 		RETURN_FALSE;
 	}
 
@@ -701,7 +673,7 @@ PHP_FUNCTION(apc_fetch) {
         ZVAL_BOOL(success, 0);
     }
 
-	if(Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
+	if (Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
 	    convert_to_string(key);
 	}
 	
@@ -792,17 +764,11 @@ leave:
  */
 PHP_FUNCTION(apc_exists) {
     zval *key;
-    HashTable *hash;
-    HashPosition hpos;
-    zval **hentry;
-    char *strkey;
-    int strkey_len;
-    apc_cache_entry_t* entry;
-    zval *result;
-    zval *result_entry;
     time_t t;
 
-    if(!APCG(enabled)) RETURN_FALSE;
+    if(!APCG(enabled)) {
+		RETURN_FALSE;
+	}
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &key) == FAILURE) {
         return;
@@ -810,36 +776,48 @@ PHP_FUNCTION(apc_exists) {
 
     t = apc_time();
 
-    if(Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
+    if (Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
         convert_to_string(key);
     }
 
-    if(Z_TYPE_P(key) == IS_STRING) {
-        strkey = Z_STRVAL_P(key);
-        strkey_len = Z_STRLEN_P(key);
-        if(!strkey_len) RETURN_FALSE;
-        entry = apc_cache_exists(apc_user_cache, strkey, strkey_len + 1, t TSRMLS_CC);
-        if(entry) {
-            RETURN_TRUE;
-        }
-    } else if(Z_TYPE_P(key) == IS_ARRAY) {
-        hash = Z_ARRVAL_P(key);
+    if (Z_TYPE_P(key) == IS_STRING) {
+        if (Z_STRLEN_P(key)) {
+		    if(apc_cache_exists(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, t TSRMLS_CC)) {
+		        RETURN_TRUE;
+		    } else {
+				RETURN_FALSE;			
+			}
+		}
+    } else if (Z_TYPE_P(key) == IS_ARRAY) {
+    	HashPosition hpos;
+		zval **hentry;
+		zval *result;
+		
         MAKE_STD_ZVAL(result);
         array_init(result); 
-        zend_hash_internal_pointer_reset_ex(hash, &hpos);
-        while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
-            if(Z_TYPE_PP(hentry) != IS_STRING) {
-                apc_warning("apc_exists() expects a string or array of strings." TSRMLS_CC);
-                RETURN_FALSE;
-            }
 
-            entry = apc_cache_exists(apc_user_cache, Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) + 1, t TSRMLS_CC);
-            if(entry) {
-                MAKE_STD_ZVAL(result_entry);
-                ZVAL_BOOL(result_entry, 1);
-                zend_hash_add(Z_ARRVAL_P(result), Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) +1, &result_entry, sizeof(zval*), NULL);
-            } /* don't set values we didn't find */
-            zend_hash_move_forward_ex(hash, &hpos);
+        zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(key), &hpos);
+        while(zend_hash_get_current_data_ex(Z_ARRVAL_P(key), (void**)&hentry, &hpos) == SUCCESS) {
+            if(Z_TYPE_PP(hentry) == IS_STRING) {
+               if (apc_cache_exists(apc_user_cache, Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) + 1, t TSRMLS_CC)) {
+					zval *result_entry;
+				
+		            MAKE_STD_ZVAL(result_entry);
+		            ZVAL_BOOL(result_entry, 1);
+				
+		            zend_hash_add(
+						Z_ARRVAL_P(result), 
+						Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) +1, 
+						&result_entry, sizeof(zval*), NULL
+					);
+		        }
+            } else {
+				apc_warning(
+					"apc_exists() expects a string or array of strings." TSRMLS_CC);
+			}
+
+			/* don't set values we didn't find */
+            zend_hash_move_forward_ex(Z_ARRVAL_P(key), &hpos);
         }
         RETURN_ZVAL(result, 0, 1);
     } else {
@@ -855,38 +833,45 @@ PHP_FUNCTION(apc_exists) {
 PHP_FUNCTION(apc_delete) {
     zval *keys;
 
-    if(!APCG(enabled)) RETURN_FALSE;
+    if(!APCG(enabled)) {
+		RETURN_FALSE;
+	}
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &keys) == FAILURE) {
         return;
     }
 
     if (Z_TYPE_P(keys) == IS_STRING) {
-        if (!Z_STRLEN_P(keys)) RETURN_FALSE;
-        if(apc_cache_delete(apc_user_cache, Z_STRVAL_P(keys), (Z_STRLEN_P(keys) + 1) TSRMLS_CC)) {
+        if (!Z_STRLEN_P(keys)) {
+			RETURN_FALSE;
+		}
+
+        if (apc_cache_delete(apc_user_cache, Z_STRVAL_P(keys), (Z_STRLEN_P(keys) + 1) TSRMLS_CC)) {
             RETURN_TRUE;
         } else {
             RETURN_FALSE;
         }
+
     } else if (Z_TYPE_P(keys) == IS_ARRAY) {
-        HashTable *hash = Z_ARRVAL_P(keys);
         HashPosition hpos;
         zval **hentry;
+
         array_init(return_value);
-        zend_hash_internal_pointer_reset_ex(hash, &hpos);
-        while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
-            if(Z_TYPE_PP(hentry) != IS_STRING) {
+        zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(keys), &hpos);
+
+        while (zend_hash_get_current_data_ex(Z_ARRVAL_P(keys), (void**)&hentry, &hpos) == SUCCESS) {
+            if (Z_TYPE_PP(hentry) != IS_STRING) {
                 apc_warning("apc_delete() expects a string, array of strings, or APCIterator instance." TSRMLS_CC);
                 add_next_index_zval(return_value, *hentry);
                 Z_ADDREF_PP(hentry);
-            } else if(apc_cache_delete(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1) TSRMLS_CC) != 1) {
+            } else if (apc_cache_delete(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1) TSRMLS_CC) != 1) {
                 add_next_index_zval(return_value, *hentry);
                 Z_ADDREF_PP(hentry);
             }
-            zend_hash_move_forward_ex(hash, &hpos);
+            zend_hash_move_forward_ex(Z_ARRVAL_P(keys), &hpos);
         }
-        return;
     } else if (Z_TYPE_P(keys) == IS_OBJECT) {
+
         if (apc_iterator_delete(keys TSRMLS_CC)) {
             RETURN_TRUE;
         } else {
