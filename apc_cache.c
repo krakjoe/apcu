@@ -511,7 +511,7 @@ clear_all:
          * entries.  For the user cache that is slightly confusing since
          * we have the individual entry ttl's we can look at, but that would be
          * too much work.  So if you want the user cache expunged, set a high
-         * default apc.user_ttl and still provide a specific ttl for each entry
+         * default apc.ttl and still provide a specific ttl for each entry
          * on insert
          */
 

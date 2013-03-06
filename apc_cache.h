@@ -126,9 +126,11 @@ typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void*
  *
  * This function should be called once per process per cache
  *
- * size_hint is a "hint" at the total number of source files that will be
- * cached. It determines the physical size of the hash table. Passing 0 for
- * this argument will use a reasonable default value.
+ * size_hint is a "hint" at the total number entries that will be expected. 
+ * It determines the physical size of the hash table. Passing 0 for
+ * this argument will use a reasonable default value (2000)
+ * Note: APCG(user_entries_hint)
+ * 
  *
  * gc_ttl is the maximum time a cache entry may speed on the garbage
  * collection list. This is basically a work around for the inherent
