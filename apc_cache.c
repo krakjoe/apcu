@@ -593,7 +593,7 @@ zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC) {
 } /* }}} */
 
 /* {{{ apc_cache_insert */
-int apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC)
+zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC)
 {
     slot_t** slot;
     unsigned int keylen = key.identifier_len;
@@ -829,7 +829,7 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
 /* }}} */
 
 /* {{{ apc_cache_delete */
-int apc_cache_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_DC)
+zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_DC)
 {
     slot_t** slot;
     unsigned long h;

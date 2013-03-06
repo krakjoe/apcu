@@ -192,12 +192,12 @@ extern zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC);
  *
  * an easier API exists in the form of apc_cache_store
  */
-extern int apc_cache_insert(apc_cache_t* cache, 
-                            apc_cache_key_t key,
-                            apc_cache_entry_t* value, 
-                            apc_context_t* ctxt, 
-                            time_t t, 
-                            int exclusive TSRMLS_DC);
+extern zend_bool apc_cache_insert(apc_cache_t* cache, 
+                                  apc_cache_key_t key,
+                                  apc_cache_entry_t* value, 
+                                  apc_context_t* ctxt, 
+                                  time_t t, 
+                                  int exclusive TSRMLS_DC);
 
 /*
 * apc_cache_update updates an entry in place, this is used for rfc1867
@@ -221,11 +221,11 @@ extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
 /* 
  * apc_cache_store creates key, entry and context in which to make an insertion of val into the specified cache
  */
-extern zend_bool apc_cache_store(apc_cache_t* cache, 
-                                 char *strkey, 
-                                 int strkey_len, 
-                                 const zval *val, 
-                                 const unsigned int ttl, 
+extern zend_bool apc_cache_store(apc_cache_t* cache,
+                                 char *strkey,
+                                 int strkey_len,
+                                 const zval *val,
+                                 const unsigned int ttl,
                                  const int exclusive TSRMLS_DC);
 
 /*
@@ -243,9 +243,9 @@ extern apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache,
 /*
  * apc_cache_delete and apc_cache_delete finds an entry in the cache and deletes it.
  */
-extern int apc_cache_delete(apc_cache_t* cache,
-                            char *strkey,
-                            int keylen TSRMLS_DC);
+extern zend_bool apc_cache_delete(apc_cache_t* cache,
+                                  char *strkey,
+                                  int keylen TSRMLS_DC);
 
 /* apc_cach_fetch_zval takes a zval in the cache and reconstructs a runtime
  * zval from it.
