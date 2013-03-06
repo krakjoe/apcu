@@ -274,7 +274,7 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, cons
     apc_cache_key_t key;
     time_t t;
     apc_context_t ctxt={0,};
-    int ret = 1;
+    int ret = 0;
 
     if (!APCG(serializer) && APCG(serializer_name)) {
         /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
@@ -293,16 +293,18 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, cons
 				if ((entry = apc_cache_make_entry(val, &ctxt, ttl TSRMLS_CC))) {
 					/* create an insertion */
 					if (apc_cache_insert(cache, key, entry, &ctxt, t, exclusive TSRMLS_CC)) {
-						goto result;
-					} else { ret = 0; }
+						ret = 1;
+					}
 				}
 			}
 		}
+
 		/* in any case of failure the context should be destroyed */
-		apc_cache_destroy_context(&ctxt TSRMLS_CC);
+		if (!ret) {
+			apc_cache_destroy_context(&ctxt TSRMLS_CC);
+		}			
 	}
 	
-result:
     HANDLE_UNBLOCK_INTERRUPTIONS();
 
     return ret;
