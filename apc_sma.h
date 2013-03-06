@@ -33,72 +33,28 @@
 #define ALLOC_DISTRIBUTION 0
 
 #include "apc.h"
+#include "apc_sma_api.h"
 
-/* {{{ struct definition: apc_segment_t */
-typedef struct _apc_segment_t {
-    size_t size;
-    void* shmaddr;
-#ifdef APC_MEMPROTECT
-    void* roaddr;
-#endif
-} apc_segment_t; /* }}} */
-
-/*
- * @TODO:
- * 	Provide an API from this code ...
- * APC should declare a static apc_sma_t apc_user_sma 
- *  just like it does for apc_user_cache
- * This, or another version of this API should 
- *	take apc_sma_t* and use it where appropriate
-*/
-
-/* {{{ struct definition: apc_sma_t */
-typedef struct _apc_sma_t {
-	zend_bool  initialized;
-	zend_uint  num;
-	zend_ulong size;
-	zend_uint  last;
-	apc_segment_t* segs;
-} apc_sma_t; /* }}} */
-
+/* {{{ SMA APC 
+ This allows APC to function as it always did, unaware of other allocators created by external libraries */
 extern void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC);
 extern void apc_sma_cleanup(TSRMLS_D);
 extern void* apc_sma_malloc(size_t size TSRMLS_DC);
 extern void* apc_sma_malloc_ex(size_t size, size_t fragment, size_t* allocated TSRMLS_DC);
-extern void* apc_sma_realloc(void* p, size_t size TSRMLS_DC);
+extern void* apc_sma_apiloc(void* p, size_t size TSRMLS_DC);
 extern char* apc_sma_strdup(const char *s TSRMLS_DC);
 extern void apc_sma_free(void* p TSRMLS_DC);
 #if ALLOC_DISTRIBUTION 
 extern size_t *apc_sma_get_alloc_distribution();
 #endif
-
 extern void* apc_sma_protect(void *p);
-extern void* apc_sma_unprotect(void *p);
-
-/* {{{ struct definition: apc_sma_link_t */
-typedef struct apc_sma_link_t apc_sma_link_t;
-struct apc_sma_link_t {
-    long size;               /* size of this free block */
-    long offset;             /* offset in segment of this block */
-    apc_sma_link_t* next;   /* link to next free block */
-};
-/* }}} */
-
-/* {{{ struct definition: apc_sma_info_t */
-typedef struct apc_sma_info_t apc_sma_info_t;
-struct apc_sma_info_t {
-    int num_seg;            /* number of shared memory segments */
-    size_t seg_size;           /* size of each shared memory segment */
-    apc_sma_link_t** list;  /* there is one list per segment */
-};
-/* }}} */
+extern void* apc_sma_unprotect(void *p); 
 
 extern apc_sma_info_t* apc_sma_info(zend_bool limited TSRMLS_DC);
 extern void apc_sma_free_info(apc_sma_info_t* info TSRMLS_DC);
-
 extern size_t apc_sma_get_avail_mem();
 extern zend_bool apc_sma_get_avail_size(size_t size);
-extern void apc_sma_check_integrity();
+extern void apc_sma_check_integrity(); /* }}} */
 
 /* {{{ ALIGNWORD: pad up x, aligned to the system's word boundary */
 typedef union { void* p; int i; long l; double d; void (*f)(); } apc_word_t;

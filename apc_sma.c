@@ -45,6 +45,8 @@
 # define APC_SMA_CANARIES 1
 #endif
 
+static apc_sma_t apc_sma;
+
 enum { DEFAULT_NUMSEG=1, DEFAULT_SEGSIZE=30*1024*1024 };
 
 static int sma_initialized = 0;     /* true if the sma has been initialized */
@@ -63,10 +65,10 @@ struct sma_header_t {
 #endif
 };
 
-#define SMA_HDR(i)  ((sma_header_t*)((sma_segments[i]).shmaddr))
-#define SMA_ADDR(i) ((char*)(SMA_HDR(i)))
-#define SMA_RO(i)   ((char*)(sma_segments[i]).roaddr)
-#define SMA_LCK(i)  ((SMA_HDR(i))->sma_lock)
+#define SMA_HDR(sma, i)  ((sma_header_t*)((sma->segs[i]).shmaddr))
+#define SMA_ADDR(sma, i) ((char*)(SMA_HDR(sma, i)))
+#define SMA_RO(sma, i)   ((char*)(sma->segs[i]).roaddr)
+#define SMA_LCK(sma, i)  ((SMA_HDR(sma, i))->sma_lock)
 
 #ifdef APC_SMA_DEBUG
 /* global counter for identifying blocks
@@ -334,56 +336,59 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 /* }}} */
 
 /* {{{ apc_sma_init */
+void apc_sma_api_init(apc_sma_t* sma, zend_uint num, zend_ulong size, char *mask TSRMLS_DC) {
+	uint i;
 
-void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC)
-{
-    uint i;
-
-    if (sma_initialized) {
+    if (sma->initialized) {
         return;
     }
-    sma_initialized = 1;
+
+    sma->initialized = 1;
 
 #if APC_MMAP
     /*
      * I don't think multiple anonymous mmaps makes any sense
      * so force sma_numseg to 1 in this case
      */
-    if(!mmap_file_mask || 
-       (mmap_file_mask && !strlen(mmap_file_mask)) ||
-       (mmap_file_mask && !strcmp(mmap_file_mask, "/dev/zero"))) {
-        sma_numseg = 1;
+    if(!mask || 
+       (mask && !strlen(mask)) ||
+       (mask && !strcmp(mask, "/dev/zero"))) {
+        sma->num = 1;
     } else {
-        sma_numseg = numseg > 0 ? numseg : DEFAULT_NUMSEG;
+        sma->num = num > 0 ? num : DEFAULT_NUMSEG;
     }
 #else
-    sma_numseg = numseg > 0 ? numseg : DEFAULT_NUMSEG;
+    sma->num = num > 0 ? num : DEFAULT_NUMSEG;
 #endif
 
-    sma_segsize = segsize > 0 ? segsize : DEFAULT_SEGSIZE;
+    sma->size = size > 0 ? size : DEFAULT_SEGSIZE;
 
-    sma_segments = (apc_segment_t*) apc_emalloc((sma_numseg * sizeof(apc_segment_t)) TSRMLS_CC);
+    sma->segs = (apc_segment_t*) apc_emalloc((sma->num * sizeof(apc_segment_t)) TSRMLS_CC);
 
-    for (i = 0; i < sma_numseg; i++) {
+    for (i = 0; i < sma->num; i++) {
         sma_header_t*   header;
         block_t     *first, *empty, *last;
         void*       shmaddr;
 
 #if APC_MMAP
-        sma_segments[i] = apc_mmap(mmap_file_mask, sma_segsize TSRMLS_CC);
-        if(sma_numseg != 1) memcpy(&mmap_file_mask[strlen(mmap_file_mask)-6], "XXXXXX", 6);
+        sma->segs[i] = apc_mmap(mask, sma->size TSRMLS_CC);
+        if(sma->num != 1) 
+			memcpy(&mask[strlen(mask)-6], "XXXXXX", 6);
 #else
-        sma_segments[i] = apc_shm_attach(apc_shm_create(i, sma_segsize TSRMLS_CC), sma_segsize TSRMLS_CC);
+        sma->segs[i] = apc_shm_attach(
+			apc_shm_create(i, sma->size TSRMLS_CC), 
+			sma->size TSRMLS_CC
+		);
 #endif
         
-        sma_segments[i].size = sma_segsize;
+        sma->segs[i].size = sma->size;
 
-        shmaddr = sma_segments[i].shmaddr;
+        shmaddr = sma->segs[i].shmaddr;
 
         header = (sma_header_t*) shmaddr;
         CREATE_LOCK(&header->sma_lock);
-        header->segsize = sma_segsize;
-        header->avail = sma_segsize - ALIGNWORD(sizeof(sma_header_t)) - ALIGNWORD(sizeof(block_t)) - ALIGNWORD(sizeof(block_t));
+        header->segsize = sma->size;
+        header->avail = sma->size - ALIGNWORD(sizeof(sma_header_t)) - ALIGNWORD(sizeof(block_t)) - ALIGNWORD(sizeof(block_t));
 #if ALLOC_DISTRIBUTION
         {
            int j;
@@ -417,87 +422,94 @@ void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC)
 #ifdef APC_SMA_DEBUG
         last->id = -1;
 #endif
-    }
+    }	
+}
+
+void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC)
+{
+	apc_sma_api_init(&apc_sma, numseg, segsize, mmap_file_mask TSRMLS_CC); 
 }
 /* }}} */
 
+void apc_sma_api_cleanup(apc_sma_t* sma TSRMLS_DC) {
+	uint i;
+
+    assert(sma->initialized);
+
+    for (i = 0; i < sma->num; i++) {
+        DESTROY_LOCK(&SMA_LCK(sma, i));
+#if APC_MMAP
+        apc_unmap(&sma->segs[i] TSRMLS_CC);
+#else
+        apc_shm_detach(&sma->segs[i] TSRMLS_CC);
+#endif
+    }
+    sma->initialized = 0;
+
+    apc_efree(sma->segs TSRMLS_CC);
+}
 /* {{{ apc_sma_cleanup */
 void apc_sma_cleanup(TSRMLS_D)
 {
-    uint i;
-
-    assert(sma_initialized);
-
-    for (i = 0; i < sma_numseg; i++) {
-        DESTROY_LOCK(&SMA_LCK(i));
-#if APC_MMAP
-        apc_unmap(&sma_segments[i] TSRMLS_CC);
-#else
-        apc_shm_detach(&sma_segments[i] TSRMLS_CC);
-#endif
-    }
-    sma_initialized = 0;
-    apc_efree(sma_segments TSRMLS_CC);
+    apc_sma_api_cleanup(&apc_sma TSRMLS_CC);
 }
 /* }}} */
 
-/* {{{ apc_sma_malloc_ex */
-void* apc_sma_malloc_ex(size_t n, size_t fragment, size_t* allocated TSRMLS_DC)
-{
-    size_t off;
+void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, zend_ulong* allocated TSRMLS_CC) {
+	size_t off;
     uint i;
     int nuked = 0;
 
 restart:
-    assert(sma_initialized);
-    LOCK(&SMA_LCK(sma_lastseg));
+    assert(sma->initialized);
+    LOCK(&SMA_LCK(sma, sma->last));
 
-    off = sma_allocate(SMA_HDR(sma_lastseg), n, fragment, allocated);
+    off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
 
     if(off == -1) { 
         /* retry failed allocation after we expunge */
-        UNLOCK(&SMA_LCK(sma_lastseg));
+        UNLOCK(&SMA_LCK(sma, sma->last));
 		apc_user_cache->expunge_cb(
 			apc_user_cache, (n+fragment) TSRMLS_CC);
-        LOCK(&SMA_LCK(sma_lastseg));
-        off = sma_allocate(SMA_HDR(sma_lastseg), n, fragment, allocated);
+        LOCK(&SMA_LCK(sma, sma->last));
+        off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
     }
 
     if (off != -1) {
-        void* p = (void *)(SMA_ADDR(sma_lastseg) + off);
-        UNLOCK(&SMA_LCK(sma_lastseg));
+        void* p = (void *)(SMA_ADDR(sma, sma->last) + off);
+        UNLOCK(&SMA_LCK(sma, sma->last));
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
         VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
         return p;
     }
     
-    UNLOCK(&SMA_LCK(sma_lastseg));
+    UNLOCK(&SMA_LCK(sma, sma->last));
 
-    for (i = 0; i < sma_numseg; i++) {
-        if (i == sma_lastseg) {
+    for (i = 0; i < sma->num; i++) {
+        if (i == sma->last) {
             continue;
         }
-        LOCK(&SMA_LCK(i));
-        off = sma_allocate(SMA_HDR(i), n, fragment, allocated);
+        LOCK(&SMA_LCK(sma, i));
+        off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
         if(off == -1) { 
             /* retry failed allocation after we expunge */
-            UNLOCK(&SMA_LCK(i));
+            UNLOCK(&SMA_LCK(sma, i));
 			apc_user_cache->expunge_cb(
 				apc_user_cache, (n+fragment) TSRMLS_CC);
-            LOCK(&SMA_LCK(i));
-            off = sma_allocate(SMA_HDR(i), n, fragment, allocated);
+            LOCK(&SMA_LCK(sma, i));
+            off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
         }
         if (off != -1) {
-            void* p = (void *)(SMA_ADDR(i) + off);
-            UNLOCK(&SMA_LCK(i));
+            void* p = (void *)(SMA_ADDR(sma, i) + off);
+            UNLOCK(&SMA_LCK(sma, i));
             sma_lastseg = i;
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
             VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
             return p;
         }
-        UNLOCK(&SMA_LCK(i));
+        UNLOCK(&SMA_LCK(sma, i));
     }
 
     /* I've tried being nice, but now you're just asking for it */
@@ -511,61 +523,88 @@ restart:
 
     return NULL;
 }
+
+/* {{{ apc_sma_malloc_ex */
+void* apc_sma_malloc_ex(size_t n, size_t fragment, size_t* allocated TSRMLS_DC)
+{
+	return apc_sma_api_malloc_ex(
+		&apc_sma, n, fragment, allocated TSRMLS_CC);    
+}
 /* }}} */
+
+void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong n TSRMLS_DC) 
+{
+	size_t allocated;
+	return apc_sma_api_malloc_ex(
+		sma, n, MINBLOCKSIZE, &allocated TSRMLS_CC);
+}
 
 /* {{{ apc_sma_malloc */
 void* apc_sma_malloc(size_t n TSRMLS_DC)
 {
     size_t allocated;
-    void *p = apc_sma_malloc_ex(n, MINBLOCKSIZE, &allocated TSRMLS_CC);
-
-    return p;
+    return apc_sma_malloc_ex(
+		n, MINBLOCKSIZE, &allocated TSRMLS_CC);
 }
 /* }}} */
+
+void* apc_sma_api_realloc(apc_sma_t* sma, void* p, zend_ulong n TSRMLS_DC) {
+	apc_sma_api_free(sma, p TSRMLS_CC);
+	return apc_sma_api_malloc(
+		sma, n TSRMLS_CC);
+}
 
 /* {{{ apc_sma_realloc */
 void* apc_sma_realloc(void *p, size_t n TSRMLS_DC)
 {
-    apc_sma_free(p TSRMLS_CC);
-    return apc_sma_malloc(n TSRMLS_CC);
+    return apc_sma_api_realloc(&apc_sma, p, n TSRMLS_CC);
 }
 /* }}} */
+
+char* apc_sma_api_strdup(apc_sma_t* sma, const char* s TSRMLS_DC) {
+	void* q;
+    int len;
+
+    if(!s) {
+		return NULL;
+	}
+
+    len = strlen(s)+1;
+    q = apc_sma_api_malloc(
+		sma, len TSRMLS_CC);
+
+    if(!q) {
+		return NULL;
+	}
+
+    memcpy(q, s, len);
+    return q;
+}
 
 /* {{{ apc_sma_strdup */
 char* apc_sma_strdup(const char* s TSRMLS_DC)
 {
-    void* q;
-    int len;
-
-    if(!s) return NULL;
-
-    len = strlen(s)+1;
-    q = apc_sma_malloc(len TSRMLS_CC);
-    if(!q) return NULL;
-    memcpy(q, s, len);
-    return q;
+    return apc_sma_api_strdup(&apc_sma, s TSRMLS_CC);
 }
 /* }}} */
 
-/* {{{ apc_sma_free */
-void apc_sma_free(void* p TSRMLS_DC)
-{
-    uint i;
+void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_CC) {
+	uint i;
     size_t offset;
 
     if (p == NULL) {
         return;
     }
 
-    assert(sma_initialized);
+    assert(sma->initialized);
 
     
-    for (i = 0; i < sma_numseg; i++) {
-        offset = (size_t)((char *)p - SMA_ADDR(i));
-        if (p >= (void*)SMA_ADDR(i) && offset < sma_segsize) {
-            LOCK(&SMA_LCK(i));
-            sma_deallocate(SMA_HDR(i), offset);
-            UNLOCK(&SMA_LCK(i));
+    for (i = 0; i < sma->num; i++) {
+        offset = (size_t)((char *)p - SMA_ADDR(sma, i));
+        if (p >= (void*)SMA_ADDR(sma, i) && offset < sma->size) {
+            LOCK(&SMA_LCK(sma, i));
+            sma_deallocate(SMA_HDR(sma, i), offset);
+            UNLOCK(&SMA_LCK(sma, i));
 #ifdef VALGRIND_FREELIKE_BLOCK
             VALGRIND_FREELIKE_BLOCK(p, 0);
 #endif
@@ -575,104 +614,120 @@ void apc_sma_free(void* p TSRMLS_DC)
 
     apc_error("apc_sma_free: could not locate address %p" TSRMLS_CC, p);
 }
+
+/* {{{ apc_sma_free */
+void apc_sma_free(void* p TSRMLS_DC)
+{
+    apc_sma_api_free(&apc_sma, p TSRMLS_CC);
+}
 /* }}} */
 
 #ifdef APC_MEMPROTECT
 /* {{{ apc_sma_protect */
-void* apc_sma_protect(void *p)
-{
-    unsigned int i = 0;
+void* apc_sma_api_protect(apc_sma_t* sma, void* p) {
+	unsigned int i = 0;
     size_t offset;
 
     if (p == NULL) {
         return NULL;
     }
 
-    if(SMA_RO(sma_lastseg) == NULL) return p;
+    if(SMA_RO(sma, sma->last) == NULL) return p;
 
-    offset = (size_t)((char *)p - SMA_ADDR(sma_lastseg));
+    offset = (size_t)((char *)p - SMA_ADDR(sma, sma->last));
 
-    if(p >= (void*)SMA_ADDR(sma_lastseg) && offset < sma_segsize) {
-        return SMA_RO(sma_lastseg) + offset;
+    if(p >= (void*)SMA_ADDR(sma, sma->last) && offset < sma->size) {
+        return SMA_RO(sma, sma->last) + offset;
     }
 
-    for (i = 0; i < sma_numseg; i++) {
-        offset = (size_t)((char *)p - SMA_ADDR(i));
-        if (p >= (void*)SMA_ADDR(i) && offset < sma_segsize) {
-            return SMA_RO(i) + offset;
+    for (i = 0; i < sma->num; i++) {
+        offset = (size_t)((char *)p - SMA_ADDR(sma, i));
+        if (p >= (void*)SMA_ADDR(sma, i) && offset < sma->size) {
+            return SMA_RO(sma, i) + offset;
         }
     }
 
     return NULL;
 }
+void* apc_sma_protect(void *p)
+{
+    return apc_sma_protect(&apc_sma, p);
+}
 /* }}} */
+
+
+void* apc_sma_api_unprotect(apc_sma_t* sma, void* p){
+	unsigned int i = 0;
+    size_t offset;
+
+    if (p == NULL) {
+        return NULL;
+    }
+
+    if(SMA_RO(sma, sma->last) == NULL) return p;
+
+    offset = (size_t)((char *)p - SMA_RO(sma, sma->last));
+
+    if(p >= (void*)SMA_RO(sma, sma->last) && offset < sma->size) {
+        return SMA_ADDR(sma, sma->last) + offset;
+    }
+
+    for (i = 0; i < sma->num; i++) {
+        offset = (size_t)((char *)p - SMA_RO(sma, i));
+        if (p >= (void*)SMA_RO(sma, i) && offset < sma->size) {
+            return SMA_ADDR(sma, i) + offset;
+        }
+    }
+
+    return NULL;
+}
 
 /* {{{ apc_sma_unprotect */
 void* apc_sma_unprotect(void *p)
 {
-    unsigned int i = 0;
-    size_t offset;
-
-    if (p == NULL) {
-        return NULL;
-    }
-
-    if(SMA_RO(sma_lastseg) == NULL) return p;
-
-    offset = (size_t)((char *)p - SMA_RO(sma_lastseg));
-
-    if(p >= (void*)SMA_RO(sma_lastseg) && offset < sma_segsize) {
-        return SMA_ADDR(sma_lastseg) + offset;
-    }
-
-    for (i = 0; i < sma_numseg; i++) {
-        offset = (size_t)((char *)p - SMA_RO(i));
-        if (p >= (void*)SMA_RO(i) && offset < sma_segsize) {
-            return SMA_ADDR(i) + offset;
-        }
-    }
-
-    return NULL;
+    return apc_sma_api_unprotect(&apc_sma, p);
 }
 /* }}} */
 #else
 /* {{{ apc_sma_protect */
+void* apc_sma_api_protect(apc_sma_t* sma, void *p) { return p; }
 void* apc_sma_protect(void *p) { return p; }
 /* }}} */
 
 /* {{{ apc_sma_unprotect */
+void* apc_sma_api_unprotect(apc_sma_t* sma, void *p) { return p; }
 void* apc_sma_unprotect(void *p) { return p; }
 /* }}} */
 #endif
 
-/* {{{ apc_sma_info */
-apc_sma_info_t* apc_sma_info(zend_bool limited TSRMLS_DC)
-{
-    apc_sma_info_t* info;
+apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited TSRMLS_DC) {
+	apc_sma_info_t* info;
     apc_sma_link_t** link;
     uint i;
     char* shmaddr;
     block_t* prv;
 
-    if (!sma_initialized) {
+    if (!sma->initialized) {
         return NULL;
     }
 
     info = (apc_sma_info_t*) apc_emalloc(sizeof(apc_sma_info_t) TSRMLS_CC);
-    info->num_seg = sma_numseg;
-    info->seg_size = sma_segsize - (ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t)) + ALIGNWORD(sizeof(block_t)));
+    info->num_seg = sma->num;
+    info->seg_size = sma->size - (ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t)) + ALIGNWORD(sizeof(block_t)));
 
     info->list = apc_emalloc(info->num_seg * sizeof(apc_sma_link_t*) TSRMLS_CC);
-    for (i = 0; i < sma_numseg; i++) {
+    for (i = 0; i < sma->num; i++) {
         info->list[i] = NULL;
     }
 
-    if(limited) return info;
+    if(limited) {
+		return info;
+	}
 
     /* For each segment */
-    for (i = 0; i < sma_numseg; i++) {
-        RLOCK(&SMA_LCK(i));
-        shmaddr = SMA_ADDR(i);
+    for (i = 0; i < sma->num; i++) {
+        RLOCK(&SMA_LCK(sma, i));
+        shmaddr = SMA_ADDR(sma, i);
         prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
 
         link = &info->list[i];
@@ -697,12 +752,22 @@ apc_sma_info_t* apc_sma_info(zend_bool limited TSRMLS_DC)
 #endif
 
         }
-        RUNLOCK(&SMA_LCK(i));
+        RUNLOCK(&SMA_LCK(sma, i));
     }
 
     return info;
 }
+
+/* {{{ apc_sma_info */
+apc_sma_info_t* apc_sma_info(zend_bool limited TSRMLS_DC)
+{
+    return apc_sma_api_info(&apc_sma, limited TSRMLS_CC);
+}
 /* }}} */
+
+void apc_sma_api_free_info(apc_sma_t* sma, apc_sma_info_t* info TSRMLS_DC) {
+	return apc_sma_free_info(info TSRMLS_CC);
+}
 
 /* {{{ apc_sma_free_info */
 void apc_sma_free_info(apc_sma_info_t* info TSRMLS_DC)
@@ -722,39 +787,52 @@ void apc_sma_free_info(apc_sma_info_t* info TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ apc_sma_get_avail_mem */
-size_t apc_sma_get_avail_mem()
-{
-    size_t avail_mem = 0;
+zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma) {
+	size_t avail_mem = 0;
     uint i;
 
-    for (i = 0; i < sma_numseg; i++) {
-        sma_header_t* header = SMA_HDR(i);
+    for (i = 0; i < sma->num; i++) {
+        sma_header_t* header = SMA_HDR(sma, i);
         avail_mem += header->avail;
     }
     return avail_mem;
 }
+
+/* {{{ apc_sma_get_avail_mem */
+size_t apc_sma_get_avail_mem()
+{
+   return apc_sma_api_get_avail_mem(&apc_sma);
+}
 /* }}} */
 
-/* {{{ apc_sma_get_avail_size */
-zend_bool apc_sma_get_avail_size(size_t size)
-{
-    uint i;
+zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size) {
+	uint i;
 
-    for (i = 0; i < sma_numseg; i++) {
-    	sma_header_t* header = SMA_HDR(i);
+    for (i = 0; i < sma->num; i++) {
+    	sma_header_t* header = SMA_HDR(sma, i);
 		if (header->avail > size) {
 			return 1;
 		}
     }
     return 0;
 }
+
+/* {{{ apc_sma_get_avail_size */
+zend_bool apc_sma_get_avail_size(size_t size)
+{
+    return apc_sma_api_get_avail_size(&apc_sma, size);
+}
 /* }}} */
 
 #if ALLOC_DISTRIBUTION
-size_t *apc_sma_get_alloc_distribution(void) {
-    sma_header_t* header = (sma_header_t*) segment->sma_shmaddr;
+zend_ulong *apc_sma_api_get_alloc_distribution(apc_sma_t* sma) {
+	/* ?? */
+	sma_header_t* header = (sma_header_t*) segment->sma_shmaddr;
     return header->adist;
+}
+
+size_t *apc_sma_get_alloc_distribution() {
+    return apc_sma_api_get_alloc_distribution(&apc_sma);
 }
 #endif
 
