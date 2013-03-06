@@ -118,6 +118,9 @@ struct apc_cache_t {
 };
 /* }}} */
 
+/* {{{ typedef: apc_cache_updater_t */
+typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void* data); /* }}} */
+
 /*
  * apc_cache_create creates the shared memory cache. 
  *
@@ -195,6 +198,15 @@ extern int apc_cache_insert(apc_cache_t* cache,
                             apc_context_t* ctxt, 
                             time_t t, 
                             int exclusive TSRMLS_DC);
+
+/*
+* apc_cache_update updates an entry in place, this is used for rfc1867
+*/
+extern zend_bool apc_cache_update(apc_cache_t* cache,
+                                  char *strkey, 
+                                  int keylen,
+                                  apc_cache_updater_t updater, 
+                                  void* data TSRMLS_DC);
 
 /*
  * apc_cache_find searches for a cache entry by its hashed identifier,
@@ -291,19 +303,6 @@ extern zend_bool apc_cache_busy(apc_cache_t* cache);
 */
 extern zend_bool apc_cache_defense(apc_cache_t* cache,
                                    apc_cache_key_t* key TSRMLS_DC);
-
-/* {{{ rfc1867 */
-typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void* data);
-
-/*
-* apc_cache_update: update an entry in place, not a good idea
-*/
-extern zend_bool apc_cache_update(apc_cache_t* cache, 	
-                                  char *strkey, 
-                                  int keylen,
-                                  apc_cache_updater_t updater, 
-                                  void* data TSRMLS_DC);
-/* }}} */
 #endif
 
 /*
