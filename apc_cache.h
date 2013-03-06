@@ -138,11 +138,20 @@ typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void*
  * ttl is the maximum time a cache entry can idle in a slot in case the slot
  * is needed.  This helps in cleaning up the cache and ensuring that entries 
  * hit frequently stay cached and ones not hit very often eventually disappear.
+ * 
+ * by default will use the apc_sma_malloc allocator, this should not be called by 3rd parties
  */
 extern apc_cache_t* apc_cache_create(int size_hint,
                                      int gc_ttl,
                                      int ttl TSRMLS_DC);
 
+/*
+* apc_cache_create_ex performs allocations with the allocator provided, suitable for 3rd parties
+*/
+extern apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate,
+                                        int size_hint,
+                                        int gc_ttl,
+                                        int ttl TSRMLS_DC);
 /*
 * apc_cache_preload preloads the data at path into the specified cache
 */

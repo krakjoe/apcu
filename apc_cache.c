@@ -230,7 +230,13 @@ int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 /* {{{ apc_cache_create */
 apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl TSRMLS_DC)
 {
-    apc_cache_t* cache;
+    return apc_cache_create_ex(apc_sma_malloc, size_hint, gc_ttl, ttl TSRMLS_CC);
+}
+/* }}} */
+
+/* {{{ apc_cache_create_ex */
+apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_ttl, int ttl TSRMLS_DC) {
+	apc_cache_t* cache;
     int cache_size;
     int num_slots;
 
@@ -239,7 +245,7 @@ apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl TSRMLS_DC)
     cache = (apc_cache_t*) apc_emalloc(sizeof(apc_cache_t) TSRMLS_CC);
     cache_size = sizeof(cache_header_t) + num_slots*sizeof(slot_t*);
 
-    cache->shmaddr = apc_sma_malloc(cache_size TSRMLS_CC);
+    cache->shmaddr = allocate(cache_size TSRMLS_CC);
     if(!cache->shmaddr) {
         apc_error("Unable to allocate shared memory for cache structures.  (Perhaps your shared memory size isn't large enough?). " TSRMLS_CC);
         return NULL;
@@ -265,8 +271,7 @@ apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl TSRMLS_DC)
     cache->expunge_cb = apc_cache_expunge;
 
     return cache;
-}
-/* }}} */
+} /* }}} */
 
 /* {{{ apc_cache_store */
 zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC) {
