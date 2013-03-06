@@ -146,7 +146,7 @@ extern apc_cache_t* apc_cache_create(int size_hint,
 * apc_cache_preload preloads the data at path into the specified cache
 */
 extern zend_bool apc_cache_preload(apc_cache_t* cache,
-								   const char* path TSRMLS_DC);
+                                   const char* path TSRMLS_DC);
 
 /*
  * apc_cache_destroy releases any OS resources associated with a cache object.
@@ -182,8 +182,8 @@ extern zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC);
 
 /*
  * apc_cache_insert adds an entry to the cache.
- * Returns non-zero if the entry was successfully inserted, 0 otherwise. 
- * If 0 is returned, the caller must free the cache entry by calling
+ * Returns true if the entry was successfully inserted, false otherwise. 
+ * If false is returned, the caller must free the cache entry by calling
  * apc_cache_free_entry (see below).
  *
  * key is the value created by apc_cache_make_key for file keys.
@@ -199,8 +199,18 @@ extern zend_bool apc_cache_insert(apc_cache_t* cache,
                                   time_t t, 
                                   int exclusive TSRMLS_DC);
 
+/* 
+ * apc_cache_store creates key, entry and context in which to make an insertion of val into the specified cache
+ */
+extern zend_bool apc_cache_store(apc_cache_t* cache,
+                                 char *strkey,
+                                 int strkey_len,
+                                 const zval *val,
+                                 const unsigned int ttl,
+                                 const int exclusive TSRMLS_DC);
+
 /*
-* apc_cache_update updates an entry in place, this is used for rfc1867
+* apc_cache_update updates an entry in place, this is used for rfc1867 and inc/dec/cas
 */
 extern zend_bool apc_cache_update(apc_cache_t* cache,
                                   char *strkey, 
@@ -217,16 +227,6 @@ extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
                                          char* strkey, 	
                                          int keylen, 
                                          time_t t TSRMLS_DC);
-
-/* 
- * apc_cache_store creates key, entry and context in which to make an insertion of val into the specified cache
- */
-extern zend_bool apc_cache_store(apc_cache_t* cache,
-                                 char *strkey,
-                                 int strkey_len,
-                                 const zval *val,
-                                 const unsigned int ttl,
-                                 const int exclusive TSRMLS_DC);
 
 /*
  * apc_cache_exists searches for a cache entry by its hashed identifier,
