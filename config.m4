@@ -116,6 +116,7 @@ if test "$PHP_APCU" != "no"; then
   PHP_SUBST(APC_SHARED_LIBADD)
   PHP_SUBST(APC_CFLAGS)
   PHP_INSTALL_HEADERS(ext/apcu, [apc_serializer.h])
+  PHP_INSTALL_HEADERS(ext/apcu, [apc_sma_api.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
 fi
 

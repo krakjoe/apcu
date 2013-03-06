@@ -28,6 +28,7 @@ if(PHP_APCU != 'no')
 	AC_DEFINE('HAVE_ATOMIC_OPERATIONS', 1);
 
 	PHP_INSTALL_HEADERS("ext/apcu", "apc_serializer.h");
+	PHP_INSTALL_HEADERS("ext/apcu", "apc_sma_api.h");
 
 	EXTENSION('apcu', apc_sources);
 }

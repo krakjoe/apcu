@@ -43,7 +43,7 @@ static apc_pool* apc_realpool_create(apc_pool_type type, apc_malloc_t, apc_free_
 /* }}} */
 
 /* {{{ apc_pool_create */
-apc_pool* apc_pool_create(apc_pool_type pool_type, 
+apc_pool* apc_pool_create(apc_pool_type pool_type,
                           apc_malloc_t allocate, 
                           apc_free_t deallocate,
                           apc_protect_t protect,
