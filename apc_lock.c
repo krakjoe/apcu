@@ -64,7 +64,7 @@ int apc_lock_rlock(apc_lock_t *lock TSRMLS_DC) {
 			return 1;
 		
 		default:
-			apc_error("pthread mutex error: APC failed to acquire read lock (%i).", rc TSRMLS_CC);
+			apc_error("pthread mutex error: APC failed to acquire read lock (%i)." TSRMLS_CC, rc);
 	}
 #else
 	
@@ -86,7 +86,7 @@ int apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
 		} break;
 
 		default:
-			apc_error("pthread mutex error: APC failed to acquire write lock (%i)", rc TSRMLS_CC);
+			apc_error("pthread mutex error: APC failed to acquire write lock (%i)" TSRMLS_CC, rc);
 	}
 #else
 
@@ -106,7 +106,7 @@ int apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC) {
 		} break;
 
 		default:
-			apc_error("pthread mutex error: APC failed to release write lock (%i)", rc TSRMLS_CC);
+			apc_error("pthread mutex error: APC failed to release write lock (%i)" TSRMLS_CC, rc);
 	}
 #else
 
@@ -124,7 +124,7 @@ int apc_lock_runlock(apc_lock_t *lock TSRMLS_DC) {
 		} break;
 
 		default:
-			apc_error("pthread mutex error: APC failed to release read lock (%i)", rc TSRMLS_CC);
+			apc_error("pthread mutex error: APC failed to release read lock (%i)" TSRMLS_CC, rc);
 	}
 #else
 

@@ -66,11 +66,11 @@ typedef struct _apc_cache_key_t {
 
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct _apc_cache_entry_t {
-    zval *val;
-    unsigned int ttl;
-    int ref_count;
-    size_t mem_size;
-    apc_pool *pool;
+    zval *val;                    /* the zval copied at store time */
+    unsigned int ttl;             /* the ttl on this specific entry */
+    int ref_count;                /* the reference count of this entry */
+    size_t mem_size;              /* memory used */
+    apc_pool *pool;               /* pool which allocated the value */
 } apc_cache_entry_t;
 /* }}} */
 
@@ -129,9 +129,8 @@ typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void*
  * size_hint is a "hint" at the total number entries that will be expected. 
  * It determines the physical size of the hash table. Passing 0 for
  * this argument will use a reasonable default value (2000)
- * Note: APCG(user_entries_hint)
+ * Note: APCG(entries_hint)
  * 
- *
  * gc_ttl is the maximum time a cache entry may speed on the garbage
  * collection list. This is basically a work around for the inherent
  * unreliability of our reference counting mechanism (see apc_cache_release).
@@ -158,8 +157,7 @@ extern zend_bool apc_cache_preload(apc_cache_t* cache,
 extern void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC);
 
 /*
- * apc_cache_clear empties a cache. This can safely be called at any time,
- * even while other server processes are executing cached source files.
+ * apc_cache_clear empties a cache. This can safely be called at any time.
  */
 extern void apc_cache_clear(apc_cache_t* cache TSRMLS_DC);
 
@@ -178,6 +176,18 @@ extern zend_bool apc_cache_make_context(apc_context_t* context,
                                         uint force_update TSRMLS_DC);
 
 /*
+* apc_cache_make_context_ex is an advanced/external version of make_context
+*  the memory management functions passed should work with your static external sma 
+*/
+extern zend_bool apc_cache_make_context_ex(apc_context_t* context,
+                                           apc_malloc_t _malloc, 
+                                           apc_free_t _free, 
+                                           apc_protect_t _protect, 
+                                           apc_unprotect_t _unprotect, 
+                                           apc_pool_type pool_type, 
+                                           apc_copy_type copy_type, 
+                                           uint force_update TSRMLS_DC);
+/*
 * apc_context_destroy should be called when a context is finished being used 
 */
 extern zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC);
@@ -188,7 +198,7 @@ extern zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC);
  * If false is returned, the caller must free the cache entry by calling
  * apc_cache_free_entry (see below).
  *
- * key is the value created by apc_cache_make_key for file keys.
+ * key is the value created by apc_cache_make_key
  *
  * value is a cache entry returned by apc_cache_make_entry (see below).
  *

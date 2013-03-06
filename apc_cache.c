@@ -239,7 +239,7 @@ apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl TSRMLS_DC)
     cache = (apc_cache_t*) apc_emalloc(sizeof(apc_cache_t) TSRMLS_CC);
     cache_size = sizeof(cache_header_t) + num_slots*sizeof(slot_t*);
 
-    cache->shmaddr = apc_sma_malloc(cache_size);
+    cache->shmaddr = apc_sma_malloc(cache_size TSRMLS_CC);
     if(!cache->shmaddr) {
         apc_error("Unable to allocate shared memory for cache structures.  (Perhaps your shared memory size isn't large enough?). " TSRMLS_CC);
         return NULL;
@@ -288,7 +288,7 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, cons
 		/* initialize the key for insertion */
 		if (apc_cache_make_key(&key, strkey, strkey_len TSRMLS_CC)) {
 			/* run cache defense */
-			if (!apc_cache_defense(cache, &key)) {
+			if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
 				/* initialize the entry for insertion */
 				if ((entry = apc_cache_make_entry(val, &ctxt, ttl TSRMLS_CC))) {
 					/* create an insertion */
@@ -565,26 +565,48 @@ clear_all:
 zend_bool apc_cache_make_context(apc_context_t* context, apc_context_type context_type, apc_pool_type pool_type, apc_copy_type copy_type, uint force_update TSRMLS_DC) {
 	switch (context_type) {
 		case APC_CONTEXT_SHARE: {
-			context->pool = apc_pool_create(
-				pool_type, apc_sma_malloc, apc_sma_free, apc_sma_protect, apc_sma_unprotect TSRMLS_CC);
+			return apc_cache_make_context_ex(
+				context,
+				apc_sma_malloc, apc_sma_free, apc_sma_protect, apc_sma_unprotect,
+				pool_type, copy_type, force_update TSRMLS_CC
+			);
 		} break;
 		
 		case APC_CONTEXT_NOSHARE: {
-			context->pool = apc_pool_create(
-				pool_type, apc_php_malloc, apc_php_free, NULL, NULL TSRMLS_CC);
+			return apc_cache_make_context_ex(
+				context,
+				apc_php_malloc, apc_php_free, NULL, NULL,
+				pool_type, copy_type, force_update TSRMLS_CC
+			);
 		} break;
-
-		default: return 0;
 	}
 
+	return 0;
+} /* }}} */
+
+/* {{{ apc_cache_make_context_ex */
+zend_bool apc_cache_make_context_ex(apc_context_t* context,
+                                    apc_malloc_t _malloc, 
+                                    apc_free_t _free, 
+                                    apc_protect_t _protect, 
+                                    apc_unprotect_t _unprotect, 
+                                    apc_pool_type pool_type, 
+                                    apc_copy_type copy_type, 
+                                    uint force_update TSRMLS_DC) {
+	/* attempt to create the pool */
+	context->pool = apc_pool_create(
+		pool_type, _malloc, _free, _protect, _unprotect TSRMLS_CC
+	);
+	
 	if (!context->pool) {
 		apc_warning("Unable to allocate memory for pool." TSRMLS_CC);
 		return 0;
 	}
 
+	/* set context information */
 	context->copy = copy_type;
 	context->force_update = force_update;
-	
+
 	return 1;
 } /* }}} */
 

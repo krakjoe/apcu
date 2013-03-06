@@ -410,7 +410,7 @@ void apc_sma_api_cleanup(apc_sma_t* sma TSRMLS_DC) {
     apc_efree(sma->segs TSRMLS_CC);
 }
 
-void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, zend_ulong* allocated TSRMLS_CC) {
+void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC) {
 	size_t off;
     uint i;
     int nuked = 0;
@@ -512,7 +512,7 @@ char* apc_sma_api_strdup(apc_sma_t* sma, const char* s TSRMLS_DC) {
     return q;
 }
 
-void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_CC) {
+void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC) {
 	uint i;
     size_t offset;
 
