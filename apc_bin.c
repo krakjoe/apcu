@@ -437,10 +437,10 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
                 } else if (Z_TYPE_P(sp->value->val) == IS_ARRAY && !APCG(serializer)) {
                     /* this is a little complicated, we have to unserialize it first, then serialize it again */
                     zval *garbage;
-                    ctxt.copy = APC_COPY_OUT_USER;
+                    ctxt.copy = APC_COPY_OUT;
                     garbage = apc_copy_zval(NULL, sp->value->val, &ctxt TSRMLS_CC);
                     APCG(serializer) = apc_find_serializer("php" TSRMLS_CC);
-                    ctxt.copy = APC_COPY_IN_USER;
+                    ctxt.copy = APC_COPY_IN;
                     ep->val.val = apc_copy_zval(NULL, garbage, &ctxt TSRMLS_CC);
                     ep->val.val->type = IS_OBJECT;
                     /* a memleak can not be avoided: zval_ptr_dtor(&garbage); */
@@ -513,7 +513,7 @@ int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
             uint use_copy = 0;
             switch (Z_TYPE_P(ep->val.val)) {
                 case IS_OBJECT:
-                    ctxt.copy = APC_COPY_OUT_USER;
+                    ctxt.copy = APC_COPY_OUT;
                     data = apc_copy_zval(NULL, ep->val.val, &ctxt TSRMLS_CC);
                     use_copy = 1;
                 break;
@@ -521,7 +521,7 @@ int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
                     data = ep->val.val;
                 break;
             }
-            ctxt.copy = APC_COPY_IN_USER;
+            ctxt.copy = APC_COPY_IN;
 			/* TODO no info/info_len */
             //_apc_store(ep->val.key->identifier, ep->val->key->identifier_len, data, ep->val.ttl, 0 TSRMLS_CC);
             if (use_copy) {

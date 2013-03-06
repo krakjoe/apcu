@@ -33,6 +33,7 @@
 #include "apc_cache.h"
 #include "apc_sma.h"
 #include "apc_globals.h"
+#include "php_scandir.h"
 #include "SAPI.h"
 #include "TSRM.h"
 #include "ext/standard/md5.h"
@@ -267,6 +268,157 @@ apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl TSRMLS_DC)
 }
 /* }}} */
 
+/* {{{ apc_cache_store */
+zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC) {
+    apc_cache_entry_t *entry;
+    apc_cache_key_t key;
+    time_t t;
+    apc_context_t ctxt={0,};
+    int ret = 1;
+
+    if (!APCG(serializer) && APCG(serializer_name)) {
+        /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
+        APCG(serializer) = apc_find_serializer(APCG(serializer_name) TSRMLS_CC);
+    }
+
+    HANDLE_BLOCK_INTERRUPTIONS();
+
+	/* initialize a context suitable for making an insert */
+	if (apc_cache_make_context(&ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
+		/* initialize the key for insertion */
+		if (apc_cache_make_key(&key, strkey, strkey_len TSRMLS_CC)) {
+			/* run cache defense */
+			if (!apc_cache_defense(cache, &key)) {
+				/* initialize the entry for insertion */
+				if ((entry = apc_cache_make_entry(val, &ctxt, ttl TSRMLS_CC))) {
+					/* create an insertion */
+					if (apc_cache_insert(cache, key, entry, &ctxt, t, exclusive TSRMLS_CC)) {
+						goto result;
+					} else { ret = 0; }
+				}
+			}
+		}
+		/* in any case of failure the context should be destroyed */
+		apc_cache_destroy_context(&ctxt TSRMLS_CC);
+	}
+	
+result:
+    HANDLE_UNBLOCK_INTERRUPTIONS();
+
+    return ret;
+} /* }}} */
+
+/* {{{ data_unserialize */
+static zval* data_unserialize(const char *filename TSRMLS_DC)
+{
+    zval* retval;
+    long len = 0;
+    struct stat sb;
+    char *contents, *tmp;
+    FILE *fp;
+    php_unserialize_data_t var_hash = {0,};
+
+    if(VCWD_STAT(filename, &sb) == -1) {
+        return NULL;
+    }
+
+    fp = fopen(filename, "rb");
+
+    len = sizeof(char)*sb.st_size;
+
+    tmp = contents = malloc(len);
+
+    if(!contents) {
+       return NULL;
+    }
+
+    if(fread(contents, 1, len, fp) < 1) {	
+      free(contents);
+      return NULL;
+    }
+
+    MAKE_STD_ZVAL(retval);
+
+    PHP_VAR_UNSERIALIZE_INIT(var_hash);
+    
+    /* I wish I could use json */
+    if(!php_var_unserialize(&retval, (const unsigned char**)&tmp, (const unsigned char*)(contents+len), &var_hash TSRMLS_CC)) {
+        zval_ptr_dtor(&retval);
+        return NULL;
+    }
+
+    PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
+
+    free(contents);
+    fclose(fp);
+
+    return retval;
+}
+
+static int apc_load_data(apc_cache_t* cache, const char *data_file TSRMLS_DC)
+{
+    char *p;
+    char key[MAXPATHLEN] = {0,};
+    unsigned int key_len;
+    zval *data;
+
+    p = strrchr(data_file, DEFAULT_SLASH);
+
+    if(p && p[1]) {
+        strlcpy(key, p+1, sizeof(key));
+        p = strrchr(key, '.');
+
+        if(p) {
+            p[0] = '\0';
+            key_len = strlen(key)+1;
+
+            data = data_unserialize(data_file TSRMLS_CC);
+            if(data) {
+                apc_cache_store(cache, key, key_len, data, 0, 1 TSRMLS_CC);
+            }
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+/* {{{ apc_cache_preload shall load the prepared data files in path into the specified cache */
+zend_bool apc_cache_preload(apc_cache_t* cache, const char *path TSRMLS_DC)
+{
+#ifndef ZTS	
+	zend_bool result = 0;
+	char file[MAXPATHLEN]={0,};
+	int ndir, i;
+	char *p = NULL;
+	struct dirent **namelist = NULL;
+
+	if ((ndir = php_scandir(path, &namelist, 0, php_alphasort)) > 0) {
+		for (i = 0; i < ndir; i++) {
+			/* check for extension */
+			if (!(p = strrchr(namelist[i]->d_name, '.'))
+				    || (p && strcmp(p, ".data"))) {
+				free(namelist[i]);
+				continue;
+			}
+
+			snprintf(file, MAXPATHLEN, "%s%c%s",
+				    path, DEFAULT_SLASH, namelist[i]->d_name);
+
+			if(apc_load_data(cache, file TSRMLS_CC)) {
+				result = 1;
+			}
+			free(namelist[i]);
+		}
+		free(namelist);
+	}
+	return result;
+#else 
+	apc_error("Cannot load data from apc.preload_path=%s in thread-safe mode" TSRMLS_CC, path);
+	return 0;
+#endif	
+} /* }}} */
+
 /* {{{ apc_cache_release */
 void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry TSRMLS_DC)
 {
@@ -406,6 +558,39 @@ clear_all:
     }
 }
 /* }}} */
+
+/* {{{ apc_cache_make_context */
+zend_bool apc_cache_make_context(apc_context_t* context, apc_context_type context_type, apc_pool_type pool_type, apc_copy_type copy_type, uint force_update TSRMLS_DC) {
+	switch (context_type) {
+		case APC_CONTEXT_SHARE: {
+			context->pool = apc_pool_create(
+				pool_type, apc_sma_malloc, apc_sma_free, apc_sma_protect, apc_sma_unprotect TSRMLS_CC);
+		} break;
+		
+		case APC_CONTEXT_NOSHARE: {
+			context->pool = apc_pool_create(
+				pool_type, apc_php_malloc, apc_php_free, NULL, NULL TSRMLS_CC);
+		} break;
+
+		default: return 0;
+	}
+
+	if (!context->pool) {
+		apc_warning("Unable to allocate memory for pool." TSRMLS_CC);
+		return 0;
+	}
+
+	context->copy = copy_type;
+	context->force_update = force_update;
+	
+	return 1;
+} /* }}} */
+
+/* {{{ apc_context_destroy */
+zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC) {
+	if (context->pool)
+		apc_pool_destroy(context->pool TSRMLS_CC);
+} /* }}} */
 
 /* {{{ apc_cache_insert */
 int apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC)
@@ -593,10 +778,10 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
 /* }}} */
 
 /* {{{ apc_cache_update */
-int _apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cache_updater_t updater, void* data TSRMLS_DC)
+zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cache_updater_t updater, void* data TSRMLS_DC)
 {
     slot_t** slot;
-    int retval;
+    int retval = 0;
     unsigned long h;
 
     if(apc_cache_busy(cache))
@@ -671,13 +856,14 @@ int apc_cache_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_cache_make_key */
-int apc_cache_make_key(apc_cache_key_t* key, char* identifier, int identifier_len TSRMLS_DC)
+zend_bool apc_cache_make_key(apc_cache_key_t* key, char* identifier, int identifier_len TSRMLS_DC)
 {
     assert(key != NULL);
 
-    if (!identifier)
-        return 0;
-
+    if (!identifier) {
+		return 0;
+	}
+    
     key->identifier = identifier;
     key->identifier_len = identifier_len;
     key->h = string_nhash_8(
@@ -868,7 +1054,7 @@ static zval** my_copy_zval_ptr(zval** dst, const zval** src, apc_context_t* ctxt
 {
     zval* dst_new;
     apc_pool* pool = ctxt->pool;
-    int usegc = (ctxt->copy == APC_COPY_OUT_USER);
+    int usegc = (ctxt->copy == APC_COPY_OUT);
 
     assert(src != NULL);
 
@@ -920,7 +1106,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
         zend_hash_index_update(&APCG(copied_zvals), (ulong)src, (void**)&dst, sizeof(zval*), NULL);
     }
 
-    if(ctxt->copy == APC_COPY_OUT_USER || ctxt->copy == APC_COPY_IN_USER) {
+    if(ctxt->copy == APC_COPY_OUT || ctxt->copy == APC_COPY_IN) {
         /* deep copies are refcount(1), but moved up for recursive 
          * arrays,  which end up being add_ref'd during its copy. */
         Z_SET_REFCOUNT_P(dst, 1);
@@ -966,9 +1152,9 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
     case IS_OBJECT:
     
         dst->type = IS_NULL;
-        if(ctxt->copy == APC_COPY_IN_USER) {
+        if(ctxt->copy == APC_COPY_IN) {
             dst = my_serialize_object(dst, src, ctxt TSRMLS_CC);
-        } else if(ctxt->copy == APC_COPY_OUT_USER) {
+        } else if(ctxt->copy == APC_COPY_OUT) {
             dst = my_unserialize_object(dst, src, ctxt TSRMLS_CC);
         }
         break;
@@ -995,7 +1181,7 @@ zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
     assert(src != NULL);
 
     if (!dst) {
-        if(ctxt->copy == APC_COPY_OUT_USER) {
+        if(ctxt->copy == APC_COPY_OUT) {
             ALLOC_ZVAL(dst);
             CHECK(dst);
         } else {

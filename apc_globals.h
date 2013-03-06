@@ -34,10 +34,11 @@
 #ifndef APC_GLOBALS_H
 #define APC_GLOBALS_H
 
+#include "apc.h"
 #include "apc_cache.h"
+#include "apc_serializer.h"
 #include "apc_stack.h"
 #include "apc_php.h"
-#include "apc_main.h"
 
 /* {{{ struct apc_rfc1867_data */
 

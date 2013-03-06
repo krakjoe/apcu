@@ -32,10 +32,25 @@
 typedef int (*apc_serialize_t)(APC_SERIALIZER_ARGS);
 typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);
 
+/* {{{ struct definition: apc_serializer_t */
+typedef struct apc_serializer_t {
+    const char *name;
+    apc_serialize_t serialize;
+    apc_unserialize_t unserialize;
+    void *config;
+} apc_serializer_t;
+/* }}} */
+
 typedef int (*apc_register_serializer_t)(const char* name,
                                         apc_serialize_t serialize,
                                         apc_unserialize_t unserialize,
                                         void *config TSRMLS_DC);
+
+#define APC_MAX_SERIALIZERS 16
+
+/* pointer to the original Zend engine compile_file function */
+static apc_serializer_t apc_serializers[APC_MAX_SERIALIZERS] = {{0,}};
+/* }}} */
 
 /*
  * ABI version for constant hooks. Increment this any time you make any changes
@@ -53,9 +68,9 @@ typedef int (*apc_register_serializer_t)(const char* name,
 #endif
 
 static APC_UNUSED int apc_register_serializer(const char* name,
-                                    apc_serialize_t serialize,
-                                    apc_unserialize_t unserialize,
-                                    void *config TSRMLS_DC)
+                                              apc_serialize_t serialize,
+                                              apc_unserialize_t unserialize,
+                                              void *config TSRMLS_DC)
 {
     zval apc_magic_constant;
     int retval = 0;
@@ -70,6 +85,50 @@ static APC_UNUSED int apc_register_serializer(const char* name,
     }
 
     return retval;
+}
+
+static APC_UNUSED int _apc_register_serializer(const char* name, apc_serialize_t serialize, 
+                                               apc_unserialize_t unserialize,
+                                               void *config TSRMLS_DC)
+{
+    int i;
+    apc_serializer_t *serializer;
+
+    for(i = 0; i < APC_MAX_SERIALIZERS; i++) {
+        serializer = &apc_serializers[i];
+        if(!serializer->name) {
+            /* empty entry */
+            serializer->name = name; /* assumed to be const */
+            serializer->serialize = serialize;
+            serializer->unserialize = unserialize;
+            serializer->config = config;
+            if (i < APC_MAX_SERIALIZERS - 1) {
+                apc_serializers[i+1].name = NULL;
+            }
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static apc_serializer_t* apc_get_serializers(TSRMLS_D) 
+{
+	return &(apc_serializers[0]);
+}
+
+static apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC) 
+{
+	int i;
+    apc_serializer_t *serializer;
+
+    for(i = 0; i < APC_MAX_SERIALIZERS; i++) {
+        serializer = &apc_serializers[i];
+        if(serializer->name && (strcmp(serializer->name, name) == 0)) {
+            return serializer;
+        }
+    }
+    return NULL;
 }
 
 #endif

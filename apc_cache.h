@@ -39,7 +39,6 @@
 #include "apc.h"
 #include "apc_lock.h"
 #include "apc_pool.h"
-#include "apc_main.h"
 #include "TSRM.h"
 
 /* {{{ cache locking macros */
@@ -141,6 +140,12 @@ extern apc_cache_t* apc_cache_create(int size_hint,
                                      int ttl TSRMLS_DC);
 
 /*
+* apc_cache_preload preloads the data at path into the specified cache
+*/
+extern zend_bool apc_cache_preload(apc_cache_t* cache,
+								   const char* path TSRMLS_DC);
+
+/*
  * apc_cache_destroy releases any OS resources associated with a cache object.
  * Under apache, this function can be safely called by the child processes
  * when they exit.
@@ -154,6 +159,25 @@ extern void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC);
 extern void apc_cache_clear(apc_cache_t* cache TSRMLS_DC);
 
 /*
+* apc_cache_make_context initializes a context with an appropriate pool and options provided
+*
+* Some of the APC API requires a context in which to operate
+*
+* The type of context required depends on the operation being performed, for example
+* an insert should happen in a shared context, a fetch should happen in a nonshared context
+*/
+extern zend_bool apc_cache_make_context(apc_context_t* context, 
+                                        apc_context_type context_type, 
+                                        apc_pool_type pool_type,
+                                        apc_copy_type copy_type,
+                                        uint force_update TSRMLS_DC);
+
+/*
+* apc_context_destroy should be called when a context is finished being used 
+*/
+extern zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC);
+
+/*
  * apc_cache_insert adds an entry to the cache.
  * Returns non-zero if the entry was successfully inserted, 0 otherwise. 
  * If 0 is returned, the caller must free the cache entry by calling
@@ -162,6 +186,8 @@ extern void apc_cache_clear(apc_cache_t* cache TSRMLS_DC);
  * key is the value created by apc_cache_make_key for file keys.
  *
  * value is a cache entry returned by apc_cache_make_entry (see below).
+ *
+ * an easier API exists in the form of apc_cache_store
  */
 extern int apc_cache_insert(apc_cache_t* cache, 
                             apc_cache_key_t key,
@@ -179,6 +205,16 @@ extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
                                          char* strkey, 	
                                          int keylen, 
                                          time_t t TSRMLS_DC);
+
+/* 
+ * apc_cache_store creates key, entry and context in which to make an insertion of val into the specified cache
+ */
+extern zend_bool apc_cache_store(apc_cache_t* cache, 
+                                 char *strkey, 
+                                 int strkey_len, 
+                                 const zval *val, 
+                                 const unsigned int ttl, 
+                                 const int exclusive TSRMLS_DC);
 
 /*
  * apc_cache_exists searches for a cache entry by its hashed identifier,
@@ -222,9 +258,9 @@ extern void apc_cache_release(apc_cache_t* cache,
 /*
 * apc_cache_make_key creates an apc_cache_key_t from an identifier, it's length and the current time
 */
-extern int apc_cache_make_key(apc_cache_key_t* key,
-                              char* identifier,
-                              int identifier_len TSRMLS_DC);
+extern zend_bool apc_cache_make_key(apc_cache_key_t* key,
+                                    char* identifier,
+                                    int identifier_len TSRMLS_DC);
 
 /*
  * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
@@ -257,13 +293,16 @@ extern zend_bool apc_cache_defense(apc_cache_t* cache,
                                    apc_cache_key_t* key TSRMLS_DC);
 
 /* {{{ rfc1867 */
-typedef int (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void* data);
+typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void* data);
 
-extern int _apc_cache_update(apc_cache_t* cache, 	
-                             char *strkey, 
-                             int keylen,
-                             apc_cache_updater_t updater, 
-                             void* data TSRMLS_DC);
+/*
+* apc_cache_update: update an entry in place, not a good idea
+*/
+extern zend_bool apc_cache_update(apc_cache_t* cache, 	
+                                  char *strkey, 
+                                  int keylen,
+                                  apc_cache_updater_t updater, 
+                                  void* data TSRMLS_DC);
 /* }}} */
 #endif
 

@@ -105,6 +105,32 @@ struct _apc_pool {
     /* apc_realpool and apc_unpool add more here */
 }; /* }}} */
 
+/* {{{ enum definition: apc_copy_type */
+/* APC_COPY_IN should be used when copying into APC 
+   APC_COPY_OUT should be used when copying out of APC */
+typedef enum _apc_copy_type {
+    APC_NO_COPY = 0,
+    APC_COPY_IN,
+    APC_COPY_OUT,
+	APC_COPY_OTHER
+} apc_copy_type; /* }}} */
+
+/* {{{ enum definition: apc_context_type 
+	APC_CONTEXT_SHARE should be used to create contexts using shared memory 
+	APC_CONTEXT_NOSHARE should be used to create contexts using standard allocators */
+typedef enum _apc_context_type {
+	APC_CONTEXT_NONE = 0,
+    APC_CONTEXT_SHARE,
+	APC_CONTEXT_NOSHARE
+} apc_context_type; /* }}} */
+
+/* {{{ struct definition: apc_context_t */
+typedef struct _apc_context_t {
+    apc_pool *pool;
+    apc_copy_type copy;
+    unsigned int force_update:1;
+} apc_context_t; /* }}} */
+
 /*
  performs alignment checking on pool internals
 */
