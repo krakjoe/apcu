@@ -115,8 +115,7 @@ if test "$PHP_APCU" != "no"; then
   PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APC_CFLAGS))
   PHP_SUBST(APC_SHARED_LIBADD)
   PHP_SUBST(APC_CFLAGS)
-  PHP_INSTALL_HEADERS(ext/apcu, [apc_serializer.h])
-  PHP_INSTALL_HEADERS(ext/apcu, [apc_sma_api.h])
+  PHP_INSTALL_HEADERS(ext/apcu, [apc_sma_api.h apc_serializer.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
 fi
 

@@ -18,6 +18,8 @@
 
 /*
  This module defines an SMA API for third parties
+ Third parties need to ensure that APCu is loaded before their module in order
+  to make use of the SMA API
 */
 
 #ifndef HAVE_APC_SMA_API_H
@@ -68,7 +70,10 @@ typedef struct _apc_sma_t {
 *
 * should be called once per allocator per process
 */
-extern void apc_sma_api_init(apc_sma_t* sma, zend_uint num, zend_ulong size, char *mask TSRMLS_DC);
+extern void apc_sma_api_init(apc_sma_t* sma,
+                             zend_uint num,
+                             zend_ulong size,
+                             char *mask TSRMLS_DC);
 
 /*
 * apc_sma_api_cleanup will free the sma allocator
@@ -78,27 +83,35 @@ extern void apc_sma_api_cleanup(apc_sma_t* sma TSRMLS_DC);
 /*
 * apc_smap_api_malloc will allocate a block from the sma of the given size
 */
-extern void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong size TSRMLS_DC);
+extern void* apc_sma_api_malloc(apc_sma_t* sma, 
+                                zend_ulong size TSRMLS_DC);
 
 /*
 * apc_sma_api_malloc_ex will allocate a block from the sma of the given size
 */
-extern void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong size, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC);
+extern void* apc_sma_api_malloc_ex(apc_sma_t* sma, 
+                                   zend_ulong size, 
+                                   zend_ulong fragment, 
+                                   zend_ulong* allocated TSRMLS_DC);
 
 /*
 * apc_sma_api_realloc will reallocate p using a new block from sma (freeing the original p)
 */
-extern void* apc_sma_api_realloc(apc_sma_t* sma, void* p, zend_ulong size TSRMLS_DC);
+extern void* apc_sma_api_realloc(apc_sma_t* sma, 
+                                 void* p, 
+                                 zend_ulong size TSRMLS_DC);
 
 /*
 * apc_sma_api_strdup will duplicate the given string into a block from sma
 */
-extern char* apc_sma_api_strdup(apc_sma_t* sma, const char* s TSRMLS_DC);
+extern char* apc_sma_api_strdup(apc_sma_t* sma, 
+                                const char* s TSRMLS_DC);
 
 /*
 * apc_sma_api_free will free p (which should be a pointer to a block allocated from sma)
 */
-extern void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC);
+extern void apc_sma_api_free(apc_sma_t* sma, 
+                             void* p TSRMLS_DC);
 
 #if ALLOC_DISTRIBUTION 
 extern zend_ulong *apc_sma_api_get_alloc_distribution(apc_sma_t* sma);
@@ -107,22 +120,26 @@ extern zend_ulong *apc_sma_api_get_alloc_distribution(apc_sma_t* sma);
 /*
 * apc_sma_api_protect will protect p (which should be a pointer to a block allocated from sma)
 */
-extern void* apc_sma_api_protect(apc_sma_t* sma, void* p);
+extern void* apc_sma_api_protect(apc_sma_t* sma, 
+                                 void* p);
 
 /*
 * apc_sma_api_protect will uprotect p (which should be a pointer to a block allocated from sma)
 */
-extern void* apc_sma_api_unprotect(apc_sma_t* sma, void *p); 
+extern void* apc_sma_api_unprotect(apc_sma_t* sma, 
+                                   void *p); 
 
 /*
 * apc_sma_api_info returns information about the allocator
 */
-extern apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited TSRMLS_DC); 
+extern apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, 
+                                        zend_bool limited TSRMLS_DC); 
 
 /*
 * apc_sma_api_info_free_info is for freeing apc_sma_info_t* returned by apc_sma_api_info
 */
-extern void apc_sma_api_free_info(apc_sma_t* sma, apc_sma_info_t* info TSRMLS_DC); 
+extern void apc_sma_api_free_info(apc_sma_t* sma,
+                                  apc_sma_info_t* info TSRMLS_DC); 
 
 /*
 * apc_sma_api_get_avail_mem will return the amount of memory available left to sma
@@ -132,7 +149,8 @@ extern zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma);
 /*
 * apc_sma_api_get_avail_size will return true if at least size bytes are available to the sma
 */
-extern zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size); 
+extern zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, 
+                                            size_t size); 
 
 /*
 * apc_sma_api_check_integrity will check the integrity of sma
