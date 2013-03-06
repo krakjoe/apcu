@@ -45,15 +45,12 @@
 # define APC_SMA_CANARIES 1
 #endif
 
-static apc_sma_t apc_sma;
+/* True global APC default SMA */
+static apc_sma_t apc_sma = {0,}; /* }}} */
 
-enum { DEFAULT_NUMSEG=1, DEFAULT_SEGSIZE=30*1024*1024 };
-
-static int sma_initialized = 0;     /* true if the sma has been initialized */
-static uint sma_numseg;             /* number of shm segments to allow */
-static size_t sma_segsize;          /* size of each shm segment */
-static apc_segment_t* sma_segments; /* array of shm segments */
-static int sma_lastseg = 0;         /* index of MRU segment */
+enum { 
+	DEFAULT_NUMSEG=1, 
+	DEFAULT_SEGSIZE=30*1024*1024 };
 
 typedef struct sma_header_t sma_header_t;
 struct sma_header_t {
@@ -503,7 +500,7 @@ restart:
         if (off != -1) {
             void* p = (void *)(SMA_ADDR(sma, i) + off);
             UNLOCK(&SMA_LCK(sma, i));
-            sma_lastseg = i;
+            sma->last = i;
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
             VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
