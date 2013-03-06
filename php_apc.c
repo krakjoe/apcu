@@ -250,9 +250,9 @@ static PHP_MINIT_FUNCTION(apcu)
         if (!APCG(initialized)) {
 			/* initialize shared memory allocator */
 #if APC_MMAP
-			apc_sma_init(APCG(shm_segments), APCG(shm_size), APCG(mmap_file_mask) TSRMLS_CC);
+			apc_sma_init(APCG(shm_segments), APCG(shm_size), APCG(mmap_file_mask));
 #else
-			apc_sma_init(APCG(shm_segments), APCG(shm_size), NULL TSRMLS_CC);
+			apc_sma_init(APCG(shm_segments), APCG(shm_size), NULL);
 #endif
 			/* create user cache */
 			apc_user_cache = apc_cache_create(
@@ -296,7 +296,7 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 			/* destroy cache pointer */
 			apc_cache_destroy(apc_user_cache TSRMLS_CC);
 			/* cleanup shared memory */
-			apc_sma_cleanup(TSRMLS_C);
+			apc_sma_cleanup();
 
 			APCG(initialized) = 0;
 		}
@@ -378,7 +378,7 @@ PHP_FUNCTION(apc_sma_info)
         return;
     }
 
-    info = apc_sma_info(limited TSRMLS_CC);
+    info = apc_sma_info(limited);
 
     if (!info) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING, "No APC SMA info available.  Perhaps APC is disabled via apc.enabled?");
@@ -391,7 +391,7 @@ PHP_FUNCTION(apc_sma_info)
     add_assoc_double(return_value, "avail_mem", (double)apc_sma_get_avail_mem());
 
     if (limited) {
-        apc_sma_free_info(info TSRMLS_CC);
+        apc_sma_free_info(info);
         return;
     }
 
@@ -430,7 +430,7 @@ PHP_FUNCTION(apc_sma_info)
         add_next_index_zval(block_lists, list);
     }
     add_assoc_zval(return_value, "block_lists", block_lists);
-    apc_sma_free_info(info TSRMLS_CC);
+    apc_sma_free_info(info);
 }
 /* }}} */
 

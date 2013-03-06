@@ -239,7 +239,7 @@ apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl TSRMLS_DC)
     cache = (apc_cache_t*) apc_emalloc(sizeof(apc_cache_t) TSRMLS_CC);
     cache_size = sizeof(cache_header_t) + num_slots*sizeof(slot_t*);
 
-    cache->shmaddr = apc_sma_malloc(cache_size TSRMLS_CC);
+    cache->shmaddr = apc_sma_malloc(cache_size);
     if(!cache->shmaddr) {
         apc_error("Unable to allocate shared memory for cache structures.  (Perhaps your shared memory size isn't large enough?). " TSRMLS_CC);
         return NULL;
@@ -436,7 +436,7 @@ void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC)
 	/* XXX this is definitely a leak, but freeing this causes all the apache
 		children to freeze. It might be because the segment is shared between
 		several processes. To figure out is how to free this safely. */
-    /*apc_sma_free(cache->shmaddr TSRMLS_CC);*/
+    /*apc_sma_free(cache->shmaddr);*/
     apc_efree(cache TSRMLS_CC);
 }
 /* }}} */
