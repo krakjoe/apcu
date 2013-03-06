@@ -511,7 +511,9 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
         return;
     }
 
-    if (!key) RETURN_FALSE;
+    if (!key) {
+		RETURN_FALSE;
+	}
 
     if (Z_TYPE_P(key) == IS_ARRAY) {
         hash = Z_ARRVAL_P(key);
@@ -556,16 +558,16 @@ PHP_FUNCTION(apc_add) {
 }
 /* }}} */
 
-/* {{{ inc_updater */
+/* {{{ php_inc_updater */
 
-struct _inc_update_args {
+struct php_inc_updater_args {
     long step;
     long lval;
 };
 
-static zend_bool inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
+static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
 
-    struct _inc_update_args *args = (struct _inc_update_args*) data;
+    struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
     
     zval* val = entry->val;
 
@@ -584,7 +586,7 @@ static zend_bool inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void*
 PHP_FUNCTION(apc_inc) {
     char *strkey;
     int strkey_len;
-    struct _inc_update_args args = {1L, -1};
+    struct php_inc_updater_args args = {1L, -1};
     zval *success = NULL;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|lz", &strkey, &strkey_len, &(args.step), &success) == FAILURE) {
@@ -595,7 +597,7 @@ PHP_FUNCTION(apc_inc) {
 		zval_dtor(success);
 	}
 
-    if(php_apc_update(strkey, strkey_len, inc_updater, &args TSRMLS_CC)) {
+    if(php_apc_update(strkey, strkey_len, php_inc_updater, &args TSRMLS_CC)) {
         if(success) ZVAL_TRUE(success);
         RETURN_LONG(args.lval);
     }
@@ -611,7 +613,7 @@ PHP_FUNCTION(apc_inc) {
 PHP_FUNCTION(apc_dec) {
     char *strkey;
     int strkey_len;
-    struct _inc_update_args args = {1L, -1};
+    struct php_inc_updater_args args = {1L, -1};
     zval *success = NULL;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|lz", &strkey, &strkey_len, &(args.step), &success) == FAILURE) {
@@ -624,7 +626,7 @@ PHP_FUNCTION(apc_dec) {
 
     args.step = args.step * -1;
 
-    if(php_apc_update(strkey, strkey_len, inc_updater, &args TSRMLS_CC)) {
+    if(php_apc_update(strkey, strkey_len, php_inc_updater, &args TSRMLS_CC)) {
         if(success) ZVAL_TRUE(success);
         RETURN_LONG(args.lval);
     }
@@ -635,8 +637,8 @@ PHP_FUNCTION(apc_dec) {
 }
 /* }}} */
 
-/* {{{ cas_updater */
-static zend_bool cas_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
+/* {{{ php_cas_updater */
+static zend_bool php_cas_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
     long* vals = ((long*)data);
     long old = vals[0];
     long new = vals[1];
@@ -664,7 +666,7 @@ PHP_FUNCTION(apc_cas) {
         return;
     }
 
-    if(php_apc_update(strkey, strkey_len, cas_updater, &vals TSRMLS_CC)) {
+    if(php_apc_update(strkey, strkey_len, php_cas_updater, &vals TSRMLS_CC)) {
 		RETURN_TRUE;
 	}
 
