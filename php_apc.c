@@ -100,7 +100,7 @@ static void php_apc_init_globals(zend_apcu_globals* apcu_globals TSRMLS_DC)
 static PHP_INI_MH(OnUpdateShmSegments) /* {{{ */
 {
 #if APC_MMAP
-    if(zend_atoi(new_value, new_value_length)!=1) {
+    if (zend_atoi(new_value, new_value_length)!=1) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING, "apc.shm_segments setting ignored in MMAP mode");
     }
     APCG(shm_segments) = 1;
@@ -115,11 +115,11 @@ static PHP_INI_MH(OnUpdateShmSize) /* {{{ */
 {
     long s = zend_atol(new_value, new_value_length);
 
-    if(s <= 0) {
+    if (s <= 0) {
         return FAILURE;
     }
 
-    if(s < 1048576L) {
+    if (s < 1048576L) {
         /* if it's less than 1Mb, they are probably using the old syntax */
         php_error_docref(	
 			NULL TSRMLS_CC, E_WARNING, "apc.shm_size now uses M/G suffixes, please update your ini files");
@@ -137,12 +137,12 @@ static PHP_INI_MH(OnUpdateRfc1867Freq) /* {{{ */
 {
     int tmp;
     tmp = zend_atoi(new_value, new_value_length);
-    if(tmp < 0) {
+    if (tmp < 0) {
         apc_error("rfc1867_freq must be greater than or equal to zero." TSRMLS_CC);
         return FAILURE;
     }
-    if(new_value[new_value_length-1] == '%') {
-        if(tmp > 100) {
+    if (new_value[new_value_length-1] == '%') {
+        if (tmp > 100) {
             apc_error("rfc1867_freq cannot be over 100%%" TSRMLS_CC);
             return FAILURE;
         }
@@ -208,11 +208,13 @@ static PHP_MINFO_FUNCTION(apcu)
     for( i = 0, serializer = apc_get_serializers(TSRMLS_C); 
                 serializer->name != NULL; 
                 serializer++, i++) {
-        if(i != 0) smart_str_appends(&names, ", ");
+        if (i != 0) {
+			smart_str_appends(&names, ", ");
+		}
         smart_str_appends(&names, serializer->name);
     }
 
-    if(names.c) {
+    if (names.c) {
         smart_str_0(&names);
         php_info_print_table_row(2, "Serialization Support", names.c);
         smart_str_free(&names);
@@ -239,14 +241,14 @@ static PHP_MINIT_FUNCTION(apcu)
     REGISTER_INI_ENTRIES();
 
     /* Disable APC in cli mode unless overridden by apc.enable_cli */
-    if(!APCG(enable_cli) && !strcmp(sapi_module.name, "cli")) {
+    if (!APCG(enable_cli) && !strcmp(sapi_module.name, "cli")) {
         APCG(enabled) = 0;
     }
 
 	/* only run initialization if APC is enabled */
     if (APCG(enabled)) {
 
-        if(!APCG(initialized)) {
+        if (!APCG(initialized)) {
 			/* initialize shared memory allocator */
 #if APC_MMAP
 			apc_sma_init(APCG(shm_segments), APCG(shm_size), APCG(mmap_file_mask) TSRMLS_CC);
@@ -268,7 +270,7 @@ static PHP_MINIT_FUNCTION(apcu)
 
 #ifdef MULTIPART_EVENT_FORMDATA
             /* File upload progress tracking */
-            if(APCG(rfc1867)) {
+            if (APCG(rfc1867)) {
                 php_rfc1867_callback = apc_rfc1867_progress;
             }
 #endif
@@ -289,7 +291,7 @@ static PHP_MINIT_FUNCTION(apcu)
 static PHP_MSHUTDOWN_FUNCTION(apcu)
 {
 	/* only shut down if APC is enabled */
-    if(APCG(enabled)) {
+    if (APCG(enabled)) {
         if (APCG(initialized)) {
 
 			/* destroy cache pointer */
@@ -316,7 +318,7 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 /* {{{ PHP_RINIT_FUNCTION(apcu) */
 static PHP_RINIT_FUNCTION(apcu)
 {
-    if(APCG(enabled)) {
+    if (APCG(enabled)) {
         if (!APCG(serializer) && APCG(serializer_name)) {
 		    /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
 		    APCG(serializer) = apc_find_serializer(APCG(serializer_name) TSRMLS_CC);
@@ -355,7 +357,7 @@ PHP_FUNCTION(apc_cache_info)
 
     info = apc_cache_info(apc_user_cache, limited TSRMLS_CC);
 
-    if(!info) {
+    if (!info) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING, "No APC info available.  Perhaps APC is not enabled? Check apc.enabled in your ini file");
         RETURN_FALSE;
     }
@@ -379,7 +381,7 @@ PHP_FUNCTION(apc_sma_info)
 
     info = apc_sma_info(limited TSRMLS_CC);
 
-    if(!info) {
+    if (!info) {
         php_error_docref(NULL TSRMLS_CC, E_WARNING, "No APC SMA info available.  Perhaps APC is disabled via apc.enabled?");
         RETURN_FALSE;
     }
@@ -389,7 +391,7 @@ PHP_FUNCTION(apc_sma_info)
     add_assoc_double(return_value, "seg_size", (double)info->seg_size);
     add_assoc_double(return_value, "avail_mem", (double)apc_sma_get_avail_mem());
 
-    if(limited) {
+    if (limited) {
         apc_sma_free_info(info TSRMLS_CC);
         return;
     }
@@ -436,7 +438,7 @@ PHP_FUNCTION(apc_sma_info)
 /* {{{ php_apc_update  */
 int php_apc_update(char *strkey, int strkey_len, apc_cache_updater_t updater, void* data TSRMLS_DC) 
 {
-    if(!APCG(enabled)) {
+    if (!APCG(enabled)) {
         return 0;
     }
 
@@ -487,7 +489,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
         while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
             zend_hash_get_current_key_ex(hash, &hkey, &hkey_len, &hkey_idx, 0, &hpos);
             if (hkey) {
-				if(!apc_cache_store(apc_user_cache, hkey, hkey_len, *hentry, (unsigned int)ttl, exclusive TSRMLS_CC)) {
+				if (!apc_cache_store(apc_user_cache, hkey, hkey_len, *hentry, (unsigned int)ttl, exclusive TSRMLS_CC)) {
                     add_assoc_long_ex(return_value, hkey, hkey_len, -1);  /* -1: insertion error */
                 }
                 hkey = NULL;
@@ -499,7 +501,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
         return;
     } else if (Z_TYPE_P(key) == IS_STRING) {
         if (!val) RETURN_FALSE;
-		if(apc_cache_store(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
+		if (apc_cache_store(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
             RETURN_TRUE;
     } else {
         apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs." TSRMLS_CC);
@@ -536,7 +538,7 @@ static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
     
     zval* val = entry->val;
 
-    if(Z_TYPE_P(val) == IS_LONG) {
+    if (Z_TYPE_P(val) == IS_LONG) {
         Z_LVAL_P(val) += args->step;
         args->lval = Z_LVAL_P(val);
         return 1;
@@ -596,8 +598,8 @@ PHP_FUNCTION(apc_dec) {
 
     args.step = args.step * -1;
 
-    if(php_apc_update(strkey, strkey_len, php_inc_updater, &args TSRMLS_CC)) {
-        if(success) ZVAL_TRUE(success);
+    if (php_apc_update(strkey, strkey_len, php_inc_updater, &args TSRMLS_CC)) {
+        if (success) ZVAL_TRUE(success);
         RETURN_LONG(args.lval);
     }
     
@@ -616,8 +618,8 @@ static zend_bool php_cas_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
     long new = vals[1];
     zval* val = entry->val;
 
-    if(Z_TYPE_P(val) == IS_LONG) {
-        if(Z_LVAL_P(val) == old) {
+    if (Z_TYPE_P(val) == IS_LONG) {
+        if (Z_LVAL_P(val) == old) {
             Z_LVAL_P(val) = new;
             return 1;
         }
@@ -638,7 +640,7 @@ PHP_FUNCTION(apc_cas) {
         return;
     }
 
-    if(php_apc_update(strkey, strkey_len, php_cas_updater, &vals TSRMLS_CC)) {
+    if (php_apc_update(strkey, strkey_len, php_cas_updater, &vals TSRMLS_CC)) {
 		RETURN_TRUE;
 	}
 
@@ -683,10 +685,10 @@ PHP_FUNCTION(apc_fetch) {
 		/* initialize a context */
 		if (apc_cache_make_context(&ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0 TSRMLS_CC)) {
 			
-			if(Z_TYPE_P(key) == IS_STRING) {
+			if (Z_TYPE_P(key) == IS_STRING) {
 
 				/* do find using string as key */
-				if((entry = apc_cache_find(apc_user_cache, Z_STRVAL_P(key), (Z_STRLEN_P(key) + 1), t TSRMLS_CC))) {
+				if ((entry = apc_cache_find(apc_user_cache, Z_STRVAL_P(key), (Z_STRLEN_P(key) + 1), t TSRMLS_CC))) {
 				    /* deep-copy returned shm zval to emalloc'ed return_value */
 				    apc_cache_fetch_zval(
 						return_value, entry->val, &ctxt TSRMLS_CC);
@@ -700,7 +702,7 @@ PHP_FUNCTION(apc_fetch) {
 
 				} else { ZVAL_BOOL(return_value, 0); }
 
-			} else if(Z_TYPE_P(key) == IS_ARRAY) {
+			} else if (Z_TYPE_P(key) == IS_ARRAY) {
 
 				/* do find using key as array of strings */
 				HashPosition hpos;
@@ -713,10 +715,10 @@ PHP_FUNCTION(apc_fetch) {
 				zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(key), &hpos);
 				while(zend_hash_get_current_data_ex(Z_ARRVAL_P(key), (void**)&hentry, &hpos) == SUCCESS) {
 
-				    if(Z_TYPE_PP(hentry) == IS_STRING) {
+				    if (Z_TYPE_PP(hentry) == IS_STRING) {
 
 				        /* perform find using this index as key */
-						if((entry = apc_cache_find(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1), t TSRMLS_CC))) {
+						if ((entry = apc_cache_find(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1), t TSRMLS_CC))) {
 							zval *result_entry;
 
 						    /* deep-copy returned shm zval to emalloc'ed return_value */
@@ -766,7 +768,7 @@ PHP_FUNCTION(apc_exists) {
     zval *key;
     time_t t;
 
-    if(!APCG(enabled)) {
+    if (!APCG(enabled)) {
 		RETURN_FALSE;
 	}
 
@@ -782,7 +784,7 @@ PHP_FUNCTION(apc_exists) {
 
     if (Z_TYPE_P(key) == IS_STRING) {
         if (Z_STRLEN_P(key)) {
-		    if(apc_cache_exists(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, t TSRMLS_CC)) {
+		    if (apc_cache_exists(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, t TSRMLS_CC)) {
 		        RETURN_TRUE;
 		    } else {
 				RETURN_FALSE;			
@@ -797,8 +799,8 @@ PHP_FUNCTION(apc_exists) {
         array_init(result); 
 
         zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(key), &hpos);
-        while(zend_hash_get_current_data_ex(Z_ARRVAL_P(key), (void**)&hentry, &hpos) == SUCCESS) {
-            if(Z_TYPE_PP(hentry) == IS_STRING) {
+        while (zend_hash_get_current_data_ex(Z_ARRVAL_P(key), (void**)&hentry, &hpos) == SUCCESS) {
+            if (Z_TYPE_PP(hentry) == IS_STRING) {
                if (apc_cache_exists(apc_user_cache, Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) + 1, t TSRMLS_CC)) {
 					zval *result_entry;
 				
@@ -833,7 +835,7 @@ PHP_FUNCTION(apc_exists) {
 PHP_FUNCTION(apc_delete) {
     zval *keys;
 
-    if(!APCG(enabled)) {
+    if (!APCG(enabled)) {
 		RETURN_FALSE;
 	}
 
@@ -893,7 +895,7 @@ PHP_FUNCTION(apc_bin_dump) {
     HashTable  *h_vars;
     apc_bd_t *bd;
 
-    if(!APCG(enabled)) {
+    if (!APCG(enabled)) {
         apc_warning("APC is not enabled, apc_bin_dump not available." TSRMLS_CC);
         RETURN_FALSE;
     }
@@ -904,7 +906,7 @@ PHP_FUNCTION(apc_bin_dump) {
 
     h_vars = z_vars ? Z_ARRVAL_P(z_vars) : NULL;
     bd = apc_bin_dump(NULL, h_vars TSRMLS_CC);
-    if(bd) {
+    if (bd) {
         RETVAL_STRINGL((char*)bd, bd->size-1, 0);
     } else {
         apc_error("Unknown error encountered during apc_bin_dump." TSRMLS_CC);
@@ -932,7 +934,7 @@ PHP_FUNCTION(apc_bin_dumpfile) {
     int numbytes = 0;
     apc_bd_t *bd;
 
-    if(!APCG(enabled)) {
+    if (!APCG(enabled)) {
         apc_warning("APC is not enabled, apc_bin_dumpfile not available." TSRMLS_CC);
         RETURN_FALSE;
     }
@@ -942,14 +944,14 @@ PHP_FUNCTION(apc_bin_dumpfile) {
         return;
     }
 
-    if(!filename_len) {
+    if (!filename_len) {
         apc_error("apc_bin_dumpfile filename argument must be a valid filename." TSRMLS_CC);
         RETURN_FALSE;
     }
 
     h_vars = z_vars ? Z_ARRVAL_P(z_vars) : NULL;
     bd = apc_bin_dump(NULL, h_vars TSRMLS_CC);
-    if(!bd) {
+    if (!bd) {
         apc_error("Unknown error encountered during apc_bin_dumpfile." TSRMLS_CC);
         RETURN_FALSE;
     }
@@ -974,14 +976,14 @@ PHP_FUNCTION(apc_bin_dumpfile) {
     }
 
     numbytes = php_stream_write(stream, (char*)bd, bd->size);
-    if(numbytes != bd->size) {
+    if (numbytes != bd->size) {
         numbytes = -1;
     }
 
     php_stream_close(stream);
     efree(bd);
 
-    if(numbytes < 0) {
+    if (numbytes < 0) {
         apc_error("Only %d of %d bytes written, possibly out of free disk space" TSRMLS_CC, numbytes, bd->size);
         RETURN_FALSE;
     }
@@ -999,7 +1001,7 @@ PHP_FUNCTION(apc_bin_load) {
     char *data;
     long flags = 0;
 
-    if(!APCG(enabled)) {
+    if (!APCG(enabled)) {
         apc_warning("APC is not enabled, apc_bin_load not available." TSRMLS_CC);
         RETURN_FALSE;
     }
@@ -1008,7 +1010,7 @@ PHP_FUNCTION(apc_bin_load) {
         return;
     }
 
-    if(!data_len || data_len != ((apc_bd_t*)data)->size -1) {
+    if (!data_len || data_len != ((apc_bd_t*)data)->size -1) {
         apc_error("apc_bin_load string argument does not appear to be a valid APC binary dump due to size (%d vs expected %d)." TSRMLS_CC, data_len, ((apc_bd_t*)data)->size -1);
         RETURN_FALSE;
     }
@@ -1033,7 +1035,7 @@ PHP_FUNCTION(apc_bin_loadfile) {
     char *data;
     int len;
 
-    if(!APCG(enabled)) {
+    if (!APCG(enabled)) {
         apc_warning("APC is not enabled, apc_bin_loadfile not available." TSRMLS_CC);
         RETURN_FALSE;
     }
@@ -1042,7 +1044,7 @@ PHP_FUNCTION(apc_bin_loadfile) {
         return;
     }
 
-    if(!filename_len) {
+    if (!filename_len) {
         apc_error("apc_bin_loadfile filename argument must be a valid filename." TSRMLS_CC);
         RETURN_FALSE;
     }
@@ -1056,13 +1058,13 @@ PHP_FUNCTION(apc_bin_loadfile) {
     }
 
     len = php_stream_copy_to_mem(stream, &data, PHP_STREAM_COPY_ALL, 0);
-    if(len == 0) {
+    if (len == 0) {
         apc_warning("File passed to apc_bin_loadfile was empty: %s." TSRMLS_CC, filename);
         RETURN_FALSE;
-    } else if(len < 0) {
+    } else if (len < 0) {
         apc_warning("Error reading file passed to apc_bin_loadfile: %s." TSRMLS_CC, filename);
         RETURN_FALSE;
-    } else if(len != ((apc_bd_t*)data)->size) {
+    } else if (len != ((apc_bd_t*)data)->size) {
         apc_warning("file passed to apc_bin_loadfile does not appear to be valid due to size (%d vs expected %d)." TSRMLS_CC, len, ((apc_bd_t*)data)->size -1);
         RETURN_FALSE;
     }
