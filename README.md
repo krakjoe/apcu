@@ -1,7 +1,7 @@
 APCu
 ====
 
-APCu is userland cacing: APC stripped of it's opcode caching in preparation for the deployment of Zend Optimizer+ as the primary solution to opcode caching in future versions of PHP.
+APCu is userland caching: APC stripped of it's opcode caching in preparation for the deployment of Zend Optimizer+ as the primary solution to opcode caching in future versions of PHP.
 
 APCu has a revised and simplified codebase, by the time the PECL release is available, every part of APCu being used will have recieved review and where necessary or appropriate, changes.
 
