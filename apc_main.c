@@ -54,7 +54,6 @@ static apc_serializer_t apc_serializers[APC_MAX_SERIALIZERS] = {{0,}};
 /* }}} */
 
 extern int _apc_store(char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC);
-extern int _apc_store_async(char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC);
 
 static zval* data_unserialize(const char *filename TSRMLS_DC)
 {

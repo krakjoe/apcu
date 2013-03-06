@@ -38,21 +38,24 @@
 #include <limits.h>
 #include "apc_mmap.h"
 
-#ifdef HAVE_VALGRIND_MEMCHECK_H
-#include <valgrind/memcheck.h>
+#ifdef APC_SMA_DEBUG
+# ifdef HAVE_VALGRIND_MEMCHECK_H
+#  include <valgrind/memcheck.h>
+# endif
+# define APC_SMA_CANARIES 1
 #endif
 
 enum { DEFAULT_NUMSEG=1, DEFAULT_SEGSIZE=30*1024*1024 };
 
 static int sma_initialized = 0;     /* true if the sma has been initialized */
-static uint sma_numseg;     /* number of shm segments to allow */
+static uint sma_numseg;             /* number of shm segments to allow */
 static size_t sma_segsize;          /* size of each shm segment */
 static apc_segment_t* sma_segments; /* array of shm segments */
 static int sma_lastseg = 0;         /* index of MRU segment */
 
 typedef struct sma_header_t sma_header_t;
 struct sma_header_t {
-    apc_lock_t sma_lock;    /* segment lock, MUST BE ALIGNED for futex locks */
+    apc_lock_t sma_lock;    /* segment lock */
     size_t segsize;         /* size of entire segment */
     size_t avail;           /* bytes available (not necessarily contiguous) */
 #if ALLOC_DISTRIBUTION
@@ -65,19 +68,13 @@ struct sma_header_t {
 #define SMA_RO(i)   ((char*)(sma_segments[i]).roaddr)
 #define SMA_LCK(i)  ((SMA_HDR(i))->sma_lock)
 
-
-/* do not enable for threaded http servers */
-/* #define __APC_SMA_DEBUG__ 1 */
-
-#ifdef __APC_SMA_DEBUG__
+#ifdef APC_SMA_DEBUG
 /* global counter for identifying blocks
  * Technically it is possible to do the same
  * using offsets, but double allocations of the
  * same offset can happen. */
 static volatile size_t block_id = 0;
 #endif
-
-#define APC_SMA_CANARIES 1
 
 typedef struct block_t block_t;
 struct block_t {
@@ -88,7 +85,7 @@ struct block_t {
 #ifdef APC_SMA_CANARIES
     size_t canary;     /* canary to check for memory overwrites */
 #endif
-#ifdef __APC_SMA_DEBUG__
+#ifdef APC_SMA_DEBUG
     size_t id;         /* identifier for the memory block */
 #endif
 };
@@ -199,13 +196,14 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, size_t size, size_t
 
     prvnextfit = 0;     /* initially null (no fit) */
     prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+
     CHECK_CANARY(prv);
 
     while (prv->fnext != 0) {
         cur = BLOCKAT(prv->fnext);
-#ifdef __APC_SMA_DEBUG__
-        CHECK_CANARY(cur);
-#endif
+
+		CHECK_CANARY(cur);
+
         /* If it can fit realsize bytes in cur block, stop searching */
         if (cur->size >= realsize) {
             prvnextfit = prv;
@@ -249,7 +247,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, size_t size, size_t
         nxt->fprev = cur->fprev;
         BLOCKAT(nxt->fnext)->fprev = OFFSET(nxt);
         BLOCKAT(nxt->fprev)->fnext = OFFSET(nxt);
-#ifdef __APC_SMA_DEBUG__
+#ifdef APC_SMA_DEBUG
         nxt->id = -1;
 #endif
     }
@@ -263,7 +261,8 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, size_t size, size_t
 #endif
 
     SET_CANARY(cur);
-#ifdef __APC_SMA_DEBUG__
+
+#ifdef APC_SMA_DEBUG
     cur->id = ++block_id;
     fprintf(stderr, "allocate(realsize=%d,size=%d,id=%d)\n", (int)(size), (int)(cur->size), cur->id);
 #endif
@@ -299,7 +298,8 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
         BLOCKAT(prv->fprev)->fnext = prv->fnext;
         /* cur and prv share an edge, combine them */
         prv->size +=cur->size;
-        RESET_CANARY(cur);
+       
+		RESET_CANARY(cur);
         cur = prv;
     }
 
@@ -310,10 +310,13 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
         BLOCKAT(nxt->fnext)->fprev = nxt->fprev;
         BLOCKAT(nxt->fprev)->fnext = nxt->fnext;
         cur->size += nxt->size;
-#ifdef __APC_SMA_DEBUG__
-        CHECK_CANARY(nxt);
+
+		CHECK_CANARY(nxt);
+
+#ifdef APC_SMA_DEBUG
         nxt->id = -1; /* assert this or set it ? */
 #endif
+
         RESET_CANARY(nxt);
     }
 
@@ -393,7 +396,7 @@ void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC)
         first->fprev = 0;
         first->prev_size = 0;
         SET_CANARY(first);
-#ifdef __APC_SMA_DEBUG__
+#ifdef APC_SMA_DEBUG
         first->id = -1;
 #endif
         empty = BLOCKAT(first->fnext);
@@ -402,7 +405,7 @@ void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC)
         empty->fprev = ALIGNWORD(sizeof(sma_header_t));
         empty->prev_size = 0;
         SET_CANARY(empty);
-#ifdef __APC_SMA_DEBUG__
+#ifdef APC_SMA_DEBUG
         empty->id = -1;
 #endif
         last = BLOCKAT(empty->fnext);
@@ -411,7 +414,7 @@ void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC)
         last->fprev =  OFFSET(empty);
         last->prev_size = empty->size;
         SET_CANARY(last);
-#ifdef __APC_SMA_DEBUG__
+#ifdef APC_SMA_DEBUG
         last->id = -1;
 #endif
     }
@@ -677,9 +680,8 @@ apc_sma_info_t* apc_sma_info(zend_bool limited TSRMLS_DC)
         /* For each block in this segment */
         while (BLOCKAT(prv->fnext)->fnext != 0) {
             block_t* cur = BLOCKAT(prv->fnext);
-#ifdef __APC_SMA_DEBUG__
-            CHECK_CANARY(cur);
-#endif
+			
+			CHECK_CANARY(cur);
 
             *link = apc_emalloc(sizeof(apc_sma_link_t) TSRMLS_CC);
             (*link)->size = cur->size;

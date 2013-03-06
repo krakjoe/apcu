@@ -32,7 +32,7 @@
 #define APC_CACHE_H
 
 /*
- * This module defines the shared memory file cache. Basically all of the
+ * This module defines the shared memory cache. Basically all of the
  * logic for storing and retrieving cache entries lives here.
  */
 
