@@ -81,4 +81,11 @@ extern zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma);
 extern zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size); 
 extern void apc_sma_api_check_integrity(apc_sma_t* sma); /* }}} */
 
+/* {{{ ALIGNWORD: pad up x, aligned to the system's word boundary */
+typedef union { void* p; int i; long l; double d; void (*f)(); } apc_word_t;
+#define ALIGNSIZE(x, size) ((size) * (1 + (((x)-1)/(size))))
+#define ALIGNWORD(x) ALIGNSIZE(x, sizeof(apc_word_t))
+/* }}} */
+
 #endif
+
