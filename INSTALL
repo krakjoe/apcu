@@ -192,7 +192,7 @@ users should consider tuning the following parameters:
     apc.enabled             This can be set to 0 to disable APCu. This is
                             primarily useful when APCu is statically compiled
                             into PHP, since there is no other way to disable
-                            it (when compiled as a DSO, the zend_extension
+                            it (when compiled as a DSO, the extension
                             line can just be commented-out).
                             (Default: 1)
                             
