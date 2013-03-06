@@ -22,29 +22,25 @@
 
 #ifndef HAVE_APC_SMA_API_H
 #define HAVE_APC_SMA_API_H
+/* {{{ SMA API
+	APC SMA API provides support for shared memory allocators to external library
+    A guide to imlpementation to come ( and is contained in the APC source code )
+*/
+
 /* {{{ struct definition: apc_segment_t */
 typedef struct _apc_segment_t {
-    size_t size;
-    void* shmaddr;
+    size_t size;            /* size of this segment */
+    void* shmaddr;          /* address of shared memory */
 #ifdef APC_MEMPROTECT
-    void* roaddr;
+    void* roaddr;           /* read only (mprotect'd) address */
 #endif
 } apc_segment_t; /* }}} */
-
-/* {{{ struct definition: apc_sma_t */
-typedef struct _apc_sma_t {
-	zend_bool  initialized;
-	zend_uint  num;
-	zend_ulong size;
-	zend_uint  last;
-	apc_segment_t* segs;
-} apc_sma_t; /* }}} */
 
 /* {{{ struct definition: apc_sma_link_t */
 typedef struct apc_sma_link_t apc_sma_link_t;
 struct apc_sma_link_t {
-    long size;               /* size of this free block */
-    long offset;             /* offset in segment of this block */
+    long size;              /* size of this free block */
+    long offset;            /* offset in segment of this block */
     apc_sma_link_t* next;   /* link to next free block */
 };
 /* }}} */
@@ -52,16 +48,20 @@ struct apc_sma_link_t {
 /* {{{ struct definition: apc_sma_info_t */
 typedef struct apc_sma_info_t apc_sma_info_t;
 struct apc_sma_info_t {
-    int num_seg;            /* number of shared memory segments */
-    size_t seg_size;           /* size of each shared memory segment */
-    apc_sma_link_t** list;  /* there is one list per segment */
+    int num_seg;            /* number of segments */
+    size_t seg_size;        /* segment size */
+    apc_sma_link_t** list;  /* one list per segment of links */
 };
 /* }}} */
 
-/* {{{ SMA API
-	APC SMA API provides support for shared memory allocators to external library
-    A guide to imlpementation to come ( and is contained in the APC source code )
-*/
+/* {{{ struct definition: apc_sma_t */
+typedef struct _apc_sma_t {
+	zend_bool  initialized; /* flag to signify this sma has been intialized */
+	zend_uint  num;         /* number of segments */
+	zend_ulong size;        /* segment size */
+	zend_uint  last;        /* last segment */
+	apc_segment_t* segs;    /* segments */
+} apc_sma_t; /* }}} */
 
 /*
 * apc_sma_api_init will initialize a shared memory allocator with num segments of the given size
