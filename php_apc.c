@@ -467,13 +467,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
     zval *key = NULL;
     zval *val = NULL;
     long ttl = 0L;
-    HashTable *hash;
-    HashPosition hpos;
-    zval **hentry;
-    char *hkey=NULL;
-    uint hkey_len;
-    ulong hkey_idx;
-
+    
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|zl", &key, &val, &ttl) == FAILURE) {
         return;
     }
@@ -483,11 +477,19 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
 	}
 
     if (Z_TYPE_P(key) == IS_ARRAY) {
-        hash = Z_ARRVAL_P(key);
+		HashPosition hpos;
+		zval **hentry;
+		
         array_init(return_value);
-        zend_hash_internal_pointer_reset_ex(hash, &hpos);
-        while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
-            zend_hash_get_current_key_ex(hash, &hkey, &hkey_len, &hkey_idx, 0, &hpos);
+
+        zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(key), &hpos);
+
+        while (zend_hash_get_current_data_ex(Z_ARRVAL_P(key), (void**)&hentry, &hpos) == SUCCESS) {
+			char *hkey=NULL;
+			uint hkey_len;
+			ulong hkey_idx;
+
+            zend_hash_get_current_key_ex(Z_ARRVAL_P(key), &hkey, &hkey_len, &hkey_idx, 0, &hpos);
             if (hkey) {
 				if (!apc_cache_store(apc_user_cache, hkey, hkey_len, *hentry, (unsigned int)ttl, exclusive TSRMLS_CC)) {
                     add_assoc_long_ex(return_value, hkey, hkey_len, -1);  /* -1: insertion error */
@@ -496,13 +498,17 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
             } else {
                 add_index_long(return_value, hkey_idx, -1);  /* -1: insertion error */
             }
-            zend_hash_move_forward_ex(hash, &hpos);
+            zend_hash_move_forward_ex(Z_ARRVAL_P(key), &hpos);
         }
         return;
     } else if (Z_TYPE_P(key) == IS_STRING) {
-        if (!val) RETURN_FALSE;
-		if (apc_cache_store(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC))
-            RETURN_TRUE;
+        if (!val) {
+			RETURN_FALSE;
+		}
+
+		if (apc_cache_store(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC)) {
+			RETURN_TRUE;		
+		}            
     } else {
         apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs." TSRMLS_CC);
     }
