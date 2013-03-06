@@ -34,17 +34,32 @@
 
 #include "apc.h"
 
-/* Simple shared memory allocator */
-
-typedef struct _apc_segment_t apc_segment_t;
-
-struct _apc_segment_t {
+/* {{{ struct definition: apc_segment_t */
+typedef struct _apc_segment_t {
     size_t size;
     void* shmaddr;
 #ifdef APC_MEMPROTECT
     void* roaddr;
 #endif
-};
+} apc_segment_t; /* }}} */
+
+/*
+ * @TODO:
+ * 	Provide an API from this code ...
+ * APC should declare a static apc_sma_t apc_user_sma 
+ *  just like it does for apc_user_cache
+ * This, or another version of this API should 
+ *	take apc_sma_t* and use it where appropriate
+*/
+
+/* {{{ struct definition: apc_sma_t */
+typedef struct _apc_sma_t {
+	zend_bool  initialized;
+	zend_uint  num;
+	zend_ulong size;
+	zend_uint  last;
+	apc_segment_t* segs;
+} apc_sma_t; /* }}} */
 
 extern void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC);
 extern void apc_sma_cleanup(TSRMLS_D);
