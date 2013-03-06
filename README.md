@@ -19,7 +19,7 @@ Specific Changes
     * revision of APC's caching API (structures revised and partly documented, functions revised and partly documented, binary functionality requires revision)
     * revision of APC's PHP internals (removals complete, not yet renamed, changes to apc_store(array) behaviour planned)
     * revision of APC's userspace API (removals complete, not yet renamed, changes to iterator complete)
-    * revision of APC's shared memory allocator (ongoing, possibly provide an API for 3rd party extensions)
+    * revision of APC's shared memory allocator (ongoing, API provided for 3rd party extensions: apc_sma_api.h)
     * revision of APC's pooling API (complete, no functional changes, documented)
     * installation of SIGUSR1 handler (where possible) to clear cache (complete)
     * documentation of all associated API's (ongoing, first headers then updates/revision/completion of TECHNOTES)
