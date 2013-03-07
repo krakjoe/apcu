@@ -218,67 +218,67 @@ typedef union { void* p; int i; long l; double d; void (*f)(); } apc_word_t;
 
 /* {{{ Call in a header somewhere to extern all sma functions */
 #define apc_sma_api_decl(name) \
-	extern void apc_sma_api_func(name, init)(zend_uint num, zend_ulong size, char* mask TSRMLS_DC); \
-	extern void apc_sma_api_func(name, cleanup)(TSRMLS_D); \
-	extern void* apc_sma_api_func(name, malloc)(zend_ulong size TSRMLS_DC); \
-	extern void* apc_sma_api_func(name, malloc_ex)(zend_ulong size, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC); \
-	extern void* apc_sma_api_func(name, realloc)(void* p, zend_ulong size TSRMLS_DC); \
-	extern char* apc_sma_api_func(name, strdup)(const char* s TSRMLS_DC); \
-	extern void apc_sma_api_func(name, free)(void* p TSRMLS_DC); \
-	extern void* apc_sma_api_func(name, protect)(void* p); \
-	extern void* apc_sma_api_func(name, unprotect)(void* p); \
-	extern apc_sma_info_t* apc_sma_api_func(name, info)(zend_bool limited TSRMLS_DC); \
-	extern void apc_sma_api_func(name, free_info)(apc_sma_info_t* info TSRMLS_DC); \
-	extern zend_ulong apc_sma_api_func(name, get_avail_mem)(); \
-	extern zend_bool apc_sma_api_func(name, get_avail_size)(zend_ulong size); \
-	extern void apc_sma_api_func(name, check_integrity)(); /* }}} */
+    extern void apc_sma_api_func(name, init)(zend_uint num, zend_ulong size, char* mask TSRMLS_DC); \
+    extern void apc_sma_api_func(name, cleanup)(TSRMLS_D); \
+    extern void* apc_sma_api_func(name, malloc)(zend_ulong size TSRMLS_DC); \
+    extern void* apc_sma_api_func(name, malloc_ex)(zend_ulong size, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC); \
+    extern void* apc_sma_api_func(name, realloc)(void* p, zend_ulong size TSRMLS_DC); \
+    extern char* apc_sma_api_func(name, strdup)(const char* s TSRMLS_DC); \
+    extern void apc_sma_api_func(name, free)(void* p TSRMLS_DC); \
+    extern void* apc_sma_api_func(name, protect)(void* p); \
+    extern void* apc_sma_api_func(name, unprotect)(void* p); \
+    extern apc_sma_info_t* apc_sma_api_func(name, info)(zend_bool limited TSRMLS_DC); \
+    extern void apc_sma_api_func(name, free_info)(apc_sma_info_t* info TSRMLS_DC); \
+    extern zend_ulong apc_sma_api_func(name, get_avail_mem)(); \
+    extern zend_bool apc_sma_api_func(name, get_avail_size)(zend_ulong size); \
+    extern void apc_sma_api_func(name, check_integrity)(); /* }}} */
 
 /* {{{ Call in a compilation unit */
 #define apc_sma_api_impl(name) \
 	apc_sma_t apc_sma_api_name(name) = {0, \
-		&apc_sma_api_func(name, init), \
-		&apc_sma_api_func(name, cleanup), \
+        &apc_sma_api_func(name, init), \
+        &apc_sma_api_func(name, cleanup), \
         &apc_sma_api_func(name, malloc), \
         &apc_sma_api_func(name, malloc_ex), \
         &apc_sma_api_func(name, realloc), \
         &apc_sma_api_func(name, strdup), \
-		&apc_sma_api_func(name, free), \
+        &apc_sma_api_func(name, free), \
         &apc_sma_api_func(name, protect), \
-		&apc_sma_api_func(name, unprotect), \
-		&apc_sma_api_func(name, info), \
-		&apc_sma_api_func(name, free_info), \
-		&apc_sma_api_func(name, get_avail_mem), \
-		&apc_sma_api_func(name, get_avail_size), \
-		&apc_sma_api_func(name, check_integrity), \
-	}; \
-	void apc_sma_api_func(name, init)(zend_uint num, zend_ulong size, char* mask TSRMLS_DC) \
-		{ apc_sma_api_init(apc_sma_api_ptr(name), num, size, mask TSRMLS_CC); } \
-	void apc_sma_api_func(name, cleanup)(TSRMLS_D) \
-		{ apc_sma_api_cleanup(apc_sma_api_ptr(name) TSRMLS_CC); } \
-	void* apc_sma_api_func(name, malloc)(zend_ulong size TSRMLS_DC) \
-		{ return apc_sma_api_malloc(apc_sma_api_ptr(name), size TSRMLS_CC); } \
-	void* apc_sma_api_func(name, malloc_ex)(zend_ulong size, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC) \
-		{ return apc_sma_api_malloc_ex(apc_sma_api_ptr(name), size, fragment, allocated TSRMLS_CC); } \
-	void* apc_sma_api_func(name, realloc)(void* p, zend_ulong size TSRMLS_DC) \
-		{ return apc_sma_api_realloc(apc_sma_api_ptr(name), p, size TSRMLS_CC); } \
-	char* apc_sma_api_func(name, strdup)(const char* s TSRMLS_DC) \
-		{ return apc_sma_api_strdup(apc_sma_api_ptr(name), s TSRMLS_CC); } \
-	void  apc_sma_api_func(name, free)(void* p TSRMLS_DC) \
-		{ apc_sma_api_free(apc_sma_api_ptr(name), p TSRMLS_CC); } \
-	void* apc_sma_api_func(name, protect)(void* p) \
-		{ return apc_sma_api_protect(apc_sma_api_ptr(name), p); } \
-	void* apc_sma_api_func(name, unprotect)(void* p) \
-		{ return apc_sma_api_unprotect(apc_sma_api_ptr(name), p); } \
-	apc_sma_info_t* apc_sma_api_func(name, info)(zend_bool limited TSRMLS_DC) \
-		{ return apc_sma_api_info(apc_sma_api_ptr(name), limited TSRMLS_CC); } \
-	void apc_sma_api_func(name, free_info)(apc_sma_info_t* info TSRMLS_DC) \
-		{ apc_sma_api_free_info(apc_sma_api_ptr(name), info TSRMLS_CC); } \
-	zend_ulong apc_sma_api_func(name, get_avail_mem)() \
-		{ return apc_sma_api_get_avail_mem(apc_sma_api_ptr(name)); } \
-	zend_bool apc_sma_api_func(name, get_avail_size)(zend_ulong size) \
-		{ return apc_sma_api_get_avail_size(apc_sma_api_ptr(name), size); } \
-	void apc_sma_api_func(name, check_integrity)() \
-		{ apc_sma_api_check_integrity(apc_sma_api_ptr(name)); }  /* }}} */
+        &apc_sma_api_func(name, unprotect), \
+        &apc_sma_api_func(name, info), \
+        &apc_sma_api_func(name, free_info), \
+        &apc_sma_api_func(name, get_avail_mem), \
+        &apc_sma_api_func(name, get_avail_size), \
+        &apc_sma_api_func(name, check_integrity), \
+    }; \
+    void apc_sma_api_func(name, init)(zend_uint num, zend_ulong size, char* mask TSRMLS_DC) \
+        { apc_sma_api_init(apc_sma_api_ptr(name), num, size, mask TSRMLS_CC); } \
+    void apc_sma_api_func(name, cleanup)(TSRMLS_D) \
+        { apc_sma_api_cleanup(apc_sma_api_ptr(name) TSRMLS_CC); } \
+    void* apc_sma_api_func(name, malloc)(zend_ulong size TSRMLS_DC) \
+        { return apc_sma_api_malloc(apc_sma_api_ptr(name), size TSRMLS_CC); } \
+    void* apc_sma_api_func(name, malloc_ex)(zend_ulong size, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC) \
+        { return apc_sma_api_malloc_ex(apc_sma_api_ptr(name), size, fragment, allocated TSRMLS_CC); } \
+    void* apc_sma_api_func(name, realloc)(void* p, zend_ulong size TSRMLS_DC) \
+        { return apc_sma_api_realloc(apc_sma_api_ptr(name), p, size TSRMLS_CC); } \
+    char* apc_sma_api_func(name, strdup)(const char* s TSRMLS_DC) \
+        { return apc_sma_api_strdup(apc_sma_api_ptr(name), s TSRMLS_CC); } \
+    void  apc_sma_api_func(name, free)(void* p TSRMLS_DC) \
+        { apc_sma_api_free(apc_sma_api_ptr(name), p TSRMLS_CC); } \
+    void* apc_sma_api_func(name, protect)(void* p) \
+        { return apc_sma_api_protect(apc_sma_api_ptr(name), p); } \
+    void* apc_sma_api_func(name, unprotect)(void* p) \
+        { return apc_sma_api_unprotect(apc_sma_api_ptr(name), p); } \
+    apc_sma_info_t* apc_sma_api_func(name, info)(zend_bool limited TSRMLS_DC) \
+        { return apc_sma_api_info(apc_sma_api_ptr(name), limited TSRMLS_CC); } \
+    void apc_sma_api_func(name, free_info)(apc_sma_info_t* info TSRMLS_DC) \
+        { apc_sma_api_free_info(apc_sma_api_ptr(name), info TSRMLS_CC); } \
+    zend_ulong apc_sma_api_func(name, get_avail_mem)() \
+        { return apc_sma_api_get_avail_mem(apc_sma_api_ptr(name)); } \
+    zend_bool apc_sma_api_func(name, get_avail_size)(zend_ulong size) \
+        { return apc_sma_api_get_avail_size(apc_sma_api_ptr(name), size); } \
+    void apc_sma_api_func(name, check_integrity)() \
+        { apc_sma_api_check_integrity(apc_sma_api_ptr(name)); }  /* }}} */
 
 /* {{{ Call wherever access to the SMA object is required */
 #define apc_sma_api_extern(name)     extern apc_sma_t apc_sma_api_name(name) /* }}} */
