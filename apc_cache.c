@@ -1584,20 +1584,6 @@ zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ apc_cache_get_lastkey: get safely the lastkey of this cache */
-zend_bool apc_cache_get_lastkey(apc_cache_t* cache, apc_cache_key_t *key TSRMLS_DC) {
-	zend_bool result = 0;
-	
-	return result;
-} /* }}} */
-
-/* {{{ apc_cache_set_lastkey: set safely the lastkey of this cache */
-zend_bool apc_cache_set_lastkey(apc_cache_t* cache, apc_cache_key_t *key TSRMLS_DC) {
-	zend_bool result = 0;
-	
-	return result;
-} /* }}} */
-
 /*
  * Local variables:
  * tab-width: 4
