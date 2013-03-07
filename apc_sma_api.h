@@ -14,18 +14,20 @@
   +----------------------------------------------------------------------+
   | Author: Joe Watkins <joe.watkins@live.co.uk>                         |
   +----------------------------------------------------------------------+
- */
 
-/*
- This module defines an SMA API for third parties
- Third parties need to ensure that APCu is loaded before their module in order
-  to make use of the SMA API
-*/
+   This software was contributed to PHP by Community Connect Inc. in 2002
+   and revised in 2005 by Yahoo! Inc. to add support for PHP 5.1.
+   Future revisions and derivatives of this source code must acknowledge
+   Community Connect Inc. as the original contributor of this module by
+   leaving this note intact in the source code.
+
+   All other licensing and usage conditions are those of the PHP Group.
+ */
 
 #ifndef HAVE_APC_SMA_API_H
 #define HAVE_APC_SMA_API_H
 /* {{{ SMA API
-	APC SMA API provides support for shared memory allocators to external library
+	APC SMA API provides support for shared memory allocators to external libraries ( and to APC )
     Skip to the bottom macros for error free usage of the SMA API
 */
 

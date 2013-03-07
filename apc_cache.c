@@ -40,6 +40,7 @@
 #include "ext/standard/php_var.h"
 #include "ext/standard/php_smart_str.h"
 
+/* ensure we can access SMA */
 apc_sma_api_extern(apc_sma);
 
 typedef void* (*ht_copy_fun_t)(void*, void*, apc_context_t* TSRMLS_DC);
