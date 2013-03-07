@@ -33,21 +33,6 @@
 #include "apc.h"
 #include "apc_sma.h"
 
-/* #define APC_POOL_DEBUG 1 */
-
-typedef enum {
-    APC_UNPOOL         = 0x0,
-    APC_SMALL_POOL     = 0x1,
-    APC_MEDIUM_POOL    = 0x2,
-    APC_LARGE_POOL     = 0x3,
-    APC_POOL_SIZE_MASK = 0x7,   /* waste a bit */
-#if APC_POOL_DEBUG
-    APC_POOL_REDZONES  = 0x08,
-    APC_POOL_SIZEINFO  = 0x10,
-    APC_POOL_OPT_MASK  = 0x18
-#endif
-} apc_pool_type;
-
 #if APC_POOL_DEBUG
 #define APC_POOL_HAS_SIZEINFO(pool) ((pool->type & APC_POOL_SIZEINFO)!=0)
 #define APC_POOL_HAS_REDZONES(pool) ((pool->type & APC_POOL_REDZONES)!=0)
@@ -79,6 +64,20 @@ typedef void* (*apc_protect_t)  (void *p);
  unprotect is called to unprotect a block allocated from the pool
 */
 typedef void* (*apc_unprotect_t)(void *p);
+
+/* {{{ enum definition: apc_pool_type */
+typedef enum {
+    APC_UNPOOL         = 0x0,
+    APC_SMALL_POOL     = 0x1,
+    APC_MEDIUM_POOL    = 0x2,
+    APC_LARGE_POOL     = 0x3,
+    APC_POOL_SIZE_MASK = 0x7,   /* waste a bit */
+#if APC_POOL_DEBUG
+    APC_POOL_REDZONES  = 0x08,
+    APC_POOL_SIZEINFO  = 0x10,
+    APC_POOL_OPT_MASK  = 0x18
+#endif
+} apc_pool_type; /* }}} */
 
 /* {{{ structure definition: apc_pool */ 
 struct _apc_pool {

@@ -211,13 +211,13 @@ extern zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC);
  *
  * value is a cache entry returned by apc_cache_make_entry (see below).
  *
- * an easier API exists in the form of apc_cache_store
+ * an easier (and faster for bulk data) API exists in the form of apc_cache_store|all
  */
 extern zend_bool apc_cache_insert(apc_cache_t* cache, 
                                   apc_cache_key_t key,
                                   apc_cache_entry_t* value, 
                                   apc_context_t* ctxt, 
-                                  time_t t, 
+                                  time_t t,
                                   int exclusive TSRMLS_DC);
 
 /* 
@@ -229,6 +229,16 @@ extern zend_bool apc_cache_store(apc_cache_t* cache,
                                  const zval *val,
                                  const unsigned int ttl,
                                  const int exclusive TSRMLS_DC);
+
+/*
+* apc_cache_store_all takes an array of data, retains the lock while all insertions are made
+*  results is populated with -1 where there is an error inserting an entry from the set
+*/
+extern zend_bool apc_cache_store_all(apc_cache_t* cache, 
+                                     zval *data, 
+                                     zval *results, 
+                                     const unsigned int ttl, 
+                                     const int exclusive TSRMLS_DC);
 
 /*
 * apc_cache_update updates an entry in place, this is used for rfc1867 and inc/dec/cas

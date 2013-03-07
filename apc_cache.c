@@ -55,6 +55,9 @@ static HashTable* my_copy_hashtable_ex(HashTable*, HashTable* TSRMLS_DC, ht_copy
 #define my_copy_hashtable( dst, src, copy_fn, holds_ptr, ctxt) \
     my_copy_hashtable_ex(dst, src TSRMLS_CC, copy_fn, holds_ptr, ctxt, NULL)
 
+/* {{{ not to be used elsewhere, assumes the caller retains a lock */
+static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC); /* }}} */
+
 /* {{{ string_nhash_8 */
 #define string_nhash_8(s,len) (unsigned long)(zend_inline_hash_func((s), len))
 /* }}} */
@@ -316,6 +319,72 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, cons
     HANDLE_UNBLOCK_INTERRUPTIONS();
 
     return ret;
+} /* }}} */
+
+/* {{{ apc_cache_store_all 
+ Makes insertions as apc_cache_store, the only difference is it holds the lock open while operating on the cache */
+zend_bool apc_cache_store_all(apc_cache_t* cache, zval *data, zval *results, const unsigned int ttl, const int exclusive TSRMLS_DC) {
+	if (Z_TYPE_P(data) == IS_ARRAY) {	
+		HashPosition position;
+		HashTable*   table = Z_ARRVAL_P(data);
+		zval**       value;
+		time_t       now = apc_time();
+		
+		/* initialize result array */
+		array_init(results);		
+		
+		/* lock the cache */
+		CACHE_LOCK(cache);
+		
+		/* loop over data */
+		for (zend_hash_internal_pointer_reset_ex(table, &position);
+			zend_hash_get_current_data_ex(table, (void**) &value, &position) == SUCCESS;
+			zend_hash_move_forward_ex(table, &position)) {
+			char *skey;
+			zend_uint sklen;
+			zend_ulong idx;
+			
+			/* fetch current string if it's a key */
+			if (zend_hash_get_current_key_ex(table, &skey, &sklen, &idx, 0, &position) == HASH_KEY_IS_STRING) {
+				apc_context_t ctxt;
+				apc_cache_key_t key;
+				apc_cache_entry_t *entry;				
+				zend_bool result = 0;
+
+				/* make a throw away context */
+				if (apc_cache_make_context(&ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
+					/* initialize the key for insertion */
+					if (apc_cache_make_key(&key, skey, sklen TSRMLS_CC)) {
+						/* run cache defense */
+						if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
+							/* initialize the entry for insertion */
+							if ((entry = apc_cache_make_entry(*value, &ctxt, ttl TSRMLS_CC))) {
+								/* create an insertion */
+								if (apc_cache_quick_insert(cache, key, entry, &ctxt, now, exclusive TSRMLS_CC)) {
+									/* all good */
+									continue;
+								}
+							}
+						}
+					}
+
+					/* insertion did not occur */
+					add_assoc_long_ex(results, skey, sklen, -1);
+
+					/* in any case of failure the context should be destroyed */
+					apc_cache_destroy_context(
+						&ctxt TSRMLS_CC);			
+				}
+			}
+		}
+		
+		/* never forget */
+		CACHE_UNLOCK(cache);
+
+		return 1;	
+	}
+	
+	return 0;
 } /* }}} */
 
 /* {{{ data_unserialize */
@@ -624,10 +693,9 @@ zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC) {
 		apc_pool_destroy(context->pool TSRMLS_CC);
 } /* }}} */
 
-/* {{{ apc_cache_insert */
-zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC)
-{
-    slot_t** slot;
+/* {{{ apc_cache_quick_insert should not be used externally */
+static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC) {
+	slot_t** slot;
     unsigned int keylen = key.identifier_len;
     apc_cache_key_t *lastkey = &cache->header->lastkey;
     
@@ -635,13 +703,6 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
         return 0;
     }
     
-    if(apc_cache_busy(cache)) {
-        /* cache cleanup in progress, do not wait */ 
-        return 0;
-    }
-
-    CACHE_LOCK(cache);
-
     memset(lastkey, 0, sizeof(apc_cache_key_t));
 
     lastkey->h = key.h;
@@ -672,7 +733,7 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
             if(exclusive && (  !(*slot)->value->ttl ||
                               ( (*slot)->value->ttl && (time_t) ((*slot)->creation_time + (*slot)->value->ttl) >= t ) 
                             ) ) {
-                goto fail;
+                return 0;
             }
             remove_slot(cache, slot TSRMLS_CC);
             break;
@@ -693,7 +754,7 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
     }
 
     if ((*slot = make_slot(&key, value, *slot, t TSRMLS_CC)) == NULL) {
-        goto fail;
+        return 0;
     } 
     
     value->mem_size = ctxt->pool->size;
@@ -702,14 +763,30 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
     cache->header->num_entries++;
     cache->header->num_inserts++;
 
-    CACHE_UNLOCK(cache);
-
     return 1;
+} /* }}} */
 
-fail:
-    CACHE_UNLOCK(cache);
+/* {{{ apc_cache_insert */
+zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC)
+{
+    zend_bool result = 0;
 
-    return 0;
+	if (!value) {
+		return result;
+	}
+	
+	if (apc_cache_busy(cache TSRMLS_CC)) {
+		return result;
+	}
+
+	CACHE_LOCK(cache);
+	
+	result = apc_cache_quick_insert(
+		cache, key, value, ctxt, t, exclusive TSRMLS_CC);	
+	
+	CACHE_UNLOCK(cache);
+	
+	return result;
 }
 /* }}} */
 
