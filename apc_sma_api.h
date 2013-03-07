@@ -76,31 +76,31 @@ typedef void (*apc_sma_check_integrity_f) (); /* }}} */
 
 /* {{{ struct definition: apc_sma_t */
 typedef struct _apc_sma_t {
-	zend_bool  initialized;                      /* flag to indicate this sma has been intialized */
+    zend_bool  initialized;                      /* flag to indicate this sma has been intialized */
 
 	/* functions */
 	apc_sma_init_f init;                         /* init */
 	apc_sma_cleanup_f cleanup;                   /* cleanup */
     apc_sma_malloc_f malloc;                     /* malloc */
-	apc_sma_malloc_ex_f malloc_ex;               /* malloc_ex */
-	apc_sma_realloc_f realloc;                   /* realloc */
-	apc_sma_strdup_f strdup;                     /* strdup */
-	apc_sma_free_f free;                         /* free */
-	apc_sma_protect_f protect;                   /* protect */
-	apc_sma_unprotect_f unprotect;               /* unprotect */
-	apc_sma_info_f info;                         /* info */
-	apc_sma_free_info_f free_info;               /* free info */
-	apc_sma_get_avail_mem_f get_avail_mem;       /* get avail mem */
-	apc_sma_get_avail_size_f get_avail_size;     /* get avail size */
-	apc_sma_check_integrity_f check_integrity;   /* check integrity */
-	
-	/* info */
-	zend_uint  num;                              /* number of segments */
-	zend_ulong size;                             /* segment size */
-	zend_uint  last;                             /* last segment */
-	
-	/* data */
-	apc_segment_t* segs;                         /* segments */
+    apc_sma_malloc_ex_f malloc_ex;               /* malloc_ex */
+    apc_sma_realloc_f realloc;                   /* realloc */
+    apc_sma_strdup_f strdup;                     /* strdup */
+    apc_sma_free_f free;                         /* free */
+    apc_sma_protect_f protect;                   /* protect */
+    apc_sma_unprotect_f unprotect;               /* unprotect */
+    apc_sma_info_f info;                         /* info */
+    apc_sma_free_info_f free_info;               /* free info */
+    apc_sma_get_avail_mem_f get_avail_mem;       /* get avail mem */
+    apc_sma_get_avail_size_f get_avail_size;     /* get avail size */
+    apc_sma_check_integrity_f check_integrity;   /* check integrity */
+
+    /* info */
+    zend_uint  num;                              /* number of segments */
+    zend_ulong size;                             /* segment size */
+    zend_uint  last;                             /* last segment */
+
+    /* data */
+    apc_segment_t* segs;                         /* segments */
 } apc_sma_t; /* }}} */
 
 /*
