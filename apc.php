@@ -1017,11 +1017,12 @@ EOB;
 		// output list
 		$i=0;
 		foreach($list as $k => $entry) {
-      if(!$MYREQUEST['SEARCH'] || preg_match($MYREQUEST['SEARCH'], $entry[$fieldname]) != 0) {  
+      if(!$MYREQUEST['SEARCH'] || preg_match($MYREQUEST['SEARCH'], $entry[$fieldname]) != 0) {
+		$sh=md5($entry["key"]);  
         $field_value = htmlentities(strip_tags($entry[$fieldname],''), ENT_QUOTES, 'UTF-8');
         echo
           '<tr class=tr-',$i%2,'>',
-          "<td class=td-0><a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],"&SH=",md5($entry[$fieldkey]),"\">",$field_value,'</a></td>',
+          "<td class=td-0><a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],"&SH=",$sh,"\">",$field_value,'</a></td>',
           '<td class="td-n center">',$entry['num_hits'],'</td>',
           '<td class="td-n right">',$entry['mem_size'],'</td>',
           '<td class="td-n center">',date(DATE_FORMAT,$entry['access_time']),'</td>',
@@ -1046,6 +1047,11 @@ EOB;
           echo '<td class="td-last center"> &nbsp; </td>';
         }
         echo '</tr>';
+		if ($sh == $MYREQUEST["SH"]) {
+			echo '<tr>';
+			echo '<td colspan="7"><pre>'.print_r(apc_fetch($entry['key']), 1).'</pre></td>';
+			echo '</tr>';
+		}
         $i++;
         if ($i == $MYREQUEST['COUNT'])
           break;
