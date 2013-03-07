@@ -280,7 +280,7 @@ apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_tt
 zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC) {
     apc_cache_entry_t *entry;
     apc_cache_key_t key;
-    time_t t;
+    time_t t = apc_time();
     apc_context_t ctxt={0,};
     int ret = 0;
 
