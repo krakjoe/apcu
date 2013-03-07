@@ -776,7 +776,7 @@ EOB;
 
 	echo <<<EOB
 		<tr class=tr-0><td class=td-0>Shared Memory</td><td>{$mem['num_seg']} Segment(s) with $seg_size 
-    <br/> ({$cache['memory_type']})
+    <br/> ({$cache['memory_type']} memory, {$cache['locking_type']} locking)
     </td></tr>
 EOB;
 	echo   '<tr class=tr-1><td class=td-0>Start Time</td><td>',date(DATE_FORMAT,$cache['start_time']),'</td></tr>';
@@ -913,9 +913,9 @@ case OB_USER_CACHE:
 		echo '</div>';
 		break;
 	}
-	$fieldname='info';
+	$fieldname='key';
 	$fieldheading='User Entry Label';
-	$fieldkey='info';
+	$fieldkey='key';
 
 	$cols=6;
 	echo <<<EOB
