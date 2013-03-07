@@ -78,9 +78,9 @@ typedef void (*apc_sma_check_integrity_f) (); /* }}} */
 typedef struct _apc_sma_t {
     zend_bool  initialized;                      /* flag to indicate this sma has been intialized */
 
-	/* functions */
-	apc_sma_init_f init;                         /* init */
-	apc_sma_cleanup_f cleanup;                   /* cleanup */
+    /* functions */
+    apc_sma_init_f init;                         /* init */
+    apc_sma_cleanup_f cleanup;                   /* cleanup */
     apc_sma_malloc_f malloc;                     /* malloc */
     apc_sma_malloc_ex_f malloc_ex;               /* malloc_ex */
     apc_sma_realloc_f realloc;                   /* realloc */
