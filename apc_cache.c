@@ -40,6 +40,8 @@
 #include "ext/standard/php_var.h"
 #include "ext/standard/php_smart_str.h"
 
+apc_sma_api_extern(apc_sma);
+
 typedef void* (*ht_copy_fun_t)(void*, void*, apc_context_t* TSRMLS_DC);
 typedef int (*ht_check_copy_fun_t)(Bucket*, va_list);
 
@@ -492,7 +494,7 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
          */
         WLOCK(&cache->header->lock);
         process_pending_removals(cache TSRMLS_CC);
-        if (apc_sma_get_avail_mem() > (size_t)(APCG(shm_size)/2)) {
+        if (apc_sma.get_avail_mem() > (size_t)(APCG(shm_size)/2)) {
             /* probably a queued up expunge, we don't need to do this */
             WUNLOCK(&cache->header->lock);
             return;
@@ -524,7 +526,7 @@ clear_all:
 
         WLOCK(&cache->header->lock);
         process_pending_removals(cache TSRMLS_CC);
-        if (apc_sma_get_avail_mem() > (size_t)(APCG(shm_size)/2)) {
+        if (apc_sma.get_avail_mem() > (size_t)(APCG(shm_size)/2)) {
             /* probably a queued up expunge, we don't need to do this */
             WUNLOCK(&cache->header->lock);
             return;
@@ -555,7 +557,7 @@ clear_all:
             }
         }
 
-        if (!apc_sma_get_avail_size(size)) {
+        if (!apc_sma.get_avail_size(size)) {
             /* TODO: re-do this to remove goto across locked sections */
             goto clear_all;
         }

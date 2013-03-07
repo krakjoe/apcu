@@ -45,9 +45,6 @@
 # define APC_SMA_CANARIES 1
 #endif
 
-/* True global APC default SMA */
-static apc_sma_t apc_sma = {0,}; /* }}} */
-
 enum { 
 	DEFAULT_NUMSEG=1, 
 	DEFAULT_SEGSIZE=30*1024*1024 };
@@ -275,32 +272,6 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
     return size;
 }
 /* }}} */
-
-/* {{{ APC SMA */
-void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC) { apc_sma_api_init(&apc_sma, numseg, segsize, mmap_file_mask TSRMLS_CC); }
-void apc_sma_cleanup(TSRMLS_D) { apc_sma_api_cleanup(&apc_sma TSRMLS_CC); }
-void* apc_sma_malloc_ex(size_t n, size_t fragment, size_t* allocated TSRMLS_DC) { return apc_sma_api_malloc_ex(&apc_sma, n, fragment, allocated TSRMLS_CC); }
-void* apc_sma_malloc(size_t n TSRMLS_DC) { size_t allocated; return apc_sma_malloc_ex(n, MINBLOCKSIZE, &allocated TSRMLS_CC); }
-void* apc_sma_realloc(void *p, size_t n TSRMLS_DC) { return apc_sma_api_realloc(&apc_sma, p, n TSRMLS_CC); }
-char* apc_sma_strdup(const char* s TSRMLS_DC) { return apc_sma_api_strdup(&apc_sma, s TSRMLS_CC); }
-void apc_sma_free(void* p TSRMLS_DC) { apc_sma_api_free(&apc_sma, p TSRMLS_CC); }
-
-#ifdef APC_MEMPROTECT
-void* apc_sma_protect(void *p) { return apc_sma_api_protect(&apc_sma, p); }
-void* apc_sma_unprotect(void *p) { return apc_sma_api_unprotect(&apc_sma, p); }
-#else
-void* apc_sma_protect(void *p) { return p; }
-void* apc_sma_unprotect(void *p) { return p; }
-#endif
-
-apc_sma_info_t* apc_sma_info(zend_bool limited TSRMLS_DC) { return apc_sma_api_info(&apc_sma, limited TSRMLS_CC); }
-void apc_sma_free_info(apc_sma_info_t* info TSRMLS_DC) { apc_sma_api_free_info(&apc_sma, info TSRMLS_CC);    }
-size_t apc_sma_get_avail_mem() { return apc_sma_api_get_avail_mem(&apc_sma); }
-zend_bool apc_sma_get_avail_size(size_t size) { return apc_sma_api_get_avail_size(&apc_sma, size); }
-
-#if ALLOC_DISTRIBUTION
-size_t *apc_sma_get_alloc_distribution() { return apc_sma_api_get_alloc_distribution(&apc_sma); }
-#endif /* }}} */
 
 /* {{{ APC SMA API */
 void apc_sma_api_init(apc_sma_t* sma, zend_uint num, zend_ulong size, char *mask TSRMLS_DC) {
@@ -691,13 +662,12 @@ zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size) {
     }
     return 0;
 }
-#if ALLOC_DISTRIBUTION
-zend_ulong *apc_sma_api_get_alloc_distribution(apc_sma_t* sma) {
-	/* ?? */
-	sma_header_t* header = (sma_header_t*) segment->sma_shmaddr;
-    return header->adist;
-}
-#endif /* }}} */
+
+/* {{{ APC SMA */
+apc_sma_api_impl(apc_sma); 
+/* }}} */
+
+ /* }}} */
 
 /*
  * Local variables:

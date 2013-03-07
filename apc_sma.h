@@ -30,31 +30,11 @@
 #ifndef APC_SMA_H
 #define APC_SMA_H
 
-#define ALLOC_DISTRIBUTION 0
-
 #include "apc.h"
 #include "apc_sma_api.h"
 
-/* {{{ SMA APC 
- This allows APC to function as it always did, unaware of other allocators created by external libraries */
-extern void apc_sma_init(int numseg, size_t segsize, char *mmap_file_mask TSRMLS_DC);
-extern void apc_sma_cleanup(TSRMLS_D);
-extern void* apc_sma_malloc(size_t size TSRMLS_DC);
-extern void* apc_sma_malloc_ex(size_t size, size_t fragment, size_t* allocated TSRMLS_DC);
-extern void* apc_sma_apiloc(void* p, size_t size TSRMLS_DC);
-extern char* apc_sma_strdup(const char *s TSRMLS_DC);
-extern void apc_sma_free(void* p TSRMLS_DC);
-#if ALLOC_DISTRIBUTION 
-extern size_t *apc_sma_get_alloc_distribution();
-#endif
-extern void* apc_sma_protect(void *p);
-extern void* apc_sma_unprotect(void *p); 
-
-extern apc_sma_info_t* apc_sma_info(zend_bool limited TSRMLS_DC);
-extern void apc_sma_free_info(apc_sma_info_t* info TSRMLS_DC);
-extern size_t apc_sma_get_avail_mem();
-extern zend_bool apc_sma_get_avail_size(size_t size);
-extern void apc_sma_check_integrity(); /* }}} */
+/* {{{ SMA APC */
+apc_sma_api_decl(apc_sma); /* }}} */
 #endif
 
 /*
