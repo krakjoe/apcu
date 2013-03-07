@@ -1009,22 +1009,6 @@ static APC_HOTSPOT HashTable* my_copy_hashtable_ex(HashTable* dst,
             CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket), pool TSRMLS_CC)));
         } else if (IS_INTERNED(curr->arKey)) {
             CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket), pool TSRMLS_CC)));
-#ifndef ZTS
-        } else if (pool->type != APC_UNPOOL) {
-            char *arKey;
-
-            arKey = (char *) zend_new_interned_string(curr->arKey, curr->nKeyLength, 0 TSRMLS_CC);
-			
-            if (!arKey) {
-                /* this is ugly, but the old arkey[1] is gone, so we allocate all of the bytes as a tail-fragment (see IS_TAILED) */
-                CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket) + curr->nKeyLength, pool TSRMLS_CC)));
-                newp->arKey = (const char*)(newp+1); 
-            } else {
-                CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket), pool TSRMLS_CC)));
-                newp->arKey = arKey;
-            }
-
-#endif
         } else {
             /* I repeat, this is ugly */
             CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket) + curr->nKeyLength, pool TSRMLS_CC)));
