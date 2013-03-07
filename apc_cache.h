@@ -64,6 +64,13 @@ typedef struct _apc_cache_key_t {
 	apc_cache_owner_t owner;      /* the context that created this key */
 } apc_cache_key_t; /* }}} */
 
+/* {{{ struct definition: apc_cache_key_l */
+typedef struct _apc_cache_key_l {
+	apc_cache_key_t key;          /* the actual key */
+	apc_lock_t lock;              /* the lock */
+	zend_bool init;               /* a flag, why not */
+} apc_cache_key_l; /* }}} */
+
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct _apc_cache_entry_t {
     zval *val;                    /* the zval copied at store time */
@@ -100,7 +107,7 @@ typedef struct _cache_header_t {
     zend_bool busy;             /* Flag to tell clients when we are busy cleaning the cache */
     int num_entries;            /* Statistic on the number of entries */
     size_t mem_size;            /* Statistic on the memory size used by this cache */
-    apc_cache_key_t lastkey;    /* information about the last key inserted */
+    apc_cache_key_l lastkey;    /* information about the last key inserted */
 } cache_header_t;
 /* }}} */
 

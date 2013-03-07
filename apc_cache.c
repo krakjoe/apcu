@@ -246,18 +246,26 @@ apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_tt
     int cache_size;
     int num_slots;
 
+	/* calculate number of slots */
     num_slots = make_prime(size_hint > 0 ? size_hint : 2000);
 
+	/* allocate pointer by normal means */
     cache = (apc_cache_t*) apc_emalloc(sizeof(apc_cache_t) TSRMLS_CC);
+	
+	/* calculate cache size for shm allocation */
     cache_size = sizeof(cache_header_t) + num_slots*sizeof(slot_t*);
 
+	/* allocate shm */
     cache->shmaddr = allocate(cache_size TSRMLS_CC);
     if(!cache->shmaddr) {
         apc_error("Unable to allocate shared memory for cache structures.  (Perhaps your shared memory size isn't large enough?). " TSRMLS_CC);
         return NULL;
     }
+	
+	/* zero shm */
     memset(cache->shmaddr, 0, cache_size);
 
+	/* set default header */
     cache->header = (cache_header_t*) cache->shmaddr;
     cache->header->num_hits = 0;
     cache->header->num_misses = 0;
@@ -266,14 +274,22 @@ apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_tt
     cache->header->expunges = 0;
     cache->header->busy = 0;
 	
+	/* set cache options */
     cache->slots = (slot_t**) (((char*) cache->shmaddr) + sizeof(cache_header_t));
     cache->num_slots = num_slots;
     cache->gc_ttl = gc_ttl;
     cache->ttl = ttl;
 
+	/* create cache lock */
     CREATE_LOCK(&cache->header->lock);
+
+	/* create lastkey lock */
+	CREATE_LOCK(&cache->header->lastkey.lock);
 	
+	/* zero slots */
     memset(cache->slots, 0, sizeof(slot_t*)*num_slots);
+
+	/* set expunge callback */
     cache->expunge_cb = apc_cache_expunge;
 
     return cache;
@@ -322,7 +338,7 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, cons
 } /* }}} */
 
 /* {{{ apc_cache_store_all 
- Makes insertions as apc_cache_store, the only difference is it holds the lock open while operating on the cache */
+ Makes insertions as apc_cache_store, the only difference is it holds the lock open while operating on the cache  */
 zend_bool apc_cache_store_all(apc_cache_t* cache, zval *data, zval *results, const unsigned int ttl, const int exclusive TSRMLS_DC) {
 	if (Z_TYPE_P(data) == IS_ARRAY) {	
 		HashPosition position;
@@ -362,6 +378,7 @@ zend_bool apc_cache_store_all(apc_cache_t* cache, zval *data, zval *results, con
 								/* create an insertion */
 								if (apc_cache_quick_insert(cache, key, entry, &ctxt, now, exclusive TSRMLS_CC)) {
 									/* all good */
+									/* TODO logicall results should have a positive value ? */
 									continue;
 								}
 							}
@@ -508,7 +525,12 @@ void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry TSRMLS_DC)
 /* {{{ apc_cache_destroy */
 void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC)
 {
+	/* destroy cache lock */
     DESTROY_LOCK(&cache->header->lock);
+	
+	/* destroy the lastkey lock */
+	if (cache->header->lastkey.init)
+		DESTROY_LOCK(&cache->header->lastkey.lock);
 
 	/* XXX this is definitely a leak, but freeing this causes all the apache
 		children to freeze. It might be because the segment is shared between
@@ -547,7 +569,8 @@ void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ apc_cache_expunge */
+/* {{{ apc_cache_expunge 
+ locks are cycled several times during an expunge */
 static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 {
     int i;
@@ -563,16 +586,30 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
          * we run out of space.
          */
         WLOCK(&cache->header->lock);
+
+		/* remove junk */
         process_pending_removals(cache TSRMLS_CC);
+		
+		
         if (apc_sma.get_avail_mem() > (size_t)(APCG(shm_size)/2)) {
             /* probably a queued up expunge, we don't need to do this */
             WUNLOCK(&cache->header->lock);
             return;
         }
+		
+		/* stops insertions from occuring while we clear out */
         cache->header->busy = 1;
+		/* sets counters */
         cache->header->expunges++;
 
+		/*
+		* Cycling the lock here gives others a chance to read
+		*/
+        WUNLOCK(&cache->header->lock);
+		
 clear_all:
+		/* expunge */
+		WLOCK(&cache->header->lock);
         for (i = 0; i < cache->num_slots; i++) {
             slot_t* p = cache->slots[i];
             while (p) {
@@ -580,9 +617,13 @@ clear_all:
             }
             cache->slots[i] = NULL;
         }
+		/* resets lastkey, we have a lock */
         memset(&cache->header->lastkey, 0, sizeof(apc_cache_key_t));
+		/* allow insertions to occur again */
         cache->header->busy = 0;
+		/* cycle locks again */
         WUNLOCK(&cache->header->lock);
+
     } else {
         slot_t **p;
         /*
@@ -605,6 +646,7 @@ clear_all:
         cache->header->busy = 1;
         cache->header->expunges++;
 		
+		/* look for junk */
         for (i = 0; i < cache->num_slots; i++) {
             p = &cache->slots[i];
             while(*p) {
@@ -627,13 +669,25 @@ clear_all:
             }
         }
 
-        if (!apc_sma.get_avail_size(size)) {
-            /* TODO: re-do this to remove goto across locked sections */
-            goto clear_all;
+		/* if the cache now has space, then reset last key and unlock */
+        if (apc_sma.get_avail_size(size)) {
+            /* wipes lastkey, it's okay, we have a lock of sorts */
+        	memset(&cache->header->lastkey, 0, sizeof(apc_cache_key_t));
+		
+			/* allow insertions to take place again */
+        	cache->header->busy = 0;
+
+			/* release locks */
+        	WUNLOCK(&cache->header->lock);
+			
+			return;
         }
-        memset(&cache->header->lastkey, 0, sizeof(apc_cache_key_t));
-        cache->header->busy = 0;
+		
+		/* cycle locks, keep everything moving ... */
         WUNLOCK(&cache->header->lock);
+	
+		/* try again */
+		goto clear_all;	
     }
 }
 /* }}} */
@@ -697,28 +751,16 @@ zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC) {
 static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC) {
 	slot_t** slot;
     unsigned int keylen = key.identifier_len;
-    apc_cache_key_t *lastkey = &cache->header->lastkey;
     
+	/* minimal */
+	/* TODO should we check !key ? */
     if (!value) {
         return 0;
     }
-    
-    memset(lastkey, 0, sizeof(apc_cache_key_t));
 
-    lastkey->h = key.h;
-    lastkey->identifier_len = keylen;
-    lastkey->mtime = t;
-#ifdef ZTS
-    lastkey->owner = TSRMLS_C;
-#else
-    lastkey->owner = getpid();
-#endif
-    
-    /* we do not reset lastkey after the insert. Whether it is inserted 
-     * or not, another insert in the same second is always a bad idea. 
-     */
-    process_pending_removals(cache TSRMLS_CC);
-    
+	/*
+	* jump straight in, everything will be okay ...
+	*/
     slot = &cache->slots[key.h % cache->num_slots];
 
     while (*slot) {
@@ -754,6 +796,7 @@ static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key,
     }
 
     if ((*slot = make_slot(&key, value, *slot, t TSRMLS_CC)) == NULL) {
+		/* TODO should we return something else here, this is a serious error ? */
         return 0;
     } 
     
@@ -771,19 +814,29 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 {
     zend_bool result = 0;
 
+	/* at least */
 	if (!value) {
 		return result;
 	}
 	
+	/* check we are not clearing the cache */
 	if (apc_cache_busy(cache TSRMLS_CC)) {
 		return result;
 	}
 
+	/* let no one in */
 	CACHE_LOCK(cache);
+
+	/* we do not reset lastkey after the insert. Whether it is inserted 
+     * or not, another insert in the same second is always a bad idea. 
+     */
+    process_pending_removals(cache TSRMLS_CC);
 	
+	/* make the actual insertion */
 	result = apc_cache_quick_insert(
 		cache, key, value, ctxt, t, exclusive TSRMLS_CC);	
 	
+	/* never forget */
 	CACHE_UNLOCK(cache);
 	
 	return result;
@@ -1461,16 +1514,21 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ apc_cache_busy */
+/* {{{ apc_cache_busy
+ TODO I don't like this */
 zend_bool apc_cache_busy(apc_cache_t* cache)
 {
     return cache->header->busy;
 }
 /* }}} */
 
-/* {{{ apc_cache_defense */
+/* {{{ apc_cache_defense 
+ a revised, safe cache defense
+ TODO use exact keys, why shouldn't we be exact */
 zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 {
+	zend_bool result = 0;
+
 	/* in ZTS mode, we use the current TSRM context to determine the owner */
 #ifdef ZTS
 # define FROM_DIFFERENT_THREAD(k) ((key->owner = TSRMLS_C) != (k)->owner) 
@@ -1478,25 +1536,67 @@ zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 # define FROM_DIFFERENT_THREAD(k) ((key->owner = getpid()) != (k)->owner) 
 #endif
 
+	/* only continue if slam defense is enabled */
 	if (APCG(slam_defense)) {
-		apc_cache_key_t *lastkey = &cache->header->lastkey;
 
-		/* check the hash and identifier length match */
-		if( lastkey->h == key->h && 
-			lastkey->identifier_len == key->identifier_len) {
-			/* check the time ( last second considered slam ) and context */
-		    if(lastkey->mtime == key->mtime && 
-			   FROM_DIFFERENT_THREAD(lastkey)) {
-		        /* potential cache slam */
-		        apc_debug("Potential cache slam averted for key '%s'" TSRMLS_CC, key->identifier);
-		        return 1;
-		    }
+		/* fetch locking last key struct */
+		apc_cache_key_l *last = &cache->header->lastkey;
+		
+		/* lock the key while we operate on it */
+		LOCK(&last->lock);
+		{
+			/* fetch the real last key */
+			apc_cache_key_t *lastkey = (apc_cache_key_t*) last;
+			
+			/* check the hash and identifier length match */
+			if( lastkey->h == key->h && 
+				lastkey->identifier_len == key->identifier_len) {
+				/* check the time ( last second considered slam ) and context */
+				if(lastkey->mtime == key->mtime && 
+				   FROM_DIFFERENT_THREAD(lastkey)) {
+				    /* potential cache slam */
+				    apc_debug(
+						"Potential cache slam averted for key '%s'" TSRMLS_CC, key->identifier);
+				    result = 1;
+				} else {
+					/* overwrite last key, still locked */
+					memset(lastkey, 0, sizeof(apc_cache_key_t));
+					
+					/* sets enough information for an educated guess, but is not exact */
+					lastkey->h = key->h;
+					lastkey->identifier_len = key->identifier_len;
+					lastkey->mtime = apc_time();
+
+					/* required to tell contexts apart */
+#ifdef ZTS
+					lastkey->owner = TSRMLS_C;
+#else
+					lastkey->owner = getpid();
+#endif
+				}
+			}
 		}
+		/* never forget */
+		UNLOCK(&last->lock);
 	}
 
     return 0;
 }
 /* }}} */
+
+/* {{{ apc_cache_get_lastkey: get safely the lastkey of this cache */
+zend_bool apc_cache_get_lastkey(apc_cache_t* cache, apc_cache_key_t *key TSRMLS_DC) {
+	zend_bool result = 0;
+	
+	return result;
+} /* }}} */
+
+/* {{{ apc_cache_set_lastkey: set safely the lastkey of this cache */
+zend_bool apc_cache_set_lastkey(apc_cache_t* cache, apc_cache_key_t *key TSRMLS_DC) {
+	zend_bool result = 0;
+	
+	return result;
+} /* }}} */
 
 /*
  * Local variables:
