@@ -68,7 +68,6 @@ typedef struct _apc_cache_key_t {
 typedef struct _apc_cache_key_l {
 	apc_cache_key_t key;          /* the actual key */
 	apc_lock_t lock;              /* the lock */
-	zend_bool init;               /* a flag, why not */
 } apc_cache_key_l; /* }}} */
 
 /* {{{ struct definition: apc_cache_entry_t */

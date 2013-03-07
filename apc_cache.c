@@ -529,8 +529,7 @@ void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC)
     DESTROY_LOCK(&cache->header->lock);
 	
 	/* destroy the lastkey lock */
-	if (cache->header->lastkey.init)
-		DESTROY_LOCK(&cache->header->lastkey.lock);
+	DESTROY_LOCK(&cache->header->lastkey.lock);
 
 	/* XXX this is definitely a leak, but freeing this causes all the apache
 		children to freeze. It might be because the segment is shared between
