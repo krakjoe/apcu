@@ -996,7 +996,7 @@ EOB;
 			case 'C': $k=sprintf('%015d-',$entry['creation_time']);	break;
 			case 'T': $k=sprintf('%015d-',$entry['ttl']);			break;
 			case 'D': $k=sprintf('%015d-',$entry['deletion_time']);	break;
-			case 'S': $k='';										break;
+			case 'S': $k=$entry["key"];								break;
 		}
 		if (!$AUTHENTICATED) {
 			// hide all path entries if not logged in
