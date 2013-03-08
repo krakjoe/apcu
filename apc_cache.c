@@ -100,33 +100,35 @@ static int make_prime(int n)
 /* }}} */
 
 /* {{{ make_slot */
-slot_t* make_slot(apc_cache_key_t *key, apc_cache_entry_t* value, slot_t* next, time_t t TSRMLS_DC)
+slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* value, slot_t* next, time_t t TSRMLS_DC)
 {
-    slot_t* p = apc_pool_alloc(value->pool, sizeof(slot_t));
-	char *identifier = NULL;
-	
-    if (!p) 
-		return NULL;
+	slot_t* p = NULL;
 
-	identifier = (char*) apc_pmemcpy(
-		key->identifier, key->identifier_len, 
-		value->pool TSRMLS_CC
-	);
+	CACHE_LOCK(cache);
+    {
+		if ((p = apc_pool_alloc(value->pool, sizeof(slot_t)))) {
+			char* identifier = (char*) apc_pmemcpy(
+				key->identifier, key->identifier_len, 
+				value->pool TSRMLS_CC
+			);
+
+			if (identifier) {
+				key->identifier = identifier;
 	
-	if (!identifier)
-		return NULL;
-	
-    key->identifier = identifier;
-	
-	CREATE_LOCK(&p->lock);
-		
-    p->key = key[0];
-    p->value = value;
-    p->next = next;
-    p->num_hits = 0;
-    p->creation_time = t;
-    p->access_time = t;
-    p->deletion_time = 0;
+				CREATE_LOCK(&p->lock);
+
+				p->key = key[0];
+				p->value = value;
+				p->next = next;
+				p->num_hits = 0;
+				p->creation_time = t;
+				p->access_time = t;
+				p->deletion_time = 0;
+			}
+		}
+	}
+	CACHE_UNLOCK(cache);
+
     return p;
 }
 /* }}} */
@@ -855,7 +857,7 @@ static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key,
 		SLOT_UNLOCK(select);        
     }
 
-    if ((*slot = make_slot(&key, value, *slot, t TSRMLS_CC)) == NULL) {
+    if ((*slot = make_slot(cache, &key, value, *slot, t TSRMLS_CC)) == NULL) {
 
 		/* TODO should we return something else here, this is a serious error ? */
         return 0;
