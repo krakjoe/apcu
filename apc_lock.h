@@ -16,8 +16,8 @@
   +----------------------------------------------------------------------+
  */
 
-#ifndef APC_LOCK
-#define APC_LOCK
+#ifndef APC_LOCK_H
+#define APC_LOCK_H
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -27,9 +27,6 @@
 
 #ifndef _WIN32
 # include "pthread.h"
-/*
- Note: this is not an MRL
-*/
 typedef struct _apc_lock_t {
 	pthread_mutex_t read;
 	pthread_mutex_t write;
@@ -38,22 +35,74 @@ typedef struct _apc_lock_t {
 
 #endif
 
+/* {{{ functions */
 int apc_lock_create(apc_lock_t *lock TSRMLS_DC);
 int apc_lock_rlock(apc_lock_t *lock TSRMLS_DC);
 int apc_lock_wlock(apc_lock_t *lock TSRMLS_DC);
 int apc_lock_runlock(apc_lock_t *lock TSRMLS_DC);
 int apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC);
-void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC);
+void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC); /* }}} */
 
 /* {{{ generic locking macros */
 #define CREATE_LOCK(lock)     apc_lock_create(lock TSRMLS_CC)
 #define DESTROY_LOCK(lock)    apc_lock_destroy(lock TSRMLS_CC)
-#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock TSRMLS_CC); }
+#define WLOCK(lock)           apc_lock_wlock(lock TSRMLS_CC)
 #define LOCK                  WLOCK
-#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock TSRMLS_CC); }
-#define WUNLOCK(lock)         { apc_lock_wunlock(lock TSRMLS_CC); HANDLE_UNBLOCK_INTERRUPTIONS(); }
+#define RLOCK(lock)           apc_lock_rlock(lock TSRMLS_CC)
+#define WUNLOCK(lock)         apc_lock_wunlock(lock TSRMLS_CC)
 #define UNLOCK                WUNLOCK
-#define RUNLOCK(lock)         { apc_lock_runlock(lock TSRMLS_CC); HANDLE_UNBLOCK_INTERRUPTIONS(); }
+#define RUNLOCK(lock)         apc_lock_runlock(lock TSRMLS_CC)
 /* }}} */
+
+/* {{{ object locking macros */
+#define APC_WLOCK(o)          WLOCK(&(o)->lock)
+#define APC_LOCK              APC_WLOCK
+#define APC_WUNLOCK(o)        WUNLOCK(&(o)->lock)
+#define APC_UNLOCK            APC_WUNLOCK
+#define APC_RLOCK(o)          RLOCK(&(o)->lock)
+#define APC_RUNLOCK(o)        RUNLOCK(&(o)->lock) /* }}} */
+
+/* {{{ simple atomic operations */
+#define APC_ATOM_ADD(o, k, v) do {\
+	APC_LOCK(o);\
+	o->k += v;\
+	APC_UNLOCK(o);\
+} while(0)
+
+#define APC_ATOM_SUB(o, k, v) do {\
+	APC_LOCK(o);\
+	o->k -= v;\
+	APC_UNLOCK(o);\
+while(0)
+
+#define APC_ATOM_INC(o, k) do {\
+	APC_LOCK(o);\
+	o->k++;\
+	APC_UNLOCK(o);\
+} while(0)
+
+#define APC_ATOM_DEC(o, k) do {\
+	APC_LOCK(o);\
+	o->h--;\
+	APC_UNLOCK(o);\
+} while(0)
+
+#define APC_ATOM_SET(o, k, v) do {\
+	APC_LOCK(o);\
+	o->k = v;\
+	APC_UNLOCK(o);\
+} while(0)  
+
+#define APC_ATOM_ZERO(o, k, s) do {\
+	APC_LOCK(o);\
+	memset(&o->k, 0, s);\
+	APC_UNLOCK(o);\
+} while(0) 
+
+#define APC_ATOM_DUP(o, d) do {\
+	APC_LOCK(o);\
+	memcpy(d, o, sizeof(*o));\
+	APC_UNLOCK(o);\
+} while(0)/* }}} */
 
 #endif
