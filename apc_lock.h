@@ -103,6 +103,12 @@ while(0)
 	APC_LOCK(o);\
 	memcpy(d, o, sizeof(*o));\
 	APC_UNLOCK(o);\
-} while(0)/* }}} */
+} while(0)
+
+#define APC_ATOM_COPY(o, k, d) do {\
+	APC_LOCK(o);\
+	memcpy(d, &o->k, sizeof(*d));\
+	APC_UNLOCK(o);\
+} while(0) /* }}} */
 
 #endif

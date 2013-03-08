@@ -80,6 +80,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
     zend_bool initialized;       /* true if module was initialized */
     zend_bool enable_cli;        /* Flag to override turning APC off for CLI */
     zend_bool slam_defense;      /* true for user cache slam defense */ 
+
 #ifdef MULTIPART_EVENT_FORMDATA
     zend_bool rfc1867;            /* Flag to enable rfc1867 handler */
     char* rfc1867_prefix;         /* Key prefix */
@@ -88,6 +89,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
     long rfc1867_ttl;             /* TTL for rfc1867 entries */
     apc_rfc1867_data rfc1867_data;/* Per-request data */
 #endif	
+
 	void *apc_bd_alloc_ptr;      /* bindump alloc() ptr */
     void *apc_bd_alloc_ubptr;    /* bindump alloc() upper bound ptr */
     HashTable apc_bd_alloc_list; /* bindump alloc() ptr list */

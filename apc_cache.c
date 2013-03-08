@@ -210,9 +210,9 @@ static void process_pending_removals(apc_cache_t* cache TSRMLS_DC)
     time_t now;
 
     /* This function scans the list of removed cache entries and deletes any
-     * entry whose reference count is zero (indicating that it is no longer
-     * being executed) or that has been on the pending list for more than
-     * cache->gc_ttl seconds (we issue a warning in the latter case).
+     * entry whose reference count is zero  or that has been on the pending 
+	 * list for more than cache->gc_ttl seconds 
+	 *   (we issue a warning in the latter case).
      */
 	
     if (!cache->header->deleted_list)
@@ -648,7 +648,7 @@ void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
         }
         cache->slots[i] = NULL;
     }
-
+	
 	/* reset last key */
 	APC_ATOM_ZERO((&(cache->header->lastkey)), key, sizeof(apc_cache_key_t));
 
@@ -1686,7 +1686,12 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
  TODO I don't like this */
 zend_bool apc_cache_busy(apc_cache_t* cache)
 {
-    return cache->header->busy;
+	zend_bool busy;
+
+	APC_ATOM_COPY(
+		cache->header, busy, &busy);
+
+    return busy;
 }
 /* }}} */
 
