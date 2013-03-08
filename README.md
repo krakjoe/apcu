@@ -23,6 +23,7 @@ Specific Changes
     * revision of APC's pooling API (complete, no functional changes, documented)
     * installation of SIGUSR1 handler (where possible) to clear cache (complete)
     * almost all locking moved from cache level to slot level (in progress)
+    * apc.smart allows runtime adjustable control over how the cache is purged
     * documentation of all associated API's (ongoing, first headers then updates/revision/completion of TECHNOTES)
 
 The C api does not retain backward compatibility, anyone relying on APC that will rely on APCu in the future should review the changes as soon as possible and continue to track them.

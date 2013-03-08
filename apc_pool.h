@@ -32,6 +32,7 @@
 
 #include "apc.h"
 #include "apc_sma.h"
+#include "apc_serializer.h"
 
 #if APC_POOL_DEBUG
 #define APC_POOL_HAS_SIZEINFO(pool) ((pool->type & APC_POOL_SIZEINFO)!=0)
@@ -125,9 +126,9 @@ typedef enum _apc_context_type {
 
 /* {{{ struct definition: apc_context_t */
 typedef struct _apc_context_t {
-    apc_pool *pool;
-    apc_copy_type copy;
-    unsigned int force_update:1;
+    apc_pool*          pool;            /* pool of memory for context */
+    apc_copy_type      copy;            /* copying type for context */
+    unsigned int       force_update:1;  /* flag to force updates */
 } apc_context_t; /* }}} */
 
 /*

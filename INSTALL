@@ -261,6 +261,18 @@ users should consider tuning the following parameters:
                             feature.
                             (Default: 1)
 
+	apc.smart
+							If you begin to get low on resources, an expunge of the cache
+							is performed if it is less than half full. This is not always
+							a suitable way of determining if an expunge of the cache
+							should be performed.
+							apc.smart allows you to set a runtime configuration value which
+							is used to determine if an expunge should be run
+							if (available_size < apc.smart * requested_size)
+								apc_cache_expunge()
+							Additionally, 
+							(Default: 0)
+
     apc.enable_cli          Mostly for testing and debugging.  Setting this enables APCu
                             for the CLI version of PHP.  Normally you wouldn't want to
                             create, populate and tear down the APCu cache on every CLI

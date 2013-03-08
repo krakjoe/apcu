@@ -294,14 +294,14 @@ int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 
 
 /* {{{ apc_cache_create */
-apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl TSRMLS_DC)
+apc_cache_t* apc_cache_create(int size_hint, int gc_ttl, int ttl, long smart TSRMLS_DC)
 {
-    return apc_cache_create_ex(apc_sma_malloc, size_hint, gc_ttl, ttl TSRMLS_CC);
+    return apc_cache_create_ex(apc_sma_malloc, size_hint, gc_ttl, ttl, smart TSRMLS_CC);
 }
 /* }}} */
 
 /* {{{ apc_cache_create_ex */
-apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_ttl, int ttl TSRMLS_DC) {
+apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_ttl, int ttl, long smart TSRMLS_DC) {
 	apc_cache_t* cache;
     int cache_size;
     int num_slots;
@@ -339,6 +339,7 @@ apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_tt
     cache->num_slots = num_slots;
     cache->gc_ttl = gc_ttl;
     cache->ttl = ttl;
+	cache->header->smart = smart;
 
 	/* header lock */
 	CREATE_LOCK(&cache->header->lock);
@@ -677,11 +678,27 @@ static void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
 } /* }}} */
 
 /* {{{ apc_cache_expunge 
- locks are cycled several times during an expunge */
+* Where smart is not set:
+*  Where no ttl is set on cache:
+*   Expunge if available memory is less than seg_size/2
+*  Where ttl is set on cache:
+*   Perform cleanup of stale entries
+*   If available memory if less than the size requested, run full expunge
+*
+* Where smart is set:
+*  Where no ttl is set on cache:
+*   Expunge is available memory is less than size * smart
+*  Where ttl is set on cache:
+*   If available memory if less than the size requested, run full expunge
+*
+* The TTL of an entry takes precedence over the TTL of a cache
+*/
 static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 {
     int i;
     time_t t;
+	size_t suitable = 0L;
+	size_t available = 0L;
 
     t = apc_time();
 
@@ -698,58 +715,61 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
     process_pending_removals(
 		cache TSRMLS_CC);
 
+	/* make suitable selection */
+	suitable = (cache->header->smart > 0L) ? (size_t) (cache->header->smart * size) : (size_t) (APCG(shm_size)/2);
+
+	/* get available */
+	available = apc_sma.get_avail_mem();
+
+	/* perform expunge processing */
     if(!cache->ttl) {
-        /*
-         * If cache->ttl is not set, we wipe out the entire cache when
-         * we run out of space.
-         */
-        
+
 		/* check it is necessary to expunge */
-        if (apc_sma.get_avail_mem() < (size_t)(APCG(shm_size)/2)) {
-			apc_cache_real_expunge(cache TSRMLS_CC);
-        }
+		if (available < suitable) {
+			apc_cache_real_expunge(
+				cache TSRMLS_CC);
+	    }
     } else {
-        slot_t **p;
-        /*
-         * If the ttl for the cache is set we walk through and delete stale 
-         * entries.  For the user cache that is slightly confusing since
-         * we have the individual entry ttl's we can look at, but that would be
-         * too much work.  So if you want the user cache expunged, set a high
-         * default apc.ttl and still provide a specific ttl for each entry
-         * on insert
-         */
+		slot_t **slot;
+		slot_t *select = NULL;
 		
 		/* check that expunge is necessary */
-        if (apc_sma.get_avail_mem() < (size_t)(APCG(shm_size)/2)) {
+        if (available < suitable) {
+			
+			/* set expunges counter */
 			APC_ATOM_INC(cache->header, expunges);
 
 			/* look for junk */
 		    for (i = 0; i < cache->num_slots; i++) {
-		        p = &cache->slots[i];
-		        while(*p) {	
-					APC_LOCK(*p);
+		        slot = &cache->slots[i];
+		        while((select=(*slot))) {	
+					
+					/* perform slot locking */
+					APC_LOCK(select);
 					
 		            /*
 		             * For the user cache we look at the individual entry ttl values
 		             * and if not set fall back to the default ttl for the user cache
 		             */
-		            if((*p)->value->ttl) {
-		                if((time_t) ((*p)->creation_time + (*p)->value->ttl) < t) {
-							APC_UNLOCK(*p);
-		                    remove_slot(cache, p TSRMLS_CC);
+		            if(select->value->ttl) {
+		                if((time_t) (select->creation_time + select->value->ttl) < t) {
+							APC_UNLOCK(select);
+		                    remove_slot(cache, slot TSRMLS_CC);
 		                    continue;
 		                }
 		            } else if(cache->ttl) {
-		                if((*p)->creation_time + cache->ttl < t) {
-							APC_UNLOCK(*p);
-		                    remove_slot(cache, p TSRMLS_CC);
+		                if(select->creation_time + cache->ttl < t) {
+							APC_UNLOCK(select);
+		                    remove_slot(cache, slot TSRMLS_CC);
 		                    continue;
 		                }
 		            }
-
-					p = &(*p)->next;
-
-					APC_UNLOCK(*p);		            
+					
+					/* grab next slot */
+					slot = &select->next;
+					
+					/* unlock slot */
+					APC_UNLOCK(select);		            
 		        }
 		    }
 
@@ -757,7 +777,10 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 		    if (apc_sma.get_avail_size(size)) {
 		        /* wipe lastkey */
 		    	APC_ATOM_ZERO((&(cache->header->lastkey)), key, sizeof(apc_cache_key_t));
-		    } else apc_cache_real_expunge(cache TSRMLS_CC);
+		    } else {
+				/* with not enough space left in cache, we are forced to expunge */
+				apc_cache_real_expunge(cache TSRMLS_CC);
+			}
         }
     }
 
@@ -1202,7 +1225,9 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
         CHECK(dst->value.str.val = apc_pmemcpy(buf.c, (buf.len + 1), pool TSRMLS_CC));
     }
 
-    if(buf.c) smart_str_free(&buf);
+    if(buf.c) {
+		smart_str_free(&buf);
+	}
 
     return dst;
 }

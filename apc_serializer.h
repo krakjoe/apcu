@@ -24,7 +24,9 @@
 
 /* this is a shipped .h file, do not include any other header in this file */
 #define APC_SERIALIZER_NAME(module) module##_apc_serializer
+#define APC_SERIALIZER_EXTERN(module) extern apc_serialize_t module##_apc_serializer
 #define APC_UNSERIALIZER_NAME(module) module##_apc_unserializer
+#define APC_UNSERIALIZER_EXTERN(module) extern apc_unserialize_t module##_apc_unserializer
 
 #define APC_SERIALIZER_ARGS unsigned char **buf, size_t *buf_len, const zval *value, void *config TSRMLS_DC
 #define APC_UNSERIALIZER_ARGS zval **value, unsigned char *buf, size_t buf_len, void *config TSRMLS_DC
@@ -34,30 +36,18 @@ typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);
 
 /* {{{ struct definition: apc_serializer_t */
 typedef struct apc_serializer_t {
-    const char *name;
-    apc_serialize_t serialize;
-    apc_unserialize_t unserialize;
-    void *config;
+    const char*        name;
+    apc_serialize_t    serialize;
+    apc_unserialize_t  unserialize;
+    void*              config;
 } apc_serializer_t;
 /* }}} */
 
-typedef int (*apc_register_serializer_t)(const char* name,
-                                        apc_serialize_t serialize,
-                                        apc_unserialize_t unserialize,
-                                        void *config TSRMLS_DC);
-
 #define APC_MAX_SERIALIZERS 16
 
-/* pointer to the original Zend engine compile_file function */
+/* pointer to the list of serializers */
 static apc_serializer_t apc_serializers[APC_MAX_SERIALIZERS] = {{0,}};
 /* }}} */
-
-/*
- * ABI version for constant hooks. Increment this any time you make any changes
- * to any function in this file.
- */
-#define APC_SERIALIZER_ABI "0"
-#define APC_SERIALIZER_CONSTANT "\000apc_register_serializer-" APC_SERIALIZER_ABI
 
 #if !defined(APC_UNUSED)
 # if defined(__GNUC__)
@@ -67,30 +57,10 @@ static apc_serializer_t apc_serializers[APC_MAX_SERIALIZERS] = {{0,}};
 # endif
 #endif
 
-static APC_UNUSED int apc_register_serializer(const char* name,
-                                              apc_serialize_t serialize,
-                                              apc_unserialize_t unserialize,
-                                              void *config TSRMLS_DC)
-{
-    zval apc_magic_constant;
-    int retval = 0;
-
-    /* zend_get_constant will return 1 on success, otherwise apc_magic_constant wouldn't be touched at all */
-    if (zend_get_constant(APC_SERIALIZER_CONSTANT, sizeof(APC_SERIALIZER_CONSTANT)-1, &apc_magic_constant TSRMLS_CC)) {
-        apc_register_serializer_t register_func = (apc_register_serializer_t)(Z_LVAL(apc_magic_constant));
-        if(register_func) {
-            retval = register_func(name, serialize, unserialize, NULL TSRMLS_CC);
-        }
-        zval_dtor(&apc_magic_constant);
-    }
-
-    return retval;
-}
-
-static APC_UNUSED int _apc_register_serializer(const char* name, apc_serialize_t serialize, 
-                                               apc_unserialize_t unserialize,
-                                               void *config TSRMLS_DC)
-{
+static zend_bool apc_register_serializer(const char* name, 
+                                         apc_serialize_t serialize, 
+                                         apc_unserialize_t unserialize,
+                                         void *config TSRMLS_DC) {
     int i;
     apc_serializer_t *serializer;
 
@@ -98,7 +68,7 @@ static APC_UNUSED int _apc_register_serializer(const char* name, apc_serialize_t
         serializer = &apc_serializers[i];
         if(!serializer->name) {
             /* empty entry */
-            serializer->name = name; /* assumed to be const */
+            serializer->name = name;
             serializer->serialize = serialize;
             serializer->unserialize = unserialize;
             serializer->config = config;
@@ -112,13 +82,11 @@ static APC_UNUSED int _apc_register_serializer(const char* name, apc_serialize_t
     return 0;
 }
 
-static apc_serializer_t* apc_get_serializers(TSRMLS_D) 
-{
+static apc_serializer_t* apc_get_serializers(TSRMLS_D)  {
 	return &(apc_serializers[0]);
 }
 
-static apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC) 
-{
+static apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC) {
 	int i;
     apc_serializer_t *serializer;
 

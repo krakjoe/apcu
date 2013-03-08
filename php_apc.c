@@ -81,15 +81,26 @@ apc_cache_t* apc_user_cache = NULL;
 /* External APC SMA */
 apc_sma_api_extern(apc_sma);
 
+/* Default serializers */
+APC_SERIALIZER_EXTERN(php);
+APC_UNSERIALIZER_EXTERN(php);
+
+/* Global init functions */
 static void php_apc_init_globals(zend_apcu_globals* apcu_globals TSRMLS_DC)
 {
     apcu_globals->initialized = 0;
     apcu_globals->slam_defense = 1;
+	apcu_globals->smart = 0;
+
 #ifdef MULTIPART_EVENT_FORMDATA
     apcu_globals->rfc1867 = 0;
     memset(&(apcu_globals->rfc1867_data), 0, sizeof(apc_rfc1867_data));
 #endif
-    memset(&apcu_globals->copied_zvals, 0, sizeof(HashTable));
+
+    memset(	
+		&apcu_globals->copied_zvals, 0, sizeof(HashTable)
+	);
+	
 	apcu_globals->preload_path = NULL;
     apcu_globals->coredump_unmap = 0;
     apcu_globals->use_request_time = 1;
@@ -165,6 +176,7 @@ STD_PHP_INI_ENTRY("apc.shm_size",       "32M",  PHP_INI_SYSTEM, OnUpdateShmSize,
 STD_PHP_INI_ENTRY("apc.entries_hint",   "4096", PHP_INI_SYSTEM, OnUpdateLong,              entries_hint,     zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.gc_ttl",         "3600", PHP_INI_SYSTEM, OnUpdateLong,              gc_ttl,           zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.ttl",            "0",    PHP_INI_SYSTEM, OnUpdateLong,              ttl,              zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.smart",          "0",    PHP_INI_SYSTEM, OnUpdateLong,              smart,            zend_apcu_globals, apcu_globals)
 #if APC_MMAP
 STD_PHP_INI_ENTRY("apc.mmap_file_mask",  NULL,  PHP_INI_SYSTEM, OnUpdateString,            mmap_file_mask,   zend_apcu_globals, apcu_globals)
 #endif
@@ -259,7 +271,7 @@ static PHP_MINIT_FUNCTION(apcu)
 #endif
 			/* create user cache */
 			apc_user_cache = apc_cache_create(
-				APCG(entries_hint), APCG(gc_ttl), APCG(ttl) TSRMLS_CC);
+				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(smart) TSRMLS_CC);
 			
 			/* initialize pooling */
 			apc_pool_init();
@@ -282,6 +294,10 @@ static PHP_MINIT_FUNCTION(apcu)
 			
 			/* initialize iterator object */
             apc_iterator_init(module_number TSRMLS_CC);
+
+			/* register default serializer */
+			apc_register_serializer(
+				"php", php_apc_serializer, php_apc_unserializer, NULL TSRMLS_CC);
         }
     }
 
@@ -661,7 +677,7 @@ PHP_FUNCTION(apc_fetch) {
 	
 	/* check for a string, or array of strings */
 	if (Z_TYPE_P(key) == IS_ARRAY || (Z_TYPE_P(key) == IS_STRING && Z_STRLEN_P(key) > 0)) {
-
+		
 		/* initialize a context */
 		if (apc_cache_make_context(&ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0 TSRMLS_CC)) {
 			

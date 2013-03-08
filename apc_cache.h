@@ -100,6 +100,7 @@ typedef struct _cache_header_t {
     zend_bool busy;             /* Flag to tell clients when we are busy cleaning the cache */
     int num_entries;            /* Statistic on the number of entries */
     size_t mem_size;            /* Statistic on the memory size used by this cache */
+	long smart;                 /* adjustable smart expunges of data */
     apc_cache_key_l lastkey;    /* information about the last key inserted */
 } cache_header_t;
 /* }}} */
@@ -143,7 +144,8 @@ typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void*
  */
 extern apc_cache_t* apc_cache_create(int size_hint,
                                      int gc_ttl,
-                                     int ttl TSRMLS_DC);
+                                     int ttl,
+                                     long smart TSRMLS_DC);
 
 /*
 * apc_cache_create_ex performs allocations with the allocator provided, suitable for 3rd parties
@@ -151,7 +153,8 @@ extern apc_cache_t* apc_cache_create(int size_hint,
 extern apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate,
                                         int size_hint,
                                         int gc_ttl,
-                                        int ttl TSRMLS_DC);
+                                        int ttl,
+                                        long smart TSRMLS_DC);
 /*
 * apc_cache_preload preloads the data at path into the specified cache
 */
