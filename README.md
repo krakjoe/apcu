@@ -22,8 +22,8 @@ Specific Changes
     * revision of APC's shared memory allocator (ongoing, API provided for 3rd party extensions: apc_sma_api.h)
     * revision of APC's pooling API (complete, no functional changes, documented)
     * installation of SIGUSR1 handler (where possible) to clear cache (complete)
+    * almost all locking moved from cache level to slot level (in progress)
     * documentation of all associated API's (ongoing, first headers then updates/revision/completion of TECHNOTES)
-    * calling apc_add(array()) or apc_store(array()) retains lock until all insertions are made
 
 The C api does not retain backward compatibility, anyone relying on APC that will rely on APCu in the future should review the changes as soon as possible and continue to track them.
 The userspace PHP api is not likely to retain backward compatibility, though may emulate it at runtime if interest in that is expressed.
