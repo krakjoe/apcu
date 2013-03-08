@@ -242,7 +242,7 @@ form of a quick-start guide to start hacking on APC.
 		apc_cache_owner_t owner;      /* the context that created this key */
      } apc_cache_key_t;   
 
-   To create a apc_cache_key_t structure, call apc_make_cache_key(), see apc_cache.h
+   To create a apc_cache_key_t structure, call apc_cache_make_key(), see apc_cache.h
 	
    Ok, on to the actual cache entry, here is an extract of apc_cache_entry_t:
 
@@ -254,9 +254,9 @@ form of a quick-start guide to start hacking on APC.
 			apc_pool *pool;               /* pool which allocated the value */
      } apc_cache_entry_t;
 
-   To create an apc_cache_entry_t, call apc_make_cache_entry(), see apc_cache.h
+   To create an apc_cache_entry_t, call apc_cache_make_entry(), see apc_cache.h
 
-   Any of the structures taken by apc_cache_* functions have their equivalent apc_make_*
+   Any of the structures taken by apc_cache_* functions have their equivalent apc_cache_make_*
 
    If an insertion of an entry should fail, it falls to the caller of insert to free 
    the pooled resources used to create the entry. 
