@@ -35,49 +35,46 @@ form of a quick-start guide to start hacking on APC.
 
    Grab the .gdbinit from the PHP source tree and have a look at the macros.
 
-5. Look through apcu/apc_sma_api.h
-   It is a pretty standard memory allocator, supporting third party extensions.
+5. The basics of APCu
 
-   apc_sma_malloc, apc_sma_realloc, apc_sma_strdup and apc_sma_free behave to the
-   caller just like malloc, realloc, strdup and free, they are generated from macros
-   in the API header, see apc_sma_api_* for details in apcu/apc_sma.c
+   APCu has three main component parts:
+		1) shared memory allocator
+		2) pooling
+		3) a safe, fast, implementation of a userland cache
+	
+5.1) APCu SMA
+   
+   It is a pretty standard memory allocator, now supporting third party extensions.
 
-   On server startup the MINIT hook in php_apc.c apc_sma_init(). apc_sma_init calls into
-   apc_mmap.c to mmap the specified sized segment (I tend to just use a single
-   segment).  apc_mmap.c should be self-explanatory.  It mmaps a temp file and
-   then unlinks that file right after the mmap to provide automatic shared memory
-   cleanup in case the process dies.
+   apc_sma_malloc, apc_sma_realloc, apc_sma_strdup and apc_sma_free 
+   behave to the caller just like malloc, realloc, strdup and free, they are 
+   generated from macros in apc_sma_api.h
 
-   Once the region has been initialized we stick a header_t at the beginning
-   of the region.  It contains the total size in header->segsize and the number 
-   of bytes available in header->avail.  
+	Note:   apc_sma_api.h is formatted and designed such that the SMA APCu 
+			uses can be used by third parties in their own extensions without
+			interfering with, or consuming the resources of APCu itself
 
-   After the header comes a bit of a hack.  A zero-sized block is inserted just
-   to make things easier later on.  And then a huge block that is basically
-   the size of the entire segment minus the two (for the 0-sized block, and this one)
-   block headers.
+	apc_sma is a structure of type apc_sma_t, it is statically allocated at runtime,
+	appropriate handlers are generated and set, and the structure made ready for initialization.
 
-   The code for this is:
+    MINIT then initializes apc_sma with apc_sma_api_init(&apc_sma). APCu SMA then takes 
+    care of mmaping the shared memory for use by everyone with a reference to apc_sma. 
+    ( which you can obtain in any compilation unit with apc_sma_api_extern(apc_sma) )  
+	
+	At this point, we have a completely useless 32MB chunk of memory at our disposal, before
+	it can be used, an apc_cache_header_t is initialized at the beginning of the reigon of
+	mmapp'ed memory.
+    
+    The header serves as a place to store, among other things, statistical information and a lock.
+    
+    Immediately after the header comes a zero sized block, immediately after that a single
+	block the remaining size of the shared memory.
 
-     header = (header_t*) shmaddr;
-     header->segsize = sma_segsize;
-     header->avail = sma_segsize - sizeof(header_t) - sizeof(block_t) - alignword(sizeof(int));
-     memset(&header->lock,0,sizeof(header->lock));
-     sma_lock = &header->lock;
-     block = BLOCKAT(sizeof(header_t));
-     block->size = 0;
-     block->next = sizeof(header_t) + sizeof(block_t);
-     block = BLOCKAT(block->next);
-     block->size = header->avail;
-     block->next = 0;
+    At this point, the shared memory looks like this:
 
-   So the shared memory looks like this:
-
-     +--------+-------+---------------------------------+
-     | header | block |             block               |
-     +--------+-------+---------------------------------+
-
-   sma_shmaddrs[0] gives you the address of header
+     +--------+--------+----------------------------------+
+     | header | 0-size |              shared              |
+     +--------+--------+----------------------------------+
 
    The blocks are just a simple offset-based linked list (so no pointers):
 
@@ -95,15 +92,14 @@ form of a quick-start guide to start hacking on APC.
 
      #define BLOCKAT(offset) ((block_t*)((char *)shmaddr + offset))
 
-   where shmaddr = sma_shaddrs[0]
+   where shmaddr = sma->shaddrs[0]
 
    And the OFFSET macro goes the other way:
 
      #define OFFSET(block) ((int)(((char*)block) - (char*)shmaddr))
 
-   Allocating a block with a call to apc_sma_allocate() walks through the
-   linked list of blocks until it finds one that is >= to the requested size.
-   The first call to apc_sma_allocate() will hit the second block.  We then
+   Allocating a block walks through the linked list of blocks until it finds one that is >= 
+   to the requested size. The first call to allocate will hit the second block.  We then
    chop up that block so it looks like this:
 
      +--------+-------+-------+-------------------------+
@@ -122,19 +118,56 @@ form of a quick-start guide to start hacking on APC.
    link which now points to a block with an offset further along in
    the segment.
 
-   When the block is freed using apc_sma_deallocate() the steps are
-   basically just reversed.  The block is put back and then the deallocate
-   code looks at the block before and after to see if the block immediately
-   before and after are free and if so the blocks are combined.  So you never
+   When the block is freed the steps are basically just reversed.  
+   The block is put back and then the deallocate code looks at the block before and after to see 
+   if the block immediately before and after are free and if so the blocks are combined.  So you never
    have 2 free blocks next to each other, apart from at the front with that
    0-sized dummy block.  This mostly prevents fragmentation.  I have been
    toying with the idea of always allocating block at 2^n boundaries to make
    it more likely that they will be re-used to cut down on fragmentation further.
    That's what the POWER_OF_TWO_BLOCKSIZE you see in apc_sma.c is all about.
   
-   Shared memory operations incurr locking, see the implementation for details.
+5.2) APCu Pooling
 
-   That should mostly take care of the low-level shared memory handling.
+   Pooling serves as a means to provide operations with a context: without context, managing memory within
+   APCu would become near impossible, and very error prone.
+
+   Whenever APCu is instructed to undertake an operation that requires relinquishing the owner of some memory
+   a struct of type apc_cache_context_t is passed, among other things, the context contains a pool,
+   the pool provides references to handlers that are appropriate for the current operation.
+
+   For example: To copy data into the shared area, APCu will require the use of allocators that return blocks
+				from shared memory. To copy data out of the shared area and hand over ownership to PHP, normal
+				allocators must be used.
+
+   For more information about pooling, see apc_pool.h/apc_pool.c in the source distribution.
+
+5.3) APCu Cache
+
+   The caching functionality of APCu is provided by a modified version of the APC source code
+
+   APC used cache level locking to ensure integrity of data - any time you wrote into or read from the cache
+   you acquired and released a global cache lock: This somewhat hinders performance, at least in theory, it complicates
+   implementation of new features and ideas, and raises the barrier rather high for maintainers.
+
+   APCu adopts a different method of ensuring integrity by moving the locking to the slot level.
+   APCu pays close attention to the problems inherent in a system being executed in an environment where concurrency is certain.
+   
+   When headers are manipulated ( any part ), the operations are done so with the protection of a mutex, such short, efficient operations
+   are not a candidate for enough contention for concern. When the counter or state flag is set, the mutex is released immediately, no lock is
+   held at the cache level while APCu manipulates data. 
+
+   This means that almost all of the API that needs to be maintained is completely free from locking.
+   
+   In addition to simplified and advanced locking, some simple tweaks have been applied. 
+     The possibility to control more finely what happens when resources become low for APCu.
+     A unified, general purpose implementation of a read/write lock, used everywhere, by everything.
+     Simplified configuration of APCu will ensure good performance out of the box
+     Agressive commenting of every source file I have changed or organized, the beginnings of a well documented APC !!
+
+   There's probably some of my blood in it, if you look real close ...
+
+   The remainder of the document goes on to explain in some detail the cache itself, which is almost unchanged in APCu
 
 6. Next up is apc_cache.c which implements the cache logic.
 
@@ -143,8 +176,7 @@ form of a quick-start guide to start hacking on APC.
    around system allocators (malloc etc).  Don't confuse apc_emalloc() and 
    apc_sma_malloc() as only the latter returns blocks from shared memory.
 
-   The cache is stored in/described by this struct allocated locally using
-   apc_emalloc():
+   The cache is stored in/described by this struct allocated locally using apc_emalloc():
 
      struct apc_cache_t {
          void* shmaddr;              /* process (local) address of shared cache */
