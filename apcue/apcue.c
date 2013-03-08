@@ -99,9 +99,15 @@ PHP_MINIT_FUNCTION(apcue)
 	/* If you have INI entries, uncomment these lines 
 	REGISTER_INI_ENTRIES();
 	*/
+
+	/* initialize sma */
 	apcue_sma.init(1, 2048*20, NULL TSRMLS_CC);
-	apcue_cache = apc_cache_create(
-				10, 0L, 0L, 0L TSRMLS_CC);
+	
+	/* create cache in shared memory */ 
+	apcue_cache = apc_cache_create_ex(
+		apcue_sma.malloc,
+		10, 0L, 0L, 0L TSRMLS_CC
+	);
 
 	return SUCCESS;
 }
@@ -114,7 +120,13 @@ PHP_MSHUTDOWN_FUNCTION(apcue)
 	/* uncomment this line if you have INI entries
 	UNREGISTER_INI_ENTRIES();
 	*/
-	apc_cache_destroy(apcue_cache TSRMLS_CC);
+	
+	/* destroy cache */
+	apc_cache_destroy(
+		apcue_cache TSRMLS_CC);
+	
+	/* cleanup sma */
+	apcue_sma.cleanup(TSRMLS_CC);
 
 	return SUCCESS;
 }
