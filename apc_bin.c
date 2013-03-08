@@ -374,7 +374,7 @@ static int apc_bin_checkfilter(HashTable *filter, const char *key, uint key_len)
 
 /* {{{ apc_bin_dump */
 apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
-    slot_t *sp;
+    apc_cache_slot_t *sp;
     apc_bd_entry_t *ep;
     int i, count=0;
     apc_bd_t *bd;

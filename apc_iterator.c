@@ -31,9 +31,9 @@ zend_class_entry *apc_iterator_ce;
 zend_object_handlers apc_iterator_object_handlers;
 
 /* {{{ apc_iterator_item */
-static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, slot_t **slot_pp TSRMLS_DC) {
+static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc_cache_slot_t **slot_pp TSRMLS_DC) {
     zval *zvalue;
-    slot_t *slot = *slot_pp;
+    apc_cache_slot_t *slot = *slot_pp;
     apc_context_t ctxt = {0, };
     apc_iterator_item_t *item = ecalloc(1, sizeof(apc_iterator_item_t));
 
@@ -165,7 +165,7 @@ static zend_object_value apc_iterator_create(zend_class_entry *ce TSRMLS_DC) {
 /* {{{ apc_iterator_search_match
  *       Verify if the key matches our search parameters
  */
-static int apc_iterator_search_match(apc_iterator_t *iterator, slot_t **slot) {
+static int apc_iterator_search_match(apc_iterator_t *iterator, apc_cache_slot_t **slot) {
     char *key;
     int key_len;
     char *fname_key = NULL;
@@ -197,7 +197,7 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, slot_t **slot) {
 /* }}} */
 
 /* {{{ apc_iterator_check_expiry */
-static int apc_iterator_check_expiry(apc_cache_t* cache, slot_t **slot, time_t t)
+static int apc_iterator_check_expiry(apc_cache_t* cache, apc_cache_slot_t **slot, time_t t)
 {
     if((*slot)->value->ttl) {
         if((time_t) ((*slot)->creation_time + (*slot)->value->ttl) < t) {
@@ -216,7 +216,7 @@ static int apc_iterator_check_expiry(apc_cache_t* cache, slot_t **slot, time_t t
 /* {{{ apc_iterator_fetch_active */
 static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
     int count=0;
-    slot_t **slot;
+    apc_cache_slot_t **slot;
     apc_iterator_item_t *item;
     time_t t;
 
@@ -251,7 +251,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
 /* {{{ apc_iterator_fetch_deleted */
 static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
     int count=0;
-    slot_t **slot;
+    apc_cache_slot_t **slot;
     apc_iterator_item_t *item;
 
     slot = &apc_user_cache->header->deleted_list;
@@ -279,7 +279,7 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
 
 /* {{{ apc_iterator_totals */
 static void apc_iterator_totals(apc_iterator_t *iterator TSRMLS_DC) {
-    slot_t **slot;
+    apc_cache_slot_t **slot;
     int i;
 
     for (i=0; i < apc_user_cache->num_slots; i++) {

@@ -73,13 +73,13 @@ typedef struct _apc_cache_entry_t {
 } apc_cache_entry_t;
 /* }}} */
 
-/* {{{ struct definition: slot_t */
-typedef struct slot_t slot_t;
-struct slot_t {
+/* {{{ struct definition: apc_cache_slot_t */
+typedef struct apc_cache_slot_t apc_cache_slot_t;
+struct apc_cache_slot_t {
 	apc_lock_t lock;            /* slot lock */
     apc_cache_key_t key;        /* slot key */
     apc_cache_entry_t* value;   /* slot value */
-    slot_t* next;               /* next slot in linked list */
+    apc_cache_slot_t* next;     /* next slot in linked list */
     unsigned long num_hits;     /* number of hits to this bucket */
     time_t creation_time;       /* time slot was initialized */
     time_t deletion_time;       /* time slot was removed from cache */
@@ -87,22 +87,22 @@ struct slot_t {
 };
 /* }}} */
 
-/* {{{ struct definition: cache_header_t
+/* {{{ struct definition: apc_cache_header_t
    Any values that must be shared among processes should go in here. */
-typedef struct _cache_header_t {
-	apc_lock_t lock;            /* header lock */
-    unsigned long num_hits;     /* total successful hits in cache */
-    unsigned long num_misses;   /* total unsuccessful hits in cache */
-    unsigned long num_inserts;  /* total successful inserts in cache */
-    unsigned long expunges;     /* total number of expunges */
-    slot_t* deleted_list;       /* linked list of to-be-deleted slots */
-    time_t start_time;          /* time the above counters were reset */
-    zend_bool busy;             /* Flag to tell clients when we are busy cleaning the cache */
-    int num_entries;            /* Statistic on the number of entries */
-    size_t mem_size;            /* Statistic on the memory size used by this cache */
-	long smart;                 /* adjustable smart expunges of data */
-    apc_cache_key_l lastkey;    /* information about the last key inserted */
-} cache_header_t;
+typedef struct _apc_cache_header_t {
+	apc_lock_t lock;                 /* header lock */
+    unsigned long num_hits;          /* total successful hits in cache */
+    unsigned long num_misses;        /* total unsuccessful hits in cache */
+    unsigned long num_inserts;       /* total successful inserts in cache */
+    unsigned long expunges;          /* total number of expunges */
+    apc_cache_slot_t* deleted_list;  /* linked list of to-be-deleted slots */
+    time_t start_time;               /* time the above counters were reset */
+    zend_bool busy;                  /* Flag to tell clients when we are busy cleaning the cache */
+    int num_entries;                 /* Statistic on the number of entries */
+    size_t mem_size;                 /* Statistic on the memory size used by this cache */
+	long smart;                      /* adjustable smart expunges of data */
+    apc_cache_key_l lastkey;         /* information about the last key inserted */
+} apc_cache_header_t;
 /* }}} */
 
 /* {{{ struct definition: apc_cache_t */
@@ -110,8 +110,8 @@ typedef struct apc_cache_t apc_cache_t;
 typedef void (*apc_expunge_cb_t)(apc_cache_t* cache, size_t n TSRMLS_DC); 
 struct apc_cache_t {
     void* shmaddr;                /* process (local) address of shared cache */
-    cache_header_t* header;       /* cache header (stored in SHM) */
-    slot_t** slots;               /* array of cache slots (stored in SHM) */
+    apc_cache_header_t* header;   /* cache header (stored in SHM) */
+    apc_cache_slot_t** slots;     /* array of cache slots (stored in SHM) */
     int num_slots;                /* number of slots in cache */
     int gc_ttl;                   /* maximum time on GC list for a slot */
     int ttl;                      /* if slot is needed and entry's access time is older than this ttl, remove it */

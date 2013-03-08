@@ -100,15 +100,15 @@ static int make_prime(int n)
 /* }}} */
 
 /* {{{ make_slot */
-slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* value, slot_t* next, time_t t TSRMLS_DC)
+apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* value, apc_cache_slot_t* next, time_t t TSRMLS_DC)
 {
-	slot_t* p = NULL;
+	apc_cache_slot_t* p = NULL;
 	
 	/* lock the cache header */
 	APC_LOCK(cache->header);
     {
 		/* copy identifier */
-		if ((p = apc_pool_alloc(value->pool, sizeof(slot_t)))) {
+		if ((p = apc_pool_alloc(value->pool, sizeof(apc_cache_slot_t)))) {
 			char* identifier = (char*) apc_pmemcpy(
 				key->identifier, key->identifier_len, 
 				value->pool TSRMLS_CC
@@ -144,7 +144,7 @@ slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* v
 /* }}} */
 
 /* {{{ free_slot */
-static void free_slot(slot_t* slot TSRMLS_DC)
+static void free_slot(apc_cache_slot_t* slot TSRMLS_DC)
 {
 	HANDLE_BLOCK_INTERRUPTIONS();
 	
@@ -167,9 +167,9 @@ static void free_slot(slot_t* slot TSRMLS_DC)
 
 /* {{{ remove_slot 
  Must never be called outside of a lock */
-static void remove_slot(apc_cache_t* cache, slot_t** slot TSRMLS_DC)
+static void remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot TSRMLS_DC)
 {
-    slot_t* dead = *slot;
+    apc_cache_slot_t* dead = *slot;
     *slot = (*slot)->next;
 
 	HANDLE_BLOCK_INTERRUPTIONS();
@@ -204,8 +204,8 @@ static void remove_slot(apc_cache_t* cache, slot_t** slot TSRMLS_DC)
 /* {{{ process_pending_removals */
 static void process_pending_removals(apc_cache_t* cache TSRMLS_DC)
 {
-    slot_t** slot;
-	slot_t*  select = NULL;
+    apc_cache_slot_t** slot;
+	apc_cache_slot_t*  select = NULL;
 	
     time_t now;
 
@@ -313,7 +313,7 @@ apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_tt
     cache = (apc_cache_t*) apc_emalloc(sizeof(apc_cache_t) TSRMLS_CC);
 	
 	/* calculate cache size for shm allocation */
-    cache_size = sizeof(cache_header_t) + num_slots*sizeof(slot_t*);
+    cache_size = sizeof(apc_cache_header_t) + num_slots*sizeof(apc_cache_slot_t*);
 
 	/* allocate shm */
     cache->shmaddr = allocate(cache_size TSRMLS_CC);
@@ -326,7 +326,7 @@ apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_tt
     memset(cache->shmaddr, 0, cache_size);
 
 	/* set default header */
-    cache->header = (cache_header_t*) cache->shmaddr;
+    cache->header = (apc_cache_header_t*) cache->shmaddr;
     cache->header->num_hits = 0;
     cache->header->num_misses = 0;
     cache->header->deleted_list = NULL;
@@ -335,7 +335,7 @@ apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_tt
     cache->header->busy = 0;
 	
 	/* set cache options */
-    cache->slots = (slot_t**) (((char*) cache->shmaddr) + sizeof(cache_header_t));
+    cache->slots = (apc_cache_slot_t**) (((char*) cache->shmaddr) + sizeof(apc_cache_header_t));
     cache->num_slots = num_slots;
     cache->gc_ttl = gc_ttl;
     cache->ttl = ttl;
@@ -348,7 +348,7 @@ apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_tt
 	CREATE_LOCK(&cache->header->lastkey.lock);
 	
 	/* zero slots */
-    memset(cache->slots, 0, sizeof(slot_t*)*num_slots);
+    memset(cache->slots, 0, sizeof(apc_cache_slot_t*)*num_slots);
 
 	/* set expunge callback */
     cache->expunge_cb = apc_cache_expunge;
@@ -642,7 +642,7 @@ void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
 	
 	/* clear slots */
     for (i = 0; i < cache->num_slots; i++) {
-        slot_t* p = cache->slots[i];
+        apc_cache_slot_t* p = cache->slots[i];
         while (p) {
             remove_slot(cache, &p TSRMLS_CC);
         }
@@ -666,7 +666,7 @@ static void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
 
 	/* expunge */
     for (i = 0; i < cache->num_slots; i++) {
-        slot_t* p = cache->slots[i];
+        apc_cache_slot_t* p = cache->slots[i];
         while (p) {
             remove_slot(cache, &p TSRMLS_CC);
         }
@@ -730,8 +730,8 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 				cache TSRMLS_CC);
 	    }
     } else {
-		slot_t **slot;
-		slot_t *select = NULL;
+		apc_cache_slot_t **slot;
+		apc_cache_slot_t *select = NULL;
 		
 		/* check that expunge is necessary */
         if (available < suitable) {
@@ -846,8 +846,8 @@ zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC) {
 
 /* {{{ apc_cache_quick_insert should not be used externally */
 static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, int exclusive TSRMLS_DC) {
-	slot_t** slot;
-	slot_t*  select = NULL;
+	apc_cache_slot_t** slot;
+	apc_cache_slot_t*  select = NULL;
 
     unsigned int keylen = key.identifier_len;
     
@@ -967,8 +967,8 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 /* {{{ apc_cache_find */
 apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, time_t t TSRMLS_DC)
 {
-    slot_t** slot;
-	slot_t*  select = NULL;
+    apc_cache_slot_t** slot;
+	apc_cache_slot_t*  select = NULL;
 	
     volatile apc_cache_entry_t* value = NULL;
     unsigned long h;
@@ -1039,8 +1039,8 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
 /* {{{ apc_cache_exists */
 apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen, time_t t TSRMLS_DC)
 {
-    slot_t** slot;
-	slot_t*  select = NULL;
+    apc_cache_slot_t** slot;
+	apc_cache_slot_t*  select = NULL;
 	
     volatile apc_cache_entry_t* value = NULL;
     unsigned long h;
@@ -1094,8 +1094,8 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
 /* {{{ apc_cache_update */
 zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cache_updater_t updater, void* data TSRMLS_DC)
 {
-    slot_t** slot;
-	slot_t*  select = NULL;
+    apc_cache_slot_t** slot;
+	apc_cache_slot_t*  select = NULL;
 	
     int retval = 0;
     unsigned long h;
@@ -1165,8 +1165,8 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
 /* {{{ apc_cache_delete */
 zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_DC)
 {
-    slot_t** slot;
-	slot_t*  select = NULL;
+    apc_cache_slot_t** slot;
+	apc_cache_slot_t*  select = NULL;
 	
     unsigned long h;
 
@@ -1593,7 +1593,7 @@ apc_cache_entry_t* apc_cache_make_entry(const zval* val, apc_context_t* ctxt, co
 /* }}} */
 
 /* {{{ apc_cache_link_info */
-static zval* apc_cache_link_info(apc_cache_t *cache, slot_t* p TSRMLS_DC)
+static zval* apc_cache_link_info(apc_cache_t *cache, apc_cache_slot_t* p TSRMLS_DC)
 {
     zval *link = NULL;
 
@@ -1627,7 +1627,7 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
     zval *list = NULL;
     zval *deleted_list = NULL;
     zval *slots = NULL;
-    slot_t* p;
+    apc_cache_slot_t* p;
     int i, j;
 
     if(!cache) return NULL;

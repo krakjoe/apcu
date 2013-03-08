@@ -58,7 +58,7 @@
 #define APC_ITER_NONE       (0x00000000L)
 #define APC_ITER_ALL        (0xffffffffL)
 
-typedef void* (*apc_iterator_item_cb_t)(slot_t **slot);
+typedef void* (*apc_iterator_item_cb_t)(apc_cache_slot_t **slot);
 
 
 /* {{{ apc_iterator_t */
