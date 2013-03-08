@@ -2,9 +2,9 @@
 APCu
 ====
 
-APCu is userland caching: APC stripped of it's opcode caching in preparation for the deployment of Zend Optimizer+ as the primary solution to opcode caching in future versions of PHP.
+APCu is userland caching: APC stripped of opcode caching in preparation for the deployment of Zend Optimizer+ as the primary solution to opcode caching in future versions of PHP.
 
-APCu has a revised and simplified codebase, by the time the PECL release is available, every part of APCu being used will have recieved review and where necessary or appropriate, changes.
+APCu has a revised and simplified codebase, by the time the PECL release is available, every part of APCu being used will have received review and where necessary or appropriate, changes.
 
 Simplifying and documenting the API of APCu completely removes the barrier to maintenance and development of APCu in the future, and additionally allows us to make optimizations not possible previously because of APC's inherent complexity.
 
@@ -32,7 +32,6 @@ Still to Do:
 
 	* serializer needs to be moved out of globals to aid third parties, apc_context_t/apc_cache_t
     * cleanup config.m4/config.w32
-    * 
 
 The C api does not retain backward compatibility, anyone relying on APC that will rely on APCu in the future should review the changes as soon as possible and continue to track them.
 The PHP api will retain compatibility with APC, as will common configuration options, providing a drop in replacement.
