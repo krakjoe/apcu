@@ -19,12 +19,20 @@ Specific Changes
     * revision of APC's caching API (complete)
     * revision of APC's PHP internals (complete)
     * revision of APC's userspace API (complete, exception apc_bin.c)
-    * revision of APC's shared memory allocator (complete, API provided for 3rd party extensions: apc_sma_api.h)
+    * revision of APC's shared memory allocator (complete)
     * revision of APC's pooling API (complete, no functional changes, documented)
     * installation of SIGUSR1 handler (where possible) to clear cache (complete)
     * slot level locking (complete)
+    * format API headers so they can be referenced externally (complete, see apcue)
     * apc.smart allows runtime adjustable control over how the cache is purged (complete)
     * documentation of all associated API's (ongoing, mostly complete, all headers and source file documented and commented)
+
+Still to Do:
+============
+
+	* serializer needs to be moved out of globals to aid third parties, apc_context_t/apc_cache_t
+    * cleanup config.m4/config.w32
+    * 
 
 The C api does not retain backward compatibility, anyone relying on APC that will rely on APCu in the future should review the changes as soon as possible and continue to track them.
 The PHP api will retain compatibility with APC, as will common configuration options, providing a drop in replacement.
