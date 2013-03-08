@@ -108,7 +108,7 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 	APC_LOCK(cache->header);
     {
 		/* copy identifier */
-		if ((p = apc_pool_alloc(value->pool, sizeof(apc_cache_slot_t)))) {
+		if ((p = value->pool->palloc(value->pool, sizeof(apc_cache_slot_t) TSRMLS_CC))) {
 			char* identifier = (char*) apc_pmemcpy(
 				key->identifier, key->identifier_len, 
 				value->pool TSRMLS_CC
@@ -1292,13 +1292,13 @@ static APC_HOTSPOT HashTable* my_copy_hashtable_ex(HashTable* dst,
     assert(src != NULL);
 
     if (!dst) {
-        CHECK(dst = (HashTable*) apc_pool_alloc(pool, sizeof(src[0])));
+        CHECK(dst = (HashTable*) pool->palloc(pool, sizeof(src[0]) TSRMLS_CC));
     }
 
     memcpy(dst, src, sizeof(src[0]));
 
     /* allocate buckets for the new hashtable */
-    CHECK((dst->arBuckets = apc_pool_alloc(pool, (dst->nTableSize * sizeof(Bucket*)))));
+    CHECK((dst->arBuckets = pool->palloc(pool, (dst->nTableSize * sizeof(Bucket*)) TSRMLS_CC)));
 
     memset(dst->arBuckets, 0, dst->nTableSize * sizeof(Bucket*));
     dst->pInternalPointer = NULL;
@@ -1396,14 +1396,14 @@ static zval** my_copy_zval_ptr(zval** dst, const zval** src, apc_context_t* ctxt
     assert(src != NULL);
 
     if (!dst) {
-        CHECK(dst = (zval**) apc_pool_alloc(pool, sizeof(zval*)));
+        CHECK(dst = (zval**) pool->palloc(pool, sizeof(zval*) TSRMLS_CC));
     }
 
     if(usegc) {
         ALLOC_ZVAL(dst[0]);
         CHECK(dst[0]);
     } else {
-        CHECK((dst[0] = (zval*) apc_pool_alloc(pool, sizeof(zval))));
+        CHECK((dst[0] = (zval*) pool->palloc(pool, sizeof(zval) TSRMLS_CC)));
     }
 
     CHECK((dst_new = my_copy_zval(*dst, *src, ctxt TSRMLS_CC)));
@@ -1522,7 +1522,7 @@ zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
             ALLOC_ZVAL(dst);
             CHECK(dst);
         } else {
-            CHECK(dst = (zval*) apc_pool_alloc(pool, sizeof(zval)));
+            CHECK(dst = (zval*) pool->palloc(pool, sizeof(zval) TSRMLS_CC));
         }
     }
 
@@ -1573,7 +1573,7 @@ apc_cache_entry_t* apc_cache_make_entry(const zval* val, apc_context_t* ctxt, co
     apc_cache_entry_t* entry;
     apc_pool* pool = ctxt->pool;
 
-    entry = (apc_cache_entry_t*) apc_pool_alloc(pool, sizeof(apc_cache_entry_t));
+    entry = (apc_cache_entry_t*) pool->palloc(pool, sizeof(apc_cache_entry_t) TSRMLS_CC);
     if (!entry) {
 		return NULL;
 	}

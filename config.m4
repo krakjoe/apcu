@@ -3,10 +3,10 @@ dnl $Id: config.m4 327593 2012-09-10 11:50:58Z pajoye $
 dnl
 
 PHP_ARG_ENABLE(apcu, whether to enable APCu support,
-[  --enable-apc           Enable APCu support])
+[  --enable-apcu          Enable APCu support])
 
 AC_ARG_ENABLE(apcu-debug,
-[  --enable-apc-debug     Enable APCu debugging], 
+[  --enable-apcu-debug    Enable APCu debugging], 
 [
   PHP_APCU_DEBUG=$enableval
 ], 
@@ -115,7 +115,7 @@ if test "$PHP_APCU" != "no"; then
   PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APC_CFLAGS))
   PHP_SUBST(APC_SHARED_LIBADD)
   PHP_SUBST(APC_CFLAGS)
-  PHP_INSTALL_HEADERS(ext/apcu, [apc_sma_api.h apc_serializer.h])
+  PHP_INSTALL_HEADERS(ext/apcu, [apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_serializer.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
 fi
 

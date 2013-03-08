@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | APCu                                                                 |
   +----------------------------------------------------------------------+
-  | Copyright (c) 2013 The PHP Group                                |
+  | Copyright (c) 2013 The PHP Group                                     |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -12,21 +12,17 @@
   | obtain it through the world-wide-web, please send a note to          |
   | license@php.net so we can mail you a copy immediately.               |
   +----------------------------------------------------------------------+
-  | Author: Joe Watkins <joe.watkins@live.co.uk>                        |
+  | Author: Joe Watkins <joe.watkins@live.co.uk>                         |
   +----------------------------------------------------------------------+
  */
 
-#ifndef APC_LOCK_H
-#define APC_LOCK_H
-
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#ifndef APC_API_H
+#define APC_API_H
 
 #include "apc.h"
-
-#ifndef APC_LOCK_API_H
-# include "apc_lock_api.h"
-#endif
+#include "apc_lock_api.h"
+#include "apc_pool_api.h"
+#include "apc_sma_api.h"
+#include "apc_cache_api.h"
 
 #endif
