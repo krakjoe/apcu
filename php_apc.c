@@ -297,7 +297,7 @@ static PHP_MINIT_FUNCTION(apcu)
 
 			/* register default serializer */
 			apc_register_serializer(
-				"default", php_apc_serializer, php_apc_unserializer, NULL TSRMLS_CC);
+				"php", php_apc_serializer, php_apc_unserializer, NULL TSRMLS_CC);
         }
     }
 

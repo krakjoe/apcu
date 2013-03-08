@@ -1125,7 +1125,7 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
                 case IS_CONSTANT_ARRAY:
                 case IS_OBJECT:
                 {
-                    if(APCG(serializer)) {
+                    if(!APCG(serializer)) {
                         retval = 0;
                         break;
                     } else {
