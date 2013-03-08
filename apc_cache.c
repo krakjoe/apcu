@@ -1682,8 +1682,7 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ apc_cache_busy
- TODO I don't like this */
+/* {{{ apc_cache_busy */
 zend_bool apc_cache_busy(apc_cache_t* cache)
 {
 	zend_bool busy;
