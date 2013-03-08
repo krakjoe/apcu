@@ -41,13 +41,6 @@
 #include "apc_pool.h"
 #include "TSRM.h"
 
-/* {{{ cache locking macros */
-#define CACHE_LOCK(cache)        WLOCK(&cache->header->lock)
-#define CACHE_UNLOCK(cache)      WUNLOCK(&cache->header->lock)
-#define CACHE_RLOCK(cache)       RLOCK(&cache->header->lock)
-#define CACHE_RUNLOCK(cache)     RUNLOCK(&cache->header->lock)
-/* }}} */
-
 /* {{{ used for slam defense to determine the context which created any key */
 #ifdef ZTS
 typedef void*** apc_cache_owner_t;
@@ -83,6 +76,7 @@ typedef struct _apc_cache_entry_t {
 /* {{{ struct definition: slot_t */
 typedef struct slot_t slot_t;
 struct slot_t {
+	apc_lock_t lock;            /* slot lock */
     apc_cache_key_t key;        /* slot key */
     apc_cache_entry_t* value;   /* slot value */
     slot_t* next;               /* next slot in linked list */
@@ -93,10 +87,13 @@ struct slot_t {
 };
 /* }}} */
 
+#define SLOT_LOCK(slot)         LOCK(&(slot)->lock)
+#define SLOT_UNLOCK(slot)       UNLOCK(&(slot)->lock)
+
 /* {{{ struct definition: cache_header_t
    Any values that must be shared among processes should go in here. */
 typedef struct _cache_header_t {
-    apc_lock_t lock;            /* APC lock */
+	apc_lock_t lock;            /* APC lock */
     unsigned long num_hits;     /* total successful hits in cache */
     unsigned long num_misses;   /* total unsuccessful hits in cache */
     unsigned long num_inserts;  /* total successful inserts in cache */
@@ -109,6 +106,41 @@ typedef struct _cache_header_t {
     apc_cache_key_l lastkey;    /* information about the last key inserted */
 } cache_header_t;
 /* }}} */
+
+#define CACHE_LOCK(cache)       LOCK(&cache->header->lock)
+#define CACHE_UNLOCK(cache)     UNLOCK(&cache->header->lock)
+#define CACHE_RLOCK(cache)      RLOCK(&cache->header->lock)
+#define CACHE_RUNLOCK(cache)    RUNLOCK(&cache->header->lock)
+
+#define CACHE_SAFE_ADD(c, h, v) do {\
+	CACHE_LOCK(c);\
+	c->header->h += v;\
+	CACHE_UNLOCK(c);\
+} while(0)
+
+#define CACHE_SAFE_SUB(c, h, v) do {\
+	CACHE_LOCK(c);\
+	c->header->h -= v;\
+	CACHE_UNLOCK(c);\
+while(0)
+
+#define CACHE_SAFE_INC(c, h) do {\
+	CACHE_LOCK(c);\
+	c->header->h++;\
+	CACHE_UNLOCK(c);\
+} while(0)
+
+#define CACHE_SAFE_DEC(c, h) do {\
+	CACHE_LOCK(c);\
+	c->header->h--;\
+	CACHE_UNLOCK(c);\
+} while(0)
+
+#define CACHE_SET_BUSY(c, v) do {\
+	CACHE_LOCK(c);\
+	c->header->busy = v;\
+	CACHE_UNLOCK(c);\
+} while(0)
 
 /* {{{ struct definition: apc_cache_t */
 typedef struct apc_cache_t apc_cache_t;

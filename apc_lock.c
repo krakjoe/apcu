@@ -34,8 +34,15 @@ int apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
 		switch (pthread_mutexattr_init(&attr)) {
 			case SUCCESS: switch(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED)) {
 				case SUCCESS: {
+					/* recursive support required */
+					pthread_mutexattr_settype(
+						&attr, PTHREAD_MUTEX_RECURSIVE);
+
+					/* initialize two identical mutex */
 					pthread_mutex_init(&lock->read, &attr);
 					pthread_mutex_init(&lock->write, &attr);
+					
+					/* cleanup attributes */
 					pthread_mutexattr_destroy(
 						&attr);
 
@@ -98,8 +105,8 @@ int apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
 int apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef _WIN32
 	int rc = SUCCESS;
-	switch ((rc = pthread_mutex_unlock(&lock->read))) {		
-		case SUCCESS: switch((rc = pthread_mutex_unlock(&lock->write))){
+	switch ((rc = pthread_mutex_unlock(&lock->write))) {		
+		case SUCCESS: switch((rc = pthread_mutex_unlock(&lock->read))){
 			case SUCCESS: {
 				return 1;
 			} break;
