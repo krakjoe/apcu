@@ -144,7 +144,7 @@ form of a quick-start guide to start hacking on APC.
    apc_sma_malloc() as only the latter returns blocks from shared memory.
 
    The cache is stored in/described by this struct allocated locally using
-   emalloc():
+   apc_emalloc():
 
      struct apc_cache_t {
          void* shmaddr;              /* process (local) address of shared cache */
@@ -262,5 +262,5 @@ form of a quick-start guide to start hacking on APC.
    the pooled resources used to create the entry. 
 
 If you made it to the end of this, you should have a pretty good idea of where things are in
-the code.  I skimmed over a lot of things, so plan on spending some time reading through the code.
+the code.  There is much more reading to do in headers ... good luck ...
 
