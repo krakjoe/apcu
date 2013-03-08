@@ -14,20 +14,20 @@ Specific Changes
 ================
 
     * appropriate changes (removals) to configuration parameters (complete)
-    * appropriate changes to userspace management script (partly complete, could do with a rewrite)
+    * appropriate changes to userspace management script (complete)
 	* revision of APC locking (ongoing, unix-like OS tested & working, more testing to be done)
-    * revision of APC's caching API (structures revised and partly documented, functions revised and partly documented, binary functionality requires revision)
-    * revision of APC's PHP internals (removals complete, not yet renamed)
-    * revision of APC's userspace API (removals complete, not yet renamed, changes to iterator complete)
-    * revision of APC's shared memory allocator (ongoing, API provided for 3rd party extensions: apc_sma_api.h)
+    * revision of APC's caching API (complete)
+    * revision of APC's PHP internals (complete)
+    * revision of APC's userspace API (complete, exception apc_bin.c)
+    * revision of APC's shared memory allocator (complete, API provided for 3rd party extensions: apc_sma_api.h)
     * revision of APC's pooling API (complete, no functional changes, documented)
     * installation of SIGUSR1 handler (where possible) to clear cache (complete)
-    * almost all locking moved from cache level to slot level (in progress)
-    * apc.smart allows runtime adjustable control over how the cache is purged
-    * documentation of all associated API's (ongoing, first headers then updates/revision/completion of TECHNOTES)
+    * almost all locking moved from cache level to slot level (complete)
+    * apc.smart allows runtime adjustable control over how the cache is purged (complete)
+    * documentation of all associated API's (ongoing, mostly complete, all headers and source file documented and commented)
 
 The C api does not retain backward compatibility, anyone relying on APC that will rely on APCu in the future should review the changes as soon as possible and continue to track them.
-The userspace PHP api is not likely to retain backward compatibility, though may emulate it at runtime if interest in that is expressed.
+The PHP api will retain compatibility with APC, providing a drop in replacement, as will common configuration options.
 
 Possible Ideas
 ==============
