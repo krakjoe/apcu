@@ -862,6 +862,8 @@ static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key,
     slot = &cache->slots[key.h % cache->num_slots];
 
     while ((select=(*slot))) {
+
+		/* perform slot locking */
 		APC_LOCK(select);
 		
 		/* check for a match by hash and identifier */
@@ -877,13 +879,14 @@ static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key,
             if(exclusive && (  !select->value->ttl ||
                               ( select->value->ttl && (time_t) (select->creation_time + select->value->ttl) >= t ) 
                             ) ) {
+				/* unlock slot */
 				APC_UNLOCK(select);
 
                 return 0;
             }
-
+			/* unlock slot (about to be removed) */
 			APC_UNLOCK(select);
-
+			
             remove_slot(
 				cache, slot TSRMLS_CC);
             break;
@@ -898,15 +901,19 @@ static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key,
          */
         if((cache->ttl && select->access_time < (t - cache->ttl)) || 
            (select->value->ttl && (time_t) (select->creation_time + select->value->ttl) < t)) {
+			/* unlock slot (about to be removed) */
 			APC_UNLOCK(select);
 			
-            remove_slot(cache, slot TSRMLS_CC);
+            remove_slot(
+				cache, slot TSRMLS_CC);
 
             continue;
         }
 		
+		/* set next slot */
 		slot = &select->next;
 
+		/* unlock slot */
 		APC_UNLOCK(select);        
     }
 
@@ -1106,6 +1113,9 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
     slot = &cache->slots[h % cache->num_slots];
 
     while ((select=(*slot))) {
+		/* perform slot locking */
+		APC_LOCK(select);
+		
 		/* check for a match by hash and identifier */
         if ((h == select->key.h) &&
             !memcmp(select->key.identifier, strkey, keylen)) {
@@ -1135,10 +1145,18 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
                 break;
             }
 			
+			/* unlock slot */
+			APC_UNLOCK(select);
+
             return retval;
         }
+
+		/* set next slot */
         slot = &select->next;
-    }
+		
+		/* unlock slot */
+		APC_UNLOCK(select);    
+	}
 
     return 0;
 }
