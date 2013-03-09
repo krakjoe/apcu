@@ -255,7 +255,7 @@ static PHP_MINIT_FUNCTION(apcu)
     REGISTER_INI_ENTRIES();
 
 	/* locks initialized regardless of settings */
-	apc_lock_init(TSRMLS_CC);
+	apc_lock_init(TSRMLS_C);
 	
     /* Disable APC in cli mode unless overridden by apc.enable_cli */
     if (!APCG(enable_cli) && !strcmp(sapi_module.name, "cli")) {
@@ -491,7 +491,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
     if (Z_TYPE_P(key) == IS_ARRAY) {
 
 		apc_cache_store_all(
-			apc_user_cache, key, return_value, (unsigned int)ttl, exclusive);
+			apc_user_cache, key, return_value, (unsigned int)ttl, exclusive TSRMLS_CC);
 		return;
 		
     } else {

@@ -7,7 +7,7 @@ ARG_ENABLE('apcu-debug', 'Whether to enable APCu debugging', 'no');
 if(PHP_APCU != 'no')
 {
 	var apc_sources = 	'apc.c php_apc.c apc_cache.c apc_debug.c ' + 
-						'apc_iterator.c apc_shm.c ' + 
+						'apc_iterator.c apc_shm.c apc_lock.c ' + 
 						'apc_sma.c apc_stack.c apc_rfc1867.c apc_pool.c ' +
 						'apc_bin.c';
 

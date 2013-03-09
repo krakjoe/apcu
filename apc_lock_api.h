@@ -40,7 +40,7 @@ typedef struct _apc_lock_t {
 } apc_lock_t;
 # endif
 #else
-
+typedef SRWLOCK apc_lock_t;
 #endif
 
 /* {{{ functions */
