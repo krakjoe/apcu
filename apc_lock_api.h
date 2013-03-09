@@ -28,7 +28,7 @@
 	the majority of Posix rwlock implementations
 */
 
-#ifndef _WIN32
+#ifndef PHP_WIN32
 # define __USE_UNIX98
 # include "pthread.h"
 # ifdef APC_NATIVE_RWLOCK
@@ -40,7 +40,9 @@ typedef struct _apc_lock_t {
 } apc_lock_t;
 # endif
 #else
-
+/* XXX kernel lock mode only for now, compatible through all the wins, add more ifdefs for others */
+# include "apc_windows_srwlock_kernel.h"
+typedef apc_windows_cs_rwlock_t apc_lock_t;
 #endif
 
 /* {{{ functions */

@@ -314,7 +314,7 @@ extern zval* apc_cache_info(apc_cache_t* cache,
 /*
 * apc_cache_busy returns true while the cache is being cleaned
 */
-extern zend_bool apc_cache_busy(apc_cache_t* cache);
+extern zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC);
 
 /*
 * apc_cache_defense: guard against slamming a key

@@ -663,6 +663,11 @@ zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size) {
     return 0;
 }
 
+void apc_sma_api_check_integrity(apc_sma_t* sma)
+{
+    /* dummy */
+}
+
 /* {{{ APC SMA */
 apc_sma_api_impl(apc_sma); 
 /* }}} */

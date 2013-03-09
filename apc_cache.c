@@ -354,9 +354,11 @@ apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_tt
 zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC) {
     apc_cache_entry_t *entry;
     apc_cache_key_t key;
-    time_t t = apc_time();
+    time_t t;
     apc_context_t ctxt={0,};
     int ret = 0;
+
+    t = apc_time();
 
     if (!APCG(serializer) && APCG(serializer_name)) {
         /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
@@ -620,7 +622,7 @@ void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
     int i;
 
 	/* check there is a cache and it is not busy */
-    if(!cache || apc_cache_busy(cache)) {
+    if(!cache || apc_cache_busy(cache TSRMLS_CC)) {
 		return;
 	}
 	
@@ -698,7 +700,7 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 
 	/* check there is a cache and it is not busy */
     /* you MUST check the cache is not busy here */
-    if(!cache || apc_cache_busy(cache TSRMLS_CC)) {
+    if(!cache || apc_cache_busy(cache  TSRMLS_CC)) {
 		return;
 	}
 
@@ -768,7 +770,7 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 		    }
 
 			/* if the cache now has space, then reset last key and unlock */
-		    if (apc_sma.get_avail_size(size)) {
+		    if (apc_sma.get_avail_size(size TSRMLS_CC)) {
 		        /* wipe lastkey */
 		    	APC_ATOM_ZERO((&(cache->header->lastkey)), key, sizeof(apc_cache_key_t));
 		    } else {
@@ -941,7 +943,7 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 	}
 	
 	/* check we are not clearing the cache */
-	if (apc_cache_busy(cache)) {
+	if (apc_cache_busy(cache TSRMLS_CC)) {
 		return result;
 	}
 
@@ -967,7 +969,7 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
     volatile apc_cache_entry_t* value = NULL;
     unsigned long h;
 
-    if(apc_cache_busy(cache))
+    if(apc_cache_busy(cache TSRMLS_CC))
     {
         /* cache cleanup in progress */ 
         return NULL;
@@ -1039,7 +1041,7 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
     volatile apc_cache_entry_t* value = NULL;
     unsigned long h;
 
-    if(apc_cache_busy(cache))
+    if(apc_cache_busy(cache TSRMLS_CC))
     {
         /* cache cleanup in progress */ 
         return NULL;
@@ -1094,7 +1096,7 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
     int retval = 0;
     unsigned long h;
 
-    if(apc_cache_busy(cache))
+    if(apc_cache_busy(cache TSRMLS_CC))
     {
         /* cache cleanup in progress */ 
         return 0;
@@ -1695,7 +1697,7 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_cache_busy */
-zend_bool apc_cache_busy(apc_cache_t* cache)
+zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC)
 {
 	zend_bool busy;
 
