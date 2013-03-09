@@ -28,7 +28,7 @@
 	the majority of Posix rwlock implementations
 */
 
-#ifndef _WIN32
+#ifndef PHP_WIN32
 # define __USE_UNIX98
 # include "pthread.h"
 # ifdef APC_NATIVE_RWLOCK
