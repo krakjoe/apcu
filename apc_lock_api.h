@@ -44,9 +44,17 @@ typedef struct _apc_lock_t {
 #endif
 
 /* {{{ functions */
+/*
+  The following functions should be called once per process:
+	apc_lock_init initializes attributes suitable for all locks
+	apc_lock_cleanup destroys those attributes
+  This saves us from having to create and destroy attributes for
+  every lock we use at runtime */
 extern zend_bool apc_lock_init(TSRMLS_D);
 extern void      apc_lock_cleanup(TSRMLS_D);
-
+/*
+  The following functions should be self explanitory:
+*/
 extern zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC);
 extern zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC);
 extern zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC);
