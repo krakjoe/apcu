@@ -40,7 +40,9 @@ typedef struct _apc_lock_t {
 } apc_lock_t;
 # endif
 #else
-typedef SRWLOCK apc_lock_t;
+/* XXX kernel lock mode only for now, compatible through all the wins, add more ifdefs for others */
+# include "apc_windows_srwlock_kernel.h"
+typedef apc_windows_cs_rwlock_t apc_lock_t;
 #endif
 
 /* {{{ functions */

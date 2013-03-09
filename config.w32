@@ -9,14 +9,16 @@ if(PHP_APCU != 'no')
 	var apc_sources = 	'apc.c php_apc.c apc_cache.c apc_debug.c ' + 
 						'apc_iterator.c apc_shm.c apc_lock.c ' + 
 						'apc_sma.c apc_stack.c apc_rfc1867.c apc_pool.c ' +
-						'apc_bin.c';
+						'apc_bin.c apc_windows_srwlock_kernel.c';
 
 	if(PHP_APCU_DEBUG != 'no')
 	{
 		ADD_FLAG('CFLAGS_APC', '/D APC_DEBUG=1');
 	}
 
-	/* do the locking stuff here, someone else hopefully */
+	/* XXX srwlock kernel as most BC compatible for now */
+	AC_DEFINE('APC_SRWLOCK_KERNEL', 1);
+	ADD_FLAG('CFLAGS_APC', '/D WIN32_ONLY_COMPILER=1');
 
 	AC_DEFINE('HAVE_APCU', 1);
 
