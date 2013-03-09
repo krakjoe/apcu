@@ -164,7 +164,7 @@ void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC) {
 	pthread_rwlock_destroy(lock);
 # endif
 #else
-	apc_windows_cs_destroy((apc_windows_cs_rwlock_t *)lock TSRMLS_CC);
+	apc_windows_cs_destroy((apc_windows_cs_rwlock_t *)lock);
 #endif
 } 
 #endif
