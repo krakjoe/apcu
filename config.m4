@@ -5,66 +5,44 @@ dnl
 PHP_ARG_ENABLE(apcu, whether to enable APCu support,
 [  --enable-apcu          Enable APCu support])
 
+AC_MSG_CHECKING(if APCu should be built in debug mode)
 AC_ARG_ENABLE(apcu-debug,
 [  --enable-apcu-debug    Enable APCu debugging], 
 [
-  PHP_APCU_DEBUG=$enableval
+  PHP_APCU_DEBUG=yes
+	AC_MSG_RESULT(yes)
 ], 
 [
   PHP_APCU_DEBUG=no
-])
-
-AC_MSG_CHECKING(whether we should use mmap)
-AC_ARG_ENABLE(apcu-mmap,
-[  --disable-apcu-mmap
-                          Disable mmap support and use IPC shm instead],
-[
-  PHP_APCU_MMAP=$enableval
-  AC_MSG_RESULT($enableval)
-], [
-  PHP_APCU_MMAP=yes
-  AC_MSG_RESULT(yes)
-])
-
-AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_cv_APC_GCC_ATOMICS, [
-		AC_TRY_LINK([],[
-				int foo = 0;
-				__sync_fetch_and_add(&foo, 1);
-				__sync_bool_compare_and_swap(&foo, 0, 1);
-				return __sync_fetch_and_add(&foo, 1);
-			],
-			[PHP_cv_APC_GCC_ATOMICS=yes],
-			[PHP_cv_APC_GCC_ATOMICS=no])
-	])
-
-if test "x${PHP_cv_APC_GCC_ATOMICS}" != "xno"; then
-		AC_DEFINE(HAVE_ATOMIC_OPERATIONS, 1,
-			[Define this if your target compiler supports builtin atomics])
-fi
-
-AC_MSG_CHECKING(whether we should enable memory protection)
-AC_ARG_ENABLE(apcu-memprotect,
-[  --enable-apcu-memprotect
-                          Enable mmap/shm memory protection],
-[
-  PHP_APCU_MEMPROTECT=$enableval
-  AC_MSG_RESULT($enableval)
-], [
-  PHP_APCU_MEMPROTECT=no
   AC_MSG_RESULT(no)
 ])
 
+AC_MSG_CHECKING(if APCu will use mmap or shm)
+AC_ARG_ENABLE(apcu-mmap,
+[  --disable-apcu-mmap		Disable mmap, falls back on shm],
+[
+  PHP_APCU_MMAP=no
+  AC_MSG_RESULT(shm)
+], [
+  PHP_APCU_MMAP=yes
+  AC_MSG_RESULT(mmap)
+])
+
 if test "$PHP_APCU" != "no"; then
-  test "$PHP_APCU_MMAP" != "no" && AC_DEFINE(APC_MMAP, 1, [ ])
-
 	if test "$PHP_APCU_DEBUG" != "no"; then
-		AC_DEFINE(__DEBUG_APC__, 1, [ ])
+		AC_DEFINE(APC_DEBUG, 1, [ ])
+	fi
+  
+	if test "$PHP_APCU_MMAP" != "no"; then
+		AC_DEFINE(APC_MMAP, 1, [ ])
 	fi
 
-	if test "$PHP_APCU_MEMPROTECT" != "no"; then
-		AC_DEFINE(APC_MEMPROTECT, 1, [ shm/mmap memory protection ])
-	fi
-
+	PHP_CHECK_LIBRARY(pthread, pthread_rwlock_init,
+  [
+    PHP_ADD_LIBRARY(pthread,,APCU_SHARED_LIBADD)
+		AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
+  ])
+	
   AC_CHECK_FUNCS(sigaction)
   AC_CACHE_CHECK(for union semun, php_cv_semun,
   [
@@ -73,7 +51,7 @@ if test "$PHP_APCU" != "no"; then
 #include <sys/ipc.h>
 #include <sys/sem.h>
     ], [union semun x; x.val=1], [
-      php_cv_semun=yes
+      hp_cv_semun=yesp
     ],[
       php_cv_semun=no
     ])
@@ -84,16 +62,13 @@ if test "$PHP_APCU" != "no"; then
     AC_DEFINE(HAVE_SEMUN, 0, [ ])
   fi
 
-  AC_MSG_CHECKING(whether we should enable valgrind support)
   AC_ARG_ENABLE(valgrind-checks,
   [  --disable-valgrind-checks
                           Disable valgrind based memory checks],
   [
-    PHP_APCU_VALGRIND=$enableval
-    AC_MSG_RESULT($enableval)
+    PHP_APCU_VALGRIND=no
   ], [
     PHP_APCU_VALGRIND=yes
-    AC_MSG_RESULT(yes)
     AC_CHECK_HEADER(valgrind/memcheck.h, 
   		[AC_DEFINE([HAVE_VALGRIND_MEMCHECK_H],1, [enable valgrind memchecks])])
   ])
@@ -111,10 +86,10 @@ if test "$PHP_APCU" != "no"; then
                apc_iterator.c \
 							 apc_bin.c "
 
-  PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APC_SHARED_LIBADD)])
-  PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APC_CFLAGS))
-  PHP_SUBST(APC_SHARED_LIBADD)
-  PHP_SUBST(APC_CFLAGS)
+  PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
+  PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
+  PHP_SUBST(APCU_SHARED_LIBADD)
+  PHP_SUBST(APCU_CFLAGS)
   PHP_INSTALL_HEADERS(ext/apcu, [apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_serializer.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
 fi

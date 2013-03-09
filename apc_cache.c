@@ -105,7 +105,7 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 	apc_cache_slot_t* p = NULL;
 	
 	/* lock the cache header */
-	APC_LOCK(cache->header);
+	APC_WLOCK(cache->header);
     {
 		/* copy identifier */
 		if ((p = value->pool->palloc(value->pool, sizeof(apc_cache_slot_t) TSRMLS_CC))) {
@@ -137,7 +137,7 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 		}
 	}
 	/* unlock the cache header */
-	APC_UNLOCK(cache->header);
+	APC_WUNLOCK(cache->header);
 
     return p;
 }
@@ -149,14 +149,14 @@ static void free_slot(apc_cache_slot_t* slot TSRMLS_DC)
 	HANDLE_BLOCK_INTERRUPTIONS();
 	
 	/* lock slot */
-	APC_LOCK(slot);
+	APC_WLOCK(slot);
 	
 	/* destroy slot pool */
     apc_pool_destroy(
 		slot->value->pool TSRMLS_CC);
 	
 	/* unlock slot */
-	APC_UNLOCK(slot);
+	APC_WUNLOCK(slot);
 
 	/* destroy lock */
 	DESTROY_LOCK(&slot->lock);
@@ -175,27 +175,21 @@ static void remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot TSRMLS_DC)
 	HANDLE_BLOCK_INTERRUPTIONS();
 	
 	/* lock the cache header */	
-	APC_LOCK(cache->header);
+	APC_WLOCK(cache->header);
 
     cache->header->mem_size -= dead->value->mem_size;
     cache->header->num_entries--;
 	
-	/* keep things moving */
-	APC_UNLOCK(cache->header);
-	
     if (dead->value->ref_count <= 0) {
         free_slot(dead TSRMLS_CC);
     } else {
-		/* lock cache header while it is edited */
-		APC_LOCK(cache->header);
-
         dead->next = cache->header->deleted_list;
         dead->deletion_time = time(0);
         cache->header->deleted_list = dead;
-
-		/* unlock cache header */
-		APC_UNLOCK(cache->header);
     }
+	
+	/* unlock */
+	APC_WUNLOCK(cache->header);
 	
 	HANDLE_UNBLOCK_INTERRUPTIONS();
 }
@@ -224,7 +218,7 @@ static void process_pending_removals(apc_cache_t* cache TSRMLS_DC)
 
     while ((select=(*slot))) {
 		/* perform slot locking */
-		APC_LOCK(select);		
+		APC_WLOCK(select);		
 		{
 			int gc_sec = cache->gc_ttl ? (now - select->deletion_time) : 0;
 
@@ -745,7 +739,7 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 		        while((select=(*slot))) {	
 					
 					/* perform slot locking */
-					APC_LOCK(select);
+					APC_WLOCK(select);
 					
 		            /*
 		             * For the user cache we look at the individual entry ttl values
@@ -769,7 +763,7 @@ static void apc_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 					slot = &select->next;
 					
 					/* unlock slot */
-					APC_UNLOCK(select);		            
+					APC_WUNLOCK(select);		            
 		        }
 		    }
 
@@ -864,7 +858,7 @@ static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key,
     while ((select=(*slot))) {
 
 		/* perform slot locking */
-		APC_LOCK(select);
+		APC_WLOCK(select);
 		
 		/* check for a match by hash and identifier */
         if ((select->key.h == key.h) && 
@@ -880,12 +874,12 @@ static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key,
                               ( select->value->ttl && (time_t) (select->creation_time + select->value->ttl) >= t ) 
                             ) ) {
 				/* unlock slot */
-				APC_UNLOCK(select);
+				APC_WUNLOCK(select);
 
                 return 0;
             }
 			/* unlock slot (about to be removed) */
-			APC_UNLOCK(select);
+			APC_WUNLOCK(select);
 			
             remove_slot(
 				cache, slot TSRMLS_CC);
@@ -902,7 +896,7 @@ static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key,
         if((cache->ttl && select->access_time < (t - cache->ttl)) || 
            (select->value->ttl && (time_t) (select->creation_time + select->value->ttl) < t)) {
 			/* unlock slot (about to be removed) */
-			APC_UNLOCK(select);
+			APC_WUNLOCK(select);
 			
             remove_slot(
 				cache, slot TSRMLS_CC);
@@ -914,7 +908,7 @@ static zend_bool apc_cache_quick_insert(apc_cache_t* cache, apc_cache_key_t key,
 		slot = &select->next;
 
 		/* unlock slot */
-		APC_UNLOCK(select);        
+		APC_WUNLOCK(select);        
     }
 
     if ((*slot = make_slot(cache, &key, value, *slot, t TSRMLS_CC)) == NULL) {
@@ -986,7 +980,7 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
     slot = &cache->slots[h % cache->num_slots];
 
     while ((select=(*slot))) {
-		APC_LOCK(select);
+		APC_RLOCK(select);
 		
 		/* check for a matching key by has and identifier */
         if ((h == select->key.h) &&
@@ -995,7 +989,7 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
             /* Check to make sure this entry isn't expired by a hard TTL */
             if(select->value->ttl && (time_t) (select->creation_time + select->value->ttl) < t) {
 
-				APC_UNLOCK(select);
+				APC_RUNLOCK(select);
 				
 				/* remove expired entry */
                 remove_slot(
@@ -1018,7 +1012,7 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
 			/* grab value */
             value = select->value;
 			
-			APC_UNLOCK(select);
+			APC_RUNLOCK(select);
 			
             return (apc_cache_entry_t*)value;
         }
@@ -1026,7 +1020,7 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
 		/* next */
         slot = &select->next;
 
-		APC_UNLOCK(select);		
+		APC_RUNLOCK(select);		
     }
  	
 	/* not found, so increment misses */
@@ -1059,7 +1053,7 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
 
     while ((select=(*slot))) {
 		/* perform slot locking */
-		APC_LOCK(select);
+		APC_RLOCK(select);
 		
 		/* check for match by hash and identifier */
         if ((h == select->key.h) &&
@@ -1067,7 +1061,7 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
 
             /* Check to make sure this entry isn't expired by a hard TTL */
             if(select->value->ttl && (time_t) (select->creation_time + select->value->ttl) < t) {
-				APC_UNLOCK(select);
+				APC_RUNLOCK(select);
 				
                 return NULL;
             }
@@ -1076,7 +1070,7 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
             value = select->value;
 			
 			/* release slot lock */
-			APC_UNLOCK(select);
+			APC_RUNLOCK(select);
 						
             return (apc_cache_entry_t*)value;
         }
@@ -1084,7 +1078,7 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
 		slot = &select->next;
 
 		/* release slot lock */
-		APC_UNLOCK(select);    
+		APC_RUNLOCK(select);    
     }
 
     return NULL;
@@ -1114,7 +1108,7 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
 
     while ((select=(*slot))) {
 		/* perform slot locking */
-		APC_LOCK(select);
+		APC_WLOCK(select);
 		
 		/* check for a match by hash and identifier */
         if ((h == select->key.h) &&
@@ -1146,7 +1140,7 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
             }
 			
 			/* unlock slot */
-			APC_UNLOCK(select);
+			APC_WUNLOCK(select);
 
             return retval;
         }
@@ -1155,7 +1149,7 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
         slot = &select->next;
 		
 		/* unlock slot */
-		APC_UNLOCK(select);    
+		APC_WUNLOCK(select);    
 	}
 
     return 0;
@@ -1179,13 +1173,13 @@ zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_D
     while ((select=(*slot))) {
 
 		/* perform slot locking */
-		APC_LOCK(select);
+		APC_WLOCK(select);
 
 		/* check for a match by hash and identifier */
         if ((h == select->key.h) && 
             !memcmp(select->key.identifier, strkey, keylen)) {
 			/* unlock slot (about to be removed) */
-			APC_UNLOCK(select);
+			APC_WUNLOCK(select);
 
 			/* executing removal */
             remove_slot(
@@ -1198,7 +1192,7 @@ zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_D
 		slot = &select->next;
 
 		/* unlock slot */
-		APC_UNLOCK(select);        
+		APC_WUNLOCK(select);        
     }
 	
 	return 0;
@@ -1730,10 +1724,7 @@ zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 	if (APCG(slam_defense)) {
 
 		/* fetch locking last key struct */
-		apc_cache_key_l last;
-		
-		/* duplicate last key */
-		APC_ATOM_DUP(&cache->header->lastkey, &last);
+		apc_cache_key_l last = cache->header->lastkey;
 		
 		/* check the hash and identifier length match */
 		if( last.key.h == key->h && 
@@ -1749,7 +1740,7 @@ zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 			    result = 1;
 			} else {
 				/* lock the key while it is edited */
-				APC_LOCK(&cache->header->lastkey);
+				APC_WLOCK(&cache->header->lastkey);
 				{
 					/* fetch last key */
 					apc_cache_key_t* set = (apc_cache_key_t*) (&(cache->header->lastkey));
@@ -1768,7 +1759,7 @@ zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 					}
 				}
 				/* never forget */
-				APC_UNLOCK(&cache->header->lastkey);
+				APC_WUNLOCK(&cache->header->lastkey);
 			}
 		}
 	}

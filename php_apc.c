@@ -254,6 +254,9 @@ static PHP_MINIT_FUNCTION(apcu)
 
     REGISTER_INI_ENTRIES();
 
+	/* locks initialized regardless of settings */
+	apc_lock_init(TSRMLS_CC);
+	
     /* Disable APC in cli mode unless overridden by apc.enable_cli */
     if (!APCG(enable_cli) && !strcmp(sapi_module.name, "cli")) {
         APCG(enabled) = 0;
@@ -308,6 +311,9 @@ static PHP_MINIT_FUNCTION(apcu)
 /* {{{ PHP_MSHUTDOWN_FUNCTION(apcu) */
 static PHP_MSHUTDOWN_FUNCTION(apcu)
 {
+	/* locks shutdown regardless of settings */
+	apc_lock_cleanup(TSRMLS_C);
+
 	/* only shut down if APC is enabled */
     if (APCG(enabled)) {
         if (APCG(initialized)) {

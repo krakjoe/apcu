@@ -388,54 +388,54 @@ void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, z
 
 restart:
     assert(sma->initialized);
-    LOCK(&SMA_LCK(sma, sma->last));
+    WLOCK(&SMA_LCK(sma, sma->last));
 
     off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
 
     if(off == -1) { 
         /* retry failed allocation after we expunge */
-        UNLOCK(&SMA_LCK(sma, sma->last));
+        WUNLOCK(&SMA_LCK(sma, sma->last));
 		apc_user_cache->expunge_cb(
 			apc_user_cache, (n+fragment) TSRMLS_CC);
-        LOCK(&SMA_LCK(sma, sma->last));
+        WLOCK(&SMA_LCK(sma, sma->last));
         off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
     }
 
     if (off != -1) {
         void* p = (void *)(SMA_ADDR(sma, sma->last) + off);
-        UNLOCK(&SMA_LCK(sma, sma->last));
+        WUNLOCK(&SMA_LCK(sma, sma->last));
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
         VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
         return p;
     }
     
-    UNLOCK(&SMA_LCK(sma, sma->last));
+    WUNLOCK(&SMA_LCK(sma, sma->last));
 
     for (i = 0; i < sma->num; i++) {
         if (i == sma->last) {
             continue;
         }
-        LOCK(&SMA_LCK(sma, i));
+        WLOCK(&SMA_LCK(sma, i));
         off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
         if(off == -1) { 
             /* retry failed allocation after we expunge */
-            UNLOCK(&SMA_LCK(sma, i));
+            WUNLOCK(&SMA_LCK(sma, i));
 			apc_user_cache->expunge_cb(
 				apc_user_cache, (n+fragment) TSRMLS_CC);
-            LOCK(&SMA_LCK(sma, i));
+            WLOCK(&SMA_LCK(sma, i));
             off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
         }
         if (off != -1) {
             void* p = (void *)(SMA_ADDR(sma, i) + off);
-            UNLOCK(&SMA_LCK(sma, i));
+            WUNLOCK(&SMA_LCK(sma, i));
             sma->last = i;
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
             VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
             return p;
         }
-        UNLOCK(&SMA_LCK(sma, i));
+        WUNLOCK(&SMA_LCK(sma, i));
     }
 
     /* I've tried being nice, but now you're just asking for it */
@@ -497,9 +497,9 @@ void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC) {
     for (i = 0; i < sma->num; i++) {
         offset = (size_t)((char *)p - SMA_ADDR(sma, i));
         if (p >= (void*)SMA_ADDR(sma, i) && offset < sma->size) {
-            LOCK(&SMA_LCK(sma, i));
+            WLOCK(&SMA_LCK(sma, i));
             sma_deallocate(SMA_HDR(sma, i), offset);
-            UNLOCK(&SMA_LCK(sma, i));
+            WUNLOCK(&SMA_LCK(sma, i));
 #ifdef VALGRIND_FREELIKE_BLOCK
             VALGRIND_FREELIKE_BLOCK(p, 0);
 #endif
