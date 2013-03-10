@@ -128,15 +128,15 @@ while(0)
 } while(0) 
 
 #define APC_ATOM_DUP(o, d) do {\
-	APC_WLOCK(o);\
+	APC_RLOCK(o);\
 	memcpy(d, o, sizeof(*o));\
-	APC_WUNLOCK(o);\
+	APC_RUNLOCK(o);\
 } while(0)
 
 #define APC_ATOM_COPY(o, k, d) do {\
-	APC_WLOCK(o);\
+	APC_RLOCK(o);\
 	memcpy(d, &o->k, sizeof(*d));\
-	APC_WUNLOCK(o);\
+	APC_RUNLOCK(o);\
 } while(0) /* }}} */
 
 #endif
