@@ -188,7 +188,7 @@ static void process_pending_removals(apc_cache_t* cache TSRMLS_DC)
 
 	if (apc_cache_processing(cache TSRMLS_CC)) {
 		return;
-	} 
+	}
 	
 	cache->header->state |= APC_CACHE_ST_PROC;
 	
@@ -211,7 +211,7 @@ static void process_pending_removals(apc_cache_t* cache TSRMLS_DC)
 			    }
 			
 				/* set next slot */
-			    *slot = (*slot)->next;
+			    *slot = select->next;
 			
 				/* free slot */
 			    free_slot(
