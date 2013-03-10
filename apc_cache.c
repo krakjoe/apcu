@@ -324,6 +324,7 @@ apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate, int size_hint, int gc_tt
     cache->header = (apc_cache_header_t*) cache->shmaddr;
     cache->header->num_hits = 0;
     cache->header->num_misses = 0;
+	cache->header->num_entries = 0;
     cache->header->deleted_list = NULL;
     cache->header->start_time = time(NULL);
     cache->header->expunges = 0;
