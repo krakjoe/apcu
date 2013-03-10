@@ -272,9 +272,13 @@ static PHP_MINIT_FUNCTION(apcu)
 #else
 			apc_sma.init(APCG(shm_segments), APCG(shm_size), NULL TSRMLS_CC);
 #endif
+			
 			/* create user cache */
 			apc_user_cache = apc_cache_create(
-				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(smart) TSRMLS_CC);
+				&apc_sma, 
+				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(smart) 
+				TSRMLS_CC
+			);
 			
 			/* initialize pooling */
 			apc_pool_init();

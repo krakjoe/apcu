@@ -274,7 +274,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 /* }}} */
 
 /* {{{ APC SMA API */
-void apc_sma_api_init(apc_sma_t* sma, zend_uint num, zend_ulong size, char *mask TSRMLS_DC) {
+void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, zend_uint num, zend_ulong size, char *mask TSRMLS_DC) {
 	uint i;
 
     if (sma->initialized) {
@@ -282,7 +282,9 @@ void apc_sma_api_init(apc_sma_t* sma, zend_uint num, zend_ulong size, char *mask
     }
 
     sma->initialized = 1;
-
+	sma->expunge = expunge;
+	sma->data = data;
+	
 #if APC_MMAP
     /*
      * I don't think multiple anonymous mmaps makes any sense
@@ -392,11 +394,11 @@ restart:
 
     off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
 
-    if(off == -1) { 
+    if(off == -1) {
         /* retry failed allocation after we expunge */
         WUNLOCK(&SMA_LCK(sma, sma->last));
-		apc_user_cache->expunge_cb(
-			apc_user_cache, (n+fragment) TSRMLS_CC);
+		sma->expunge(
+			*(sma->data), (n+fragment) TSRMLS_CC);
         WLOCK(&SMA_LCK(sma, sma->last));
         off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
     }
@@ -421,8 +423,8 @@ restart:
         if(off == -1) { 
             /* retry failed allocation after we expunge */
             WUNLOCK(&SMA_LCK(sma, i));
-			apc_user_cache->expunge_cb(
-				apc_user_cache, (n+fragment) TSRMLS_CC);
+			sma->expunge(
+				*(sma->data), (n+fragment) TSRMLS_CC);
             WLOCK(&SMA_LCK(sma, i));
             off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
         }
@@ -440,7 +442,7 @@ restart:
 
     /* I've tried being nice, but now you're just asking for it */
     if(!nuked) {
-        apc_user_cache->expunge_cb(apc_user_cache, (n+fragment) TSRMLS_CC);
+        sma->expunge(*(sma->data), (n+fragment) TSRMLS_CC);
         nuked = 1;
         goto restart;
     }
@@ -669,7 +671,7 @@ void apc_sma_api_check_integrity(apc_sma_t* sma)
 }
 
 /* {{{ APC SMA */
-apc_sma_api_impl(apc_sma); 
+apc_sma_api_impl(apc_sma, &apc_user_cache, apc_cache_default_expunge); 
 /* }}} */
 
  /* }}} */

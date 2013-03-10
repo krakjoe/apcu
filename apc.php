@@ -789,7 +789,7 @@ EOB;
 		<div class="info div1"><h2>Cache Information</h2>
 		<table cellspacing=0>
 		<tbody>
-    		<tr class=tr-0><td class=td-0>Cached Variables</td><td>$number_vars/{$cache['num_slots']} ($size_vars)</td></tr>
+    		<tr class=tr-0><td class=td-0>Cached Variables</td><td>$number_vars ($size_vars)</td></tr>
 			<tr class=tr-1><td class=td-0>Hits</td><td>{$cache['num_hits']}</td></tr>
 			<tr class=tr-0><td class=td-0>Misses</td><td>{$cache['num_misses']}</td></tr>
 			<tr class=tr-1><td class=td-0>Request Rate (hits, misses)</td><td>$req_rate_user cache requests/second</td></tr>

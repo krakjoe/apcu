@@ -72,7 +72,8 @@ typedef apc_sma_info_t* (*apc_sma_info_f) (zend_bool limited TSRMLS_DC);
 typedef void (*apc_sma_free_info_f) (apc_sma_info_t *info TSRMLS_DC);
 typedef zend_ulong (*apc_sma_get_avail_mem_f) ();
 typedef zend_bool (*apc_sma_get_avail_size_f) (zend_ulong size TSRMLS_DC);
-typedef void (*apc_sma_check_integrity_f) (); /* }}} */
+typedef void (*apc_sma_check_integrity_f) (); 
+typedef void (*apc_sma_expunge_f)(void* pointer, zend_ulong size TSRMLS_DC); /* }}} */
 
 /* {{{ struct definition: apc_sma_t */
 typedef struct _apc_sma_t {
@@ -94,12 +95,16 @@ typedef struct _apc_sma_t {
     apc_sma_get_avail_size_f get_avail_size;     /* get avail size */
     apc_sma_check_integrity_f check_integrity;   /* check integrity */
 
+	/* callback */
+	apc_sma_expunge_f expunge;                   /* expunge */
+	void** data;                                 /* data */	
+	
     /* info */
     zend_uint  num;                              /* number of segments */
     zend_ulong size;                             /* segment size */
     zend_uint  last;                             /* last segment */
-
-    /* data */
+	
+    /* segments */
     apc_segment_t* segs;                         /* segments */
 } apc_sma_t; /* }}} */
 
@@ -109,6 +114,8 @@ typedef struct _apc_sma_t {
 * should be called once per allocator per process
 */
 extern void apc_sma_api_init(apc_sma_t* sma,
+                             void** data,
+							 apc_sma_expunge_f expunge,
                              zend_uint num,
                              zend_ulong size,
                              char *mask TSRMLS_DC);
@@ -234,7 +241,7 @@ typedef union { void* p; int i; long l; double d; void (*f)(); } apc_word_t;
     extern void apc_sma_api_func(name, check_integrity)(); /* }}} */
 
 /* {{{ Call in a compilation unit */
-#define apc_sma_api_impl(name) \
+#define apc_sma_api_impl(name, data, expunge) \
 	apc_sma_t apc_sma_api_name(name) = {0, \
         &apc_sma_api_func(name, init), \
         &apc_sma_api_func(name, cleanup), \
@@ -252,7 +259,7 @@ typedef union { void* p; int i; long l; double d; void (*f)(); } apc_word_t;
         &apc_sma_api_func(name, check_integrity), \
     }; \
     void apc_sma_api_func(name, init)(zend_uint num, zend_ulong size, char* mask TSRMLS_DC) \
-        { apc_sma_api_init(apc_sma_api_ptr(name), num, size, mask TSRMLS_CC); } \
+        { apc_sma_api_init(apc_sma_api_ptr(name), (void**) data, (apc_sma_expunge_f) expunge, num, size, mask TSRMLS_CC); } \
     void apc_sma_api_func(name, cleanup)(TSRMLS_D) \
         { apc_sma_api_cleanup(apc_sma_api_ptr(name) TSRMLS_CC); } \
     void* apc_sma_api_func(name, malloc)(zend_ulong size TSRMLS_DC) \

@@ -243,7 +243,7 @@ These instructions assume your PHP installation is located in /usr/local/php.
 	apc.smart				If you begin to get low on resources, an expunge of the cache
 							is performed if it is less than half full. This is not always
 							a suitable way of determining if an expunge of the cache
-							should be performed.
+							should be per
 							apc.smart allows you to set a runtime configuration value which
 							is used to determine if an expunge should be run
 							if (available_size < apc.smart * requested_size)

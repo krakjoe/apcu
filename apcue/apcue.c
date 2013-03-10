@@ -33,9 +33,14 @@ ZEND_DECLARE_MODULE_GLOBALS(apcue)
 
 /* True global resources - no need for thread safety here */
 static int le_apcue;
-static apc_cache_t* apcue_cache = NULL;
 
-apc_sma_api_impl(apcue_sma);
+/* Don't use staticness here, the SMA api needs access to this structure at expunge time */
+apc_cache_t* apcue_cache = NULL;
+
+/*
+* Initializes your isolated sma, using your cache and the default expunge function
+*/
+apc_sma_api_impl(apcue_sma, &apcue_cache, apc_cache_default_expunge);
 
 /* {{{ apcue_functions[]
  *
@@ -104,10 +109,30 @@ PHP_MINIT_FUNCTION(apcue)
 	apcue_sma.init(1, 2048*20, NULL TSRMLS_CC);
 	
 	/* create cache in shared memory */ 
-	apcue_cache = apc_cache_create_ex(
-		apcue_sma.malloc,
+	apcue_cache = apc_cache_create(
+		&apcue_sma,
 		10, 0L, 0L, 0L TSRMLS_CC
 	);
+
+	/*
+	* Some testing code ... 
+	*/
+	{
+		zval test;
+		apc_cache_entry_t *entry;
+				
+		ZVAL_LONG(&test, 1);
+		
+		apc_cache_store(apcue_cache, "hello", sizeof("hello"), &test, 0, 0 TSRMLS_CC);
+		{
+			apc_cache_entry_t* entry = apc_cache_exists(apcue_cache, "hello", sizeof("hello"), time(0) TSRMLS_CC);
+			if (entry) {
+				php_printf(
+					"found hello in local cache @ %p :)\n", entry);
+
+			} else php_printf("failed to store in local cache :(\n");
+		}
+	}
 
 	return SUCCESS;
 }

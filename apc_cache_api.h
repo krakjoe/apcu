@@ -81,6 +81,7 @@ struct apc_cache_slot_t {
    Any values that must be shared among processes should go in here. */
 typedef struct _apc_cache_header_t {
 	apc_lock_t lock;                 /* header lock */
+	apc_sma_t* sma;                  /* shared memory allocator */
     unsigned long num_hits;          /* total successful hits in cache */
     unsigned long num_misses;        /* total unsuccessful hits in cache */
     unsigned long num_inserts;       /* total successful inserts in cache */
@@ -129,22 +130,13 @@ typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void*
  * ttl is the maximum time a cache entry can idle in a slot in case the slot
  * is needed.  This helps in cleaning up the cache and ensuring that entries 
  * hit frequently stay cached and ones not hit very often eventually disappear.
- * 
- * by default will use the apc_sma_malloc allocator, this should not be called by 3rd parties
+ *
  */
-extern apc_cache_t* apc_cache_create(int size_hint,
+extern apc_cache_t* apc_cache_create(apc_sma_t* sma,
+                                     int size_hint,
                                      int gc_ttl,
                                      int ttl,
                                      long smart TSRMLS_DC);
-
-/*
-* apc_cache_create_ex performs allocations with the allocator provided, suitable for 3rd parties
-*/
-extern apc_cache_t* apc_cache_create_ex(apc_malloc_t allocate,
-                                        int size_hint,
-                                        int gc_ttl,
-                                        int ttl,
-                                        long smart TSRMLS_DC);
 /*
 * apc_cache_preload preloads the data at path into the specified cache
 */
@@ -162,6 +154,24 @@ extern void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC);
  * apc_cache_clear empties a cache. This can safely be called at any time.
  */
 extern void apc_cache_clear(apc_cache_t* cache TSRMLS_DC);
+
+/* {{{ apc_cache_default_expunge 
+* Where smart is not set:
+*  Where no ttl is set on cache:
+*   Expunge if available memory is less than seg_size/2
+*  Where ttl is set on cache:
+*   Perform cleanup of stale entries
+*   If available memory if less than the size requested, run full expunge
+*
+* Where smart is set:
+*  Where no ttl is set on cache:
+*   Expunge is available memory is less than size * smart
+*  Where ttl is set on cache:
+*   If available memory if less than the size requested, run full expunge
+*
+* The TTL of an entry takes precedence over the TTL of a cache
+*/
+extern void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC);
 
 /*
 * apc_cache_make_context initializes a context with an appropriate pool and options provided
@@ -314,7 +324,8 @@ extern zval* apc_cache_info(apc_cache_t* cache,
 /*
 * apc_cache_busy returns true while the cache is being cleaned
 */
-extern zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC);
+extern zend_bool apc_cache_busy(apc_cache_t* cache, 
+                                zend_bool set TSRMLS_DC);
 
 /*
 * apc_cache_defense: guard against slamming a key
