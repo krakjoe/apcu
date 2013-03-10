@@ -134,13 +134,9 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 /* {{{ free_slot */
 static void free_slot(apc_cache_slot_t* slot TSRMLS_DC)
 {
-	HANDLE_BLOCK_INTERRUPTIONS();
-	
 	/* destroy slot pool */
     apc_pool_destroy(
 		slot->value->pool TSRMLS_CC);
-	
-	HANDLE_UNBLOCK_INTERRUPTIONS();
 }
 /* }}} */
 
@@ -190,37 +186,47 @@ static void process_pending_removals(apc_cache_t* cache TSRMLS_DC)
     if (!cache->header->deleted_list)
         return;
 
-    slot = &cache->header->deleted_list;
+	if (apc_cache_processing(cache TSRMLS_CC)) {
+		return;
+	} 
+	
+	cache->header->state |= APC_CACHE_ST_PROC;
+	
+    {
+		slot = &cache->header->deleted_list;
 
-    now = time(0);
+		now = time(0);
 
-    while ((select=(*slot))) {	
-		int gc_sec = cache->gc_ttl ? (now - select->deletion_time) : 0;
+		while ((select=(*slot))) {	
+			int gc_sec = cache->gc_ttl ? (now - select->deletion_time) : 0;
 
-	    if (select->value->ref_count <= 0 || gc_sec > cache->gc_ttl) {
+			if (select->value->ref_count <= 0 || gc_sec > cache->gc_ttl) {
 
-			/* good ol' whining */
-	        if (select->value->ref_count > 0) {
-	            apc_warning(
-					"GC cache entry '%s' was on gc-list for %d seconds" TSRMLS_CC, 
-					select->key.identifier, gc_sec
-				);
-	        }
+				/* good ol' whining */
+			    if (select->value->ref_count > 0) {
+			        apc_warning(
+						"GC cache entry '%s' was on gc-list for %d seconds" TSRMLS_CC, 
+						select->key.identifier, gc_sec
+					);
+			    }
 			
-			/* set next slot */
-	        *slot = select->next;
+				/* set next slot */
+			    *slot = (*slot)->next;
 			
-			/* free slot */
-	        free_slot(
-				select TSRMLS_CC);
+				/* free slot */
+			    free_slot(
+					select TSRMLS_CC);
 			
-			/* next */
-			continue;
+				/* next */
+				continue;
 
-	    } else {
-			slot = &select->next;
+			} else {
+				slot = &select->next;
+			}
 		}
-    }
+	}
+	
+	cache->header->state &= ~APC_CACHE_ST_PROC;
 }
 /* }}} */
 
@@ -293,7 +299,7 @@ apc_cache_t* apc_cache_create(apc_sma_t* sma, int size_hint, int gc_ttl, int ttl
     cache->header->deleted_list = NULL;
     cache->header->start_time = time(NULL);
     cache->header->expunges = 0;
-    cache->header->busy = 0;
+	cache->header->state |= APC_CACHE_ST_NONE;
 	
 	/* set cache options */
     cache->slots = (apc_cache_slot_t**) (((char*) cache->shmaddr) + sizeof(apc_cache_header_t));
@@ -394,7 +400,7 @@ zend_bool apc_cache_store_all(apc_cache_t* cache, zval *data, zval *results, con
 
                     make a throw away context ...
                 */
-
+				
                 if (apc_cache_make_context(&ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
 
                     /* initialize the key for insertion */
@@ -599,7 +605,7 @@ static void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
 void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
 {
 	/* check there is a cache and it is not busy */
-    if(!cache) {
+    if(!cache || apc_cache_busy(cache TSRMLS_CC)) {
 		return;
 	}
 	
@@ -607,7 +613,7 @@ void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
 	APC_LOCK(cache->header);
 	
 	/* set busy */
-	cache->header->busy = 1;
+	cache->header->state |= APC_CACHE_ST_BUSY;
 
 	/* expunge cache */
 	apc_cache_real_expunge(cache TSRMLS_CC);
@@ -617,7 +623,7 @@ void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
     cache->header->expunges = 0;
 	
 	/* unset busy */
-    cache->header->busy = 0;
+    cache->header->state &= ~APC_CACHE_ST_BUSY;
 	
 	/* unlock header */
 	APC_UNLOCK(cache->header);
@@ -627,7 +633,7 @@ void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
 /* {{{ apc_cache_default_expunge 
 * Where smart is not set:
 *  Where no ttl is set on cache:
-*   Expunge if available memory is less than seg_size/2
+*   Expunge if available memory is less than sma->size/2
 *  Where ttl is set on cache:
 *   Perform cleanup of stale entries
 *   If available memory if less than the size requested, run full expunge
@@ -649,23 +655,27 @@ void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 
     t = apc_time();
 
-	/* check there is a cache and it is not busy */
+	/* check there is a cache */
     if(!cache) {
 		return;
 	}
 	
-	/* lock header */
+	if (apc_cache_busy(cache TSRMLS_CC)) {
+        return;
+    }
+
+	/* get the lock for header */
 	APC_LOCK(cache->header);
 
-	/* set busy */
-	cache->header->busy = 1;
+	/* update state in header */
+	cache->header->state |= APC_CACHE_ST_BUSY;
 	
 	/* process deleted */
     process_pending_removals(
 		cache TSRMLS_CC);
 
 	/* make suitable selection */
-	suitable = (cache->header->smart > 0L) ? (size_t) (cache->header->smart * size) : (size_t) (APCG(shm_size)/2);
+	suitable = (cache->header->smart > 0L) ? (size_t) (cache->header->smart * size) : (size_t) (cache->header->sma->size/2);
 
 	/* get available */
 	available = apc_sma.get_avail_mem();
@@ -723,7 +733,7 @@ void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
     }
 
 	/* we are done */
-	cache->header->busy = 0;
+	cache->header->state &= ~APC_CACHE_ST_BUSY;
 
 	/* unlock header */
 	APC_UNLOCK(cache->header);
@@ -795,8 +805,9 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 		return result;
 	}
 	
-	/* check we are not clearing the cache */
-	if (apc_cache_busy(cache TSRMLS_CC)) {
+	/* check we are able to deal with this request */
+	if (apc_cache_busy(cache TSRMLS_CC) ||
+        apc_cache_processing(cache TSRMLS_CC)) {
 		return result;
 	}
 
@@ -890,9 +901,10 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
     volatile apc_cache_entry_t* value = NULL;
     unsigned long h;
 
-    if(apc_cache_busy(cache TSRMLS_CC))
+    if(apc_cache_busy(cache TSRMLS_CC)||
+	   apc_cache_processing(cache TSRMLS_CC))
     {
-        /* cache cleanup in progress */ 
+        /* cannot service request right now */ 
         return NULL;
     }
 	
@@ -966,7 +978,8 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
     volatile apc_cache_entry_t* value = NULL;
     unsigned long h;
 
-    if(apc_cache_busy(cache TSRMLS_CC))
+    if(apc_cache_busy(cache TSRMLS_CC) ||
+       apc_cache_processing(cache TSRMLS_CC))
     {
         /* cache cleanup in progress */ 
         return NULL;
@@ -1023,9 +1036,10 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
     int retval = 0;
     unsigned long h;
 
-    if(apc_cache_busy(cache TSRMLS_CC))
+    if(apc_cache_busy(cache TSRMLS_CC) ||
+       apc_cache_processing(cache TSRMLS_CC))
     {
-        /* cache cleanup in progress */ 
+        /* cannot service request right now */ 
         return 0;
     }
 	
@@ -1622,8 +1636,15 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 
 /* {{{ apc_cache_busy */
 zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC)
-{
-	return cache->header->busy;
+{	
+	return ((cache->header->state & APC_CACHE_ST_BUSY)==APC_CACHE_ST_BUSY);
+}
+/* }}} */
+
+/* {{{ apc_cache_processing */
+zend_bool apc_cache_processing(apc_cache_t* cache TSRMLS_DC)
+{	
+	return ((cache->header->state & APC_CACHE_ST_PROC)==APC_CACHE_ST_PROC);
 }
 /* }}} */
 

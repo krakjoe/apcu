@@ -82,13 +82,18 @@ typedef struct _apc_cache_header_t {
     unsigned long expunges;          /* total number of expunges */
     apc_cache_slot_t* deleted_list;  /* linked list of to-be-deleted slots */
     time_t start_time;               /* time the above counters were reset */
-    zend_bool busy;                  /* Flag to tell clients when we are busy cleaning the cache */
+    volatile zend_ushort state;      /* cache state */
     int num_entries;                 /* Statistic on the number of entries */
     size_t mem_size;                 /* Statistic on the memory size used by this cache */
 	long smart;                      /* adjustable smart expunges of data */
     apc_cache_key_t lastkey;         /* information about the last key inserted */
 } apc_cache_header_t;
 /* }}} */
+
+/* {{{ state constants */
+#define APC_CACHE_ST_NONE 0
+#define APC_CACHE_ST_BUSY 1
+#define APC_CACHE_ST_PROC 2 /* }}} *
 
 /* {{{ struct definition: apc_cache_t */
 typedef struct apc_cache_t apc_cache_t;
@@ -319,6 +324,11 @@ extern zval* apc_cache_info(apc_cache_t* cache,
 * apc_cache_busy returns true while the cache is being cleaned
 */
 extern zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC);
+
+/*
+* apc_cache_processing returns true while the cache is in collection
+*/
+extern zend_bool apc_cache_processing(apc_cache_t* cache TSRMLS_DC);
 
 /*
 * apc_cache_defense: guard against slamming a key
