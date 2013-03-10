@@ -876,6 +876,8 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
             cache->header->mem_size += ctxt->pool->size;
             cache->header->num_entries++;
             cache->header->num_inserts++;
+		} else {
+			goto nothing;
 		}
 	}
 
@@ -1106,6 +1108,13 @@ zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_D
 	
     unsigned long h;
 
+	if (!cache) {
+		return;
+	}
+
+	/* lock cache */
+	APC_WLOCK(cache->header);	
+	
 	/* calculate hash */
     h = string_nhash_8(strkey, keylen);
 
@@ -1119,15 +1128,23 @@ zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_D
 			/* executing removal */
             remove_slot(
 				cache, slot TSRMLS_CC);
-			
-            return 1;
+			goto deleted;
         }
 		
 		/* continue locking */
 		slot = &select->next;      
     }
 	
+	/* unlock header */
+	APC_WUNLOCK(cache->header);
+	
 	return 0;
+
+deleted:
+	/* unlock deleted */
+	APC_WUNLOCK(cache->header);
+
+	return 1;
 }
 /* }}} */
 
