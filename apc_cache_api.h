@@ -47,12 +47,6 @@ typedef struct _apc_cache_key_t {
 	apc_cache_owner_t owner;      /* the context that created this key */
 } apc_cache_key_t; /* }}} */
 
-/* {{{ struct definition: apc_cache_key_l */
-typedef struct _apc_cache_key_l {
-	apc_cache_key_t key;          /* the actual key */
-	apc_lock_t lock;              /* the lock */
-} apc_cache_key_l; /* }}} */
-
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct _apc_cache_entry_t {
     zval *val;                    /* the zval copied at store time */
@@ -66,7 +60,6 @@ typedef struct _apc_cache_entry_t {
 /* {{{ struct definition: apc_cache_slot_t */
 typedef struct apc_cache_slot_t apc_cache_slot_t;
 struct apc_cache_slot_t {
-	apc_lock_t lock;            /* slot lock */
     apc_cache_key_t key;        /* slot key */
     apc_cache_entry_t* value;   /* slot value */
     apc_cache_slot_t* next;     /* next slot in linked list */
@@ -92,7 +85,7 @@ typedef struct _apc_cache_header_t {
     int num_entries;                 /* Statistic on the number of entries */
     size_t mem_size;                 /* Statistic on the memory size used by this cache */
 	long smart;                      /* adjustable smart expunges of data */
-    apc_cache_key_l lastkey;         /* information about the last key inserted */
+    apc_cache_key_t lastkey;         /* information about the last key inserted */
 } apc_cache_header_t;
 /* }}} */
 
@@ -324,8 +317,7 @@ extern zval* apc_cache_info(apc_cache_t* cache,
 /*
 * apc_cache_busy returns true while the cache is being cleaned
 */
-extern zend_bool apc_cache_busy(apc_cache_t* cache, 
-                                zend_bool set TSRMLS_DC);
+extern zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC);
 
 /*
 * apc_cache_defense: guard against slamming a key

@@ -390,6 +390,7 @@ void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, z
 
 restart:
     assert(sma->initialized);
+
     WLOCK(&SMA_LCK(sma, sma->last));
 
     off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
@@ -495,7 +496,6 @@ void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC) {
 
     assert(sma->initialized);
 
-    
     for (i = 0; i < sma->num; i++) {
         offset = (size_t)((char *)p - SMA_ADDR(sma, i));
         if (p >= (void*)SMA_ADDR(sma, i) && offset < sma->size) {

@@ -147,23 +147,11 @@ form of a quick-start guide to start hacking on APC.
 
    The caching functionality of APCu is provided by a modified version of the APC source code
 
-   APC used cache level locking to ensure integrity of data - any time you wrote into or read from the cache
-   you acquired and released a global cache lock: This somewhat hinders performance, at least in theory, it complicates
-   implementation of new features and ideas, and raises the barrier rather high for maintainers.
-
-   APCu adopts a different method of ensuring integrity by moving the locking to the slot level.
-   APCu pays close attention to the problems inherent in a system being executed in an environment where concurrency is certain.
-   
-   When headers are manipulated ( any part ), the operations are done so with the protection of a mutex, such short, efficient operations
-   are not a candidate for enough contention for concern. When the counter or state flag is set, the mutex is released immediately, no lock is
-   held at the cache level while APCu manipulates data. 
-
-   This means that almost all of the API that needs to be maintained is completely free from locking.
-   
-   In addition to simplified and advanced locking, some simple tweaks have been applied. 
-     The possibility to control more finely what happens when resources become low for APCu.
+   Some simple tweaks have been applied: 
      A unified, general purpose implementation of a read/write lock, used everywhere, by everything.
-     Simplified configuration of APCu will ensure good performance out of the box
+     Simplified configuration of APCu will ensure good performance out of the box.
+     The possibility to control more finely what happens when resources become low for APCu.
+	 A completely exposed and installed API, making way for third party extensions to reuse APCu.
      Agressive commenting of every source file I have changed or organized, the beginnings of a well documented APC !!
 
    There's probably some of my blood in it, if you look real close ...
@@ -214,7 +202,7 @@ form of a quick-start guide to start hacking on APC.
 		int num_entries;                      /* Statistic on the number of entries */
 		size_t mem_size;                      /* Statistic on the memory size used by this cache */
 		long smart;                           /* adjustable smart expunges of data */
-		apc_cache_key_l lastkey;              /* information about the last key inserted */
+		apc_cache_key_t lastkey;              /* information about the last key inserted */
      };
 
    Since this is at the start of the shared memory segment, these values are accessible
@@ -225,10 +213,9 @@ form of a quick-start guide to start hacking on APC.
 
      typedef struct apc_cache_slot_t apc_cache_slot_t;
      struct apc_cache_slot_t {
-		apc_lock_t lock;            /* slot lock */
 		apc_cache_key_t key;        /* slot key */
 		apc_cache_entry_t* value;   /* slot value */
-		apc_cache_slot_t* next;               /* next slot in linked list */
+		apc_cache_slot_t* next;     /* next slot in linked list */
 		unsigned long num_hits;     /* number of hits to this bucket */
 		time_t creation_time;       /* time slot was initialized */
 		time_t deletion_time;       /* time slot was removed from cache */
