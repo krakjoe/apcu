@@ -592,10 +592,11 @@ static void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
 		}
 	}
 
-	/* reset counter */
+	/* reset counters */
+	cache->header->num_inserts = 0;
 	cache->header->num_entries = 0;
     cache->header->num_hits = 0;
-    cache->header->num_misses = 0;	
+    cache->header->num_misses = 0;
 	
 	/* resets lastkey */
 	memset(&cache->header->lastkey, 0, sizeof(apc_cache_key_t));
@@ -605,7 +606,8 @@ static void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
 void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
 {
 	/* check there is a cache and it is not busy */
-    if(!cache || apc_cache_busy(cache TSRMLS_CC)) {
+    if(!cache || 
+		apc_cache_busy(cache TSRMLS_CC)) {
 		return;
 	}
 	
@@ -614,7 +616,7 @@ void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
 	
 	/* set busy */
 	cache->header->state |= APC_CACHE_ST_BUSY;
-
+	
 	/* expunge cache */
 	apc_cache_real_expunge(cache TSRMLS_CC);
 
@@ -660,6 +662,7 @@ void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 		return;
 	}
 	
+	/* check we are the only ... */
 	if (apc_cache_busy(cache TSRMLS_CC)) {
         return;
     }
@@ -806,8 +809,7 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 	}
 	
 	/* check we are able to deal with this request */
-	if (apc_cache_busy(cache TSRMLS_CC) ||
-        apc_cache_processing(cache TSRMLS_CC)) {
+	if (apc_cache_busy(cache TSRMLS_CC)) {
 		return result;
 	}
 
@@ -903,10 +905,9 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
     volatile apc_cache_entry_t* value = NULL;
     unsigned long h;
 
-    if(apc_cache_busy(cache TSRMLS_CC)||
-	   apc_cache_processing(cache TSRMLS_CC))
-    {
-        /* cannot service request right now */ 
+	/* check we are able to deal with the request */
+    if(apc_cache_busy(cache TSRMLS_CC))
+    { 
         return NULL;
     }
 	
@@ -1654,7 +1655,7 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 /* {{{ apc_cache_busy */
 zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC)
 {	
-	return ((cache->header->state & APC_CACHE_ST_BUSY)==APC_CACHE_ST_BUSY);
+	return ((cache->header->state & APC_CACHE_ST_IBUSY)==APC_CACHE_ST_IBUSY);
 }
 /* }}} */
 

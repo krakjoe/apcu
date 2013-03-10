@@ -93,7 +93,8 @@ typedef struct _apc_cache_header_t {
 /* {{{ state constants */
 #define APC_CACHE_ST_NONE 0
 #define APC_CACHE_ST_BUSY 1
-#define APC_CACHE_ST_PROC 2 /* }}} *
+#define APC_CACHE_ST_PROC 2
+#define APC_CACHE_ST_IBUSY (APC_CACHE_ST_BUSY|APC_CACHE_ST_PROC) /* }}} *
 
 /* {{{ struct definition: apc_cache_t */
 typedef struct apc_cache_t apc_cache_t;
