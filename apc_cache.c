@@ -939,7 +939,7 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 		    /* adjust header */
 			APC_WLOCK(cache->header);
 			{
-				cache->header->mem_size = ctxt->pool->size;
+				cache->header->mem_size += ctxt->pool->size;
 				cache->header->num_entries++;
 				cache->header->num_inserts++;
 			}
