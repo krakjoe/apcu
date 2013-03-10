@@ -42,7 +42,8 @@ typedef pid_t apc_cache_owner_t;
 typedef struct _apc_cache_key_t {
     const char *identifier;		  /* the identifier for this key */
     int identifier_len;			  /* the length of the identifier string */
-    unsigned long h;              /* pre-computed hash value */
+    zend_ulong h;                 /* pre-computed hash */
+	zend_ulong s;                 /* pre-computed position */
     time_t mtime;                 /* the mtime of this cached entry */
 	apc_cache_owner_t owner;      /* the context that created this key */
 } apc_cache_key_t; /* }}} */
@@ -209,10 +210,10 @@ extern zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC);
  *
  * an easier (and faster for bulk data) API exists in the form of apc_cache_store|all
  */
-extern zend_bool apc_cache_insert(apc_cache_t* cache, 
+extern zend_bool apc_cache_insert(apc_cache_t* cache,
                                   apc_cache_key_t key,
-                                  apc_cache_entry_t* value, 
-                                  apc_context_t* ctxt, 
+                                  apc_cache_entry_t* value,
+                                  apc_context_t* ctxt,
                                   time_t t,
                                   int exclusive TSRMLS_DC);
 
@@ -230,19 +231,19 @@ extern zend_bool apc_cache_store(apc_cache_t* cache,
 * apc_cache_store_all takes an array of data, retains the lock while all insertions are made
 *  results is populated with -1 where there is an error inserting an entry from the set
 */
-extern zend_bool apc_cache_store_all(apc_cache_t* cache, 
-                                     zval *data, 
-                                     zval *results, 
-                                     const unsigned int ttl, 
+extern zend_bool apc_cache_store_all(apc_cache_t* cache,
+                                     zval *data,
+                                     zval *results,
+                                     const unsigned int ttl,
                                      const int exclusive TSRMLS_DC);
 
 /*
 * apc_cache_update updates an entry in place, this is used for rfc1867 and inc/dec/cas
 */
 extern zend_bool apc_cache_update(apc_cache_t* cache,
-                                  char *strkey, 
+                                  char *strkey,
                                   int keylen,
-                                  apc_cache_updater_t updater, 
+                                  apc_cache_updater_t updater,
                                   void* data TSRMLS_DC);
 
 /*
@@ -251,8 +252,8 @@ extern zend_bool apc_cache_update(apc_cache_t* cache,
  *
  */
 extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
-                                         char* strkey, 	
-                                         int keylen, 
+                                         char* strkey,
+                                         int keylen,
                                          time_t t TSRMLS_DC);
 
 /*
@@ -263,8 +264,8 @@ extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
  *
  */
 extern apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache,
-                                           char* strkey, 
-                                           int keylen, 
+                                           char* strkey,
+                                           int keylen,
                                            time_t t TSRMLS_DC);
 
 /*
@@ -278,8 +279,8 @@ extern zend_bool apc_cache_delete(apc_cache_t* cache,
  * zval from it.
  *
  */
-zval* apc_cache_fetch_zval(zval* dst, 
-                           const zval* src, 
+zval* apc_cache_fetch_zval(zval* dst,
+                           const zval* src,
                            apc_context_t* ctxt TSRMLS_DC);
 
 /*
@@ -311,7 +312,7 @@ extern apc_cache_entry_t* apc_cache_make_entry(const zval *val,
 /*
  fetches information about the cache provided for userland status functions
 */
-extern zval* apc_cache_info(apc_cache_t* cache, 
+extern zval* apc_cache_info(apc_cache_t* cache,
                             zend_bool limited TSRMLS_DC);
 
 /*

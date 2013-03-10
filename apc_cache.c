@@ -329,31 +329,31 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, cons
     HANDLE_BLOCK_INTERRUPTIONS();
 
 	/* initialize a context suitable for making an insert */
-	if (apc_cache_make_context(&ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
+    if (apc_cache_make_context(&ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
 
-		/* initialize the key for insertion */
-		if (apc_cache_make_key(&key, strkey, strkey_len TSRMLS_CC)) {
+        /* initialize the key for insertion */
+        if (apc_cache_make_key(&key, strkey, strkey_len TSRMLS_CC)) {
 
-			/* run cache defense */
-			if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
+            /* run cache defense */
+            if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
 
-				/* initialize the entry for insertion */
-				if ((entry = apc_cache_make_entry(val, &ctxt, ttl TSRMLS_CC))) {
+                /* initialize the entry for insertion */
+                if ((entry = apc_cache_make_entry(val, &ctxt, ttl TSRMLS_CC))) {
 
-					/* execute an insertion */
-					if (apc_cache_insert(cache, key, entry, &ctxt, t, exclusive TSRMLS_CC)) {
-						ret = 1;
-					}
-				}
-			}
-		}
+                    /* execute an insertion */
+                    if (apc_cache_insert(cache, key, entry, &ctxt, t, exclusive TSRMLS_CC)) {
+                        ret = 1;
+                    }
+                }
+            }
+        }
 
-		/* in any case of failure the context should be destroyed */
-		if (!ret) {
-			apc_cache_destroy_context(&ctxt TSRMLS_CC);
-		}			
-	}
-	
+        /* in any case of failure the context should be destroyed */
+        if (!ret) {
+            apc_cache_destroy_context(&ctxt TSRMLS_CC);
+        }
+    }
+
     HANDLE_UNBLOCK_INTERRUPTIONS();
 
     return ret;
@@ -363,77 +363,77 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, cons
  Makes insertions as apc_cache_store, the only difference is it holds the lock open while operating on the cache  */
 zend_bool apc_cache_store_all(apc_cache_t* cache, zval *data, zval *results, const unsigned int ttl, const int exclusive TSRMLS_DC) {
 	if (Z_TYPE_P(data) == IS_ARRAY) {	
-		HashPosition position;
-		HashTable*   table = Z_ARRVAL_P(data);
-		zval**       value;
-		time_t       now = apc_time();
-		
-		/* initialize result array */
-		array_init(results);		
+        HashPosition position;
+        HashTable*   table = Z_ARRVAL_P(data);
+        zval**       value;
+        time_t       now = apc_time();
 
-		/* loop over data */
-		for (zend_hash_internal_pointer_reset_ex(table, &position);
-			zend_hash_get_current_data_ex(table, (void**) &value, &position) == SUCCESS;
-			zend_hash_move_forward_ex(table, &position)) {
-			char *skey;
-			zend_uint sklen;
-			zend_ulong idx;
+        /* initialize result array */
+        array_init(results);		
+
+        /* loop over data */
+        for (zend_hash_internal_pointer_reset_ex(table, &position);
+            zend_hash_get_current_data_ex(table, (void**) &value, &position) == SUCCESS;
+            zend_hash_move_forward_ex(table, &position)) {
+            char *skey;
+            zend_uint sklen;
+            zend_ulong idx;
 			
-			/* fetch current string if it's a key */
-			if (zend_hash_get_current_key_ex(table, &skey, &sklen, &idx, 0, &position) == HASH_KEY_IS_STRING) {
-				apc_context_t ctxt;
-				apc_cache_key_t key;
-				apc_cache_entry_t *entry;				
-				zend_bool result = 0;
+            /* fetch current string if it's a key */
+            if (zend_hash_get_current_key_ex(table, &skey, &sklen, &idx, 0, &position) == HASH_KEY_IS_STRING) {
+                apc_context_t ctxt;
+                apc_cache_key_t key;
+                apc_cache_entry_t *entry;				
+                zend_bool result = 0;
 
-				/* 
-				  NOTE: 
-					You should not use the same context/pool for multiple inserts 
+                /* 
+                  NOTE: 
+                    You should not use the same context/pool for multiple inserts 
                     The size of the pool is used for calculations and is assumed to be the same as the consumption of
-                    the single entry passed to apc_cache_insert 
+                    the single entry passed to apc_cache_insert
 
-					make a throw away context ...
-				*/
+                    make a throw away context ...
+                */
 
-				if (apc_cache_make_context(&ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
-					
-					/* initialize the key for insertion */
-					if (apc_cache_make_key(&key, skey, sklen TSRMLS_CC)) {
+                if (apc_cache_make_context(&ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
 
-						/* run cache defense */
-						if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
+                    /* initialize the key for insertion */
+                    if (apc_cache_make_key(&key, skey, sklen TSRMLS_CC)) {
 
-							/* initialize the entry for insertion */
-							if ((entry = apc_cache_make_entry(*value, &ctxt, ttl TSRMLS_CC))) {
+                        /* run cache defense */
+                        if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
 
-								/* create an insertion */
-								if (apc_cache_insert(cache, key, entry, &ctxt, now, exclusive TSRMLS_CC)) {
+                            /* initialize the entry for insertion */
+                            if ((entry = apc_cache_make_entry(*value, &ctxt, ttl TSRMLS_CC))) {
 
-									/* all good */
-									/* TODO logicall results should have a positive value ? */
-									continue;
-								}
-							}
-						}
-					}
+                                /* create an insertion */
+                                if (apc_cache_insert(cache, key, entry, &ctxt, now, exclusive TSRMLS_CC)) {
+
+                                    /* all good */
+                                    /* TODO logicall results should have a positive value ? */
+                                    continue;
+                                }
+                            }
+                        }
+                    }
 
 					/* insertion did not occur */
-					add_assoc_long_ex(results, skey, sklen, -1);
+                    add_assoc_long_ex(results, skey, sklen, -1);
 
 					/* in any case of failure the context should be destroyed */
-					apc_cache_destroy_context(
-						&ctxt TSRMLS_CC);	
+                    apc_cache_destroy_context(
+                        &ctxt TSRMLS_CC);	
 					
-					/* bail */
-					break;
-				}
-			}
-		}
+                    /* bail */
+                    break;
+                }
+            }
+        }
 		
-		return 1;	
-	}
+        return 1;	
+    }
 	
-	return 0;
+    return 0;
 } /* }}} */
 
 /* {{{ data_unserialize */
@@ -814,12 +814,11 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 		unsigned int keylen = key.identifier_len;
 		
 		/*
-		* jump straight in, everything will be okay ...
+		* select appropriate slot ...
 		*/
 		slot = &cache->slots[key.h % cache->num_slots];
 
 		while ((select=(*slot))) {
-
 			
 			/* check for a match by hash and identifier */
 		    if ((select->key.h == key.h) && 
@@ -831,15 +830,12 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 		         * the user entry already exists and it has no ttl, or
 		         * there is a ttl and the entry has not timed out yet.
 		         */
-		        if(exclusive && (  !select->value->ttl ||
-		                          ( select->value->ttl && (time_t) (select->creation_time + select->value->ttl) >= t ) 
-		                        ) ) {
-					/* unlock slot */
-					goto nothing;
+		        if(exclusive) {
+                    if (!select->value->ttl || (time_t) (select->creation_time + select->value->ttl) >= t) {
+                        goto nothing;
+                    }
 		        }
-				
-		        remove_slot(
-					cache, slot TSRMLS_CC);
+                remove_slot(cache, slot TSRMLS_CC);
 		        break;
 		    } else 
 
@@ -852,37 +848,36 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 		     */
 		    if((cache->ttl && select->access_time < (t - cache->ttl)) || 
 		       (select->value->ttl && (time_t) (select->creation_time + select->value->ttl) < t)) {
-				
-		        remove_slot(
-					cache, slot TSRMLS_CC);
+
+                remove_slot(cache, slot TSRMLS_CC);
 
 		        continue;
 		    }
 		
 			/* set next slot */
-			slot = &select->next;      
+            slot = &select->next;      
 		}
 
 		if ((*slot = make_slot(cache, &key, value, *slot, t TSRMLS_CC)) != NULL) {
-			/* set value size from pool size */
-			value->mem_size = ctxt->pool->size;
+            /* set value size from pool size */
+            value->mem_size = ctxt->pool->size;
 
-		    cache->header->mem_size += ctxt->pool->size;
-			cache->header->num_entries++;
-			cache->header->num_inserts++;
+            cache->header->mem_size += ctxt->pool->size;
+            cache->header->num_entries++;
+            cache->header->num_inserts++;
 		}
 	}
 
-	/* unlock and return succesfull */	
-	APC_UNLOCK(cache->header);
+    /* unlock and return succesfull */	
+    APC_UNLOCK(cache->header);
 
-	return 1;
+    return 1;
 
-	/* bail */
+    /* bail */
 nothing:
-	APC_UNLOCK(cache->header);
+    APC_UNLOCK(cache->header);
 
-	return 0;
+    return 0;
 }
 /* }}} */
 
