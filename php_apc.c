@@ -372,7 +372,7 @@ PHP_FUNCTION(apc_clear_cache)
 /* {{{ proto array apc_cache_info([bool limited]) */
 PHP_FUNCTION(apc_cache_info)
 {
-    zval* info = NULL;
+    zval* info;
     zend_bool limited = 0;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &limited) == FAILURE) {
@@ -684,18 +684,13 @@ void *apc_erealloc_wrapper(void *ptr, size_t size) {
 PHP_FUNCTION(apc_fetch) {
     zval *key;
     zval *success = NULL;
-    HashTable *hash;
-    HashPosition hpos;
-    zval **hentry;
-    zval *result;
-    zval *result_entry;
-    char *strkey;
-    int strkey_len;
     apc_cache_entry_t* entry;
     time_t t;
     apc_context_t ctxt = {0,};
 
-    if(!APCG(enabled)) RETURN_FALSE;
+    if (!APCG(enabled)) {
+		RETURN_FALSE;
+	}
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z|z", &key, &success) == FAILURE) {
         return;
@@ -707,63 +702,89 @@ PHP_FUNCTION(apc_fetch) {
         ZVAL_BOOL(success, 0);
     }
 
-    ctxt.pool = apc_pool_create(APC_UNPOOL, apc_php_malloc, apc_php_free, NULL, NULL TSRMLS_CC);
-    if (!ctxt.pool) {
-        apc_warning("Unable to allocate memory for pool." TSRMLS_CC);
-        RETURN_FALSE;
-    }
-    ctxt.copy = APC_COPY_OUT;
-    ctxt.force_update = 0;
+	if (Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
+	    convert_to_string(key);
+	}
+	
+	/* check for a string, or array of strings */
+	if (Z_TYPE_P(key) == IS_ARRAY || (Z_TYPE_P(key) == IS_STRING && Z_STRLEN_P(key) > 0)) {
+		
+		/* initialize a context */
+		if (apc_cache_make_context(apc_user_cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0 TSRMLS_CC)) {
+			
+			if (Z_TYPE_P(key) == IS_STRING) {
 
-    if(Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
-        convert_to_string(key);
-    }
+				/* do find using string as key */
+				if ((entry = apc_cache_find(apc_user_cache, Z_STRVAL_P(key), (Z_STRLEN_P(key) + 1), t TSRMLS_CC))) {
+				    /* deep-copy returned shm zval to emalloc'ed return_value */
+				    apc_cache_fetch_zval(
+						&ctxt, return_value, entry->val TSRMLS_CC);
+					/* decrement refcount of entry */
+				    apc_cache_release(
+						apc_user_cache, entry TSRMLS_CC);
+					/* set success */
+					if (success) {
+						ZVAL_BOOL(success, 1);
+					}
 
-    if(Z_TYPE_P(key) == IS_STRING) {
-        strkey = Z_STRVAL_P(key);
-        strkey_len = Z_STRLEN_P(key);
-        if(!strkey_len) RETURN_FALSE;
-        entry = apc_cache_find(apc_user_cache, strkey, (strkey_len + 1), t TSRMLS_CC);
-        if(entry) {
-            /* deep-copy returned shm zval to emalloc'ed return_value */
-            apc_cache_fetch_zval(&ctxt, return_value, entry->val TSRMLS_CC);
-            apc_cache_release(apc_user_cache, entry TSRMLS_CC);
-        } else {
-            goto freepool;
-        }
-    } else if(Z_TYPE_P(key) == IS_ARRAY) {
-        hash = Z_ARRVAL_P(key);
-        MAKE_STD_ZVAL(result);
-        array_init(result); 
-        zend_hash_internal_pointer_reset_ex(hash, &hpos);
-        while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
-            if(Z_TYPE_PP(hentry) != IS_STRING) {
-                apc_warning("apc_fetch() expects a string or array of strings." TSRMLS_CC);
-                goto freepool;
-            }
-            entry = apc_cache_find(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1), t TSRMLS_CC);
-            if(entry) {
-                /* deep-copy returned shm zval to emalloc'ed return_value */
-                MAKE_STD_ZVAL(result_entry);
-                apc_cache_fetch_zval(&ctxt, result_entry, entry->val TSRMLS_CC);
-                apc_cache_release(apc_user_cache, entry TSRMLS_CC);
-                zend_hash_add(Z_ARRVAL_P(result), Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) +1, &result_entry, sizeof(zval*), NULL);
-            } /* don't set values we didn't find */
-            zend_hash_move_forward_ex(hash, &hpos);
-        }
-        RETVAL_ZVAL(result, 0, 1);
-    } else {
-        apc_warning("apc_fetch() expects a string or array of strings." TSRMLS_CC);
-freepool:
-        apc_pool_destroy(ctxt.pool TSRMLS_CC);
-        RETURN_FALSE;
-    }
+				} else { ZVAL_BOOL(return_value, 0); }
 
-    if (success) {
-        ZVAL_BOOL(success, 1);
-    }
+			} else if (Z_TYPE_P(key) == IS_ARRAY) {
 
-    apc_pool_destroy(ctxt.pool TSRMLS_CC);
+				/* do find using key as array of strings */
+				HashPosition hpos;
+				zval **hentry;
+				zval *result;
+                
+				MAKE_STD_ZVAL(result);
+				array_init(result);
+				
+				zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(key), &hpos);
+				while(zend_hash_get_current_data_ex(Z_ARRVAL_P(key), (void**)&hentry, &hpos) == SUCCESS) {
+
+				    if (Z_TYPE_PP(hentry) == IS_STRING) {
+
+				        /* perform find using this index as key */
+						if ((entry = apc_cache_find(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1), t TSRMLS_CC))) {
+							zval *result_entry;
+
+						    /* deep-copy returned shm zval to emalloc'ed return_value */
+						    MAKE_STD_ZVAL(result_entry);
+						    apc_cache_fetch_zval(
+								&ctxt, result_entry, entry->val TSRMLS_CC);
+							/* decrement refcount of entry */
+						    apc_cache_release(
+								apc_user_cache, entry TSRMLS_CC);
+							/* add the emalloced value to return array */
+						    zend_hash_add(
+								Z_ARRVAL_P(result), Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) +1, &result_entry, sizeof(zval*), NULL);
+						}
+				    } else {
+
+						/* we do not break loop, we just skip the key */
+						apc_warning(
+							"apc_fetch() expects a string or array of strings." TSRMLS_CC);
+					}
+
+					/* don't set values we didn't find */
+				    zend_hash_move_forward_ex(Z_ARRVAL_P(key), &hpos);
+				}
+
+				RETVAL_ZVAL(result, 0, 1);
+
+				if (success) {
+					ZVAL_BOOL(success, 1);
+				}
+			}
+
+leave:
+			apc_cache_destroy_context(&ctxt TSRMLS_CC );	
+		}
+
+	} else { 
+		apc_warning("apc_fetch() expects a string or array of strings." TSRMLS_CC);
+		RETURN_FALSE; 
+	}
     return;
 }
 /* }}} */

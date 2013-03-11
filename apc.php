@@ -989,13 +989,13 @@ EOB;
 	
 	foreach($cache[$scope_list[$MYREQUEST['SCOPE']]] as $i => $entry) {
 		switch($MYREQUEST['SORT1']) {
-			case 'A': $k=sprintf('%015d-',$entry['access_time']); 	break;
+			case 'A': $k=sprintf('%015d-',$entry['atime']);  	    break;
 			case 'H': $k=sprintf('%015d-',$entry['nhits']); 		break;
 			case 'Z': $k=sprintf('%015d-',$entry['mem_size']); 		break;
 			case 'M': $k=sprintf('%015d-',$entry['mtime']);			break;
-			case 'C': $k=sprintf('%015d-',$entry['creation_time']);	break;
+			case 'C': $k=sprintf('%015d-',$entry['ctime']);	        break;
 			case 'T': $k=sprintf('%015d-',$entry['ttl']);			break;
-			case 'D': $k=sprintf('%015d-',$entry['deletion_time']);	break;
+			case 'D': $k=sprintf('%015d-',$entry['dtime']);      	break;
 			case 'S': $k=$entry["key"];								break;
 		}
 		if (!$AUTHENTICATED) {
@@ -1025,9 +1025,9 @@ EOB;
           "<td class=td-0><a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],"&SH=",$sh,"\">",$field_value,'</a></td>',
           '<td class="td-n center">',$entry['nhits'],'</td>',
           '<td class="td-n right">',$entry['mem_size'],'</td>',
-          '<td class="td-n center">',date(DATE_FORMAT,$entry['access_time']),'</td>',
+          '<td class="td-n center">',date(DATE_FORMAT,$entry['atime']),'</td>',
           '<td class="td-n center">',date(DATE_FORMAT,$entry['mtime']),'</td>',
-          '<td class="td-n center">',date(DATE_FORMAT,$entry['creation_time']),'</td>';
+          '<td class="td-n center">',date(DATE_FORMAT,$entry['ctime']),'</td>';
 
         if($fieldname=='info') {
           if($entry['ttl'])
@@ -1035,9 +1035,9 @@ EOB;
           else
             echo '<td class="td-n center">None</td>';
         }
-        if ($entry['deletion_time']) {
+        if ($entry['dtime']) {
 
-          echo '<td class="td-last center">', date(DATE_FORMAT,$entry['deletion_time']), '</td>';
+          echo '<td class="td-last center">', date(DATE_FORMAT,$entry['dtime']), '</td>';
         } else if ($MYREQUEST['OB'] == OB_USER_CACHE) {
 
           echo '<td class="td-last center">';
