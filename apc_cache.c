@@ -393,48 +393,50 @@ zend_bool apc_cache_store_all(apc_cache_t* cache, zval *data, zval *results, con
                 apc_cache_entry_t *entry;				
                 zend_bool result = 0;
 
-                /* 
-                  NOTE: 
-                    You should not use the same context/pool for multiple inserts 
-                    The size of the pool is used for calculations and is assumed to be the same as the consumption of
-                    the single entry passed to apc_cache_insert
+                if (skey) {
+    	            /* 
+    	              NOTE: 
+    	                You should not use the same context/pool for multiple inserts 
+    	                The size of the pool is used for calculations and is assumed to be the same as the consumption of
+    	                the single entry passed to apc_cache_insert
 
-                    make a throw away context ...
-                */
-				
-                if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
+    	                make a throw away context ...
+    	            */
+    			
+    	            if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
 
-                    /* initialize the key for insertion */
-                    if (apc_cache_make_key(&key, skey, sklen TSRMLS_CC)) {
+    	                /* initialize the key for insertion */
+    	                if (apc_cache_make_key(&key, skey, sklen TSRMLS_CC)) {
 
-                        /* run cache defense */
-                        if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
+    	                    /* run cache defense */
+    	                    if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
 
-                            /* initialize the entry for insertion */
-                            if ((entry = apc_cache_make_entry(&ctxt, *value, ttl TSRMLS_CC))) {
+    	                        /* initialize the entry for insertion */
+    	                        if ((entry = apc_cache_make_entry(&ctxt, *value, ttl TSRMLS_CC))) {
 
-                                /* create an insertion */
-                                if (apc_cache_insert(cache, key, entry, &ctxt, now, exclusive TSRMLS_CC)) {
+    	                            /* create an insertion */
+    	                            if (apc_cache_insert(cache, key, entry, &ctxt, now, exclusive TSRMLS_CC)) {
 
-                                    /* all good */
-                                    /* TODO logically results should have a positive value ? */
-                                    continue;
-                                }
-                            }
-                        }
-                    }
+    	                                /* all good */
+     	                                /* TODO logically results should have a positive value ? */
+    	                                continue;
+    	                            }
+    	                        }
+    	                    }
+    	                }
 
-					/* insertion did not occur */
-                    add_assoc_long_ex(results, skey, sklen, -1);
+    					/* insertion did not occur */
+    	                add_assoc_long_ex(results, skey, sklen, -1);
 
-					/* in any case of failure the context should be destroyed */
-                    apc_cache_destroy_context(
-                        &ctxt TSRMLS_CC);	
+    					/* in any case of failure the context should be destroyed */
+    	                apc_cache_destroy_context(
+    	                    &ctxt TSRMLS_CC);	
 					
-                    /* bail */
-                    break;
+    	                /* bail */
+    	                break;
+    	            }
                 }
-            }
+            } else add_index_long(results, idx, -1);
         }
 		
         return 1;	

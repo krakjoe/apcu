@@ -157,6 +157,7 @@ extern void apc_cache_clear(apc_cache_t* cache TSRMLS_DC);
 /* {{{ apc_cache_default_expunge 
 * Where smart is not set:
 *  Where no ttl is set on cache:
+*   Perform cleanup of stale entries
 *   Expunge if available memory is less than seg_size/2
 *  Where ttl is set on cache:
 *   Perform cleanup of stale entries

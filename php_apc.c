@@ -484,30 +484,41 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
         return;
     }
 
-    if (!key) {
-		RETURN_FALSE;
-	}
+    if (!key) RETURN_FALSE;
 
-    if (Z_TYPE_P(key) == IS_ARRAY) {
+	/* keep it tidy */
+    {
+		if (Z_TYPE_P(key) == IS_ARRAY) {
+            HashPosition hpos;
+            zval **hentry;
+            char *hkey = NULL;
+            zend_uint hkey_len;
+            zend_ulong hkey_idx;
+            HashTable* hash = Z_ARRVAL_P(key);
 
-		apc_cache_store_all(
-			apc_user_cache, key, return_value, (unsigned int)ttl, exclusive TSRMLS_CC);
-		return;
-		
-    } else {
-		if (Z_TYPE_P(key) == IS_STRING) {
-		    if (!val) {
-				RETURN_FALSE;
-			}
-
-			if (apc_cache_store(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (unsigned int)ttl, exclusive TSRMLS_CC)) {
-				RETURN_TRUE;		
-			}
+		    array_init(return_value);
+		    zend_hash_internal_pointer_reset_ex(hash, &hpos);
+		    while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
+		        zend_hash_get_current_key_ex(hash, &hkey, &hkey_len, &hkey_idx, 0, &hpos);
+		        if (hkey) {
+		            if(!apc_cache_store(apc_user_cache, hkey, hkey_len, *hentry, (zend_uint) ttl, exclusive TSRMLS_CC)) {
+		                add_assoc_long_ex(return_value, hkey, hkey_len, -1);  /* -1: insertion error */
+		            }
+		            hkey = NULL;
+		        } else {
+		            add_index_long(return_value, hkey_idx, -1);  /* -1: insertion error */
+		        }
+		        zend_hash_move_forward_ex(hash, &hpos);
+		    }
+		    return;
+		} else if (Z_TYPE_P(key) == IS_STRING) {
+		    if (!val) RETURN_FALSE;
+		    if(apc_cache_store(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (zend_uint) ttl, exclusive TSRMLS_CC))
+		        RETURN_TRUE;
+		} else {
+		    apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs." TSRMLS_CC);
 		}
-		return;        
-    }
-
-	apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs." TSRMLS_CC);
+	}
 
     RETURN_FALSE;
 }
