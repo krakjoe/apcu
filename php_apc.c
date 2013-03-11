@@ -517,6 +517,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 		        }
 		        zend_hash_move_forward_ex(hash, &hpos);
 		    }
+			return;
 		} else {
             if (Z_TYPE_P(key) == IS_STRING) {
 			    if (!val) {

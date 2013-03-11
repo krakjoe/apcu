@@ -22,6 +22,12 @@
 # include "apc_lock.h"
 #endif
 
+/*
+ APCu never checks the return value of a locking call, it assumes it should not fail
+ and execution continues regardless, therefore it is pointless to check the return
+ values of calls to locking functions, lets save ourselves the comparison.
+*/
+
 /* {{{ There's very little point in initializing a billion sets of attributes */
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
@@ -103,57 +109,55 @@ zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
 zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
-	return (pthread_mutex_lock(&lock->read)==SUCCESS);
+	pthread_mutex_lock(&lock->read);
 # else
-	return (pthread_rwlock_rdlock(lock)==SUCCESS);
+	pthread_rwlock_rdlock(lock);
 # endif
 #else
 	apc_windows_cs_rdlock((apc_windows_cs_rwlock_t *)lock TSRMLS_CC);
-
-	return 1;
 #endif
+	return 1;
 }
 
 zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
-	return ((pthread_mutex_lock(&lock->read)==SUCCESS) && (pthread_mutex_lock(&lock->write)==SUCCESS));
-# else
-	return (pthread_rwlock_wrlock(lock)==SUCCESS);
+	pthread_mutex_lock(&lock->read);
+	pthread_mutex_lock(&lock->write);
+# else	
+	pthread_rwlock_wrlock(lock);
 # endif
 #else
 	apc_windows_cs_lock((apc_windows_cs_rwlock_t *)lock TSRMLS_CC);
-
-	return 1;
 #endif
+	return 1;
 }
 
 zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
-	return ((pthread_mutex_unlock(&lock->read)==SUCCESS) && (pthread_mutex_unlock(&lock->write)==SUCCESS));
+	pthread_mutex_unlock(&lock->read);
+	pthread_mutex_unlock(&lock->write);
 # else
-	return (pthread_rwlock_unlock(lock)==SUCCESS);
+	pthread_rwlock_unlock(lock);
 # endif
 #else
 	apc_windows_cs_unlock_wr((apc_windows_cs_rwlock_t *)lock TSRMLS_CC);
-
-	return 1;
 #endif
+	return 1;
 }
 
 zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
-	return (pthread_mutex_unlock(&lock->read)==SUCCESS);
+	pthread_mutex_unlock(&lock->read);
 # else
-	return (pthread_rwlock_unlock(lock)==SUCCESS);
+	pthread_rwlock_unlock(lock);
 # endif
 #else
 	apc_windows_cs_unlock_rd((apc_windows_cs_rwlock_t *)lock TSRMLS_CC);
-
-	return 1;
 #endif
+	return 1;
 }
 
 void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC) {
