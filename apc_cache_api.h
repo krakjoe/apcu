@@ -73,8 +73,8 @@ struct apc_cache_slot_t {
 /* {{{ state constants */
 #define APC_CACHE_ST_NONE 0
 #define APC_CACHE_ST_BUSY 1
-#define APC_CACHE_ST_PROC 2
-#define APC_CACHE_ST_IBUSY (APC_CACHE_ST_BUSY|APC_CACHE_ST_PROC) /* }}} */
+#define APC_CACHE_ST_GC   2
+#define APC_CACHE_ST_IBUSY (APC_CACHE_ST_BUSY|APC_CACHE_ST_GC) /* }}} */
 
 /* {{{ struct definition: apc_cache_header_t
    Any values that must be shared among processes should go in here. */
@@ -153,25 +153,6 @@ extern void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC);
  * apc_cache_clear empties a cache. This can safely be called at any time.
  */
 extern void apc_cache_clear(apc_cache_t* cache TSRMLS_DC);
-
-/* {{{ apc_cache_default_expunge 
-* Where smart is not set:
-*  Where no ttl is set on cache:
-*   Perform cleanup of stale entries
-*   Expunge if available memory is less than seg_size/2
-*  Where ttl is set on cache:
-*   Perform cleanup of stale entries
-*   If available memory if less than the size requested, run full expunge
-*
-* Where smart is set:
-*  Where no ttl is set on cache:
-*   Expunge is available memory is less than size * smart
-*  Where ttl is set on cache:
-*   If available memory if less than the size requested, run full expunge
-*
-* The TTL of an entry takes precedence over the TTL of a cache
-*/
-extern void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC);
 
 /*
 * apc_cache_make_context initializes a context with an appropriate pool and options provided
@@ -321,12 +302,19 @@ extern zval* apc_cache_info(apc_cache_t* cache,
                             zend_bool limited TSRMLS_DC);
 
 /*
-* apc_cache_busy returns true while the cache is being cleaned
+* apc_cache_busy returns true while the cache is busy
+*
+* a cache is considered busy when any of the following occur:
+*  a) the cache becomes busy when the allocator beneath it is running out of resources
+*  b) a clear of the cache was requested
+*  c) garbage collection is in progress
+*
+* Note: garbage collection can be invoked by the SMA and is invoked on insert
 */
 extern zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC);
 
 /*
-* apc_cache_processing returns true while the cache is in collection
+* apc_cache_processing returns true while the cache is in gc
 */
 extern zend_bool apc_cache_processing(apc_cache_t* cache TSRMLS_DC);
 
@@ -341,6 +329,69 @@ extern zend_bool apc_cache_processing(apc_cache_t* cache TSRMLS_DC);
 */
 extern zend_bool apc_cache_defense(apc_cache_t* cache,
                                    apc_cache_key_t* key TSRMLS_DC);
+
+/*
+* The remaining functions allow a third party to reimplement expunge
+* 
+* Look at the source of apc_cache_default_expunge for what is expected of this function
+*
+* The default behaviour of expunge is explained below, should no combination of those options
+* be suitable, you will need to reimplement apc_cache_default_expunge and pass it to your
+* call to apc_sma_api_init, this will replace the default functionality.
+* The functions below you can use during your own implementation of expunge to gain more
+* control over how the expunge process works ...
+* 
+* Note: beware of locking (copy it exactly), setting states is also important
+*/
+
+/* {{{ apc_cache_default_expunge
+* Where smart is not set:
+*  Where no ttl is set on cache:
+*   1) Perform cleanup of stale entries
+*   2) Expunge if available memory is less than sma->size/2
+*  Where ttl is set on cache:
+*   1) Perform cleanup of stale entries
+*   2) If available memory if less than the size requested, run full expunge
+*
+* Where smart is set:
+*  Where no ttl is set on cache:
+*   1) Perform cleanup of stale entries
+*   2) Expunge is available memory is less than size * smart
+*  Where ttl is set on cache:
+*   1) Perform cleanup of stale entries
+*   2) If available memory if less than the size requested, run full expunge
+*
+* The TTL of an entry takes precedence over the TTL of a cache
+*/
+extern void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC);
+
+/*
+* The remaining functions are used during the APCu implementation of expunge
+*/
+
+/*
+* apc_cache_real_expunge: trashes the whole cache
+*
+* Note: it is assumed you have a write lock on the header when you enter real expunge
+*/
+extern void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC);
+
+/*
+* apc_cache_gc: runs garbage collection on cache
+*
+* Note: it is assumed you have a write lock on the header when you enter gc
+*/
+extern void apc_cache_gc(apc_cache_t* cache TSRMLS_DC);
+
+/*
+* apc_cache_remove_slot: removes slot
+*
+* if no references remain, the slot is free'd immediately
+* if there are references remaining, the slot is trashed
+*
+* Note: it is assumed you have a write lock on the header when you remove slots
+*/
+void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot TSRMLS_DC);
 #endif
 
 /*

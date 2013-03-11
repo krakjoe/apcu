@@ -37,10 +37,18 @@ static int le_apcue;
 /* Don't use staticness here, the SMA api needs access to this structure at expunge time */
 apc_cache_t* apcue_cache = NULL;
 
+/* {{{ override the expunge functionality of APCu */
+static void apcue_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC) {
+	php_printf(
+		"expunging apcue ...");
+
+	apc_cache_default_expunge(cache, size TSRMLS_CC);
+}
+
 /*
 * Initializes your isolated sma, using your cache and the default expunge function
 */
-apc_sma_api_impl(apcue_sma, &apcue_cache, apc_cache_default_expunge);
+apc_sma_api_impl(apcue_sma, &apcue_cache, apcue_cache_expunge);
 
 /* {{{ apcue_functions[]
  *
@@ -132,7 +140,7 @@ PHP_MSHUTDOWN_FUNCTION(apcue)
 		apcue_cache TSRMLS_CC);
 	
 	/* cleanup sma */
-	apcue_sma.cleanup(TSRMLS_CC);
+	apcue_sma.cleanup(TSRMLS_C);
 
 	return SUCCESS;
 }

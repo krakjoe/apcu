@@ -224,7 +224,7 @@ form of a quick-start guide to start hacking on APC.
 
    apc_cache_insert() shows what happens on a new cache insert.
 
-     slot = &cache->slots[hash(key) % cache->nslots];
+     slot = &cache->slots[zend_inline_hash_func(key, keylen) % cache->nslots];
 
    cache->slots is our array of slots in the segment.
 
