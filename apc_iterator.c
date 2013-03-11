@@ -53,7 +53,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
         ctxt.copy = APC_COPY_OUT;
 
         MAKE_STD_ZVAL(zvalue);
-        apc_cache_fetch_zval(zvalue, slot->value->val, &ctxt TSRMLS_CC);
+        apc_cache_fetch_zval(&ctxt, zvalue, slot->value->val TSRMLS_CC);
         apc_pool_destroy(ctxt.pool TSRMLS_CC);
         add_assoc_zval(item->value, "value", zvalue);
     }

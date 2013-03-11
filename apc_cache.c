@@ -344,7 +344,7 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, cons
             if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
 
                 /* initialize the entry for insertion */
-                if ((entry = apc_cache_make_entry(val, &ctxt, ttl TSRMLS_CC))) {
+                if ((entry = apc_cache_make_entry(&ctxt, val, ttl TSRMLS_CC))) {
 
                     /* execute an insertion */
                     if (apc_cache_insert(cache, key, entry, &ctxt, t, exclusive TSRMLS_CC)) {
@@ -410,7 +410,7 @@ zend_bool apc_cache_store_all(apc_cache_t* cache, zval *data, zval *results, con
                         if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
 
                             /* initialize the entry for insertion */
-                            if ((entry = apc_cache_make_entry(*value, &ctxt, ttl TSRMLS_CC))) {
+                            if ((entry = apc_cache_make_entry(&ctxt, *value, ttl TSRMLS_CC))) {
 
                                 /* create an insertion */
                                 if (apc_cache_insert(cache, key, entry, &ctxt, now, exclusive TSRMLS_CC)) {
@@ -979,7 +979,7 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
 /* }}} */
 
 /* {{{ apc_cache_fetch */
-zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, int keylen, zval** dst, time_t t TSRMLS_DC) 
+zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, int keylen, time_t t, zval **dst TSRMLS_DC) 
 {	
 	apc_context_t ctxt = {0, };
 	apc_cache_entry_t *entry;
@@ -991,7 +991,7 @@ zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, int keylen, zval** d
 		/* create unpool context */
 		if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0 TSRMLS_CC)) {
 			/* copy to emalloc'd context */
-			apc_cache_fetch_zval(*dst, entry->val, &ctxt TSRMLS_CC);
+			apc_cache_fetch_zval(&ctxt, *dst, entry->val TSRMLS_CC);
 			/* release entry */
 			apc_cache_release(
 				cache, entry TSRMLS_CC);
@@ -1014,8 +1014,7 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
     volatile apc_cache_entry_t* value = NULL;
     unsigned long h;
 
-    if(apc_cache_busy(cache TSRMLS_CC) ||
-       apc_cache_processing(cache TSRMLS_CC))
+    if(apc_cache_busy(cache TSRMLS_CC))
     {
         /* cache cleanup in progress */ 
         return NULL;
@@ -1072,8 +1071,7 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
     int retval = 0;
     unsigned long h;
 
-    if(apc_cache_busy(cache TSRMLS_CC) ||
-       apc_cache_processing(cache TSRMLS_CC))
+    if(apc_cache_busy(cache TSRMLS_CC))
     {
         /* cannot service request right now */ 
         return 0;
@@ -1527,7 +1525,7 @@ zval* apc_cache_store_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRML
 /* }}} */
 
 /* {{{ apc_cache_fetch_zval */
-zval* apc_cache_fetch_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
+zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zval* src TSRMLS_DC)
 {
     if (Z_TYPE_P(src) == IS_ARRAY) {
         /* Maintain a list of zvals we've copied to properly handle recursive structures */
@@ -1545,7 +1543,7 @@ zval* apc_cache_fetch_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRML
 /* }}} */
 
 /* {{{ apc_cache_make_entry */
-apc_cache_entry_t* apc_cache_make_entry(const zval* val, apc_context_t* ctxt, const unsigned int ttl TSRMLS_DC)
+apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt, const zval* val, const unsigned int ttl TSRMLS_DC)
 {
     apc_cache_entry_t* entry;
     apc_pool* pool = ctxt->pool;

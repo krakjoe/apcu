@@ -693,7 +693,7 @@ PHP_FUNCTION(apc_fetch) {
 				if ((entry = apc_cache_find(apc_user_cache, Z_STRVAL_P(key), (Z_STRLEN_P(key) + 1), t TSRMLS_CC))) {
 				    /* deep-copy returned shm zval to emalloc'ed return_value */
 				    apc_cache_fetch_zval(
-						return_value, entry->val, &ctxt TSRMLS_CC);
+						&ctxt, return_value, entry->val TSRMLS_CC);
 					/* decrement refcount of entry */
 				    apc_cache_release(
 						apc_user_cache, entry TSRMLS_CC);
@@ -726,7 +726,7 @@ PHP_FUNCTION(apc_fetch) {
 						    /* deep-copy returned shm zval to emalloc'ed return_value */
 						    MAKE_STD_ZVAL(result_entry);
 						    apc_cache_fetch_zval(
-								result_entry, entry->val, &ctxt TSRMLS_CC);
+								&ctxt, result_entry, entry->val TSRMLS_CC);
 							/* decrement refcount of entry */
 						    apc_cache_release(
 								apc_user_cache, entry TSRMLS_CC);

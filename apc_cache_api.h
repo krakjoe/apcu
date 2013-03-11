@@ -263,15 +263,14 @@ extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
                                          time_t t TSRMLS_DC);
 
 /*
- * apc_cache_find searches for a cache entry by its hashed identifier,
- * and returns a pointer to the entry if found, NULL otherwise.
+ * apc_cache_fetch fetches an entry from the cache directly into dst
  *
  */
 extern zend_bool apc_cache_fetch(apc_cache_t* cache,
                                  char* strkey,
                                  int keylen,
-                                 zval **dst,
-                                 time_t t TSRMLS_DC);
+                                 time_t t,
+                                 zval **dst TSRMLS_DC);
 
 /*
  * apc_cache_exists searches for a cache entry by its hashed identifier,
@@ -296,9 +295,9 @@ extern zend_bool apc_cache_delete(apc_cache_t* cache,
  * zval from it.
  *
  */
-extern zval* apc_cache_fetch_zval(zval* dst,
-                                  const zval* src,
-                                  apc_context_t* ctxt TSRMLS_DC);
+extern zval* apc_cache_fetch_zval(apc_context_t* ctxt,
+                                  zval* dst,
+                                  const zval* src TSRMLS_DC);
 
 /*
  * apc_cache_release decrements the reference count associated with a cache
@@ -322,8 +321,8 @@ extern zend_bool apc_cache_make_key(apc_cache_key_t* key,
 /*
  * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
  */
-extern apc_cache_entry_t* apc_cache_make_entry(const zval *val,
-                                               apc_context_t* ctxt,
+extern apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt,
+                                               const zval *val,
                                                const unsigned int ttl TSRMLS_DC);
 
 /*
