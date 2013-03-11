@@ -391,10 +391,10 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     user_vars = apc_flip_hash(user_vars);
 
     /* get size and entry counts */
-    for(i=0; i < apc_user_cache->num_slots; i++) {
+    for(i=0; i < apc_user_cache->nslots; i++) {
         sp = apc_user_cache->slots[i];
         for(; sp != NULL; sp = sp->next) {
-            if(apc_bin_checkfilter(user_vars, sp->key.identifier, sp->key.identifier_len)) {
+            if(apc_bin_checkfilter(user_vars, sp->key.str, sp->key.len)) {
                 size += sizeof(apc_bd_entry_t*) + sizeof(apc_bd_entry_t);
                 size += sp->value->mem_size - (sizeof(apc_cache_entry_t));
                 count++;
@@ -421,10 +421,10 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     /* User entries */
     zend_hash_init(&ctxt.copied, 0, NULL, NULL, 0);
     count = 0;
-    for(i=0; i < apc_user_cache->num_slots; i++) {
+    for(i=0; i < apc_user_cache->nslots; i++) {
         sp = apc_user_cache->slots[i];
         for(; sp != NULL; sp = sp->next) {
-            if(apc_bin_checkfilter(user_vars, sp->key.identifier, sp->key.identifier_len)) {
+            if(apc_bin_checkfilter(user_vars, sp->key.str, sp->key.len)) {
                 ep = &bd->entries[count];
                 if ((Z_TYPE_P(sp->value->val) == IS_ARRAY && APCG(serializer))
                         || Z_TYPE_P(sp->value->val) == IS_OBJECT) {
@@ -522,8 +522,9 @@ int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
                 break;
             }
             ctxt.copy = APC_COPY_IN;
-			/* TODO no info/info_len */
-            //_apc_store(ep->val.key->identifier, ep->val->key->identifier_len, data, ep->val.ttl, 0 TSRMLS_CC);
+			/* TODO XXX no info/len, get key elsewhere */
+            //apc_cache_store(ep->val->key.str, ep->val.key.len, data, ep->val.ttl, 0 TSRMLS_CC);
+
             if (use_copy) {
                 zval_ptr_dtor(&data);
             }

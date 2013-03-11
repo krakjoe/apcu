@@ -43,15 +43,15 @@ array(10) {
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["num_hits"]=>
+  ["nhits"]=>
   int(0)
   ["mtime"]=>
   int(%d)
-  ["creation_time"]=>
+  ["ctime"]=>
   int(%d)
-  ["deletion_time"]=>
+  ["dtime"]=>
   int(0)
-  ["access_time"]=>
+  ["atime"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -66,15 +66,15 @@ array(10) {
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["num_hits"]=>
+  ["nhits"]=>
   int(0)
   ["mtime"]=>
   int(%d)
-  ["creation_time"]=>
+  ["ctime"]=>
   int(%d)
-  ["deletion_time"]=>
+  ["dtime"]=>
   int(0)
-  ["access_time"]=>
+  ["atime"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -89,15 +89,15 @@ array(10) {
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["num_hits"]=>
+  ["nhits"]=>
   int(0)
   ["mtime"]=>
   int(%d)
-  ["creation_time"]=>
+  ["ctime"]=>
   int(%d)
-  ["deletion_time"]=>
+  ["dtime"]=>
   int(0)
-  ["access_time"]=>
+  ["atime"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -112,15 +112,15 @@ array(10) {
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["num_hits"]=>
+  ["nhits"]=>
   int(0)
   ["mtime"]=>
   int(%d)
-  ["creation_time"]=>
+  ["ctime"]=>
   int(%d)
-  ["deletion_time"]=>
+  ["dtime"]=>
   int(0)
-  ["access_time"]=>
+  ["atime"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -135,15 +135,15 @@ array(10) {
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["num_hits"]=>
+  ["nhits"]=>
   int(0)
   ["mtime"]=>
   int(%d)
-  ["creation_time"]=>
+  ["ctime"]=>
   int(%d)
-  ["deletion_time"]=>
+  ["dtime"]=>
   int(0)
-  ["access_time"]=>
+  ["atime"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -158,15 +158,15 @@ array(10) {
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["num_hits"]=>
+  ["nhits"]=>
   int(0)
   ["mtime"]=>
   int(%d)
-  ["creation_time"]=>
+  ["ctime"]=>
   int(%d)
-  ["deletion_time"]=>
+  ["dtime"]=>
   int(0)
-  ["access_time"]=>
+  ["atime"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -181,15 +181,15 @@ array(10) {
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["num_hits"]=>
+  ["nhits"]=>
   int(0)
   ["mtime"]=>
   int(%d)
-  ["creation_time"]=>
+  ["ctime"]=>
   int(%d)
-  ["deletion_time"]=>
+  ["dtime"]=>
   int(0)
-  ["access_time"]=>
+  ["atime"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -204,15 +204,15 @@ array(10) {
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["num_hits"]=>
+  ["nhits"]=>
   int(0)
   ["mtime"]=>
   int(%d)
-  ["creation_time"]=>
+  ["ctime"]=>
   int(%d)
-  ["deletion_time"]=>
+  ["dtime"]=>
   int(0)
-  ["access_time"]=>
+  ["atime"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -227,15 +227,15 @@ array(10) {
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["num_hits"]=>
+  ["nhits"]=>
   int(0)
   ["mtime"]=>
   int(%d)
-  ["creation_time"]=>
+  ["ctime"]=>
   int(%d)
-  ["deletion_time"]=>
+  ["dtime"]=>
   int(0)
-  ["access_time"]=>
+  ["atime"]=>
   int(%d)
   ["ref_count"]=>
   int(0)

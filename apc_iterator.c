@@ -41,8 +41,8 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
     array_init(item->value);
 
 	item->key = estrndup(
-		slot->key.identifier, slot->key.identifier_len);
-	item->key_len = slot->key.identifier_len;	
+		slot->key.str, slot->key.len);
+	item->key_len = slot->key.len;	
 	
     if (APC_ITER_KEY & iterator->format) {
         add_assoc_stringl(item->value, "key", item->key, (item->key_len - 1), 1);
@@ -58,19 +58,19 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
         add_assoc_zval(item->value, "value", zvalue);
     }
     if (APC_ITER_NUM_HITS & iterator->format) {
-        add_assoc_long(item->value, "num_hits", slot->num_hits);
+        add_assoc_long(item->value, "nhits", slot->nhits);
     }
     if (APC_ITER_MTIME & iterator->format) {
         add_assoc_long(item->value, "mtime", slot->key.mtime);
     }
     if (APC_ITER_CTIME & iterator->format) {
-        add_assoc_long(item->value, "creation_time", slot->creation_time);
+        add_assoc_long(item->value, "ctime", slot->ctime);
     }
     if (APC_ITER_DTIME & iterator->format) {
-        add_assoc_long(item->value, "deletion_time", slot->deletion_time);
+        add_assoc_long(item->value, "dtime", slot->dtime);
     }
     if (APC_ITER_ATIME & iterator->format) {
-        add_assoc_long(item->value, "access_time", slot->access_time);
+        add_assoc_long(item->value, "atime", slot->atime);
     }
     if (APC_ITER_REFCOUNT & iterator->format) {
         add_assoc_long(item->value, "ref_count", slot->value->ref_count);
@@ -172,8 +172,8 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, apc_cache_slot_t 
     int fname_key_len = 0;
     int rval = 1;
 
-    key = (char*)(*slot)->key.identifier;
-    key_len = (*slot)->key.identifier_len;
+    key = (char*)(*slot)->key.str;
+    key_len = (*slot)->key.len;
 
 #ifdef ITERATOR_PCRE
     if (iterator->regex) {
@@ -200,11 +200,11 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, apc_cache_slot_t 
 static int apc_iterator_check_expiry(apc_cache_t* cache, apc_cache_slot_t **slot, time_t t)
 {
     if((*slot)->value->ttl) {
-        if((time_t) ((*slot)->creation_time + (*slot)->value->ttl) < t) {
+        if((time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
             return 0;
         }
     } else if(cache->ttl) {
-        if((*slot)->creation_time + cache->ttl < t) {
+        if((*slot)->ctime + cache->ttl < t) {
             return 0;
         }
     }
@@ -226,7 +226,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
         apc_iterator_item_dtor(apc_stack_pop(iterator->stack));
     }
 
-    while(count <= iterator->chunk_size && iterator->slot_idx < apc_user_cache->num_slots) {
+    while(count <= iterator->chunk_size && iterator->slot_idx < apc_user_cache->nslots) {
         slot = &apc_user_cache->slots[iterator->slot_idx];
         while(*slot) {
             if (apc_iterator_check_expiry(apc_user_cache, slot, t)) {
@@ -254,7 +254,8 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
     apc_cache_slot_t **slot;
     apc_iterator_item_t *item;
 
-    slot = &apc_user_cache->header->deleted_list;
+	APC_RLOCK(apc_user_cache->header);
+    slot = &apc_user_cache->header->gc;
     while ((*slot) && count <= iterator->slot_idx) {
         count++;
         slot = &(*slot)->next;
@@ -273,6 +274,8 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
 
     iterator->slot_idx += count;
     iterator->stack_idx = 0;
+	APC_RUNLOCK(apc_user_cache->header);
+
     return count;
 }
 /* }}} */
@@ -282,12 +285,12 @@ static void apc_iterator_totals(apc_iterator_t *iterator TSRMLS_DC) {
     apc_cache_slot_t **slot;
     int i;
 
-    for (i=0; i < apc_user_cache->num_slots; i++) {
+    for (i=0; i < apc_user_cache->nslots; i++) {
         slot = &apc_user_cache->slots[i];
         while((*slot)) {
             if (apc_iterator_search_match(iterator, slot)) {
                 iterator->size += (*slot)->value->mem_size;
-                iterator->hits += (*slot)->num_hits;
+                iterator->hits += (*slot)->nhits;
                 iterator->count++;
             }
             slot = &(*slot)->next;

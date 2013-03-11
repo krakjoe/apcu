@@ -40,10 +40,9 @@ typedef pid_t apc_cache_owner_t;
 
 /* {{{ struct definition: apc_cache_key_t */
 typedef struct _apc_cache_key_t {
-    const char *identifier;		  /* the identifier for this key */
-    int identifier_len;			  /* the length of the identifier string */
-    zend_ulong h;                 /* pre-computed hash */
-	zend_ulong s;                 /* pre-computed position */
+    const char *str;		      /* pointer to constant string key */
+    zend_ulong len;    		      /* length of data at str */
+    zend_ulong h;                 /* pre-computed hash of key */
     time_t mtime;                 /* the mtime of this cached entry */
 	apc_cache_owner_t owner;      /* the context that created this key */
 } apc_cache_key_t; /* }}} */
@@ -51,7 +50,7 @@ typedef struct _apc_cache_key_t {
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct _apc_cache_entry_t {
     zval *val;                    /* the zval copied at store time */
-    unsigned int ttl;             /* the ttl on this specific entry */
+    zend_uint ttl;                /* the ttl on this specific entry */
     int ref_count;                /* the reference count of this entry */
     size_t mem_size;              /* memory used */
     apc_pool *pool;               /* pool which allocated the value */
@@ -64,10 +63,10 @@ struct apc_cache_slot_t {
     apc_cache_key_t key;        /* slot key */
     apc_cache_entry_t* value;   /* slot value */
     apc_cache_slot_t* next;     /* next slot in linked list */
-    unsigned long num_hits;     /* number of hits to this bucket */
-    time_t creation_time;       /* time slot was initialized */
-    time_t deletion_time;       /* time slot was removed from cache */
-    time_t access_time;         /* time slot was last accessed */
+    zend_ulong nhits;           /* number of hits to this slot */
+    time_t ctime;               /* time slot was initialized */
+    time_t dtime;               /* time slot was removed from cache */
+    time_t atime;               /* time slot was last accessed */
 };
 /* }}} */
 
@@ -81,16 +80,16 @@ struct apc_cache_slot_t {
    Any values that must be shared among processes should go in here. */
 typedef struct _apc_cache_header_t {
     apc_lock_t lock;                 /* header lock */
-    unsigned long num_hits;          /* total successful hits in cache */
-    unsigned long num_misses;        /* total unsuccessful hits in cache */
-    unsigned long num_inserts;       /* total successful inserts in cache */
-    unsigned long expunges;          /* total number of expunges */
-    apc_cache_slot_t* deleted_list;  /* linked list of to-be-deleted slots */
-    time_t start_time;               /* time the above counters were reset */
-    int num_entries;                 /* Statistic on the number of entries */
-    size_t mem_size;                 /* Statistic on the memory size used by this cache */
-    apc_cache_key_t lastkey;         /* information about the last key inserted */
+    zend_ulong nhits;                /* hit count */
+    zend_ulong nmisses;              /* miss count */
+    zend_ulong ninserts;             /* insert count */
+    zend_ulong nexpunges;            /* expunge count */
+    zend_ulong nentries;             /* entry count */
+	size_t mem_size;                 /* used */
+    time_t stime;                    /* start time */
     volatile zend_ushort state;      /* cache state */
+    apc_cache_key_t lastkey;         /* last key inserted (not necessarily without error) */
+    apc_cache_slot_t* gc;            /* gc list */
 } apc_cache_header_t; /* }}} */
 
 /* {{{ struct definition: apc_cache_t */
@@ -99,7 +98,7 @@ typedef struct _apc_cache_t {
     apc_cache_header_t* header;   /* cache header (stored in SHM) */
     apc_cache_slot_t** slots;     /* array of cache slots (stored in SHM) */
     apc_sma_t* sma;               /* shared memory allocator */
-    int num_slots;                /* number of slots in cache */
+    int nslots;                   /* number of slots in cache */
     int gc_ttl;                   /* maximum time on GC list for a slot */
     int ttl;                      /* if slot is needed and entry's access time is older than this ttl, remove it */
     long smart;                   /* smart parameter for gc */
@@ -230,7 +229,7 @@ extern zend_bool apc_cache_store(apc_cache_t* cache,
                                  char *strkey,
                                  int strkey_len,
                                  const zval *val,
-                                 const unsigned int ttl,
+                                 const zend_uint ttl,
                                  const int exclusive TSRMLS_DC);
 
 /*
@@ -240,7 +239,7 @@ extern zend_bool apc_cache_store(apc_cache_t* cache,
 extern zend_bool apc_cache_store_all(apc_cache_t* cache,
                                      zval *data,
                                      zval *results,
-                                     const unsigned int ttl,
+                                     const zend_uint ttl,
                                      const int exclusive TSRMLS_DC);
 
 /*
@@ -315,15 +314,15 @@ extern void apc_cache_release(apc_cache_t* cache,
 * apc_cache_make_key creates an apc_cache_key_t from an identifier, it's length and the current time
 */
 extern zend_bool apc_cache_make_key(apc_cache_key_t* key,
-                                    char* identifier,
-                                    int identifier_len TSRMLS_DC);
+                                    char* str,
+                                    zend_ulong len TSRMLS_DC);
 
 /*
  * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
  */
 extern apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt,
                                                const zval *val,
-                                               const unsigned int ttl TSRMLS_DC);
+                                               const zend_uint ttl TSRMLS_DC);
 
 /*
  fetches information about the cache provided for userland status functions
