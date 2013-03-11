@@ -133,16 +133,15 @@ static void free_slot(apc_cache_slot_t* slot TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ apc_cache_hash_slot 
+/* {{{ apc_cache_hash_slot
  Note: These calculations can and should be done outside of a lock */
 static void apc_cache_hash_slot(apc_cache_t* cache, 
                                 char *str,
                                 zend_uint len, 
                                 zend_ulong* hash, 
                                 zend_ulong* slot) {
-    if (((*hash) = zend_inline_hash_func(str, len))) {
-        (*slot) = (*hash) % (cache->nslots);
-    }
+	(*hash) = zend_inline_hash_func(str, len);
+	(*slot) = (*hash) % (cache->nslots);
 } /* }}} */
 
 /* {{{ apc_cache_remove_slot  */
@@ -229,7 +228,6 @@ void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
 				continue;
 
 			} else {
-				zend_error(E_WARNING, "not removing ...%p with %i refs\n", *slot, (*slot)->value->ref_count);
 				slot = &(*slot)->next;
 			}
 		}
