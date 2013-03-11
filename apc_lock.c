@@ -51,7 +51,7 @@ zend_bool apc_lock_init(TSRMLS_D) {
 # else
 	if (pthread_rwlockattr_init(&apc_lock_attr) == SUCCESS) {
 		if (pthread_rwlockattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
-			return (apc_lock_ready=1);
+			return 1;
 		}
 	}
 # endif
@@ -65,8 +65,9 @@ void apc_lock_cleanup(TSRMLS_D) {
 #ifndef PHP_WIN32
 	if (!apc_lock_ready)
 		return;
+
 	/* once per process please */
-	apc_lock_ready = 1;
+	apc_lock_ready = 0;
 
 # ifndef APC_NATIVE_RWLOCK
 	pthread_mutexattr_destroy(&apc_lock_attr);
