@@ -484,18 +484,24 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
         return;
     }
 
-    if (!key) RETURN_FALSE;
+    if (!key) {
+        /* cannot work without key */
+        RETURN_FALSE;
+    }
 
 	/* keep it tidy */
     {
 		if (Z_TYPE_P(key) == IS_ARRAY) {
-            HashPosition hpos;
+            
             zval **hentry;
             char *hkey = NULL;
             zend_uint hkey_len;
             zend_ulong hkey_idx;
+
+            HashPosition hpos;
             HashTable* hash = Z_ARRVAL_P(key);
 
+            /* note: only indicative of error */
 		    array_init(return_value);
 		    zend_hash_internal_pointer_reset_ex(hash, &hpos);
 		    while(zend_hash_get_current_data_ex(hash, (void**)&hentry, &hpos) == SUCCESS) {
@@ -504,22 +510,29 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 		            if(!apc_cache_store(apc_user_cache, hkey, hkey_len, *hentry, (zend_uint) ttl, exclusive TSRMLS_CC)) {
 		                add_assoc_long_ex(return_value, hkey, hkey_len, -1);  /* -1: insertion error */
 		            }
+                    /* reset key for next element */
 		            hkey = NULL;
 		        } else {
 		            add_index_long(return_value, hkey_idx, -1);  /* -1: insertion error */
 		        }
 		        zend_hash_move_forward_ex(hash, &hpos);
 		    }
-		    return;
-		} else if (Z_TYPE_P(key) == IS_STRING) {
-		    if (!val) RETURN_FALSE;
-		    if(apc_cache_store(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (zend_uint) ttl, exclusive TSRMLS_CC))
-		        RETURN_TRUE;
 		} else {
-		    apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs." TSRMLS_CC);
-		}
+            if (Z_TYPE_P(key) == IS_STRING) {
+			    if (!val) {
+                    /* nothing to store */
+    	            RETURN_FALSE;
+    	        }
+                /* return true on success */
+    			if(apc_cache_store(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (zend_uint) ttl, exclusive TSRMLS_CC)) {
+    	            RETURN_TRUE;
+                }
+    		} else {
+                apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs." TSRMLS_CC);
+    		}
+        }
 	}
-
+	/* default */
     RETURN_FALSE;
 }
 /* }}} */
