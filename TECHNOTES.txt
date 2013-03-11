@@ -57,10 +57,9 @@ form of a quick-start guide to start hacking on APC.
 	apc_sma is a structure of type apc_sma_t, it is statically allocated at runtime,
 	appropriate handlers are generated and set, and the structure made ready for initialization.
 
-    MINIT then initializes apc_sma with apc_sma_api_init(&apc_sma, &apc_user_cache, apc_cache_default_expunge). 
+    MINIT then initializes apc_sma with apc_sma_api_init(). 
     APCu SMA then takes care of mmaping the shared memory. 
     ( which you can obtain in any compilation unit with apc_sma_api_extern(apc_sma) )
-    The possibility of an external expunge function is to accomodate third party implementations based on APCu
 	
 	At this point, we have a completely useless 32MB chunk of memory at our disposal, before
 	it can be used, an apc_cache_header_t is initialized at the beginning of the reigon of
