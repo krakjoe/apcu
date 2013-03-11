@@ -472,9 +472,9 @@ int php_apc_update(char *strkey, int strkey_len, apc_cache_updater_t updater, vo
 }
 /* }}} */
 
-/* {{{ apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
+/* {{{ apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclusive)
  */
-static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const int exclusive)
+static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclusive)
 {
     zval *key = NULL;
     zval *val = NULL;

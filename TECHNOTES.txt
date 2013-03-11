@@ -40,7 +40,7 @@ form of a quick-start guide to start hacking on APC.
    APCu has three main component parts:
 		1) shared memory allocator
 		2) pooling
-		3) a safe, fast, implementation of a userland cache
+		3) user land cache
 	
 5.1) APCu SMA
    
@@ -156,7 +156,7 @@ form of a quick-start guide to start hacking on APC.
 
    There's probably some of my blood in it, if you look real close ...
 
-   The remainder of the document goes on to explain in some detail the cache itself, which is almost unchanged in APCu
+   The remainder of the document goes on to explain in some detail the cache itself, mostly unchanged by APCu
 
 6. Next up is apc_cache.c which implements the cache logic.
    

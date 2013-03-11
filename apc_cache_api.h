@@ -41,10 +41,10 @@ typedef pid_t apc_cache_owner_t;
 /* {{{ struct definition: apc_cache_key_t */
 typedef struct _apc_cache_key_t {
     const char *str;		      /* pointer to constant string key */
-    zend_uint len;    		      /* length of data at str */
+    zend_uint len;                /* length of data at str */
     zend_ulong h;                 /* pre-computed hash of key */
     time_t mtime;                 /* the mtime of this cached entry */
-	apc_cache_owner_t owner;      /* the context that created this key */
+    apc_cache_owner_t owner;      /* the context that created this key */
 } apc_cache_key_t; /* }}} */
 
 /* {{{ struct definition: apc_cache_entry_t */
@@ -85,9 +85,9 @@ typedef struct _apc_cache_header_t {
     zend_ulong ninserts;             /* insert count */
     zend_ulong nexpunges;            /* expunge count */
     zend_ulong nentries;             /* entry count */
-	zend_ulong mem_size;             /* used */
+    zend_ulong mem_size;             /* used */
     time_t stime;                    /* start time */
-    volatile zend_ushort state;      /* cache state */
+    zend_ushort state;               /* cache state */
     apc_cache_key_t lastkey;         /* last key inserted (not necessarily without error) */
     apc_cache_slot_t* gc;            /* gc list */
 } apc_cache_header_t; /* }}} */
@@ -220,7 +220,7 @@ extern zend_bool apc_cache_insert(apc_cache_t* cache,
                                   apc_cache_entry_t* value,
                                   apc_context_t* ctxt,
                                   time_t t,
-                                  int exclusive TSRMLS_DC);
+                                  zend_bool exclusive TSRMLS_DC);
 
 /* 
  * apc_cache_store creates key, entry and context in which to make an insertion of val into the specified cache
@@ -230,7 +230,7 @@ extern zend_bool apc_cache_store(apc_cache_t* cache,
                                  zend_uint keylen,
                                  const zval *val,
                                  const zend_uint ttl,
-                                 const int exclusive TSRMLS_DC);
+                                 const zend_bool exclusive TSRMLS_DC);
 
 /*
 * apc_cache_store_all takes an array of data, retains the lock while all insertions are made
@@ -240,7 +240,7 @@ extern zend_bool apc_cache_store_all(apc_cache_t* cache,
                                      zval *data,
                                      zval *results,
                                      const zend_uint ttl,
-                                     const int exclusive TSRMLS_DC);
+                                     const zend_bool exclusive TSRMLS_DC);
 
 /*
 * apc_cache_update updates an entry in place, this is used for rfc1867 and inc/dec/cas
