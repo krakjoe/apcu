@@ -372,7 +372,7 @@ PHP_FUNCTION(apc_clear_cache)
 /* {{{ proto array apc_cache_info([bool limited]) */
 PHP_FUNCTION(apc_cache_info)
 {
-    zval* info;
+    zval* info = NULL;
     zend_bool limited = 0;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|b", &limited) == FAILURE) {
