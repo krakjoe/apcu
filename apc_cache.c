@@ -133,6 +133,15 @@ static void free_slot(apc_cache_slot_t* slot TSRMLS_DC)
 }
 /* }}} */
 
+/* {{{ apc_cache_hash_slot 
+ Note: These calculations can and should be done outside of a lock */
+static void apc_cache_hash_slot(apc_cache_t* cache, char *str, zend_uint len, zend_ulong* hash, zend_ulong* slot) {
+	(*hash) = zend_inline_hash_func(str, len);
+    if (*hash) {
+        (*slot) = (*hash) % (cache->nslots);
+    }
+} /* }}} */
+
 /* {{{ apc_cache_remove_slot  */
 void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot TSRMLS_DC)
 {
@@ -811,16 +820,16 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, zend_uint ke
 	    apc_cache_slot_t*  select = NULL;
 	
         volatile apc_cache_entry_t* value = NULL;
-        zend_ulong h;
+        zend_ulong h, s;
+
+		/* calculate hash and slot */
+		apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
 
         /* read lock header */
 		APC_RLOCK(cache->header);
 
-		/* calculate hash */
-		h = zend_inline_hash_func(strkey, keylen);
-
-		/* find starting slot */
-		slot = &cache->slots[h % cache->nslots];
+		/* find head */
+		slot = &cache->slots[s];
 
 		while ((select=(*slot))) {
 			/* check for a matching key by has and identifier */
@@ -876,23 +885,28 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, zend_uint ke
 
 /* {{{ apc_cache_fetch */
 zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, zend_uint keylen, time_t t, zval **dst TSRMLS_DC) 
-{	
-	apc_context_t ctxt = {0, };
+{
 	apc_cache_entry_t *entry;
 	zend_bool ret = 0;
 
 	/* find the entry */
 	if ((entry = apc_cache_find(cache, strkey, keylen, t TSRMLS_CC))) {
-		apc_context_t context = {0,};
+        /* context for copying out */
+		apc_context_t ctxt = {0, };
+
 		/* create unpool context */
 		if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0 TSRMLS_CC)) {
-			/* copy to emalloc'd context */
+
+			/* copy to destination */
 			apc_cache_fetch_zval(&ctxt, *dst, entry->val TSRMLS_CC);
+
 			/* release entry */
 			apc_cache_release(
 				cache, entry TSRMLS_CC);
+
 			/* destroy context */
 			apc_cache_destroy_context(&ctxt TSRMLS_CC );
+
 			/* set result */
 			ret = 1;
 		}
@@ -916,16 +930,16 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, zend_uint 
 		apc_cache_slot_t*  select = NULL;
 	
 		volatile apc_cache_entry_t* value = NULL;
-		zend_ulong h;
+		zend_ulong h, s;
+
+        /* get hash and slot */
+		apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
 
         /* read lock header */
-		APC_RLOCK(cache->header);
-	
-		/* calculate hash */
-		h = zend_inline_hash_func(strkey, keylen);	
+		APC_RLOCK(cache->header);	
 
 		/* find head */
-		slot = &cache->slots[h % cache->nslots];
+		slot = &cache->slots[s];
 
 		while ((select=(*slot))) {
 			/* check for match by hash and identifier */
@@ -968,22 +982,22 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, zend_uint keylen, a
 	apc_cache_slot_t*  select = NULL;
 	
     zend_bool retval = 0;
-    zend_ulong h;
+    zend_ulong h, s;
 
     if(apc_cache_busy(cache TSRMLS_CC))
     {
         /* cannot service request right now */ 
         return 0;
     }
+
+    /* calculate hash */
+    apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
 	
 	/* lock header */
 	APC_LOCK(cache->header);
 
-	/* calculate hash */
-    h = zend_inline_hash_func(strkey, keylen);
-
 	/* find head */
-    slot = &cache->slots[h % cache->nslots];
+    slot = &cache->slots[s];
 
     while ((select=(*slot))) {
 		/* check for a match by hash and identifier */
@@ -1037,20 +1051,20 @@ zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, zend_uint keylen TS
     apc_cache_slot_t** slot;
 	apc_cache_slot_t*  select = NULL;
 	
-    zend_ulong h;
+    zend_ulong h, s;
 
 	if (!cache) {
 		return;
 	}
 
+    /* calculate hash and slot */
+    apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
+
 	/* lock cache */
 	APC_WLOCK(cache->header);	
 	
-	/* calculate hash */
-    h = zend_inline_hash_func(strkey, keylen);
-
 	/* find head */
-    slot = &cache->slots[h % cache->nslots];
+    slot = &cache->slots[s];
 
     while ((select=(*slot))) {
 		/* check for a match by hash and identifier */
@@ -1085,11 +1099,11 @@ zend_bool apc_cache_make_key(apc_cache_key_t* key, char* str, zend_ulong len TSR
     assert(key != NULL);
 
     if (!str) {
-		return 0;
-	}
+	    return 0;
+    }
     
 	if (!len)
-		len = strlen(str) + 1;
+	    len = strlen(str) + 1;
 	
     key->str = str;
     key->len = len;
