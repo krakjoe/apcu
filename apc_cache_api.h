@@ -41,7 +41,7 @@ typedef pid_t apc_cache_owner_t;
 /* {{{ struct definition: apc_cache_key_t */
 typedef struct _apc_cache_key_t {
     const char *str;		      /* pointer to constant string key */
-    zend_ulong len;    		      /* length of data at str */
+    zend_uint len;    		      /* length of data at str */
     zend_ulong h;                 /* pre-computed hash of key */
     time_t mtime;                 /* the mtime of this cached entry */
 	apc_cache_owner_t owner;      /* the context that created this key */
@@ -227,7 +227,7 @@ extern zend_bool apc_cache_insert(apc_cache_t* cache,
  */
 extern zend_bool apc_cache_store(apc_cache_t* cache,
                                  char *strkey,
-                                 int strkey_len,
+                                 zend_uint keylen,
                                  const zval *val,
                                  const zend_uint ttl,
                                  const int exclusive TSRMLS_DC);
@@ -247,7 +247,7 @@ extern zend_bool apc_cache_store_all(apc_cache_t* cache,
 */
 extern zend_bool apc_cache_update(apc_cache_t* cache,
                                   char *strkey,
-                                  int keylen,
+                                  zend_uint keylen,
                                   apc_cache_updater_t updater,
                                   void* data TSRMLS_DC);
 
@@ -258,7 +258,7 @@ extern zend_bool apc_cache_update(apc_cache_t* cache,
  */
 extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
                                          char* strkey,
-                                         int keylen,
+                                         zend_uint keylen,
                                          time_t t TSRMLS_DC);
 
 /*
@@ -267,7 +267,7 @@ extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
  */
 extern zend_bool apc_cache_fetch(apc_cache_t* cache,
                                  char* strkey,
-                                 int keylen,
+                                 zend_uint keylen,
                                  time_t t,
                                  zval **dst TSRMLS_DC);
 
@@ -280,7 +280,7 @@ extern zend_bool apc_cache_fetch(apc_cache_t* cache,
  */
 extern apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache,
                                            char* strkey,
-                                           int keylen,
+                                           zend_uint keylen,
                                            time_t t TSRMLS_DC);
 
 /*
@@ -288,7 +288,7 @@ extern apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache,
  */
 extern zend_bool apc_cache_delete(apc_cache_t* cache,
                                   char *strkey,
-                                  int keylen TSRMLS_DC);
+                                  zend_uint keylen TSRMLS_DC);
 
 /* apc_cach_fetch_zval takes a zval in the cache and reconstructs a runtime
  * zval from it.

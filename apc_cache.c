@@ -54,7 +54,7 @@ static HashTable* my_copy_hashtable_ex(HashTable*, HashTable* TSRMLS_DC, ht_copy
     my_copy_hashtable_ex(dst, src TSRMLS_CC, copy_fn, holds_ptr, ctxt, NULL)
 
 /* {{{ string_nhash_8 */
-#define string_nhash_8(s,len) (unsigned long)(zend_inline_hash_func((s), len))
+#define string_nhash_8(s,len) (zend_ulong)(zend_inline_hash_func((s), len))
 /* }}} */
 
 /* {{{ make_prime */
@@ -322,12 +322,12 @@ apc_cache_t* apc_cache_create(apc_sma_t* sma, int size_hint, int gc_ttl, int ttl
 } /* }}} */
 
 /* {{{ apc_cache_store */
-zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC) {
+zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, zend_uint keylen, const zval *val, const unsigned int ttl, const int exclusive TSRMLS_DC) {
     apc_cache_entry_t *entry;
     apc_cache_key_t key;
     time_t t;
     apc_context_t ctxt={0,};
-    int ret = 0;
+    zend_bool ret = 0;
 
     t = apc_time();
 
@@ -342,7 +342,7 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, cons
     if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
 
         /* initialize the key for insertion */
-        if (apc_cache_make_key(&key, strkey, strkey_len TSRMLS_CC)) {
+        if (apc_cache_make_key(&key, strkey, keylen TSRMLS_CC)) {
 
             /* run cache defense */
             if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
@@ -839,7 +839,7 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 		apc_cache_slot_t** slot;
 		apc_cache_slot_t*  select = NULL;
 
-		unsigned int keylen = key.len;
+		zend_uint keylen = key.len;
 		
 		/*
 		* select appropriate slot ...
@@ -909,13 +909,13 @@ nothing:
 /* }}} */
 
 /* {{{ apc_cache_find */
-apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, time_t t TSRMLS_DC)
+apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, zend_uint keylen, time_t t TSRMLS_DC)
 {
     apc_cache_slot_t** slot;
 	apc_cache_slot_t*  select = NULL;
 	
     volatile apc_cache_entry_t* value = NULL;
-    unsigned long h;
+    zend_ulong h;
 
 	/* check we are able to deal with the request */
     if(apc_cache_busy(cache TSRMLS_CC))
@@ -984,7 +984,7 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
 /* }}} */
 
 /* {{{ apc_cache_fetch */
-zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, int keylen, time_t t, zval **dst TSRMLS_DC) 
+zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, zend_uint keylen, time_t t, zval **dst TSRMLS_DC) 
 {	
 	apc_context_t ctxt = {0, };
 	apc_cache_entry_t *entry;
@@ -1011,13 +1011,13 @@ zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, int keylen, time_t t
 } /* }}} */
 
 /* {{{ apc_cache_exists */
-apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen, time_t t TSRMLS_DC)
+apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, zend_uint keylen, time_t t TSRMLS_DC)
 {
     apc_cache_slot_t** slot;
 	apc_cache_slot_t*  select = NULL;
 	
     volatile apc_cache_entry_t* value = NULL;
-    unsigned long h;
+    zend_ulong h;
 
     if(apc_cache_busy(cache TSRMLS_CC))
     {
@@ -1068,13 +1068,13 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen
 /* }}} */
 
 /* {{{ apc_cache_update */
-zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cache_updater_t updater, void* data TSRMLS_DC)
+zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, zend_uint keylen, apc_cache_updater_t updater, void* data TSRMLS_DC)
 {
     apc_cache_slot_t** slot;
 	apc_cache_slot_t*  select = NULL;
 	
-    int retval = 0;
-    unsigned long h;
+    zend_bool retval = 0;
+    zend_ulong h;
 
     if(apc_cache_busy(cache TSRMLS_CC))
     {
@@ -1138,12 +1138,12 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int keylen, apc_cac
 /* }}} */
 
 /* {{{ apc_cache_delete */
-zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, int keylen TSRMLS_DC)
+zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, zend_uint keylen TSRMLS_DC)
 {
     apc_cache_slot_t** slot;
 	apc_cache_slot_t*  select = NULL;
 	
-    unsigned long h;
+    zend_ulong h;
 
 	if (!cache) {
 		return;
