@@ -608,8 +608,7 @@ void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 		        while((select=(*slot))) {	
 						
 		            /*
-		             * For the user cache we look at the individual entry ttl values
-		             * and if not set fall back to the default ttl for the user cache
+		             * Entry TTL has precedence over cache TTL
 		             */
 		            if(select->value->ttl) {
 		                if((time_t) (select->ctime + select->value->ttl) < t) {
