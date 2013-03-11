@@ -83,7 +83,7 @@ form of a quick-start guide to start hacking on APC.
          size_t size;       /* size of this block */
          size_t next;       /* offset in segment of next free block */
          size_t canary;     /* canary to check for memory overwrites */
-#ifdef __APC_SMA_DEBUG__
+#ifdef APC_SMA_DEBUG
          int id;         /* identifier for the memory block */
 #endif
      };

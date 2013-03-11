@@ -103,7 +103,7 @@ typedef struct _apc_sma_t {
     zend_uint  num;                              /* number of segments */
     zend_ulong size;                             /* segment size */
     zend_uint  last;                             /* last segment */
-	
+
     /* segments */
     apc_segment_t* segs;                         /* segments */
 } apc_sma_t; /* }}} */
@@ -157,10 +157,6 @@ extern char* apc_sma_api_strdup(apc_sma_t* sma,
 */
 extern void apc_sma_api_free(apc_sma_t* sma, 
                              void* p TSRMLS_DC);
-
-#if ALLOC_DISTRIBUTION 
-extern zend_ulong *apc_sma_api_get_alloc_distribution(apc_sma_t* sma);
-#endif
 
 /*
 * apc_sma_api_protect will protect p (which should be a pointer to a block allocated from sma)

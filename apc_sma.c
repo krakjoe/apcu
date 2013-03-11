@@ -54,9 +54,6 @@ struct sma_header_t {
     apc_lock_t sma_lock;    /* segment lock */
     size_t segsize;         /* size of entire segment */
     size_t avail;           /* bytes available (not necessarily contiguous) */
-#if ALLOC_DISTRIBUTION
-    size_t adist[30];
-#endif
 };
 
 #define SMA_HDR(sma, i)  ((sma_header_t*)((sma->segs[i]).shmaddr))
@@ -64,7 +61,7 @@ struct sma_header_t {
 #define SMA_RO(sma, i)   ((char*)(sma->segs[i]).roaddr)
 #define SMA_LCK(sma, i)  ((SMA_HDR(sma, i))->sma_lock)
 
-#ifdef APC_SMA_DEBUG
+#if 0
 /* global counter for identifying blocks
  * Technically it is possible to do the same
  * using offsets, but double allocations of the
@@ -81,7 +78,7 @@ struct block_t {
 #ifdef APC_SMA_CANARIES
     size_t canary;     /* canary to check for memory overwrites */
 #endif
-#ifdef APC_SMA_DEBUG
+#if 0
     size_t id;         /* identifier for the memory block */
 #endif
 };
@@ -187,7 +184,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, size_t size, size_t
         nxt->fprev = cur->fprev;
         BLOCKAT(nxt->fnext)->fprev = OFFSET(nxt);
         BLOCKAT(nxt->fprev)->fnext = OFFSET(nxt);
-#ifdef APC_SMA_DEBUG
+#if 0
         nxt->id = -1;
 #endif
     }
@@ -196,13 +193,10 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, size_t size, size_t
 
     /* update the block header */
     header->avail -= cur->size;
-#if ALLOC_DISTRIBUTION
-    header->adist[(int)(log(size)/log(2))]++;
-#endif
 
     SET_CANARY(cur);
 
-#ifdef APC_SMA_DEBUG
+#if 0
     cur->id = ++block_id;
     fprintf(stderr, "allocate(realsize=%d,size=%d,id=%d)\n", (int)(size), (int)(cur->size), cur->id);
 #endif
@@ -253,7 +247,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 
 		CHECK_CANARY(nxt);
 
-#ifdef APC_SMA_DEBUG
+#if 0
         nxt->id = -1; /* assert this or set it ? */
 #endif
 
@@ -329,19 +323,14 @@ void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, ze
         CREATE_LOCK(&header->sma_lock);
         header->segsize = sma->size;
         header->avail = sma->size - ALIGNWORD(sizeof(sma_header_t)) - ALIGNWORD(sizeof(block_t)) - ALIGNWORD(sizeof(block_t));
-#if ALLOC_DISTRIBUTION
-        {
-           int j;
-           for(j=0; j<30; j++) header->adist[j] = 0;
-        }
-#endif
+
         first = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
         first->size = 0;
         first->fnext = ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t));
         first->fprev = 0;
         first->prev_size = 0;
         SET_CANARY(first);
-#ifdef APC_SMA_DEBUG
+#if 0
         first->id = -1;
 #endif
         empty = BLOCKAT(first->fnext);
@@ -350,7 +339,7 @@ void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, ze
         empty->fprev = ALIGNWORD(sizeof(sma_header_t));
         empty->prev_size = 0;
         SET_CANARY(empty);
-#ifdef APC_SMA_DEBUG
+#if 0
         empty->id = -1;
 #endif
         last = BLOCKAT(empty->fnext);
@@ -359,7 +348,7 @@ void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, ze
         last->fprev =  OFFSET(empty);
         last->prev_size = empty->size;
         SET_CANARY(last);
-#ifdef APC_SMA_DEBUG
+#if 0
         last->id = -1;
 #endif
     }	
@@ -614,12 +603,6 @@ apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited TSRMLS_DC) {
             link = &(*link)->next;
 
             prv = cur;
-
-#if ALLOC_DISTRIBUTION
-            sma_header_t* header = (sma_header_t*) segment->shmaddr;
-            memcpy(info->seginfo[i].adist, header->adist, sizeof(size_t) * 30);
-#endif
-
         }
         RUNLOCK(&SMA_LCK(sma, i));
     }
