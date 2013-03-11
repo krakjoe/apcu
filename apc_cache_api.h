@@ -85,7 +85,7 @@ typedef struct _apc_cache_header_t {
     zend_ulong ninserts;             /* insert count */
     zend_ulong nexpunges;            /* expunge count */
     zend_ulong nentries;             /* entry count */
-	size_t mem_size;                 /* used */
+	zend_ulong mem_size;             /* used */
     time_t stime;                    /* start time */
     volatile zend_ushort state;      /* cache state */
     apc_cache_key_t lastkey;         /* last key inserted (not necessarily without error) */
@@ -98,10 +98,10 @@ typedef struct _apc_cache_t {
     apc_cache_header_t* header;   /* cache header (stored in SHM) */
     apc_cache_slot_t** slots;     /* array of cache slots (stored in SHM) */
     apc_sma_t* sma;               /* shared memory allocator */
-    int nslots;                   /* number of slots in cache */
-    int gc_ttl;                   /* maximum time on GC list for a slot */
-    int ttl;                      /* if slot is needed and entry's access time is older than this ttl, remove it */
-    long smart;                   /* smart parameter for gc */
+    zend_ulong nslots;            /* number of slots in cache */
+    zend_ulong gc_ttl;            /* maximum time on GC list for a slot */
+    zend_ulong ttl;               /* if slot is needed and entry's access time is older than this ttl, remove it */
+    zend_ulong smart;             /* smart parameter for gc */
     zend_bool defend;             /* defense parameter for runtime */
 } apc_cache_t; /* }}} */
 
