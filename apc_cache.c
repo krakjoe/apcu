@@ -292,7 +292,6 @@ apc_cache_t* apc_cache_create(apc_sma_t* sma, int size_hint, int gc_ttl, int ttl
 	/* set default header */
     cache->header = (apc_cache_header_t*) cache->shmaddr;
 	
-	cache->header->sma = sma;
     cache->header->num_hits = 0;
     cache->header->num_misses = 0;
 	cache->header->num_entries = 0;
@@ -303,12 +302,13 @@ apc_cache_t* apc_cache_create(apc_sma_t* sma, int size_hint, int gc_ttl, int ttl
 	
 	/* set cache options */
     cache->slots = (apc_cache_slot_t**) (((char*) cache->shmaddr) + sizeof(apc_cache_header_t));
+    cache->sma = sma;
     cache->num_slots = num_slots;
     cache->gc_ttl = gc_ttl;
     cache->ttl = ttl;
-	cache->header->smart = smart;
-	cache->header->defend = defend;
-
+	cache->smart = smart;
+	cache->defend = defend;
+	
 	/* header lock */
 	CREATE_LOCK(&cache->header->lock);
 
@@ -679,7 +679,7 @@ void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 		cache TSRMLS_CC);
 
 	/* make suitable selection */
-	suitable = (cache->header->smart > 0L) ? (size_t) (cache->header->smart * size) : (size_t) (cache->header->sma->size/2);
+	suitable = (cache->smart > 0L) ? (size_t) (cache->smart * size) : (size_t) (cache->sma->size/2);
 
 	/* get available */
 	available = apc_sma.get_avail_mem();
@@ -755,10 +755,10 @@ zend_bool apc_cache_make_context(apc_cache_t* cache,
 		case APC_CONTEXT_SHARE: {
 			return apc_cache_make_context_ex(
 				context,
-				cache->header->sma->malloc, 
-                cache->header->sma->free, 
-                cache->header->sma->protect, 
-                cache->header->sma->unprotect,
+				cache->sma->malloc, 
+                cache->sma->free, 
+                cache->sma->protect, 
+                cache->sma->unprotect,
 				pool_type, copy_type, force_update TSRMLS_CC
 			);
 		} break;
@@ -1711,7 +1711,7 @@ zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 #endif
 
 	/* only continue if slam defense is enabled */
-	if (cache->header->defend) {
+	if (cache->defend) {
 
 		/* for copy of locking key struct */
 		apc_cache_key_t *last = &cache->header->lastkey;

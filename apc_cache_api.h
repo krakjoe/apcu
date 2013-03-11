@@ -71,45 +71,40 @@ struct apc_cache_slot_t {
 };
 /* }}} */
 
+/* {{{ state constants */
+#define APC_CACHE_ST_NONE 0
+#define APC_CACHE_ST_BUSY 1
+#define APC_CACHE_ST_PROC 2
+#define APC_CACHE_ST_IBUSY (APC_CACHE_ST_BUSY|APC_CACHE_ST_PROC) /* }}} */
+
 /* {{{ struct definition: apc_cache_header_t
    Any values that must be shared among processes should go in here. */
 typedef struct _apc_cache_header_t {
     apc_lock_t lock;                 /* header lock */
-    apc_sma_t* sma;                  /* shared memory allocator */
     unsigned long num_hits;          /* total successful hits in cache */
     unsigned long num_misses;        /* total unsuccessful hits in cache */
     unsigned long num_inserts;       /* total successful inserts in cache */
     unsigned long expunges;          /* total number of expunges */
     apc_cache_slot_t* deleted_list;  /* linked list of to-be-deleted slots */
     time_t start_time;               /* time the above counters were reset */
-    volatile zend_ushort state;      /* cache state */
     int num_entries;                 /* Statistic on the number of entries */
     size_t mem_size;                 /* Statistic on the memory size used by this cache */
-    long smart;                      /* adjustable smart expunges of data */
-    zend_bool defend;                /* flag for defense */
     apc_cache_key_t lastkey;         /* information about the last key inserted */
-} apc_cache_header_t;
-/* }}} */
-
-/* {{{ state constants */
-#define APC_CACHE_ST_NONE 0
-#define APC_CACHE_ST_BUSY 1
-#define APC_CACHE_ST_PROC 2
-#define APC_CACHE_ST_IBUSY (APC_CACHE_ST_BUSY|APC_CACHE_ST_PROC) /* }}} *
+    volatile zend_ushort state;      /* cache state */
+} apc_cache_header_t; /* }}} */
 
 /* {{{ struct definition: apc_cache_t */
-typedef struct apc_cache_t apc_cache_t;
-typedef void (*apc_expunge_cb_t)(apc_cache_t* cache, size_t n TSRMLS_DC); 
-struct apc_cache_t {
+typedef struct _apc_cache_t {
     void* shmaddr;                /* process (local) address of shared cache */
     apc_cache_header_t* header;   /* cache header (stored in SHM) */
     apc_cache_slot_t** slots;     /* array of cache slots (stored in SHM) */
+    apc_sma_t* sma;               /* shared memory allocator */
     int num_slots;                /* number of slots in cache */
     int gc_ttl;                   /* maximum time on GC list for a slot */
     int ttl;                      /* if slot is needed and entry's access time is older than this ttl, remove it */
-    apc_expunge_cb_t expunge_cb;  /* cache specific expunge callback to free up sma memory */
-};
-/* }}} */
+    long smart;                   /* smart parameter for gc */
+    zend_bool defend;             /* defense parameter for runtime */
+} apc_cache_t; /* }}} */
 
 /* {{{ typedef: apc_cache_updater_t */
 typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void* data); /* }}} */
