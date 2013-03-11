@@ -1616,10 +1616,6 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 
     ALLOC_INIT_ZVAL(info);
 
-    if(apc_cache_busy(cache TSRMLS_CC)) {
-        return NULL;
-    }
-
 	/* read lock header */
 	APC_RLOCK(cache->header);
 
