@@ -159,75 +159,72 @@ form of a quick-start guide to start hacking on APC.
    The remainder of the document goes on to explain in some detail the cache itself, which is almost unchanged in APCu
 
 6. Next up is apc_cache.c which implements the cache logic.
+   
+   Having initialized a suitable allocator, MINIT must call apc_cache_create, using the allocator provided
+   APCu will create a cache. The parameters to apc_cache_create for APCu are defined by various INI settings.
+   API users can provide the same options from anywhere ( their globals for example ).
+   
+   The cache is stored in/described by this struct allocated locally:
 
-   A cache consists of a block of shared memory returned by apc_sma_allocate() via apc_sma_malloc().  
-   You will notice references to apc_emalloc().  apc_emalloc() is just a thin wrapper
-   around system allocators (malloc etc).  Don't confuse apc_emalloc() and 
-   apc_sma_malloc() as only the latter returns blocks from shared memory.
-
-   The cache is stored in/described by this struct allocated locally using apc_emalloc():
-
-     struct apc_cache_t {
-         void* shmaddr;              /* process (local) address of shared cache */
-         apc_cache_header_t* header; /* cache header (stored in SHM) */
-         apc_cache_slot_t** slots;   /* array of cache slots (stored in SHM) */
-         int num_slots;              /* number of slots in cache */
-         int gc_ttl;                 /* maximum time on GC list for a slot */
-         int ttl;                    /* if slot is needed and entry's access time is older than this ttl, remove it */
-         long smart;                 /* determine how to expunge the cache */
-     };
+    /* {{{ struct definition: apc_cache_t */
+    typedef struct _apc_cache_t {
+        void* shmaddr;                /* process (local) address of shared cache */
+        apc_cache_header_t* header;   /* cache header (stored in SHM) */
+        apc_cache_slot_t** slots;     /* array of cache slots (stored in SHM) */
+        apc_sma_t* sma;               /* set during creation of cache */
+        zend_ulong nslots;            /* number of slots in cache */
+        zend_ulong gc_ttl;            /* maximum time on GC list for a slot */
+        zend_ulong ttl;               /* if slot is needed and entry's access time is older than this ttl, remove it */
+        zend_ulong smart;             /* smart parameter for gc */
+        zend_bool defend;             /* defense parameter for runtime */
+    } apc_cache_t; /* }}} */
 
    Whenever you see functions that take a 'cache' argument, this is what they
-   take.  And apc_cache_create() returns a pointer to this populated struct.
+   take.
 
-   At the beginning of the cache we have a header.  Remember, we are down a level now
-   from the sma stuff.  The sma stuff is the low-level shared-memory allocator which
-   has its own header which is completely separate and invisible to apc_cache.c.  
-   As far as apc_cache.c is concerned the block of memory it is working with could 
-   have come from a call to malloc().
+   At the beginning of the cache we have a header. The header looks like this:
 
-   The header looks like this:
-
-     typedef struct apc_cache_header_t apc_cache_header_t;
-     struct apc_cache_header_t {
-		apc_lock_t lock;                      /* header lock */
-        apc_sma_t* sma;                       /* shared memory allocator */
-		unsigned long num_hits;               /* total successful hits in cache */
-		unsigned long num_misses;             /* total unsuccessful hits in cache */
-		unsigned long num_inserts;            /* total successful inserts in cache */
-		unsigned long expunges;               /* total number of expunges */
-		apc_cache_slot_t* deleted_list;       /* linked list of to-be-deleted slots */
-		time_t start_time;                    /* time the above counters were reset */
-		zend_bool busy;                       /* Flag to tell clients when we are busy cleaning the cache */
-		int num_entries;                      /* Statistic on the number of entries */
-		size_t mem_size;                      /* Statistic on the memory size used by this cache */
-		long smart;                           /* adjustable smart expunges of data */
-		apc_cache_key_t lastkey;              /* information about the last key inserted */
-     };
+    /* {{{ struct definition: apc_cache_header_t
+       Any values that must be shared among processes should go in here. */
+    typedef struct _apc_cache_header_t {
+        apc_lock_t lock;                 /* header lock */
+        zend_ulong nhits;                /* hit count */
+        zend_ulong nmisses;              /* miss count */
+        zend_ulong ninserts;             /* insert count */
+        zend_ulong nexpunges;            /* expunge count */
+        zend_ulong nentries;             /* entry count */
+    	zend_ulong mem_size;             /* used */
+        time_t stime;                    /* start time */
+        volatile zend_ushort state;      /* cache state */
+        apc_cache_key_t lastkey;         /* last key inserted (not necessarily without error) */
+        apc_cache_slot_t* gc;            /* gc list */
+    } apc_cache_header_t; /* }}} */
 
    Since this is at the start of the shared memory segment, these values are accessible
    across all processes / threads and hence access to them has to be locked.
 
    After the header we have an array of slots.  The number of slots is user-defined
-   through the apc.num_slots ini hint.  Each slot is described by:
+   through the apc.entries_hint ini hint.  Each slot is described by:
 
-     typedef struct apc_cache_slot_t apc_cache_slot_t;
-     struct apc_cache_slot_t {
-		apc_cache_key_t key;        /* slot key */
-		apc_cache_entry_t* value;   /* slot value */
-		apc_cache_slot_t* next;     /* next slot in linked list */
-		unsigned long num_hits;     /* number of hits to this bucket */
-		time_t creation_time;       /* time slot was initialized */
-		time_t deletion_time;       /* time slot was removed from cache */
-		time_t access_time;         /* time slot was last accessed */
-     };
+    /* {{{ struct definition: apc_cache_slot_t */
+    typedef struct apc_cache_slot_t apc_cache_slot_t;
+    struct apc_cache_slot_t {
+        apc_cache_key_t key;        /* slot key */
+        apc_cache_entry_t* value;   /* slot value */
+        apc_cache_slot_t* next;     /* next slot in linked list */
+        zend_ulong nhits;           /* number of hits to this slot */
+        time_t ctime;               /* time slot was initialized */
+        time_t dtime;               /* time slot was removed from cache */
+        time_t atime;               /* time slot was last accessed */
+    };
+    /* }}} */
 
    The apc_cache_slot_t *next there is a linked list to other slots that happened to hash to the
    same array position.
 
    apc_cache_insert() shows what happens on a new cache insert.
 
-     slot = &cache->slots[hash(key) % cache->num_slots];
+     slot = &cache->slots[hash(key) % cache->nslots];
 
    cache->slots is our array of slots in the segment.
 
@@ -235,10 +232,10 @@ form of a quick-start guide to start hacking on APC.
    If there are currently no other slots there, we just create the slot and stick it into
    the array:
 
-     *slot = make_slot(key, value, *slot, t)
+     *slot = make_slot(cache, key, value, *slot, t TSRMLS_CC)
 
    If there are other slots already at this position we walk the link list to get to
-   the end. Locking each slot as we move through the list.
+   the end.
 
    While walking the linked list we also check to see if the cache has a TTL defined.
    If while walking the linked list we see a slot that has expired, we remove it
@@ -253,27 +250,30 @@ form of a quick-start guide to start hacking on APC.
    there and return indicating we didn't find it.
 
    Next we need to understand what an actual cache entry looks like.  Have a look at
-   apc_cache.h for the structs.  Here is an extract of apc_cache_key_t:
+   apc_cache.h for the structs.  Here is the definition of apc_cache_key_t:
 
-     typedef struct _apc_cache_key_t {
-		const char *identifier;		  /* the identifier for this key */
-		int identifier_len;			  /* the length of the identifier string */
-		unsigned long h;              /* pre-computed hash value */
-		time_t mtime;                 /* the mtime of this cached entry */
-		apc_cache_owner_t owner;      /* the context that created this key */
-     } apc_cache_key_t;   
+    /* {{{ struct definition: apc_cache_key_t */
+    typedef struct _apc_cache_key_t {
+        const char *str;		      /* pointer to constant string key */
+        zend_uint len;    		      /* length of data at str */
+        zend_ulong h;                 /* pre-computed hash of key */
+        time_t mtime;                 /* the mtime of this cached entry */
+	    apc_cache_owner_t owner;      /* the context that created this key */
+    } apc_cache_key_t; /* }}} */  
 
    To create a apc_cache_key_t structure, call apc_cache_make_key(), see apc_cache.h
 	
-   Ok, on to the actual cache entry, here is an extract of apc_cache_entry_t:
+   Ok, on to the actual cache entry, here is the definition of apc_cache_entry_t:
 
-     typedef struct _apc_cache_entry_t {
-             zval *val;                    /* the zval copied at store time */
-			unsigned int ttl;             /* the ttl on this specific entry */
-			int ref_count;                /* the reference count of this entry */
-			size_t mem_size;              /* memory used */
-			apc_pool *pool;               /* pool which allocated the value */
-     } apc_cache_entry_t;
+    /* {{{ struct definition: apc_cache_entry_t */
+    typedef struct _apc_cache_entry_t {
+        zval *val;                    /* the zval copied at store time */
+        zend_uint ttl;                /* the ttl on this specific entry */
+        int ref_count;                /* the reference count of this entry */
+        size_t mem_size;              /* memory used */
+        apc_pool *pool;               /* pool which allocated the value */
+    } apc_cache_entry_t;
+    /* }}} */
 
    To create an apc_cache_entry_t, call apc_cache_make_entry(), see apc_cache.h
 
