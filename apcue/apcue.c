@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) 2013 The PHP Group                                     |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -12,7 +12,7 @@
   | obtain it through the world-wide-web, please send a note to          |
   | license@php.net so we can mail you a copy immediately.               |
   +----------------------------------------------------------------------+
-  | Author:                                                              |
+  | Author: Joe Watkins <joe.watkins@live.co.uk>                         |
   +----------------------------------------------------------------------+
 */
 
@@ -27,14 +27,7 @@
 #include "ext/standard/info.h"
 #include "php_apcue.h"
 
-/* If you declare any globals in php_apcue.h uncomment this:
-ZEND_DECLARE_MODULE_GLOBALS(apcue)
-*/
-
-/* True global resources - no need for thread safety here */
-static int le_apcue;
-
-/* Don't use staticness here, the SMA api needs access to this structure at expunge time */
+/* Don't use staticness here, the sma needs access to this structure at expunge time */
 apc_cache_t* apcue_cache = NULL;
 
 /* {{{ override the expunge functionality of APCu */
@@ -42,22 +35,26 @@ static void apcue_cache_expunge(apc_cache_t* cache, size_t size TSRMLS_DC) {
 	php_printf(
 		"expunging apcue ...");
 
+	/* just call the default expunge method, 
+		reimplementation outside the scope of example */
 	apc_cache_default_expunge(cache, size TSRMLS_CC);
-}
+
+} /* }}} */
 
 /*
-* Initializes your isolated sma, using your cache and the default expunge function
+* Initializes your isolated sma, providing it a pointer to your cache and your expunge function
+*
+* Note: it does not matter that the cache is initialized after sma, but set to null the global
+*		to avoid memory errors and or compilation warnings
 */
 apc_sma_api_impl(apcue_sma, &apcue_cache, apcue_cache_expunge);
 
 /* {{{ apcue_functions[]
- *
- * Every user visible function must have an entry in apcue_functions[].
  */
 const zend_function_entry apcue_functions[] = {
-	PHP_FE(apcue_get,	NULL)		/* For testing, remove later. */
-	PHP_FE(apcue_set,	NULL)		/* For testing, remove later. */
-	PHP_FE_END	/* Must be the last line in apcue_functions[] */
+	PHP_FE(apcue_get,	NULL)
+	PHP_FE(apcue_set,	NULL)
+	PHP_FE_END
 };
 /* }}} */
 
@@ -71,11 +68,11 @@ zend_module_entry apcue_module_entry = {
 	apcue_functions,
 	PHP_MINIT(apcue),
 	PHP_MSHUTDOWN(apcue),
-	PHP_RINIT(apcue),		/* Replace with NULL if there's nothing to do at request start */
-	PHP_RSHUTDOWN(apcue),	/* Replace with NULL if there's nothing to do at request end */
+	NULL,
+	NULL,
 	PHP_MINFO(apcue),
 #if ZEND_MODULE_API_NO >= 20010901
-	"0.1", /* Replace with version number for your extension */
+	"0.0",
 #endif
 	STANDARD_MODULE_PROPERTIES
 };
@@ -85,34 +82,11 @@ zend_module_entry apcue_module_entry = {
 ZEND_GET_MODULE(apcue)
 #endif
 
-/* {{{ PHP_INI
- */
-/* Remove comments and fill if you need to have entries in php.ini
-PHP_INI_BEGIN()
-    STD_PHP_INI_ENTRY("apcue.global_value",      "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_apcue_globals, apcue_globals)
-    STD_PHP_INI_ENTRY("apcue.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_apcue_globals, apcue_globals)
-PHP_INI_END()
-*/
-/* }}} */
-
-/* {{{ php_apcue_init_globals
- */
-/* Uncomment this function if you have INI entries
-static void php_apcue_init_globals(zend_apcue_globals *apcue_globals)
-{
-	apcue_globals->global_value = 0;
-	apcue_globals->global_string = NULL;
-}
-*/
-/* }}} */
-
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(apcue)
 {
-	/* If you have INI entries, uncomment these lines 
-	REGISTER_INI_ENTRIES();
-	*/
+	/* take more care than this, do not initialize or create twice */
 
 	/* initialize sma, use a sensible amount of memory !! */
 	apcue_sma.init(1, 1024*1024*32, NULL TSRMLS_CC);
@@ -131,10 +105,8 @@ PHP_MINIT_FUNCTION(apcue)
  */
 PHP_MSHUTDOWN_FUNCTION(apcue)
 {
-	/* uncomment this line if you have INI entries
-	UNREGISTER_INI_ENTRIES();
-	*/
-	
+	/* take more care than this, do not destroy and cleanup twice */	
+
 	/* destroy cache */
 	apc_cache_destroy(
 		apcue_cache TSRMLS_CC);
@@ -146,24 +118,6 @@ PHP_MSHUTDOWN_FUNCTION(apcue)
 }
 /* }}} */
 
-/* Remove if there's nothing to do at request start */
-/* {{{ PHP_RINIT_FUNCTION
- */
-PHP_RINIT_FUNCTION(apcue)
-{
-	return SUCCESS;
-}
-/* }}} */
-
-/* Remove if there's nothing to do at request end */
-/* {{{ PHP_RSHUTDOWN_FUNCTION
- */
-PHP_RSHUTDOWN_FUNCTION(apcue)
-{
-	return SUCCESS;
-}
-/* }}} */
-
 /* {{{ PHP_MINFO_FUNCTION
  */
 PHP_MINFO_FUNCTION(apcue)
@@ -171,17 +125,8 @@ PHP_MINFO_FUNCTION(apcue)
 	php_info_print_table_start();
 	php_info_print_table_header(2, "apcue support", "enabled");
 	php_info_print_table_end();
-
-	/* Remove comments if you have entries in php.ini
-	DISPLAY_INI_ENTRIES();
-	*/
 }
 /* }}} */
-
-
-/* Remove the following function when you have succesfully modified config.m4
-   so that your module can be compiled into PHP, it exists only for testing
-   purposes. */
 
 /* {{{ proto string apcue_get(string key)
    Return an entry from the cache */

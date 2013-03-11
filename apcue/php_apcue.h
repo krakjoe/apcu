@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) 2013 The PHP Group                                     |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -12,8 +12,12 @@
   | obtain it through the world-wide-web, please send a note to          |
   | license@php.net so we can mail you a copy immediately.               |
   +----------------------------------------------------------------------+
-  | Author:                                                              |
+  | Author: Joe Watkins <joe.watkins@live.co.uk>                         |
   +----------------------------------------------------------------------+
+*/
+
+/*
+* This is an example of using the APCu API in a third party extension
 */
 
 /* $Id$ */
@@ -32,8 +36,14 @@ extern zend_module_entry apcue_module_entry;
 #	define PHP_APCUE_API
 #endif
 
+/*
+* This is the only header needed
+*/
 #include "apcu/apc_api.h"
 
+/*
+* This is the only api declaration needed
+*/
 apc_sma_api_decl(apcue_sma);
 
 #ifdef ZTS
@@ -42,38 +52,10 @@ apc_sma_api_decl(apcue_sma);
 
 PHP_MINIT_FUNCTION(apcue);
 PHP_MSHUTDOWN_FUNCTION(apcue);
-PHP_RINIT_FUNCTION(apcue);
-PHP_RSHUTDOWN_FUNCTION(apcue);
 PHP_MINFO_FUNCTION(apcue);
 
 PHP_FUNCTION(apcue_get);
 PHP_FUNCTION(apcue_set);
-
-/* 
-  	Declare any global variables you may need between the BEGIN
-	and END macros here:     
-
-ZEND_BEGIN_MODULE_GLOBALS(apcue)
-	long  global_value;
-	char *global_string;
-ZEND_END_MODULE_GLOBALS(apcue)
-*/
-
-/* In every utility function you add that needs to use variables 
-   in php_apcue_globals, call TSRMLS_FETCH(); after declaring other 
-   variables used by that function, or better yet, pass in TSRMLS_CC
-   after the last function argument and declare your utility function
-   with TSRMLS_DC after the last declared argument.  Always refer to
-   the globals in your function as APCUE_G(variable).  You are 
-   encouraged to rename these macros something shorter, see
-   examples in any other php module directory.
-*/
-
-#ifdef ZTS
-#define APCUE_G(v) TSRMG(apcue_globals_id, zend_apcue_globals *, v)
-#else
-#define APCUE_G(v) (apcue_globals.v)
-#endif
 
 #endif	/* PHP_APCUE_H */
 
