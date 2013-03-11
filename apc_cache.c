@@ -265,7 +265,7 @@ int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 /* }}} */
 
 /* {{{ apc_cache_create */
-apc_cache_t* apc_cache_create(apc_sma_t* sma, int size_hint, int gc_ttl, int ttl, long smart TSRMLS_DC) {
+apc_cache_t* apc_cache_create(apc_sma_t* sma, int size_hint, int gc_ttl, int ttl, long smart, zend_bool defend TSRMLS_DC) {
 	apc_cache_t* cache;
     int cache_size;
     int num_slots;
@@ -307,6 +307,7 @@ apc_cache_t* apc_cache_create(apc_sma_t* sma, int size_hint, int gc_ttl, int ttl
     cache->gc_ttl = gc_ttl;
     cache->ttl = ttl;
 	cache->header->smart = smart;
+	cache->header->defend = defend;
 
 	/* header lock */
 	CREATE_LOCK(&cache->header->lock);
@@ -1697,9 +1698,7 @@ zend_bool apc_cache_processing(apc_cache_t* cache TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ apc_cache_defense 
- a revised, safe cache defense
- TODO use exact keys, why shouldn't we be exact */
+/* {{{ apc_cache_defense */
 zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 {
 	zend_bool result = 0;
@@ -1712,7 +1711,7 @@ zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 #endif
 
 	/* only continue if slam defense is enabled */
-	if (APCG(slam_defense)) {
+	if (cache->header->defend) {
 
 		/* for copy of locking key struct */
 		apc_cache_key_t *last = &cache->header->lastkey;

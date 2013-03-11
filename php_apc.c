@@ -272,7 +272,7 @@ static PHP_MINIT_FUNCTION(apcu)
 			/* create user cache */
 			apc_user_cache = apc_cache_create(
 				&apc_sma, 
-				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(smart) 
+				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(smart), APCG(slam_defense)
 				TSRMLS_CC
 			);
 			

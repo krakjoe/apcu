@@ -74,8 +74,8 @@ struct apc_cache_slot_t {
 /* {{{ struct definition: apc_cache_header_t
    Any values that must be shared among processes should go in here. */
 typedef struct _apc_cache_header_t {
-	apc_lock_t lock;                 /* header lock */
-	apc_sma_t* sma;                  /* shared memory allocator */
+    apc_lock_t lock;                 /* header lock */
+    apc_sma_t* sma;                  /* shared memory allocator */
     unsigned long num_hits;          /* total successful hits in cache */
     unsigned long num_misses;        /* total unsuccessful hits in cache */
     unsigned long num_inserts;       /* total successful inserts in cache */
@@ -85,7 +85,8 @@ typedef struct _apc_cache_header_t {
     volatile zend_ushort state;      /* cache state */
     int num_entries;                 /* Statistic on the number of entries */
     size_t mem_size;                 /* Statistic on the memory size used by this cache */
-	long smart;                      /* adjustable smart expunges of data */
+    long smart;                      /* adjustable smart expunges of data */
+    zend_bool defend;                /* flag for defense */
     apc_cache_key_t lastkey;         /* information about the last key inserted */
 } apc_cache_header_t;
 /* }}} */
@@ -130,13 +131,17 @@ typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void*
  * ttl is the maximum time a cache entry can idle in a slot in case the slot
  * is needed.  This helps in cleaning up the cache and ensuring that entries 
  * hit frequently stay cached and ones not hit very often eventually disappear.
+ * 
+ * for an explanation of smart, see apc_cache_default_expunge
  *
+ * defend enables/disables slam defense for this particular cache
  */
 extern apc_cache_t* apc_cache_create(apc_sma_t* sma,
                                      int size_hint,
                                      int gc_ttl,
                                      int ttl,
-                                     long smart TSRMLS_DC);
+                                     long smart,
+                                     zend_bool defend TSRMLS_DC);
 /*
 * apc_cache_preload preloads the data at path into the specified cache
 */

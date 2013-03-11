@@ -112,7 +112,7 @@ PHP_MINIT_FUNCTION(apcue)
 	/* create cache in shared memory */ 
 	apcue_cache = apc_cache_create(
 		&apcue_sma,
-		10, 0L, 0L, 0L TSRMLS_CC
+		10, 0L, 0L, 0L, 1 TSRMLS_CC
 	);
 
 	return SUCCESS;
