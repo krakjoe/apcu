@@ -337,7 +337,7 @@ extern zend_bool apc_cache_defense(apc_cache_t* cache,
 *
 * The default behaviour of expunge is explained below, should no combination of those options
 * be suitable, you will need to reimplement apc_cache_default_expunge and pass it to your
-* call to apc_sma_api_init, this will replace the default functionality.
+* call to apc_sma_api_impl, this will replace the default functionality.
 * The functions below you can use during your own implementation of expunge to gain more
 * control over how the expunge process works ...
 * 
