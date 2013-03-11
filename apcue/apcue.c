@@ -47,7 +47,8 @@ apc_sma_api_impl(apcue_sma, &apcue_cache, apc_cache_default_expunge);
  * Every user visible function must have an entry in apcue_functions[].
  */
 const zend_function_entry apcue_functions[] = {
-	PHP_FE(confirm_apcue_compiled,	NULL)		/* For testing, remove later. */
+	PHP_FE(apcue_get,	NULL)		/* For testing, remove later. */
+	PHP_FE(apcue_set,	NULL)		/* For testing, remove later. */
 	PHP_FE_END	/* Must be the last line in apcue_functions[] */
 };
 /* }}} */
@@ -105,34 +106,14 @@ PHP_MINIT_FUNCTION(apcue)
 	REGISTER_INI_ENTRIES();
 	*/
 
-	/* initialize sma */
-	apcue_sma.init(1, 2048*20, NULL TSRMLS_CC);
+	/* initialize sma, use a sensible amount of memory !! */
+	apcue_sma.init(1, 1024*1024*32, NULL TSRMLS_CC);
 	
 	/* create cache in shared memory */ 
 	apcue_cache = apc_cache_create(
 		&apcue_sma,
 		10, 0L, 0L, 0L TSRMLS_CC
 	);
-
-	/*
-	* Some testing code ... 
-	*/
-	{
-		zval test;
-		apc_cache_entry_t *entry;
-				
-		ZVAL_LONG(&test, 1);
-		
-		apc_cache_store(apcue_cache, "hello", sizeof("hello"), &test, 0, 0 TSRMLS_CC);
-		{
-			apc_cache_entry_t* entry = apc_cache_exists(apcue_cache, "hello", sizeof("hello"), time(0) TSRMLS_CC);
-			if (entry) {
-				php_printf(
-					"found hello in local cache @ %p :)\n", entry);
-
-			} else php_printf("failed to store in local cache :(\n");
-		}
-	}
 
 	return SUCCESS;
 }
@@ -194,29 +175,43 @@ PHP_MINFO_FUNCTION(apcue)
    so that your module can be compiled into PHP, it exists only for testing
    purposes. */
 
-/* Every user-visible function in PHP should document itself in the source */
-/* {{{ proto string confirm_apcue_compiled(string arg)
-   Return a string to confirm that the module is compiled in */
-PHP_FUNCTION(confirm_apcue_compiled)
+/* {{{ proto string apcue_get(string key)
+   Return an entry from the cache */
+PHP_FUNCTION(apcue_get) 
 {
-	char *arg = NULL;
-	int arg_len, len;
-	char *strg;
+	char*      key = NULL;
+	zend_uint  klen = 0L;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &arg, &arg_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &key, &klen) == FAILURE) {
 		return;
 	}
 
-	len = spprintf(&strg, 0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "apcue", arg);
-	RETURN_STRINGL(strg, len, 0);
+	{
+		/* perform lookup */
+		if (!apc_cache_fetch(apcue_cache, key, klen, &return_value, time(0) TSRMLS_CC)) {
+			/* entry not found */
+		}
+	}
 }
 /* }}} */
-/* The previous line is meant for vim and emacs, so it can correctly fold and 
-   unfold functions in source code. See the corresponding marks just before 
-   function definition, where the functions purpose is also documented. Please 
-   follow this convention for the convenience of others editing your code.
-*/
 
+/* {{{ proto string apcue_set(string key, mixed value [, ttl])
+   Set an entry in the cache */
+PHP_FUNCTION(apcue_set)
+{
+	char*      key = NULL;
+	zend_uint  klen = 0L;
+    long       ttl = 0L;
+    zval*      pzval = NULL;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz|l", &key, &klen, &pzval, &ttl) == FAILURE) {
+		return;
+	}
+
+	/* perform store */
+	ZVAL_BOOL(return_value, apc_cache_store(apcue_cache, key, klen, pzval, ttl, 0 TSRMLS_CC));
+}
+/* }}} */
 
 /*
  * Local variables:

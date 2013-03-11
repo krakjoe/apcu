@@ -96,10 +96,6 @@ static void php_apc_init_globals(zend_apcu_globals* apcu_globals TSRMLS_DC)
     apcu_globals->rfc1867 = 0;
     memset(&(apcu_globals->rfc1867_data), 0, sizeof(apc_rfc1867_data));
 #endif
-
-    memset(	
-		&apcu_globals->copied_zvals, 0, sizeof(HashTable)
-	);
 	
 	apcu_globals->preload_path = NULL;
     apcu_globals->coredump_unmap = 0;
@@ -689,7 +685,7 @@ PHP_FUNCTION(apc_fetch) {
 	if (Z_TYPE_P(key) == IS_ARRAY || (Z_TYPE_P(key) == IS_STRING && Z_STRLEN_P(key) > 0)) {
 		
 		/* initialize a context */
-		if (apc_cache_make_context(&ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0 TSRMLS_CC)) {
+		if (apc_cache_make_context(apc_user_cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0 TSRMLS_CC)) {
 			
 			if (Z_TYPE_P(key) == IS_STRING) {
 

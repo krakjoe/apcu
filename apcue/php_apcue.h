@@ -46,7 +46,8 @@ PHP_RINIT_FUNCTION(apcue);
 PHP_RSHUTDOWN_FUNCTION(apcue);
 PHP_MINFO_FUNCTION(apcue);
 
-PHP_FUNCTION(confirm_apcue_compiled);	/* For testing, remove later. */
+PHP_FUNCTION(apcue_get);
+PHP_FUNCTION(apcue_set);
 
 /* 
   	Declare any global variables you may need between the BEGIN

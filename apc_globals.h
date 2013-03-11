@@ -94,7 +94,6 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
     void *apc_bd_alloc_ubptr;    /* bindump alloc() upper bound ptr */
     HashTable apc_bd_alloc_list; /* bindump alloc() ptr list */
 	char *preload_path;          /* preload path */
-    HashTable copied_zvals;      /* my_copy recursion detection list */
     zend_bool coredump_unmap;    /* trap signals that coredump and unmap shared memory */
     zend_bool use_request_time;  /* use the SAPI request start time for TTL */
 

@@ -181,7 +181,8 @@ extern void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 * The type of context required depends on the operation being performed, for example
 * an insert should happen in a shared context, a fetch should happen in a nonshared context
 */
-extern zend_bool apc_cache_make_context(apc_context_t* context, 
+extern zend_bool apc_cache_make_context(apc_cache_t* cache,
+                                        apc_context_t* context, 
                                         apc_context_type context_type, 
                                         apc_pool_type pool_type,
                                         apc_copy_type copy_type,
@@ -189,7 +190,6 @@ extern zend_bool apc_cache_make_context(apc_context_t* context,
 
 /*
 * apc_cache_make_context_ex is an advanced/external version of make_context
-*  the memory management functions passed should work with your static external sma 
 */
 extern zend_bool apc_cache_make_context_ex(apc_context_t* context,
                                            apc_malloc_t _malloc, 
@@ -263,6 +263,17 @@ extern apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
                                          time_t t TSRMLS_DC);
 
 /*
+ * apc_cache_find searches for a cache entry by its hashed identifier,
+ * and returns a pointer to the entry if found, NULL otherwise.
+ *
+ */
+extern zend_bool apc_cache_fetch(apc_cache_t* cache,
+                                 char* strkey,
+                                 int keylen,
+                                 zval **dst,
+                                 time_t t TSRMLS_DC);
+
+/*
  * apc_cache_exists searches for a cache entry by its hashed identifier,
  * and returns a pointer to the entry if found, NULL otherwise.  This is a
  * quick non-locking version of apc_cache_find that does not modify the
@@ -285,9 +296,9 @@ extern zend_bool apc_cache_delete(apc_cache_t* cache,
  * zval from it.
  *
  */
-zval* apc_cache_fetch_zval(zval* dst,
-                           const zval* src,
-                           apc_context_t* ctxt TSRMLS_DC);
+extern zval* apc_cache_fetch_zval(zval* dst,
+                                  const zval* src,
+                                  apc_context_t* ctxt TSRMLS_DC);
 
 /*
  * apc_cache_release decrements the reference count associated with a cache

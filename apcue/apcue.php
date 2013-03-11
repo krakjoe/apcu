@@ -11,11 +11,11 @@ foreach($functions as $func) {
     echo $func."$br\n";
 }
 echo "$br\n";
-$function = 'confirm_' . $module . '_compiled';
-if (extension_loaded($module)) {
-	$str = $function($module);
-} else {
-	$str = "Module $module is not compiled into PHP";
+while ($I++<100000) {
+	$data[]=rand($I, 100000) * time();
 }
-echo "$str\n";
+
+var_dump(apcue_set("data", $data));
+var_dump(apcue_get("data"));
+var_dump(apc_sma_info());
 ?>

@@ -335,7 +335,7 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int strkey_len, cons
     HANDLE_BLOCK_INTERRUPTIONS();
 
 	/* initialize a context suitable for making an insert */
-    if (apc_cache_make_context(&ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
+    if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
 
         /* initialize the key for insertion */
         if (apc_cache_make_key(&key, strkey, strkey_len TSRMLS_CC)) {
@@ -401,7 +401,7 @@ zend_bool apc_cache_store_all(apc_cache_t* cache, zval *data, zval *results, con
                     make a throw away context ...
                 */
 				
-                if (apc_cache_make_context(&ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
+                if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
 
                     /* initialize the key for insertion */
                     if (apc_cache_make_key(&key, skey, sklen TSRMLS_CC)) {
@@ -744,12 +744,20 @@ void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_cache_make_context */
-zend_bool apc_cache_make_context(apc_context_t* context, apc_context_type context_type, apc_pool_type pool_type, apc_copy_type copy_type, uint force_update TSRMLS_DC) {
+zend_bool apc_cache_make_context(apc_cache_t* cache, 
+                                 apc_context_t* context, 
+                                 apc_context_type context_type, 
+                                 apc_pool_type pool_type, 
+                                 apc_copy_type copy_type, 
+                                 uint force_update TSRMLS_DC) {
 	switch (context_type) {
 		case APC_CONTEXT_SHARE: {
 			return apc_cache_make_context_ex(
 				context,
-				apc_sma_malloc, apc_sma_free, apc_sma_protect, apc_sma_unprotect,
+				cache->header->sma->malloc, 
+                cache->header->sma->free, 
+                cache->header->sma->protect, 
+                cache->header->sma->unprotect,
 				pool_type, copy_type, force_update TSRMLS_CC
 			);
 		} break;
@@ -861,9 +869,7 @@ zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_en
 		     */
 		    if((cache->ttl && select->access_time < (t - cache->ttl)) || 
 		       (select->value->ttl && (time_t) (select->creation_time + select->value->ttl) < t)) {
-
                 remove_slot(cache, slot TSRMLS_CC);
-
 		        continue;
 		    }
 		
@@ -971,6 +977,33 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int keylen, 
     return NULL;
 }
 /* }}} */
+
+/* {{{ apc_cache_fetch */
+zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, int keylen, zval** dst, time_t t TSRMLS_DC) 
+{	
+	apc_context_t ctxt = {0, };
+	apc_cache_entry_t *entry;
+	zend_bool ret = 0;
+
+	/* find the entry */
+	if ((entry = apc_cache_find(cache, strkey, keylen, t TSRMLS_CC))) {
+		apc_context_t context = {0,};
+		/* create unpool context */
+		if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0 TSRMLS_CC)) {
+			/* copy to emalloc'd context */
+			apc_cache_fetch_zval(*dst, entry->val, &ctxt TSRMLS_CC);
+			/* release entry */
+			apc_cache_release(
+				cache, entry TSRMLS_CC);
+			/* destroy context */
+			apc_cache_destroy_context(&ctxt TSRMLS_CC );
+			/* set result */
+			ret = 1;
+		}
+	}
+
+	return ret;
+} /* }}} */
 
 /* {{{ apc_cache_exists */
 apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int keylen, time_t t TSRMLS_DC)
@@ -1375,8 +1408,8 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 
     memcpy(dst, src, sizeof(src[0]));
 
-    if(APCG(copied_zvals).nTableSize) {
-        if(zend_hash_index_find(&APCG(copied_zvals), (ulong)src, (void**)&tmp) == SUCCESS) {
+    if(ctxt->copied.nTableSize) {
+        if(zend_hash_index_find(&ctxt->copied, (ulong)src, (void**)&tmp) == SUCCESS) {
             if(Z_ISREF_P((zval*)src)) {
                 Z_SET_ISREF_PP(tmp);
             }
@@ -1384,7 +1417,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
             return *tmp;
         }
 
-        zend_hash_index_update(&APCG(copied_zvals), (ulong)src, (void**)&dst, sizeof(zval*), NULL);
+        zend_hash_index_update(&ctxt->copied, (ulong)src, (void**)&dst, sizeof(zval*), NULL);
     }
 
     if(ctxt->copy == APC_COPY_OUT || ctxt->copy == APC_COPY_IN) {
@@ -1480,10 +1513,10 @@ zval* apc_cache_store_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRML
 {
     if (Z_TYPE_P(src) == IS_ARRAY) {
         /* Maintain a list of zvals we've copied to properly handle recursive structures */
-        zend_hash_init(&APCG(copied_zvals), 0, NULL, NULL, 0);
+        zend_hash_init(&ctxt->copied, 0, NULL, NULL, 0);
         dst = apc_copy_zval(dst, src, ctxt TSRMLS_CC);
-        zend_hash_destroy(&APCG(copied_zvals));
-        APCG(copied_zvals).nTableSize=0;
+        zend_hash_destroy(&ctxt->copied);
+        ctxt->copied.nTableSize=0;
     } else {
         dst = apc_copy_zval(dst, src, ctxt TSRMLS_CC);
     }
@@ -1498,10 +1531,10 @@ zval* apc_cache_fetch_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRML
 {
     if (Z_TYPE_P(src) == IS_ARRAY) {
         /* Maintain a list of zvals we've copied to properly handle recursive structures */
-        zend_hash_init(&APCG(copied_zvals), 0, NULL, NULL, 0);
+        zend_hash_init(&ctxt->copied, 0, NULL, NULL, 0);
         dst = apc_copy_zval(dst, src, ctxt TSRMLS_CC);
-        zend_hash_destroy(&APCG(copied_zvals));
-        APCG(copied_zvals).nTableSize=0;
+        zend_hash_destroy(&ctxt->copied);
+        ctxt->copied.nTableSize=0;
     } else {
         dst = apc_copy_zval(dst, src, ctxt TSRMLS_CC);
     }

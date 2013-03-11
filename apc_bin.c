@@ -84,14 +84,14 @@ static void *apc_bd_alloc_ex(void *ptr_new, size_t size TSRMLS_DC);
 typedef void (*apc_swizzle_cb_t)(apc_bd_t *bd, zend_llist *ll, void *ptr TSRMLS_DC);
 
 #if APC_BINDUMP_DEBUG
-#define apc_swizzle_ptr(bd, ll, ptr) _apc_swizzle_ptr(bd, ll, (void*)ptr, __FILE__, __LINE__ TSRMLS_CC)
+#define apc_swizzle_ptr(bd, ctxt, ll, ptr) _apc_swizzle_ptr(bd, ctxt, ll, (void*)ptr, __FILE__, __LINE__ TSRMLS_CC)
 #else
-#define apc_swizzle_ptr(bd, ll, ptr) _apc_swizzle_ptr(bd, ll, (void*)ptr, NULL, 0 TSRMLS_CC)
+#define apc_swizzle_ptr(bd, ctxt, ll, ptr) _apc_swizzle_ptr(bd, ctxt, ll, (void*)ptr, NULL, 0 TSRMLS_CC)
 #endif
 
-static void _apc_swizzle_ptr(apc_bd_t *bd, zend_llist *ll, void **ptr, const char* file, int line TSRMLS_DC);
-static void apc_swizzle_hashtable(apc_bd_t *bd, zend_llist *ll, HashTable *ht, apc_swizzle_cb_t swizzle_cb, int is_ptr TSRMLS_DC);
-static void apc_swizzle_zval(apc_bd_t *bd, zend_llist *ll, zval *zv TSRMLS_DC);
+static void _apc_swizzle_ptr(apc_bd_t *bd, apc_context_t* ctxt, zend_llist *ll, void **ptr, const char* file, int line TSRMLS_DC);
+static void apc_swizzle_hashtable(apc_bd_t *bd, apc_context_t* ctxt, zend_llist *ll, HashTable *ht, apc_swizzle_cb_t swizzle_cb, int is_ptr TSRMLS_DC);
+static void apc_swizzle_zval(apc_bd_t *bd, apc_context_t* ctxt, zend_llist *ll, zval *zv TSRMLS_DC);
 
 static apc_bd_t* apc_swizzle_bd(apc_bd_t* bd, zend_llist *ll TSRMLS_DC);
 static int apc_unswizzle_bd(apc_bd_t *bd, int flags TSRMLS_DC);
@@ -143,7 +143,7 @@ static void *apc_bd_alloc_ex(void *ptr_new, size_t size TSRMLS_DC) {
 } /* }}} */
 
 /* {{{ _apc_swizzle_ptr */
-static void _apc_swizzle_ptr(apc_bd_t *bd, zend_llist *ll, void **ptr, const char* file, int line TSRMLS_DC) {
+static void _apc_swizzle_ptr(apc_bd_t *bd, apc_context_t* ctxt, zend_llist *ll, void **ptr, const char* file, int line TSRMLS_DC) {
     if(*ptr) {
         if((long)bd < (long)*ptr && (ulong)*ptr < ((long)bd + bd->size)) {
             zend_llist_add_element(ll, &ptr);
@@ -159,7 +159,7 @@ static void _apc_swizzle_ptr(apc_bd_t *bd, zend_llist *ll, void **ptr, const cha
 } /* }}} */
 
 /* {{{ apc_swizzle_hashtable */
-static void apc_swizzle_hashtable(apc_bd_t *bd, zend_llist *ll, HashTable *ht, apc_swizzle_cb_t swizzle_cb, int is_ptr TSRMLS_DC) {
+static void apc_swizzle_hashtable(apc_bd_t *bd, apc_context_t* ctxt, zend_llist *ll, HashTable *ht, apc_swizzle_cb_t swizzle_cb, int is_ptr TSRMLS_DC) {
     uint i;
     Bucket **bp, **bp_prev;
 
@@ -169,7 +169,7 @@ static void apc_swizzle_hashtable(apc_bd_t *bd, zend_llist *ll, HashTable *ht, a
         bp = &(*bp)->pListNext;
         if(is_ptr) {
             swizzle_cb(bd, ll, *(void**)(*bp_prev)->pData TSRMLS_CC);
-            apc_swizzle_ptr(bd, ll, (*bp_prev)->pData);
+            apc_swizzle_ptr(bd, ctxt, ll, (*bp_prev)->pData);
         } else {
             swizzle_cb(bd, ll, (void**)(*bp_prev)->pData TSRMLS_CC);
         }
@@ -181,42 +181,42 @@ static void apc_swizzle_hashtable(apc_bd_t *bd, zend_llist *ll, HashTable *ht, a
                 memcpy(tmp, (*bp_prev)->arKey, (*bp_prev)->nKeyLength);
                 (*bp_prev)->arKey = tmp;
             }
-            apc_swizzle_ptr(bd, ll, &(*bp_prev)->arKey);
+            apc_swizzle_ptr(bd, ctxt, ll, &(*bp_prev)->arKey);
         }
 #endif
-        apc_swizzle_ptr(bd, ll, &(*bp_prev)->pData);
+        apc_swizzle_ptr(bd, ctxt, ll, &(*bp_prev)->pData);
         if((*bp_prev)->pDataPtr) {
-            apc_swizzle_ptr(bd, ll, &(*bp_prev)->pDataPtr);
+            apc_swizzle_ptr(bd, ctxt, ll, &(*bp_prev)->pDataPtr);
         }
         if((*bp_prev)->pListLast) {
-            apc_swizzle_ptr(bd, ll, &(*bp_prev)->pListLast);
+            apc_swizzle_ptr(bd, ctxt, ll, &(*bp_prev)->pListLast);
         }
         if((*bp_prev)->pNext) {
-            apc_swizzle_ptr(bd, ll, &(*bp_prev)->pNext);
+            apc_swizzle_ptr(bd, ctxt, ll, &(*bp_prev)->pNext);
         }
         if((*bp_prev)->pLast) {
-            apc_swizzle_ptr(bd, ll, &(*bp_prev)->pLast);
+            apc_swizzle_ptr(bd, ctxt, ll, &(*bp_prev)->pLast);
         }
-        apc_swizzle_ptr(bd, ll, bp_prev);
+        apc_swizzle_ptr(bd, ctxt, ll, bp_prev);
     }
     for(i=0; i < ht->nTableSize; i++) {
         if(ht->arBuckets[i]) {
-            apc_swizzle_ptr(bd, ll, &ht->arBuckets[i]);
+            apc_swizzle_ptr(bd, ctxt, ll, &ht->arBuckets[i]);
         }
     }
-    apc_swizzle_ptr(bd, ll, &ht->pListTail);
+    apc_swizzle_ptr(bd, ctxt, ll, &ht->pListTail);
 
-    apc_swizzle_ptr(bd, ll, &ht->arBuckets);
+    apc_swizzle_ptr(bd, ctxt, ll, &ht->arBuckets);
 } /* }}} */
 
 /* {{{ apc_swizzle_zval */
-static void apc_swizzle_zval(apc_bd_t *bd, zend_llist *ll, zval *zv TSRMLS_DC) {
+static void apc_swizzle_zval(apc_bd_t *bd, apc_context_t* ctxt, zend_llist *ll, zval *zv TSRMLS_DC) {
 
-    if(APCG(copied_zvals).nTableSize) {
-        if(zend_hash_index_exists(&APCG(copied_zvals), (ulong)zv)) {
+    if(ctxt->copied.nTableSize) {
+        if(zend_hash_index_exists(&ctxt->copied, (ulong)zv)) {
           return;
         }
-        zend_hash_index_update(&APCG(copied_zvals), (ulong)zv, (void**)&zv, sizeof(zval*), NULL);
+        zend_hash_index_update(&ctxt->copied, (ulong)zv, (void**)&zv, sizeof(zval*), NULL);
     }
 
     switch(Z_TYPE_P(zv) & IS_CONSTANT_TYPE_MASK) {
@@ -229,12 +229,12 @@ static void apc_swizzle_zval(apc_bd_t *bd, zend_llist *ll, zval *zv TSRMLS_DC) {
             break;
         case IS_CONSTANT:
         case IS_STRING:
-            apc_swizzle_ptr(bd, ll, &zv->value.str.val);
+            apc_swizzle_ptr(bd, ctxt, ll, &zv->value.str.val);
             break;
         case IS_ARRAY:
         case IS_CONSTANT_ARRAY:
-            apc_swizzle_hashtable(bd, ll, zv->value.ht, (apc_swizzle_cb_t)apc_swizzle_zval, 1 TSRMLS_CC);
-            apc_swizzle_ptr(bd, ll, &zv->value.ht);
+            apc_swizzle_hashtable(bd, ctxt, ll, zv->value.ht, (apc_swizzle_cb_t)apc_swizzle_zval, 1 TSRMLS_CC);
+            apc_swizzle_ptr(bd, ctxt, ll, &zv->value.ht);
             break;
         case IS_OBJECT:
             break;
@@ -419,7 +419,7 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     bd->entries = apc_bd_alloc_ex(NULL, sizeof(apc_bd_entry_t) * count TSRMLS_CC);
 
     /* User entries */
-    zend_hash_init(&APCG(copied_zvals), 0, NULL, NULL, 0);
+    zend_hash_init(&ctxt.copied, 0, NULL, NULL, 0);
     count = 0;
     for(i=0; i < apc_user_cache->num_slots; i++) {
         sp = apc_user_cache->slots[i];
@@ -452,20 +452,20 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
                 ep->val.ttl = sp->value->ttl;
 
                 /* swizzle pointers */
-                zend_hash_clean(&APCG(copied_zvals));
+                zend_hash_clean(&ctxt.copied);
                 if (ep->val.val->type == IS_OBJECT) {
-                    apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.val->value.str.val);
+                    apc_swizzle_ptr(bd, &ctxt, &ll, &bd->entries[count].val.val->value.str.val);
                 } else {
-                    apc_swizzle_zval(bd, &ll, bd->entries[count].val.val TSRMLS_CC);
+                    apc_swizzle_zval(bd, &ctxt, &ll, bd->entries[count].val.val TSRMLS_CC);
                 }
-                apc_swizzle_ptr(bd, &ll, &bd->entries[count].val.val);
+                apc_swizzle_ptr(bd, &ctxt, &ll, &bd->entries[count].val.val);
 
                 count++;
             }
         }
     }
-    zend_hash_destroy(&APCG(copied_zvals));
-    APCG(copied_zvals).nTableSize=0;
+    zend_hash_destroy(&ctxt.copied);
+    ctxt.copied.nTableSize=0;
 
     /* append swizzle pointer list to bd */
     bd = apc_swizzle_bd(bd, &ll TSRMLS_CC);
