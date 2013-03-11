@@ -624,7 +624,7 @@ void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 		            }
 					
 					/* grab next slot */
-					slot = &select->next;	            
+					slot = &(*slot)->next;	            
 		        }
 		    }
 
