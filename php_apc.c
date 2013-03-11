@@ -203,7 +203,7 @@ static PHP_MINFO_FUNCTION(apcu)
     php_info_print_table_start();
     php_info_print_table_header(2, "APCu Support", APCG(enabled) ? "enabled" : "disabled");
     php_info_print_table_row(2, "Version", PHP_APC_VERSION);
-#ifdef __DEBUG_APC__
+#ifdef APC_DEBUG
     php_info_print_table_row(2, "APCu Debugging", "Enabled");
 #else
     php_info_print_table_row(2, "APCu Debugging", "Disabled");

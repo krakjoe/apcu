@@ -147,15 +147,15 @@ form of a quick-start guide to start hacking on APC.
    The caching functionality of APCu is provided by a modified version of the APC source code
 
    Some simple tweaks have been applied: 
-     A unified, general purpose implementation of a read/write lock, used everywhere, by everything.
-     Simplified configuration of APCu will ensure good performance out of the box.
+     Locking is written to use the best kind of locking available, and emulate it where it is not to simplify logic.
+     Extension of the SMA to support multiple instances, such that additional caches using APCu do not
+		increase contention of the main APCu cache.
      The possibility to control more finely what happens when resources become low for APCu.
-	 A completely exposed and installed API, making way for third party extensions to reuse APCu.
-     Agressive commenting of every source file I have changed or organized, the beginnings of a well documented APC !!
+	 An exposed, coherent, and documented API and example included in the distribution.
 
    There's probably some of my blood in it, if you look real close ...
 
-   The remainder of the document goes on to explain in some detail the cache itself, mostly unchanged by APCu
+   The remainder of the document goes on to explain in some detail the cache itself, functionally unchanged by APCu
 
 6. Next up is apc_cache.c which implements the cache logic.
    
@@ -248,6 +248,10 @@ form of a quick-start guide to start hacking on APC.
    but older than the mtime in the entry we are looking for, we delete the one that is
    there and return indicating we didn't find it.
 
+   API users are advised to use apc_cache_fetch over find for simplicity, this ensures
+   correct operation, fetch sets up the call to find and takes care of copying and releasing
+   the entry from the cache to a zval* provided.
+
    Next we need to understand what an actual cache entry looks like.  Have a look at
    apc_cache.h for the structs.  Here is the definition of apc_cache_key_t:
 
@@ -277,9 +281,11 @@ form of a quick-start guide to start hacking on APC.
    To create an apc_cache_entry_t, call apc_cache_make_entry(), see apc_cache.h
 
    Any of the structures taken by apc_cache_* functions have their equivalent apc_cache_make_*
-
+   
    If an insertion of an entry should fail, it falls to the caller of insert to free 
    the pooled resources used to create the entry. 
+
+   
 
 If you made it to the end of this, you should have a pretty good idea of where things are in
 the code.  There is much more reading to do in headers ... good luck ...

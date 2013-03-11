@@ -75,7 +75,6 @@ if test "$PHP_APCU" != "no"; then
 
   apc_sources="apc.c apc_lock.c php_apc.c \
                apc_cache.c \
-               apc_debug.c \
                apc_mmap.c \
                apc_shm.c \
                apc_sma.c \
