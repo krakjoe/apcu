@@ -444,7 +444,7 @@ restart:
 
 void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong n TSRMLS_DC) 
 {
-	size_t allocated;
+	zend_ulong allocated;
 	return apc_sma_api_malloc_ex(
 		sma, n, MINBLOCKSIZE, &allocated TSRMLS_CC);
 }

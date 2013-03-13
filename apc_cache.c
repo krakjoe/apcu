@@ -657,7 +657,7 @@ zend_bool apc_cache_make_context(apc_cache_t* cache,
 			return apc_cache_make_context_ex(
 				context,
                 cache->serializer,
-				cache->sma->malloc,
+				(apc_malloc_t) cache->sma->malloc,
                 cache->sma->free,
                 cache->sma->protect,
                 cache->sma->unprotect,
