@@ -110,7 +110,7 @@ struct block_t {
 /* }}} */
 
 /* {{{ sma_allocate: tries to allocate at least size bytes in a segment */
-static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, size_t size, size_t fragment, size_t *allocated)
+static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, zend_ulong size, zend_ulong fragment, zend_ulong *allocated)
 {
     void* shmaddr;          /* header of shared memory segment */
     block_t* prv;           /* block prior to working block */
