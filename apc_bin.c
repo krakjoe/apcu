@@ -34,6 +34,9 @@
 
 #include "ext/standard/md5.h"
 
+/* in apc_cache.c */
+extern zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC);
+
 #define APC_BINDUMP_DEBUG 0
 
 #if APC_BINDUMP_DEBUG
@@ -428,12 +431,18 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
         for(; sp != NULL; sp = sp->next) {
             if(apc_bin_checkfilter(user_vars, sp->key.str, sp->key.len)) {
                 ep = &bd->entries[count];
+				
+				/* copy key with current pool */
+				ep->key.str = apc_pmemcpy(sp->key.str, sp->key.len, ctxt.pool TSRMLS_CC);
+				ep->key.len = sp->key.len;
+
                 if ((Z_TYPE_P(sp->value->val) == IS_ARRAY && apc_user_cache->serializer)
                         || Z_TYPE_P(sp->value->val) == IS_OBJECT) {
                     /* avoiding hash copy, hack */
                     uint type = Z_TYPE_P(sp->value->val);
                     Z_TYPE_P(sp->value->val) = IS_STRING;
                     ep->val.val = apc_copy_zval(NULL, sp->value->val, &ctxt TSRMLS_CC);
+					
                     Z_TYPE_P(ep->val.val) = IS_OBJECT;
                     sp->value->val->type = type;
                 } else if (Z_TYPE_P(sp->value->val) == IS_ARRAY && !apc_user_cache->serializer) {
@@ -522,8 +531,9 @@ int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
                 break;
             }
             ctxt.copy = APC_COPY_IN;
-			/* TODO XXX no info/len, get key elsewhere */
-            //apc_cache_store(ep->val->key.str, ep->val.key.len, data, ep->val.ttl, 0 TSRMLS_CC);
+
+            apc_cache_store(
+				apc_user_cache, ep->key.str, ep->key.len, data, ep->val.ttl, 0 TSRMLS_CC);
 
             if (use_copy) {
                 zval_ptr_dtor(&data);
