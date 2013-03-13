@@ -30,7 +30,7 @@ if (file_exists("apc.conf.php")) include("apc.conf.php");
 
 ////////// BEGIN OF DEFAULT CONFIG AREA ///////////////////////////////////////////////////////////
 
-defaults('USE_AUTHENTICATION',0);			// Use (internal) authentication - best choice if 
+defaults('USE_AUTHENTICATION',1);			// Use (internal) authentication - best choice if 
 											// no other authentication is available
 											// If set to 0:
 											//  There will be no further authentication. You 
