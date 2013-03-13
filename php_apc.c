@@ -101,7 +101,6 @@ static void php_apc_init_globals(zend_apcu_globals* apcu_globals TSRMLS_DC)
     apcu_globals->coredump_unmap = 0;
     apcu_globals->use_request_time = 1;
     apcu_globals->serializer_name = NULL;
-    apcu_globals->serializer = NULL;
 }
 /* }}} */
 
@@ -262,16 +261,24 @@ static PHP_MINIT_FUNCTION(apcu)
     if (APCG(enabled)) {
 
         if (!APCG(initialized)) {
+			/* ensure this runs only once */
+			APCG(initialized) = 1;
+			
 			/* initialize shared memory allocator */
 #if APC_MMAP
 			apc_sma.init(APCG(shm_segments), APCG(shm_size), APCG(mmap_file_mask) TSRMLS_CC);
 #else
 			apc_sma.init(APCG(shm_segments), APCG(shm_size), NULL TSRMLS_CC);
 #endif
+
+			/* register default serializer */
+			apc_register_serializer(
+				"php", php_apc_serializer, php_apc_unserializer, NULL TSRMLS_CC);
 			
 			/* create user cache */
 			apc_user_cache = apc_cache_create(
-				&apc_sma, 
+				&apc_sma,
+				apc_find_serializer(APCG(serializer_name) TSRMLS_CC),
 				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(smart), APCG(slam_defense)
 				TSRMLS_CC
 			);
@@ -292,15 +299,8 @@ static PHP_MINIT_FUNCTION(apcu)
             }
 #endif
 
-			/* ensure this runs only once */
-			APCG(initialized) = 1;
-			
 			/* initialize iterator object */
             apc_iterator_init(module_number TSRMLS_CC);
-
-			/* register default serializer */
-			apc_register_serializer(
-				"php", php_apc_serializer, php_apc_unserializer, NULL TSRMLS_CC);
         }
     }
 
@@ -343,9 +343,9 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 static PHP_RINIT_FUNCTION(apcu)
 {
     if (APCG(enabled)) {
-        if (!APCG(serializer) && APCG(serializer_name)) {
+        if (APCG(serializer_name)) {
 		    /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
-		    APCG(serializer) = apc_find_serializer(APCG(serializer_name) TSRMLS_CC);
+			apc_cache_serializer(apc_user_cache, APCG(serializer_name) TSRMLS_CC);
 		}
 
 #if HAVE_SIGACTION
@@ -454,9 +454,9 @@ int php_apc_update(char *strkey, int strkey_len, apc_cache_updater_t updater, vo
         return 0;
     }
 
-    if (!APCG(serializer) && APCG(serializer_name)) {
+    if (APCG(serializer_name)) {
         /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
-        APCG(serializer) = apc_find_serializer(APCG(serializer_name) TSRMLS_CC);
+        apc_cache_serializer(apc_user_cache, APCG(serializer_name) TSRMLS_CC);
     }
 
     HANDLE_BLOCK_INTERRUPTIONS();
@@ -491,6 +491,11 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 
 	/* keep it tidy */
     {
+		if (APCG(serializer_name)) {
+        	/* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
+		    apc_cache_serializer(apc_user_cache, APCG(serializer_name) TSRMLS_CC);
+		}
+
 		if (Z_TYPE_P(key) == IS_ARRAY) {
             
             zval **hentry;

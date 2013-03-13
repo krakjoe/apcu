@@ -407,6 +407,8 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     bd->size = (unsigned int)size;
     pool_ptr = emalloc(sizeof(apc_pool));
     apc_bd_alloc_ex(pool_ptr, sizeof(apc_pool) TSRMLS_CC);
+
+	ctxt.serializer = apc_user_cache->serializer;
     ctxt.pool = apc_pool_create(APC_UNPOOL, apc_bd_alloc, apc_bd_free, NULL, NULL TSRMLS_CC);  /* ideally the pool wouldn't be alloc'd as part of this */
     if (!ctxt.pool) { /* TODO need to cleanup */
         apc_warning("Unable to allocate memory for pool." TSRMLS_CC);
@@ -426,7 +428,7 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
         for(; sp != NULL; sp = sp->next) {
             if(apc_bin_checkfilter(user_vars, sp->key.str, sp->key.len)) {
                 ep = &bd->entries[count];
-                if ((Z_TYPE_P(sp->value->val) == IS_ARRAY && APCG(serializer))
+                if ((Z_TYPE_P(sp->value->val) == IS_ARRAY && apc_user_cache->serializer)
                         || Z_TYPE_P(sp->value->val) == IS_OBJECT) {
                     /* avoiding hash copy, hack */
                     uint type = Z_TYPE_P(sp->value->val);
@@ -434,17 +436,15 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
                     ep->val.val = apc_copy_zval(NULL, sp->value->val, &ctxt TSRMLS_CC);
                     Z_TYPE_P(ep->val.val) = IS_OBJECT;
                     sp->value->val->type = type;
-                } else if (Z_TYPE_P(sp->value->val) == IS_ARRAY && !APCG(serializer)) {
+                } else if (Z_TYPE_P(sp->value->val) == IS_ARRAY && !apc_user_cache->serializer) {
                     /* this is a little complicated, we have to unserialize it first, then serialize it again */
                     zval *garbage;
                     ctxt.copy = APC_COPY_OUT;
                     garbage = apc_copy_zval(NULL, sp->value->val, &ctxt TSRMLS_CC);
-                    APCG(serializer) = apc_find_serializer("php" TSRMLS_CC);
                     ctxt.copy = APC_COPY_IN;
                     ep->val.val = apc_copy_zval(NULL, garbage, &ctxt TSRMLS_CC);
                     ep->val.val->type = IS_OBJECT;
                     /* a memleak can not be avoided: zval_ptr_dtor(&garbage); */
-                    APCG(serializer) = NULL;
                     ctxt.copy = APC_COPY_OTHER;
                 } else {
                     ep->val.val = apc_copy_zval(NULL, sp->value->val, &ctxt TSRMLS_CC);

@@ -98,6 +98,7 @@ typedef struct _apc_cache_t {
     apc_cache_header_t* header;   /* cache header (stored in SHM) */
     apc_cache_slot_t** slots;     /* array of cache slots (stored in SHM) */
     apc_sma_t* sma;               /* shared memory allocator */
+    apc_serializer_t* serializer; /* serializer */
     zend_ulong nslots;            /* number of slots in cache */
     zend_ulong gc_ttl;            /* maximum time on GC list for a slot */
     zend_ulong ttl;               /* if slot is needed and entry's access time is older than this ttl, remove it */
@@ -112,11 +113,15 @@ typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void*
  * apc_cache_create creates the shared memory cache. 
  *
  * This function should be called once per process per cache
+ * 
+ * serializer for APCu is set by globals on MINIT and ensured with apc_cache_serializer
+ * during execution. Using apc_cache_serializer avoids race conditions between MINIT/RINIT of
+ * APCU and the third party serializer. API users can choose to leave this null to use default
+ * PHP serializers, or search the list of serializers for the preferred serializer
  *
  * size_hint is a "hint" at the total number entries that will be expected. 
  * It determines the physical size of the hash table. Passing 0 for
- * this argument will use a reasonable default value (2000)
- * Note: APCG(entries_hint)
+ * this argument will use a reasonable default value
  * 
  * gc_ttl is the maximum time a cache entry may speed on the garbage
  * collection list. This is basically a work around for the inherent
@@ -131,6 +136,7 @@ typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void*
  * defend enables/disables slam defense for this particular cache
  */
 extern apc_cache_t* apc_cache_create(apc_sma_t* sma,
+                                     apc_serializer_t* serializer,
                                      int size_hint,
                                      int gc_ttl,
                                      int ttl,
@@ -173,6 +179,7 @@ extern zend_bool apc_cache_make_context(apc_cache_t* cache,
 * apc_cache_make_context_ex is an advanced/external version of make_context
 */
 extern zend_bool apc_cache_make_context_ex(apc_context_t* context,
+                                           apc_serializer_t* serializer,
                                            apc_malloc_t _malloc, 
                                            apc_free_t _free, 
                                            apc_protect_t _protect, 
@@ -329,6 +336,13 @@ extern zend_bool apc_cache_processing(apc_cache_t* cache TSRMLS_DC);
 */
 extern zend_bool apc_cache_defense(apc_cache_t* cache,
                                    apc_cache_key_t* key TSRMLS_DC);
+
+/*
+* apc_cache_serializer
+* sets the serializer for a cache, and by proxy contexts created for the cache
+* Note: this avoids race conditions between third party serializers and APCu
+*/
+extern void apc_cache_serializer(apc_cache_t* cache, const char* name TSRMLS_DC);
 
 /*
 * The remaining functions allow a third party to reimplement expunge

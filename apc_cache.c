@@ -272,7 +272,7 @@ int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 /* }}} */
 
 /* {{{ apc_cache_create */
-apc_cache_t* apc_cache_create(apc_sma_t* sma, int size_hint, int gc_ttl, int ttl, long smart, zend_bool defend TSRMLS_DC) {
+apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, int size_hint, int gc_ttl, int ttl, long smart, zend_bool defend TSRMLS_DC) {
 	apc_cache_t* cache;
     int cache_size;
     int nslots;
@@ -310,7 +310,8 @@ apc_cache_t* apc_cache_create(apc_sma_t* sma, int size_hint, int gc_ttl, int ttl
 	/* set cache options */
     cache->slots = (apc_cache_slot_t**) (((char*) cache->shmaddr) + sizeof(apc_cache_header_t));
     cache->sma = sma;
-    cache->nslots = nslots;
+	cache->serializer = serializer;
+	cache->nslots = nslots;
     cache->gc_ttl = gc_ttl;
     cache->ttl = ttl;
 	cache->smart = smart;
@@ -334,11 +335,6 @@ zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, zend_uint keylen, co
     zend_bool ret = 0;
 
     t = apc_time();
-
-    if (!APCG(serializer) && APCG(serializer_name)) {
-        /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
-        APCG(serializer) = apc_find_serializer(APCG(serializer_name) TSRMLS_CC);
-    }
 
     HANDLE_BLOCK_INTERRUPTIONS();
 
@@ -650,16 +646,17 @@ void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_cache_make_context */
-zend_bool apc_cache_make_context(apc_cache_t* cache, 
-                                 apc_context_t* context, 
-                                 apc_context_type context_type, 
-                                 apc_pool_type pool_type, 
-                                 apc_copy_type copy_type, 
+zend_bool apc_cache_make_context(apc_cache_t* cache,
+                                 apc_context_t* context,
+                                 apc_context_type context_type,
+                                 apc_pool_type pool_type,
+                                 apc_copy_type copy_type,
                                  uint force_update TSRMLS_DC) {
 	switch (context_type) {
 		case APC_CONTEXT_SHARE: {
 			return apc_cache_make_context_ex(
 				context,
+                cache->serializer,
 				cache->sma->malloc,
                 cache->sma->free,
                 cache->sma->protect,
@@ -671,6 +668,7 @@ zend_bool apc_cache_make_context(apc_cache_t* cache,
 		case APC_CONTEXT_NOSHARE: {
 			return apc_cache_make_context_ex(
 				context,
+                cache->serializer,
 				apc_php_malloc, apc_php_free, NULL, NULL,
 				pool_type, copy_type, force_update TSRMLS_CC
 			);
@@ -682,6 +680,7 @@ zend_bool apc_cache_make_context(apc_cache_t* cache,
 
 /* {{{ apc_cache_make_context_ex */
 zend_bool apc_cache_make_context_ex(apc_context_t* context,
+                                    apc_serializer_t* serializer,
                                     apc_malloc_t _malloc, 
                                     apc_free_t _free, 
                                     apc_protect_t _protect, 
@@ -693,16 +692,17 @@ zend_bool apc_cache_make_context_ex(apc_context_t* context,
 	context->pool = apc_pool_create(
 		pool_type, _malloc, _free, _protect, _unprotect TSRMLS_CC
 	);
-	
+
 	if (!context->pool) {
 		apc_warning("Unable to allocate memory for pool." TSRMLS_CC);
 		return 0;
 	}
 
 	/* set context information */
+	context->serializer = serializer;
 	context->copy = copy_type;
 	context->force_update = force_update;
-	
+
 	/* set this to avoid memory errors */
 	memset(&context->copied, 0, sizeof(HashTable));
 
@@ -1004,7 +1004,7 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, zend_uint keylen, a
                 case IS_CONSTANT_ARRAY:
                 case IS_OBJECT:
                 {
-                    if(APCG(serializer)) {
+                    if(cache->serializer) {
                         retval = 0;
                         break;
                     } else {
@@ -1116,9 +1116,9 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
     apc_serialize_t serialize = APC_SERIALIZER_NAME(php);
     void *config = NULL;
 
-    if(APCG(serializer)) { /* TODO: move to ctxt */
-        serialize = APCG(serializer)->serialize;
-        config = APCG(serializer)->config;
+    if(ctxt->serializer) {
+        serialize = ctxt->serializer->serialize;
+        config = ctxt->serializer->config;
     }
 
     if(serialize((unsigned char**)&buf.c, &buf.len, src, config TSRMLS_CC)) {
@@ -1142,9 +1142,9 @@ static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ct
     unsigned char *p = (unsigned char*)Z_STRVAL_P(src);
     void *config = NULL;
 
-    if(APCG(serializer)) { /* TODO: move to ctxt */
-        unserialize = APCG(serializer)->unserialize;
-        config = APCG(serializer)->config;
+    if(ctxt->serializer) {
+        unserialize = ctxt->serializer->unserialize;
+        config = ctxt->serializer->config;
     }
 
     if(unserialize(&dst, p, Z_STRLEN_P(src), config TSRMLS_CC)) {
@@ -1303,7 +1303,6 @@ static zval** my_copy_zval_ptr(zval** dst, const zval** src, apc_context_t* ctxt
 }
 /* }}} */
 
-
 /* {{{ my_copy_zval */
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
 {
@@ -1357,7 +1356,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 
     case IS_ARRAY:
     case IS_CONSTANT_ARRAY:
-        if(APCG(serializer) == NULL) {
+        if(ctxt->serializer == NULL) {
 
             CHECK(dst->value.ht =
                 my_copy_hashtable(NULL,
@@ -1651,6 +1650,13 @@ zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
     return result;
 }
 /* }}} */
+
+/* {{{ apc_cache_serializer */
+void apc_cache_serializer(apc_cache_t* cache, const char* name TSRMLS_DC) {
+	if (!cache->serializer) {
+		cache->serializer = apc_find_serializer(name TSRMLS_CC);
+	}
+} /* }}} */
 
 /*
  * Local variables:

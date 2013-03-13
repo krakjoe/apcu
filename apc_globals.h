@@ -36,7 +36,6 @@
 
 #include "apc.h"
 #include "apc_cache.h"
-#include "apc_serializer.h"
 #include "apc_stack.h"
 #include "apc_php.h"
 
@@ -98,7 +97,6 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
     zend_bool use_request_time;  /* use the SAPI request start time for TTL */
 
     char *serializer_name;       /* the serializer config option */
-    apc_serializer_t *serializer;/* the actual serializer in use */
 ZEND_END_MODULE_GLOBALS(apcu)
 
 /* (the following declaration is defined in php_apc.c) */

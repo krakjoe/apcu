@@ -148,7 +148,7 @@ APC_PRINT_FUNCTION(error, E_ERROR)
 APC_PRINT_FUNCTION(warning, E_WARNING)
 APC_PRINT_FUNCTION(notice, E_NOTICE)
 
-#ifdef __DEBUG_APC__
+#ifdef APC_DEBUG
 APC_PRINT_FUNCTION(debug, E_NOTICE)
 #else
 void apc_debug(const char *format TSRMLS_DC, ...) {}
@@ -328,31 +328,9 @@ unsigned int apc_crc32(const unsigned char* buf, unsigned int len)
 
     /* postconditioning */
     return ~crc;
-}
+} /* }}} */
 
-/* crc32gen: generate the nth (0..255) crc32 table value */
-#if 0
-static unsigned long crc32gen(int n)
-{
-    int i;
-    unsigned long crc;
-
-    crc = n;
-    for (i = 8; i >= 0; i--) {
-        if (crc & 1) {
-            crc = (crc >> 1) ^ 0xEDB88320;
-        }
-        else {
-            crc >>= 1;
-        }
-    }
-    return crc;
-}
-#endif
-
-/* }}} */
-
-/* {{{ apc_flip_hash() */
+/* {{{ apc_flip_hash */
 HashTable* apc_flip_hash(HashTable *hash) {
     zval **entry, *data;
     HashTable *new_hash;
@@ -381,6 +359,60 @@ HashTable* apc_flip_hash(HashTable *hash) {
     return new_hash;
 }
 /* }}} */
+
+/*
+* Serializer API
+*/
+#define APC_MAX_SERIALIZERS 16
+
+/* pointer to the list of serializers */
+static apc_serializer_t apc_serializers[APC_MAX_SERIALIZERS] = {{0,}};
+/* }}} */
+
+/* {{{ apc_register_serializer */
+zend_bool apc_register_serializer(const char* name, 
+                                  apc_serialize_t serialize, 
+                                  apc_unserialize_t unserialize,
+                                  void *config TSRMLS_DC) {
+    int i;
+    apc_serializer_t *serializer;
+
+    for(i = 0; i < APC_MAX_SERIALIZERS; i++) {
+        serializer = &apc_serializers[i];
+        if(!serializer->name) {
+            /* empty entry */
+            serializer->name = name;
+            serializer->serialize = serialize;
+            serializer->unserialize = unserialize;
+            serializer->config = config;
+            if (i < APC_MAX_SERIALIZERS - 1) {
+                apc_serializers[i+1].name = NULL;
+            }
+            return 1;
+        }
+    }
+
+    return 0;
+} /* }}} */
+
+/* {{{ apc_get_serializers */
+apc_serializer_t* apc_get_serializers(TSRMLS_D)  {
+	return &(apc_serializers[0]);
+} /* }}} */
+
+/* {{{ apc_find_serializer */
+apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC) {
+	int i;
+    apc_serializer_t *serializer;
+
+    for(i = 0; i < APC_MAX_SERIALIZERS; i++) {
+        serializer = &apc_serializers[i];
+        if(serializer->name && (strcmp(serializer->name, name) == 0)) {
+            return serializer;
+        }
+    }
+    return NULL;
+} /* }}} */
 
 /*
  * Local variables:

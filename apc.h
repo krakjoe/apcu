@@ -90,7 +90,7 @@ extern char** apc_tokenize(const char* s, char delim TSRMLS_DC);
 extern unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
 
 /* apc_flip_hash flips keys and values for faster searching */
-extern HashTable* apc_flip_hash(HashTable *hash); 
+extern HashTable* apc_flip_hash(HashTable *hash);
 
 #define APC_NEGATIVE_MATCH 1
 #define APC_POSITIVE_MATCH 2
@@ -113,6 +113,46 @@ extern HashTable* apc_flip_hash(HashTable *hash);
 # define APC_ALLOC 
 # define APC_HOTSPOT 
 #endif
+
+/*
+* Serializer API
+* Note: This used to live in apc_serializer.h
+*/
+#define APC_SERIALIZER_NAME(module) module##_apc_serializer
+#define APC_SERIALIZER_EXTERN(module) extern apc_serialize_t module##_apc_serializer
+#define APC_UNSERIALIZER_NAME(module) module##_apc_unserializer
+#define APC_UNSERIALIZER_EXTERN(module) extern apc_unserialize_t module##_apc_unserializer
+
+#define APC_SERIALIZER_ARGS unsigned char **buf, size_t *buf_len, const zval *value, void *config TSRMLS_DC
+#define APC_UNSERIALIZER_ARGS zval **value, unsigned char *buf, size_t buf_len, void *config TSRMLS_DC
+
+/* {{{ */
+typedef int (*apc_serialize_t)(APC_SERIALIZER_ARGS);
+typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS); /* }}} */
+
+/* {{{ struct definition: apc_serializer_t */
+typedef struct apc_serializer_t {
+    const char*        name;
+    apc_serialize_t    serialize;
+    apc_unserialize_t  unserialize;
+    void*              config;
+} apc_serializer_t;
+/* }}} */
+
+/* {{{ apc_register_serializer 
+ registers the serializer using the given name and paramters */
+extern zend_bool apc_register_serializer(const char* name, 
+                                         apc_serialize_t serialize, 
+                                         apc_unserialize_t unserialize,
+                                         void *config TSRMLS_DC); /* }}} */
+
+/* {{{ apc_get_serializers 
+ fetches the list of serializers */
+extern apc_serializer_t* apc_get_serializers(TSRMLS_D); /* }}} */
+
+/* {{{ apc_find_serializer
+ finds a previously registered serializer by name */
+extern apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC); /* }}} */
 
 #endif
 

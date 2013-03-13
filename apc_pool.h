@@ -31,7 +31,6 @@
 
 #include "apc.h"
 #include "apc_sma.h"
-#include "apc_serializer.h"
 
 #ifndef APC_POOL_API_H
 # include "apc_pool_api.h"
