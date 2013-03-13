@@ -729,7 +729,7 @@ echo
 	
 if ($AUTHENTICATED) {
 	echo <<<EOB
-		<li><a class="aright" href="$MY_SELF&CC=1&OB={$MYREQUEST['OB']}" onClick="javascript:return confirm('Are you sure?');">Clear $cache_mode Cache</a></li>
+		<li><a class="aright" href="$MY_SELF&CC=1&OB={$MYREQUEST['OB']}" onClick="javascript:return confirm('Are you sure?');">Clear Cache</a></li>
 EOB;
 }
 echo <<<EOB
@@ -753,10 +753,10 @@ case OB_HOST_STATS:
 	$mem_avail= $mem['avail_mem'];
 	$mem_used = $mem_size-$mem_avail;
 	$seg_size = bsize($mem['seg_size']);
-	$req_rate_user = sprintf("%.2f",($cache['nhits']+$cache['nmisses'])/($time-$cache['stime']));
-	$hit_rate_user = sprintf("%.2f",($cache['nhits'])/($time-$cache['stime']));
-	$miss_rate_user = sprintf("%.2f",($cache['nmisses'])/($time-$cache['stime']));
-	$insert_rate_user = sprintf("%.2f",($cache['ninserts'])/($time-$cache['stime']));
+	$req_rate_user = sprintf("%.2f", $cache['nhits'] ? (($cache['nhits']+$cache['nmisses'])/($time-$cache['stime'])) : 0);
+	$hit_rate_user = sprintf("%.2f", $cache['nhits'] ? (($cache['nhits'])/($time-$cache['stime'])) : 0);
+	$miss_rate_user = sprintf("%.2f", $cache['nmisses'] ? (($cache['nmisses'])/($time-$cache['stime'])) : 0);
+	$insert_rate_user = sprintf("%.2f", $cache['ninserts'] ? (($cache['ninserts'])/($time-$cache['stime'])) : 0);
 	$apcversion = phpversion('apcu');
 	$phpversion = phpversion();
 	$number_vars = $cache['nentries'];
@@ -776,7 +776,7 @@ EOB;
 
 	echo <<<EOB
 		<tr class=tr-0><td class=td-0>Shared Memory</td><td>{$mem['num_seg']} Segment(s) with $seg_size 
-    <br/> ({$cache['memory_type']} memory, {$cache['locking_type']} locking)
+    <br/> ({$cache['memory_type']} memory)
     </td></tr>
 EOB;
 	echo   '<tr class=tr-1><td class=td-0>Start Time</td><td>',date(DATE_FORMAT,$cache['stime']),'</td></tr>';
