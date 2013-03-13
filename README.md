@@ -29,8 +29,6 @@ Specific Changes
 Still to Do:
 ============
 
-	* serializer needs to be moved out of globals to aid third parties, apc_context_t/apc_cache_t
-    * cleanup config.m4/config.w32
 	* test/stabilize
 
 The C api does not retain backward compatibility, anyone relying on APC that will rely on APCu in the future should review the changes as soon as possible and continue to track them.
