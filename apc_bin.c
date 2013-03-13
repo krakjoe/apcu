@@ -376,7 +376,7 @@ static int apc_bin_checkfilter(HashTable *filter, const char *key, uint key_len)
 } /* }}} */
 
 /* {{{ apc_bin_dump */
-apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
+apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC) {
     apc_cache_slot_t *sp;
     apc_bd_entry_t *ep;
     int i, count=0;
@@ -390,7 +390,6 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     zend_hash_init(&APCG(apc_bd_alloc_list), 0, NULL, NULL, 0);
 
     /* flip the hash for faster filter checking */
-    files = apc_flip_hash(files);
     user_vars = apc_flip_hash(user_vars);
 
     /* get size and entry counts */
@@ -481,10 +480,6 @@ apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC) {
     zend_llist_destroy(&ll);
     zend_hash_destroy(&APCG(apc_bd_alloc_list));
 
-    if(files) {
-        zend_hash_destroy(files);
-        efree(files);
-    }
     if(user_vars) {
         zend_hash_destroy(user_vars);
         efree(user_vars);

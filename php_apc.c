@@ -932,12 +932,12 @@ PHP_FUNCTION(apc_bin_dump) {
         RETURN_FALSE;
     }
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!", &z_vars) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &z_vars) == FAILURE) {
         return;
     }
 
     h_vars = z_vars ? Z_ARRVAL_P(z_vars) : NULL;
-    bd = apc_bin_dump(NULL, h_vars TSRMLS_CC);
+    bd = apc_bin_dump(h_vars TSRMLS_CC);
     if (bd) {
         RETVAL_STRINGL((char*)bd, bd->size-1, 0);
     } else {
@@ -982,7 +982,7 @@ PHP_FUNCTION(apc_bin_dumpfile) {
     }
 
     h_vars = z_vars ? Z_ARRVAL_P(z_vars) : NULL;
-    bd = apc_bin_dump(NULL, h_vars TSRMLS_CC);
+    bd = apc_bin_dump(h_vars TSRMLS_CC);
     if (!bd) {
         apc_error("Unknown error encountered during apc_bin_dumpfile." TSRMLS_CC);
         RETURN_FALSE;

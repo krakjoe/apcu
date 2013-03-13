@@ -22,6 +22,10 @@
 #ifndef APC_BINDUMP_H
 #define APC_BINDUMP_H
 
+/*
+* @TODO XXX bin dumps are broken :(
+*/
+
 #include "apc.h"
 #include "apc_php.h"
 #include "ext/standard/basic_functions.h"
@@ -52,7 +56,7 @@ typedef struct _apc_bd_t {
     void ***swizzled_ptrs;
 } apc_bd_t;
 
-apc_bd_t* apc_bin_dump(HashTable *files, HashTable *user_vars TSRMLS_DC);
+apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC);
 int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC);
 
 #endif
