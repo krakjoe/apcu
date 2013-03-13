@@ -29,7 +29,9 @@
 */
 
 #ifndef PHP_WIN32
-# define __USE_UNIX98
+# ifndef __USE_UNIX98
+#  define __USE_UNIX98
+# endif
 # include "pthread.h"
 # ifdef APC_NATIVE_RWLOCK
 typedef pthread_rwlock_t apc_lock_t;
