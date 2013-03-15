@@ -627,7 +627,7 @@ void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 		    }
 
 			/* if the cache now has space, then reset last key */
-		    if (cache->sma->get_avail_size(size TSRMLS_CC)) {
+		    if (cache->sma->get_avail_size(size)) {
 		        /* wipe lastkey */
 				memset(&cache->header->lastkey, 0, sizeof(apc_cache_key_t));
 		    } else {
@@ -883,6 +883,8 @@ zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, zend_uint keylen, ti
 {
 	apc_cache_entry_t *entry;
 	zend_bool ret = 0;
+	
+	HANDLE_BLOCK_INTERRUPTIONS();
 
 	/* find the entry */
 	if ((entry = apc_cache_find(cache, strkey, keylen, t TSRMLS_CC))) {
@@ -906,6 +908,8 @@ zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, zend_uint keylen, ti
 			ret = 1;
 		}
 	}
+	
+	HANDLE_UNBLOCK_INTERRUPTIONS();
 
 	return ret;
 } /* }}} */

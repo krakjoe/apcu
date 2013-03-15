@@ -71,7 +71,7 @@ typedef void* (*apc_sma_unprotect_f) (void* p);
 typedef apc_sma_info_t* (*apc_sma_info_f) (zend_bool limited TSRMLS_DC);
 typedef void (*apc_sma_free_info_f) (apc_sma_info_t *info TSRMLS_DC);
 typedef zend_ulong (*apc_sma_get_avail_mem_f) ();
-typedef zend_bool (*apc_sma_get_avail_size_f) (zend_ulong size TSRMLS_DC);
+typedef zend_bool (*apc_sma_get_avail_size_f) (zend_ulong size);
 typedef void (*apc_sma_check_integrity_f) (); 
 typedef void (*apc_sma_expunge_f)(void* pointer, zend_ulong size TSRMLS_DC); /* }}} */
 
