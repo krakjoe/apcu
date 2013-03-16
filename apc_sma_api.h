@@ -82,7 +82,7 @@ typedef struct _apc_sma_t {
     /* functions */
     apc_sma_init_f init;                         /* init */
     apc_sma_cleanup_f cleanup;                   /* cleanup */
-    apc_sma_malloc_f malloc;                     /* malloc */
+    apc_sma_malloc_f smalloc;                    /* malloc */
     apc_sma_malloc_ex_f malloc_ex;               /* malloc_ex */
     apc_sma_realloc_f realloc;                   /* realloc */
     apc_sma_strdup_f strdup;                     /* strdup */

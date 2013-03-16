@@ -5,6 +5,18 @@ dnl
 PHP_ARG_ENABLE(apcu, whether to enable APCu support,
 [  --enable-apcu          Enable APCu support])
 
+AC_MSG_CHECKING(if APCu should be allowed to use rwlocks)
+AC_ARG_ENABLE(apcu-rwlocks,
+[  --disable-apcu-rwlocks Disable rwlocks in APCu],
+[
+  PHP_APCU_RWLOCKS=no
+  AC_MSG_RESULT(no)
+],
+[
+  PHP_APCU_RWLOCKS=yes
+  AC_MSG_RESULT(yes)
+])
+
 AC_MSG_CHECKING(if APCu should be built in debug mode)
 AC_ARG_ENABLE(apcu-debug,
 [  --enable-apcu-debug    Enable APCu debugging], 
@@ -37,11 +49,13 @@ if test "$PHP_APCU" != "no"; then
 		AC_DEFINE(APC_MMAP, 1, [ ])
 	fi
 
-	PHP_CHECK_LIBRARY(pthread, pthread_rwlock_init,
-  [
-    PHP_ADD_LIBRARY(pthread,,APCU_SHARED_LIBADD)
-		AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
-  ])
+  if test "$PHP_APCU_RWLOCKS" != "no"; then
+    PHP_CHECK_LIBRARY(pthread, pthread_rwlock_init,
+    [
+      PHP_ADD_LIBRARY(pthread,,APCU_SHARED_LIBADD)
+		  AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
+    ])
+  fi
 	
   AC_CHECK_FUNCS(sigaction)
   AC_CACHE_CHECK(for union semun, php_cv_semun,
