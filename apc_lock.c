@@ -163,8 +163,8 @@ zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC) {
 void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
-	pthread_mutex_destroy(lock->read);
-	pthread_mutex_destroy(lock->write);
+	pthread_mutex_destroy(&lock->read);
+	pthread_mutex_destroy(&lock->write);
 # else
 	pthread_rwlock_destroy(lock);
 # endif
