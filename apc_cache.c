@@ -287,7 +287,7 @@ apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, int 
     cache_size = sizeof(apc_cache_header_t) + nslots*sizeof(apc_cache_slot_t*);
 
 	/* allocate shm */
-    cache->shmaddr = sma->malloc(cache_size TSRMLS_CC);
+    cache->shmaddr = sma->smalloc(cache_size TSRMLS_CC);
     if(!cache->shmaddr) {
         apc_error("Unable to allocate shared memory for cache structures.  (Perhaps your shared memory size isn't large enough?). " TSRMLS_CC);
         return NULL;
@@ -657,7 +657,7 @@ zend_bool apc_cache_make_context(apc_cache_t* cache,
 			return apc_cache_make_context_ex(
 				context,
                 cache->serializer,
-				(apc_malloc_t) cache->sma->malloc,
+				(apc_malloc_t) cache->sma->smalloc,
                 cache->sma->free,
                 cache->sma->protect,
                 cache->sma->unprotect,
