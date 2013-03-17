@@ -21,7 +21,7 @@ var_dump(apc_fetch('foo'));
 <?php exit(0); ?>
 --CLEAN--
 <?php
-//unlink(dirname(__FILE__) . '/foo.bin');
+unlink(dirname(__FILE__) . '/foo.bin');
 --EXPECTF--
 bool(false)
 int(42)
