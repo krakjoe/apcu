@@ -711,8 +711,13 @@ zend_bool apc_cache_make_context_ex(apc_context_t* context,
 
 /* {{{ apc_context_destroy */
 zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC) {
-	if (context->pool)
-		apc_pool_destroy(context->pool TSRMLS_CC);
+    if (!context->pool) {
+        return 0;
+    }
+
+    apc_pool_destroy(context->pool TSRMLS_CC);
+
+    return 1;
 } /* }}} */
 
 /* {{{ apc_cache_insert */
@@ -1052,7 +1057,7 @@ zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, zend_uint keylen TS
     zend_ulong h, s;
 
 	if (!cache) {
-		return;
+		return 1;
 	}
 
     /* calculate hash and slot */
