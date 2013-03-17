@@ -15,7 +15,7 @@ apc.enable_cli=1
 <?php
 apc_clear_cache();
 var_dump(apc_fetch('foo'));
-apc_bin_loadfile(dirname(__FILE__) . '/foo.bin');
+apc_bin_loadfile(dirname(__FILE__) . '/foo.bin', NULL, APC_BIN_VERIFY_MD5 | APC_BIN_VERIFY_CRC32);
 var_dump(apc_fetch('foo'));
 ?>
 ===DONE===

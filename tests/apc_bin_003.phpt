@@ -16,7 +16,8 @@ apc.enable_cli=1
 <?php
 apc_clear_cache();
 var_dump(apc_fetch('foo'));
-apc_bin_loadfile(dirname(__FILE__) . '/foo.bin');
+var_dump(apc_fetch('bar'));
+apc_bin_loadfile(dirname(__FILE__) . '/foo.bin', NULL, APC_BIN_VERIFY_MD5 | APC_BIN_VERIFY_CRC32);
 var_dump(apc_fetch('foo'));
 var_dump(apc_fetch('bar'));
 ?>
@@ -26,6 +27,7 @@ var_dump(apc_fetch('bar'));
 <?php
 unlink(dirname(__FILE__) . '/foo.bin');
 --EXPECTF--
+bool(false)
 bool(false)
 int(42)
 string(3) "foo"
