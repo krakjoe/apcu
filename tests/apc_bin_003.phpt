@@ -8,7 +8,7 @@ APC: bindump user cache, variation 3
 apc_clear_cache();
 apc_store('foo', 42);
 apc_store('bar', 'foo');
-apc_bin_dumpfile(NULL, dirname(__FILE__) . '/foo.bin');
+apc_bin_dumpfile(NULL, dirname(__FILE__) . '/foo.bin', APC_BIN_VERIFY_MD5 | APC_BIN_VERIFY_CRC32);
 --INI--
 apc.enabled=1
 apc.enable_cli=1
