@@ -403,7 +403,7 @@ apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC) {
             }
         }
     }
-	
+
     size += sizeof(apc_bd_t) +1;  /* +1 for null termination */
     bd = emalloc(size);
     bd->size = (unsigned int)size;
@@ -467,6 +467,7 @@ apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC) {
                     apc_swizzle_zval(bd, &ctxt, &ll, bd->entries[count].val.val TSRMLS_CC);
                 }
                 apc_swizzle_ptr(bd, &ctxt, &ll, &bd->entries[count].val.val);
+                apc_swizzle_ptr(bd, &ctxt, &ll, &bd->entries[count].key.str);
 
                 count++;
             }
