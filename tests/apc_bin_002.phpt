@@ -1,9 +1,10 @@
 --TEST--
-APC: bindump user cache
+APC: bindump user cache, variation 2
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 <?php
-/* this is a hack, but otherwise the data for each platform have to be created. */
+/* XXX this is a hack, but otherwise the data for each platform 
+   has te be created manually */
 apc_clear_cache();
 apc_store('foo', 42);
 apc_bin_dumpfile(array('foo'), dirname(__FILE__) . '/foo.bin');

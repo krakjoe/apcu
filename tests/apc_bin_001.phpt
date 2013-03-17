@@ -1,5 +1,5 @@
 --TEST--
-APC: bindump user cache
+APC: bindump user cache, variation 1
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
