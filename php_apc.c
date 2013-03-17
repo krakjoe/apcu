@@ -66,6 +66,11 @@ PHP_FUNCTION(apc_dec);
 PHP_FUNCTION(apc_cas);
 PHP_FUNCTION(apc_exists);
 
+PHP_FUNCTION(apcu_bin_dump);
+PHP_FUNCTION(apcu_bin_load);
+PHP_FUNCTION(apcu_bin_dumpfile);
+PHP_FUNCTION(apcu_bin_loadfile);
+/* These are aliases to apcu_bin_* series */
 PHP_FUNCTION(apc_bin_dump);
 PHP_FUNCTION(apc_bin_load);
 PHP_FUNCTION(apc_bin_dumpfile);
@@ -920,11 +925,15 @@ PHP_FUNCTION(apc_delete) {
 }
 /* }}} */
 
-/* {{{ proto mixed apc_bin_dump([array vars])
+PHP_FUNCTION(apc_bin_dump) {
+    PHP_FN(apcu_bin_dump)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
+
+/* {{{ proto mixed apcu_bin_dump([array vars])
     Returns a binary dump of the given user variables from the APC cache.
     A NULL for vars signals a dump of every entry, while array() will dump nothing.
  */
-PHP_FUNCTION(apc_bin_dump) {
+PHP_FUNCTION(apcu_bin_dump) {
 
     zval *z_vars = NULL;
     HashTable  *h_vars;
@@ -935,9 +944,15 @@ PHP_FUNCTION(apc_bin_dump) {
         RETURN_FALSE;
     }
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &z_vars) == FAILURE) {
-        return;
-    }
+    do {
+        zval *z_files;
+
+        if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS() TSRMLS_CC, "a!a!", &z_files, &z_vars) == SUCCESS) {
+            apc_warning("apc_bin_dump is for BC only. Please use apcu_bin_dump." TSRMLS_CC);
+        } else if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &z_vars) == FAILURE) {
+            return;
+        }
+    } while(0);
 
     h_vars = z_vars ? Z_ARRVAL_P(z_vars) : NULL;
     bd = apc_bin_dump(h_vars TSRMLS_CC);
@@ -952,11 +967,14 @@ PHP_FUNCTION(apc_bin_dump) {
 }
 /* }}} */
 
+PHP_FUNCTION(apc_bin_dumpfile) {
+    PHP_FN(apcu_bin_dumpfile)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
 
-/* {{{ proto mixed apc_bin_dumpfile(array vars, string filename, [int flags [, resource context]])
+/* {{{ proto mixed apcu_bin_dumpfile(array vars, string filename, [int flags [, resource context]])
     Output a binary dump of the given user variables from the APC cache to the named file.
  */
-PHP_FUNCTION(apc_bin_dumpfile) {
+PHP_FUNCTION(apcu_bin_dumpfile) {
 
     zval *z_vars = NULL;
     HashTable *h_vars;
@@ -974,10 +992,15 @@ PHP_FUNCTION(apc_bin_dumpfile) {
         RETURN_FALSE;
     }
 
+    do {
+        zval *z_files;
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a!s|lr!", &z_vars, &filename, &filename_len, &flags, &zcontext) == FAILURE) {
-        return;
-    }
+        if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS() TSRMLS_CC, "a!a!s|lr!", &z_files, &z_vars, &filename, &filename_len, &flags, &zcontext) == SUCCESS) {
+                apc_warning("apc_bin_dumpfile is for BC only. Please use apcu_bin_dumpfile." TSRMLS_CC);
+            } else if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a!s|lr!", &z_vars, &filename, &filename_len, &flags, &zcontext) == FAILURE) {
+                return;
+            }
+    } while(0);
 
     if (!filename_len) {
         apc_error("apc_bin_dumpfile filename argument must be a valid filename." TSRMLS_CC);
@@ -1027,10 +1050,14 @@ PHP_FUNCTION(apc_bin_dumpfile) {
 }
 /* }}} */
 
-/* {{{ proto mixed apc_bin_load(string data, [int flags])
+PHP_FUNCTION(apc_bin_load) {
+    PHP_FN(apcu_bin_load)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
+
+/* {{{ proto mixed apcu_bin_load(string data, [int flags])
     Load the given binary dump into the APC file/user cache.
  */
-PHP_FUNCTION(apc_bin_load) {
+PHP_FUNCTION(apcu_bin_load) {
 
     int data_len;
     char *data;
@@ -1056,10 +1083,13 @@ PHP_FUNCTION(apc_bin_load) {
 }
 /* }}} */
 
+PHP_FUNCTION(apc_bin_loadfile) {
+    PHP_FN(apcu_bin_loadfile)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+}
 /* {{{ proto mixed apc_bin_loadfile(string filename, [resource context, [int flags]])
     Load the given binary dump from the named file into the APC file/user cache.
  */
-PHP_FUNCTION(apc_bin_loadfile) {
+PHP_FUNCTION(apcu_bin_loadfile) {
 
     char *filename;
     int filename_len;
@@ -1174,13 +1204,13 @@ ZEND_END_ARG_INFO()
 
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_bin_dump, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_bin_dump, 0, 0, 0)
     ZEND_ARG_INFO(0, files)
     ZEND_ARG_INFO(0, user_vars)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_bin_dumpfile, 0, 0, 3)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_bin_dumpfile, 0, 0, 3)
     ZEND_ARG_INFO(0, files)
     ZEND_ARG_INFO(0, user_vars)
     ZEND_ARG_INFO(0, filename)
@@ -1189,13 +1219,13 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_bin_dumpfile, 0, 0, 3)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_bin_load, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_bin_load, 0, 0, 1)
     ZEND_ARG_INFO(0, data)
     ZEND_ARG_INFO(0, flags)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_bin_loadfile, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_bin_loadfile, 0, 0, 1)
     ZEND_ARG_INFO(0, filename)
     ZEND_ARG_INFO(0, context)
     ZEND_ARG_INFO(0, flags)
@@ -1215,10 +1245,14 @@ zend_function_entry apcu_functions[] = {
     PHP_FE(apc_dec,                 arginfo_apc_inc)
     PHP_FE(apc_cas,                 arginfo_apc_cas)
     PHP_FE(apc_exists,              arginfo_apc_exists)
-    PHP_FE(apc_bin_dump,            arginfo_apc_bin_dump)
-    PHP_FE(apc_bin_load,            arginfo_apc_bin_load)
-    PHP_FE(apc_bin_dumpfile,        arginfo_apc_bin_dumpfile)
-    PHP_FE(apc_bin_loadfile,        arginfo_apc_bin_loadfile)
+    PHP_FE(apcu_bin_dump,           arginfo_apcu_bin_dump)
+    PHP_FE(apcu_bin_load,           arginfo_apcu_bin_load)
+    PHP_FE(apcu_bin_dumpfile,       arginfo_apcu_bin_dumpfile)
+    PHP_FE(apcu_bin_loadfile,       arginfo_apcu_bin_loadfile)
+    PHP_FE(apc_bin_dump,            NULL) 
+    PHP_FE(apc_bin_load,            NULL)
+    PHP_FE(apc_bin_dumpfile,        NULL)
+    PHP_FE(apc_bin_loadfile,        NULL)
     {NULL, NULL, NULL}
 };
 /* }}} */
