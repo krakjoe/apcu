@@ -302,6 +302,9 @@ static PHP_MINIT_FUNCTION(apcu)
 			/* initialize iterator object */
             apc_iterator_init(module_number TSRMLS_CC);
         }
+
+        zend_register_long_constant("APC_BIN_VERIFY_MD5", sizeof("APC_BIN_VERIFY_MD5"), APC_BIN_VERIFY_MD5, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
+        zend_register_long_constant("APC_BIN_VERIFY_CRC32", sizeof("APC_BIN_VERIFY_CRC32"), APC_BIN_VERIFY_CRC32, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
     }
 
     return SUCCESS;
