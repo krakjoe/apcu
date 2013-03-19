@@ -76,6 +76,14 @@ static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
 		apc_cache_clear(
 			apc_user_cache TSRMLS_CC);
 	}
+	
+	apc_rehandle_signal(signo, siginfo, context);
+	
+#if !defined(WIN32) && !defined(NETWARE)
+    kill(getpid(), signo);
+#else
+    raise(signo);
+#endif
 } /* }}} */
 
 /* {{{ apc_rehandle_signal
@@ -148,7 +156,7 @@ static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*
 void apc_set_signals(TSRMLS_D) 
 {
 	if (apc_signal_info.installed == 0) {
-#ifdef SIGUSR1
+#if defined(SIGUSR1) && defined(APC_SIGNAL_CLEAR)
 		apc_register_signal(SIGUSR1, apc_clear_cache TSRMLS_CC);
 #endif
 		if (APCG(coredump_unmap)) {

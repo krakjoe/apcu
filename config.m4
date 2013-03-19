@@ -29,6 +29,17 @@ AC_ARG_ENABLE(apcu-debug,
   AC_MSG_RESULT(no)
 ])
 
+AC_MSG_CHECKING(if APCu should clear on SIGUSR1)
+AC_ARG_ENABLE(apcu-clear-signal,
+[  --enable-apcu-clear-signal  Enable SIGUSR1 clearing handler],
+[
+  AC_DEFINE(APC_CLEAR_SIGNAL, 1, [ ])
+  AC_MSG_RESULT(yes)
+],
+[
+  AC_MSG_RESULT(no)
+])
+
 AC_MSG_CHECKING(if APCu will use mmap or shm)
 AC_ARG_ENABLE(apcu-mmap,
 [  --disable-apcu-mmap		Disable mmap, falls back on shm],
