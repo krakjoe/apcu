@@ -955,7 +955,7 @@ PHP_FUNCTION(apcu_bin_dump) {
     } while(0);
 
     h_vars = z_vars ? Z_ARRVAL_P(z_vars) : NULL;
-    bd = apc_bin_dump(h_vars TSRMLS_CC);
+    bd = apc_bin_dump(apc_user_cache, h_vars TSRMLS_CC);
     if (bd) {
         RETVAL_STRINGL((char*)bd, bd->size-1, 0);
     } else {
@@ -1008,7 +1008,7 @@ PHP_FUNCTION(apcu_bin_dumpfile) {
     }
 
     h_vars = z_vars ? Z_ARRVAL_P(z_vars) : NULL;
-    bd = apc_bin_dump(h_vars TSRMLS_CC);
+    bd = apc_bin_dump(apc_user_cache, h_vars TSRMLS_CC);
     if (!bd) {
         apc_error("Unknown error encountered during apc_bin_dumpfile." TSRMLS_CC);
         RETURN_FALSE;
@@ -1077,7 +1077,7 @@ PHP_FUNCTION(apcu_bin_load) {
         RETURN_FALSE;
     }
 
-    apc_bin_load((apc_bd_t*)data, (int)flags TSRMLS_CC);
+    apc_bin_load(apc_user_cache, (apc_bd_t*)data, (int)flags TSRMLS_CC);
 
     RETURN_TRUE;
 }
@@ -1135,7 +1135,7 @@ PHP_FUNCTION(apcu_bin_loadfile) {
     }
     php_stream_close(stream);
 
-    apc_bin_load((apc_bd_t*)data, (int)flags TSRMLS_CC);
+    apc_bin_load(apc_user_cache, (apc_bd_t*)data, (int)flags TSRMLS_CC);
     efree(data);
 
     RETURN_TRUE;

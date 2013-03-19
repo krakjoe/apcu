@@ -376,7 +376,7 @@ static int apc_bin_checkfilter(HashTable *filter, const char *key, uint key_len)
 } /* }}} */
 
 /* {{{ apc_bin_dump */
-apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC) {
+apc_bd_t* apc_bin_dump(apc_cache_t* cache, HashTable *user_vars TSRMLS_DC) {
     apc_cache_slot_t *sp;
     apc_bd_entry_t *ep;
     int i, count=0;
@@ -393,8 +393,8 @@ apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC) {
     user_vars = apc_flip_hash(user_vars);
 
     /* get size and entry counts */
-    for(i=0; i < apc_user_cache->nslots; i++) {
-        sp = apc_user_cache->slots[i];
+    for(i=0; i < cache->nslots; i++) {
+        sp = cache->slots[i];
         for(; sp != NULL; sp = sp->next) {
             if(apc_bin_checkfilter(user_vars, sp->key.str, sp->key.len)) {
                 size += sizeof(apc_bd_entry_t*) + sizeof(apc_bd_entry_t);
@@ -410,7 +410,7 @@ apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC) {
     pool_ptr = emalloc(sizeof(apc_pool));
     apc_bd_alloc_ex(pool_ptr, sizeof(apc_pool) TSRMLS_CC);
 
-	ctxt.serializer = apc_user_cache->serializer;
+	ctxt.serializer = cache->serializer;
     ctxt.pool = apc_pool_create(APC_UNPOOL, apc_bd_alloc, apc_bd_free, NULL, NULL TSRMLS_CC);  /* ideally the pool wouldn't be alloc'd as part of this */
     if (!ctxt.pool) { /* TODO need to cleanup */
         apc_warning("Unable to allocate memory for pool." TSRMLS_CC);
@@ -425,8 +425,8 @@ apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC) {
     /* User entries */
     zend_hash_init(&ctxt.copied, 0, NULL, NULL, 0);
     count = 0;
-    for(i=0; i < apc_user_cache->nslots; i++) {
-        sp = apc_user_cache->slots[i];
+    for(i=0; i < cache->nslots; i++) {
+        sp = cache->slots[i];
         for(; sp != NULL; sp = sp->next) {
             if(apc_bin_checkfilter(user_vars, sp->key.str, sp->key.len)) {
                 ep = &bd->entries[count];
@@ -435,7 +435,7 @@ apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC) {
 				ep->key.str = apc_pmemcpy(sp->key.str, sp->key.len, ctxt.pool TSRMLS_CC);
 				ep->key.len = sp->key.len;
 
-                if ((Z_TYPE_P(sp->value->val) == IS_ARRAY && apc_user_cache->serializer)
+                if ((Z_TYPE_P(sp->value->val) == IS_ARRAY && cache->serializer)
                         || Z_TYPE_P(sp->value->val) == IS_OBJECT) {
                     /* avoiding hash copy, hack */
                     uint type = Z_TYPE_P(sp->value->val);
@@ -444,7 +444,7 @@ apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC) {
 					
                     Z_TYPE_P(ep->val.val) = IS_OBJECT;
                     sp->value->val->type = type;
-                } else if (Z_TYPE_P(sp->value->val) == IS_ARRAY && !apc_user_cache->serializer) {
+                } else if (Z_TYPE_P(sp->value->val) == IS_ARRAY && !cache->serializer) {
                     /* this is a little complicated, we have to unserialize it first, then serialize it again */
                     zval *garbage;
                     ctxt.copy = APC_COPY_OUT;
@@ -492,7 +492,7 @@ apc_bd_t* apc_bin_dump(HashTable *user_vars TSRMLS_DC) {
 } /* }}} */
 
 /* {{{ apc_bin_load */
-int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
+int apc_bin_load(apc_cache_t* cache, apc_bd_t *bd, int flags TSRMLS_DC) {
     apc_bd_entry_t *ep;
     uint i;
     time_t t;
@@ -529,7 +529,7 @@ int apc_bin_load(apc_bd_t *bd, int flags TSRMLS_DC) {
             ctxt.copy = APC_COPY_IN;
 
             apc_cache_store(
-				apc_user_cache, ep->key.str, ep->key.len, data, ep->val.ttl, 0 TSRMLS_CC);
+				cache, ep->key.str, ep->key.len, data, ep->val.ttl, 0 TSRMLS_CC);
 
             if (use_copy) {
                 zval_ptr_dtor(&data);
