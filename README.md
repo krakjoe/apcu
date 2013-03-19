@@ -15,10 +15,10 @@ Specific Changes
 
     * appropriate changes (removals) to configuration parameters (complete)
     * appropriate changes to userspace management script (complete)
-	* revision of APC locking (ongoing, unix-like OS tested & working, more testing to be done)
+	* revision of APC locking (complete)
     * revision of APC's caching API (complete)
     * revision of APC's PHP internals (complete)
-    * revision of APC's userspace API (complete, exception apc_bin.c)
+    * revision of APC's userspace API (complete)
     * revision of APC's shared memory allocator (complete)
     * revision of APC's pooling API (complete, no functional changes, documented)
     * installation of SIGUSR1 handler (where possible) to clear cache (complete)
@@ -33,14 +33,3 @@ Still to Do:
 
 The C api does not retain backward compatibility, anyone relying on APC that will rely on APCu in the future should review the changes as soon as possible and continue to track them.
 The PHP api will retain compatibility with APC, as will common configuration options, providing a drop in replacement.
-
-Possible Ideas
-==============
-
-In no particular order:
-
-	* an asyncronous apc_store/apc_add solution (already tested, removed in the interest of simplicity)
-	* TCP failover for APCu, utilizing the binary API and TCP sockets (untested, would love it)
-    * local connection to an instance of APCu in another process ( or SAPI ) from at least CLI
-
-If you have any thoughts, please provde them to me, by any means.
