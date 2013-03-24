@@ -70,11 +70,6 @@ PHP_FUNCTION(apcu_bin_dump);
 PHP_FUNCTION(apcu_bin_load);
 PHP_FUNCTION(apcu_bin_dumpfile);
 PHP_FUNCTION(apcu_bin_loadfile);
-/* These are aliases to apcu_bin_* series */
-PHP_FUNCTION(apc_bin_dump);
-PHP_FUNCTION(apc_bin_load);
-PHP_FUNCTION(apc_bin_dumpfile);
-PHP_FUNCTION(apc_bin_loadfile);
 /* }}} */
 
 /* {{{ ZEND_DECLARE_MODULE_GLOBALS(apcu) */
@@ -197,35 +192,6 @@ PHP_INI_END()
 
 /* }}} */
 
-#ifdef APC_FULL_BC
-
-PHP_MINFO_FUNCTION(apc)
-{
-	php_info_print_table_start();
-	php_info_print_table_row(2, "APC support", "Emulated");
-	php_info_print_table_end();
-}
-
-zend_module_entry apc_module_entry = {
-	STANDARD_MODULE_HEADER,
-	"apc",
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	PHP_MINFO(apc),
-	PHP_APC_VERSION,
-	STANDARD_MODULE_PROPERTIES,
-};
-
-static void apc_init(INIT_FUNC_ARGS)
-{
-	zend_register_internal_module(&apc_module_entry TSRMLS_CC);
-}
-
-#endif
-
 /* {{{ PHP_MINFO_FUNCTION(apcu) */
 static PHP_MINFO_FUNCTION(apcu)
 {
@@ -274,6 +240,10 @@ static PHP_MINFO_FUNCTION(apcu)
 
 #ifdef MULTIPART_EVENT_FORMDATA
 extern int apc_rfc1867_progress(unsigned int event, void *event_data, void **extra TSRMLS_DC);
+#endif
+
+#ifdef APC_FULL_BC
+static void apc_init(INIT_FUNC_ARGS);
 #endif
 
 /* {{{ PHP_MINIT_FUNCTION(apcu) */
@@ -957,10 +927,6 @@ PHP_FUNCTION(apc_delete) {
 }
 /* }}} */
 
-PHP_FUNCTION(apc_bin_dump) {
-    PHP_FN(apcu_bin_dump)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-}
-
 /* {{{ proto mixed apcu_bin_dump([array vars])
     Returns a binary dump of the given user variables from the APC cache.
     A NULL for vars signals a dump of every entry, while array() will dump nothing.
@@ -998,10 +964,6 @@ PHP_FUNCTION(apcu_bin_dump) {
     return;
 }
 /* }}} */
-
-PHP_FUNCTION(apc_bin_dumpfile) {
-    PHP_FN(apcu_bin_dumpfile)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-}
 
 /* {{{ proto mixed apcu_bin_dumpfile(array vars, string filename, [int flags [, resource context]])
     Output a binary dump of the given user variables from the APC cache to the named file.
@@ -1082,10 +1044,6 @@ PHP_FUNCTION(apcu_bin_dumpfile) {
 }
 /* }}} */
 
-PHP_FUNCTION(apc_bin_load) {
-    PHP_FN(apcu_bin_load)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-}
-
 /* {{{ proto mixed apcu_bin_load(string data, [int flags])
     Load the given binary dump into the APC file/user cache.
  */
@@ -1115,9 +1073,6 @@ PHP_FUNCTION(apcu_bin_load) {
 }
 /* }}} */
 
-PHP_FUNCTION(apc_bin_loadfile) {
-    PHP_FN(apcu_bin_loadfile)(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-}
 /* {{{ proto mixed apc_bin_loadfile(string filename, [resource context, [int flags]])
     Load the given binary dump from the named file into the APC file/user cache.
  */
@@ -1264,7 +1219,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_bin_loadfile, 0, 0, 1)
 ZEND_END_ARG_INFO()
 /* }}} */
 
-/* {{{ apc_functions[] */
+/* {{{ apcu_functions[] */
 zend_function_entry apcu_functions[] = {
     PHP_FE(apc_cache_info,          arginfo_apc_cache_info)
     PHP_FE(apc_clear_cache,         arginfo_apc_clear_cache)
@@ -1281,10 +1236,6 @@ zend_function_entry apcu_functions[] = {
     PHP_FE(apcu_bin_load,           arginfo_apcu_bin_load)
     PHP_FE(apcu_bin_dumpfile,       arginfo_apcu_bin_dumpfile)
     PHP_FE(apcu_bin_loadfile,       arginfo_apcu_bin_loadfile)
-    PHP_FE(apc_bin_dump,            NULL) 
-    PHP_FE(apc_bin_load,            NULL)
-    PHP_FE(apc_bin_dumpfile,        NULL)
-    PHP_FE(apc_bin_loadfile,        NULL)
     {NULL, NULL, NULL}
 };
 /* }}} */
@@ -1303,6 +1254,44 @@ zend_module_entry apcu_module_entry = {
     PHP_APC_VERSION,
     STANDARD_MODULE_PROPERTIES
 };
+
+#ifdef APC_FULL_BC
+
+PHP_MINFO_FUNCTION(apc)
+{
+	php_info_print_table_start();
+	php_info_print_table_row(2, "APC support", "Emulated");
+	php_info_print_table_end();
+}
+
+/* {{{ apc_functions[] */
+zend_function_entry apc_functions[] = {
+    PHP_FALIAS(apc_bin_dump,     apcu_bin_dump,     arginfo_apcu_bin_dump)
+    PHP_FALIAS(apc_bin_load,     apcu_bin_load,     arginfo_apcu_bin_load)
+    PHP_FALIAS(apc_bin_dumpfile, apcu_bin_dumpfile, arginfo_apcu_bin_dumpfile)
+    PHP_FALIAS(apc_bin_loadfile, apcu_bin_loadfile, arginfo_apcu_bin_loadfile)
+    {NULL, NULL, NULL}
+};
+
+zend_module_entry apc_module_entry = {
+	STANDARD_MODULE_HEADER,
+	"apc",
+	apc_functions,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	PHP_MINFO(apc),
+	PHP_APC_VERSION,
+	STANDARD_MODULE_PROPERTIES,
+};
+
+static void apc_init(INIT_FUNC_ARGS)
+{
+	zend_register_internal_module(&apc_module_entry TSRMLS_CC);
+}
+
+#endif
 
 
 #ifdef COMPILE_DL_APCU
