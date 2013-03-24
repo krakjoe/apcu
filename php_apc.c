@@ -197,6 +197,35 @@ PHP_INI_END()
 
 /* }}} */
 
+#ifdef APC_FULL_BC
+
+PHP_MINFO_FUNCTION(apc)
+{
+	php_info_print_table_start();
+	php_info_print_table_row(2, "APC support", "Emulated");
+	php_info_print_table_end();
+}
+
+zend_module_entry apc_module_entry = {
+	STANDARD_MODULE_HEADER,
+	"apc",
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	PHP_MINFO(apc),
+	PHP_APC_VERSION,
+	STANDARD_MODULE_PROPERTIES,
+};
+
+static void apc_init(INIT_FUNC_ARGS)
+{
+	zend_register_internal_module(&apc_module_entry TSRMLS_CC);
+}
+
+#endif
+
 /* {{{ PHP_MINFO_FUNCTION(apcu) */
 static PHP_MINFO_FUNCTION(apcu)
 {
@@ -311,6 +340,9 @@ static PHP_MINIT_FUNCTION(apcu)
         zend_register_long_constant("APC_BIN_VERIFY_MD5", sizeof("APC_BIN_VERIFY_MD5"), APC_BIN_VERIFY_MD5, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
         zend_register_long_constant("APC_BIN_VERIFY_CRC32", sizeof("APC_BIN_VERIFY_CRC32"), APC_BIN_VERIFY_CRC32, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
     }
+#ifdef APC_FULL_BC
+	apc_init(INIT_FUNC_ARGS_PASSTHRU);
+#endif
 
     return SUCCESS;
 }
@@ -1271,6 +1303,7 @@ zend_module_entry apcu_module_entry = {
     PHP_APC_VERSION,
     STANDARD_MODULE_PROPERTIES
 };
+
 
 #ifdef COMPILE_DL_APCU
 ZEND_GET_MODULE(apcu)

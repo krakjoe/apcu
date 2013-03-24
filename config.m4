@@ -3,11 +3,23 @@ dnl $Id: config.m4 327593 2012-09-10 11:50:58Z pajoye $
 dnl
 
 PHP_ARG_ENABLE(apcu, whether to enable APCu support,
-[  --enable-apcu          Enable APCu support])
+[  --enable-apcu           Enable APCu support])
+
+AC_MSG_CHECKING(if APCu should provide APC full compatibility support)
+AC_ARG_ENABLE(apc-bc,
+[  --disable-apc-bc        Disable APC full compatibility support],
+[
+  PHP_APC_BC=no
+  AC_MSG_RESULT(no)
+],
+[
+  PHP_APC_BC=yes
+  AC_MSG_RESULT(yes)
+])
 
 AC_MSG_CHECKING(if APCu should be allowed to use rwlocks)
 AC_ARG_ENABLE(apcu-rwlocks,
-[  --disable-apcu-rwlocks Disable rwlocks in APCu],
+[  --disable-apcu-rwlocks  Disable rwlocks in APCu],
 [
   PHP_APCU_RWLOCKS=no
   AC_MSG_RESULT(no)
@@ -19,7 +31,7 @@ AC_ARG_ENABLE(apcu-rwlocks,
 
 AC_MSG_CHECKING(if APCu should be built in debug mode)
 AC_ARG_ENABLE(apcu-debug,
-[  --enable-apcu-debug    Enable APCu debugging], 
+[  --enable-apcu-debug     Enable APCu debugging],
 [
   PHP_APCU_DEBUG=yes
 	AC_MSG_RESULT(yes)
@@ -42,7 +54,7 @@ AC_ARG_ENABLE(apcu-clear-signal,
 
 AC_MSG_CHECKING(if APCu will use mmap or shm)
 AC_ARG_ENABLE(apcu-mmap,
-[  --disable-apcu-mmap		Disable mmap, falls back on shm],
+[  --disable-apcu-mmap     Disable mmap, falls back on shm],
 [
   PHP_APCU_MMAP=no
   AC_MSG_RESULT(shm)
@@ -52,6 +64,9 @@ AC_ARG_ENABLE(apcu-mmap,
 ])
 
 if test "$PHP_APCU" != "no"; then
+	if test "$PHP_APC_BC" != "no"; then
+		AC_DEFINE(APC_FULL_BC, 1, [APC full compatibility support])
+	fi
 	if test "$PHP_APCU_DEBUG" != "no"; then
 		AC_DEFINE(APC_DEBUG, 1, [ ])
 	fi
