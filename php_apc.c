@@ -54,17 +54,17 @@
 #endif
 
 /* {{{ PHP_FUNCTION declarations */
-PHP_FUNCTION(apc_cache_info);
-PHP_FUNCTION(apc_clear_cache);
-PHP_FUNCTION(apc_sma_info);
-PHP_FUNCTION(apc_store);
-PHP_FUNCTION(apc_fetch);
-PHP_FUNCTION(apc_delete);
-PHP_FUNCTION(apc_add);
-PHP_FUNCTION(apc_inc);
-PHP_FUNCTION(apc_dec);
-PHP_FUNCTION(apc_cas);
-PHP_FUNCTION(apc_exists);
+PHP_FUNCTION(apcu_cache_info);
+PHP_FUNCTION(apcu_clear_cache);
+PHP_FUNCTION(apcu_sma_info);
+PHP_FUNCTION(apcu_store);
+PHP_FUNCTION(apcu_fetch);
+PHP_FUNCTION(apcu_delete);
+PHP_FUNCTION(apcu_add);
+PHP_FUNCTION(apcu_inc);
+PHP_FUNCTION(apcu_dec);
+PHP_FUNCTION(apcu_cas);
+PHP_FUNCTION(apcu_exists);
 
 PHP_FUNCTION(apcu_bin_dump);
 PHP_FUNCTION(apcu_bin_load);
@@ -367,7 +367,7 @@ static PHP_RINIT_FUNCTION(apcu)
 /* }}} */
 
 /* {{{ proto void apc_clear_cache() */
-PHP_FUNCTION(apc_clear_cache)
+PHP_FUNCTION(apcu_clear_cache)
 {
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
         return;
@@ -380,7 +380,7 @@ PHP_FUNCTION(apc_clear_cache)
 /* }}} */
 
 /* {{{ proto array apc_cache_info([bool limited]) */
-PHP_FUNCTION(apc_cache_info)
+PHP_FUNCTION(apcu_cache_info)
 {
     zval* info;
     zend_bool limited = 0;
@@ -402,7 +402,7 @@ PHP_FUNCTION(apc_cache_info)
 /* }}} */
 
 /* {{{ proto array apc_sma_info([bool limited]) */
-PHP_FUNCTION(apc_sma_info)
+PHP_FUNCTION(apcu_sma_info)
 {
     apc_sma_info_t* info;
     zval* block_lists;
@@ -555,14 +555,14 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 
 /* {{{ proto int apc_store(mixed key, mixed var [, long ttl ])
  */
-PHP_FUNCTION(apc_store) {
+PHP_FUNCTION(apcu_store) {
     apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 0);
 }
 /* }}} */
 
 /* {{{ proto int apc_add(mixed key, mixed var [, long ttl ])
  */
-PHP_FUNCTION(apc_add) {
+PHP_FUNCTION(apcu_add) {
     apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1);
 }
 /* }}} */
@@ -592,7 +592,7 @@ static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
 
 /* {{{ proto long apc_inc(string key [, long step [, bool& success]])
  */
-PHP_FUNCTION(apc_inc) {
+PHP_FUNCTION(apcu_inc) {
     char *strkey;
     int strkey_len;
     struct php_inc_updater_args args = {1L, -1};
@@ -624,7 +624,7 @@ PHP_FUNCTION(apc_inc) {
 
 /* {{{ proto long apc_dec(string key [, long step [, bool &success]])
  */
-PHP_FUNCTION(apc_dec) {
+PHP_FUNCTION(apcu_dec) {
     char *strkey;
     int strkey_len;
     struct php_inc_updater_args args = {1L, -1};
@@ -673,7 +673,7 @@ static zend_bool php_cas_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
 
 /* {{{ proto int apc_cas(string key, int old, int new)
  */
-PHP_FUNCTION(apc_cas) {
+PHP_FUNCTION(apcu_cas) {
     char *strkey;
     int strkey_len;
     long vals[2];
@@ -696,7 +696,7 @@ void *apc_erealloc_wrapper(void *ptr, size_t size) {
 
 /* {{{ proto mixed apc_fetch(mixed key[, bool &success])
  */
-PHP_FUNCTION(apc_fetch) {
+PHP_FUNCTION(apcu_fetch) {
     zval *key;
     zval *success = NULL;
     apc_cache_entry_t* entry;
@@ -806,7 +806,7 @@ leave:
 
 /* {{{ proto mixed apc_exists(mixed key)
  */
-PHP_FUNCTION(apc_exists) {
+PHP_FUNCTION(apcu_exists) {
     zval *key;
     time_t t;
 
@@ -874,7 +874,7 @@ PHP_FUNCTION(apc_exists) {
 
 /* {{{ proto mixed apc_delete(mixed keys)
  */
-PHP_FUNCTION(apc_delete) {
+PHP_FUNCTION(apcu_delete) {
     zval *keys;
 
     if (!APCG(enabled)) {
@@ -1137,55 +1137,55 @@ PHP_FUNCTION(apcu_bin_loadfile) {
 #endif
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_store, 0, 0, 2)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_store, 0, 0, 2)
     ZEND_ARG_INFO(0, key)
     ZEND_ARG_INFO(0, var)
     ZEND_ARG_INFO(0, ttl)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_cache_info, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_cache_info, 0, 0, 0)
     ZEND_ARG_INFO(0, type)
     ZEND_ARG_INFO(0, limited)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_clear_cache, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_clear_cache, 0, 0, 0)
     ZEND_ARG_INFO(0, info)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_sma_info, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_sma_info, 0, 0, 0)
     ZEND_ARG_INFO(0, limited)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO(arginfo_apc_delete, 0)
+ZEND_BEGIN_ARG_INFO(arginfo_apcu_delete, 0)
     ZEND_ARG_INFO(0, keys)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_fetch, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_fetch, 0, 0, 1)
     ZEND_ARG_INFO(0, key)
     ZEND_ARG_INFO(1, success)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_inc, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_inc, 0, 0, 1)
     ZEND_ARG_INFO(0, key)
     ZEND_ARG_INFO(0, step)
     ZEND_ARG_INFO(1, success)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO(arginfo_apc_cas, 0)
+ZEND_BEGIN_ARG_INFO(arginfo_apcu_cas, 0)
     ZEND_ARG_INFO(0, key)
     ZEND_ARG_INFO(0, old)
     ZEND_ARG_INFO(0, new)
 ZEND_END_ARG_INFO()
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO(arginfo_apc_exists, 0)
+ZEND_BEGIN_ARG_INFO(arginfo_apcu_exists, 0)
     ZEND_ARG_INFO(0, keys)
 ZEND_END_ARG_INFO()
 
@@ -1221,17 +1221,17 @@ ZEND_END_ARG_INFO()
 
 /* {{{ apcu_functions[] */
 zend_function_entry apcu_functions[] = {
-    PHP_FE(apc_cache_info,          arginfo_apc_cache_info)
-    PHP_FE(apc_clear_cache,         arginfo_apc_clear_cache)
-    PHP_FE(apc_sma_info,            arginfo_apc_sma_info)
-    PHP_FE(apc_store,               arginfo_apc_store)
-    PHP_FE(apc_fetch,               arginfo_apc_fetch)
-    PHP_FE(apc_delete,              arginfo_apc_delete)
-    PHP_FE(apc_add,                 arginfo_apc_store)
-    PHP_FE(apc_inc,                 arginfo_apc_inc)
-    PHP_FE(apc_dec,                 arginfo_apc_inc)
-    PHP_FE(apc_cas,                 arginfo_apc_cas)
-    PHP_FE(apc_exists,              arginfo_apc_exists)
+    PHP_FE(apcu_cache_info,         arginfo_apcu_cache_info)
+    PHP_FE(apcu_clear_cache,        arginfo_apcu_clear_cache)
+    PHP_FE(apcu_sma_info,           arginfo_apcu_sma_info)
+    PHP_FE(apcu_store,              arginfo_apcu_store)
+    PHP_FE(apcu_fetch,              arginfo_apcu_fetch)
+    PHP_FE(apcu_delete,             arginfo_apcu_delete)
+    PHP_FE(apcu_add,                arginfo_apcu_store)
+    PHP_FE(apcu_inc,                arginfo_apcu_inc)
+    PHP_FE(apcu_dec,                arginfo_apcu_inc)
+    PHP_FE(apcu_cas,                arginfo_apcu_cas)
+    PHP_FE(apcu_exists,             arginfo_apcu_exists)
     PHP_FE(apcu_bin_dump,           arginfo_apcu_bin_dump)
     PHP_FE(apcu_bin_load,           arginfo_apcu_bin_load)
     PHP_FE(apcu_bin_dumpfile,       arginfo_apcu_bin_dumpfile)
@@ -1266,6 +1266,17 @@ PHP_MINFO_FUNCTION(apc)
 
 /* {{{ apc_functions[] */
 zend_function_entry apc_functions[] = {
+    PHP_FALIAS(apc_cache_info,   apcu_cache_info,   arginfo_apcu_cache_info)
+    PHP_FALIAS(apc_clear_cache,  apcu_clear_cache,  arginfo_apcu_clear_cache)
+    PHP_FALIAS(apc_sma_info,     apcu_sma_info,     arginfo_apcu_sma_info)
+    PHP_FALIAS(apc_store,        apcu_store,        arginfo_apcu_store)
+    PHP_FALIAS(apc_fetch,        apcu_fetch,        arginfo_apcu_fetch)
+    PHP_FALIAS(apc_delete,       apcu_delete,       arginfo_apcu_delete)
+    PHP_FALIAS(apc_add,          apcu_add,          arginfo_apcu_store)
+    PHP_FALIAS(apc_inc,          apcu_inc,          arginfo_apcu_inc)
+    PHP_FALIAS(apc_dec,          apcu_dec,          arginfo_apcu_inc)
+    PHP_FALIAS(apc_cas,          apcu_cas,          arginfo_apcu_cas)
+    PHP_FALIAS(apc_exists,       apcu_exists,       arginfo_apcu_exists)
     PHP_FALIAS(apc_bin_dump,     apcu_bin_dump,     arginfo_apcu_bin_dump)
     PHP_FALIAS(apc_bin_load,     apcu_bin_load,     arginfo_apcu_bin_load)
     PHP_FALIAS(apc_bin_dumpfile, apcu_bin_dumpfile, arginfo_apcu_bin_dumpfile)
