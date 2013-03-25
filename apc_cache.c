@@ -673,6 +673,10 @@ zend_bool apc_cache_make_context(apc_cache_t* cache,
 				pool_type, copy_type, force_update TSRMLS_CC
 			);
 		} break;
+
+		case APC_CONTEXT_NONE:
+			/* never used, just to make gcc warning free */
+			break;
 	}
 
 	return 0;
