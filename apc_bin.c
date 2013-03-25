@@ -495,7 +495,6 @@ apc_bd_t* apc_bin_dump(apc_cache_t* cache, HashTable *user_vars TSRMLS_DC) {
 int apc_bin_load(apc_cache_t* cache, apc_bd_t *bd, int flags TSRMLS_DC) {
     apc_bd_entry_t *ep;
     uint i;
-    time_t t;
     apc_context_t ctxt;
 
     if (bd->swizzled) {
@@ -503,8 +502,6 @@ int apc_bin_load(apc_cache_t* cache, apc_bd_t *bd, int flags TSRMLS_DC) {
             return -1;
         }
     }
-
-    t = apc_time();
 
     for(i = 0; i < bd->num_entries; i++) {
         ctxt.pool = apc_pool_create(APC_SMALL_POOL, (apc_malloc_t) apc_sma_malloc, (apc_free_t) apc_sma_free, apc_sma_protect, apc_sma_unprotect TSRMLS_CC);

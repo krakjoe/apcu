@@ -792,7 +792,6 @@ PHP_FUNCTION(apcu_fetch) {
 				}
 			}
 
-leave:
 			apc_cache_destroy_context(&ctxt TSRMLS_CC );	
 		}
 
