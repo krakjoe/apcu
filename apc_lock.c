@@ -45,22 +45,23 @@ zend_bool apc_lock_init(TSRMLS_D) {
 		return 1;
 
 	/* once per process please */
-	
+	apc_lock_ready = 1;
+
 # ifndef APC_NATIVE_RWLOCK
 	if (pthread_mutexattr_init(&apc_lock_attr) == SUCCESS) {
 		if (pthread_mutexattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
 			pthread_mutexattr_settype(&apc_lock_attr, PTHREAD_MUTEX_RECURSIVE);
-			apc_lock_ready = 1;
+			return 1;
 		}
 	}
 # else
 	if (pthread_rwlockattr_init(&apc_lock_attr) == SUCCESS) {
 		if (pthread_rwlockattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
-			apc_lock_ready = 1;
+			return 1;
 		}
 	}
 # endif
-	return apc_lock_ready;
+	return 0;
 #else
 	return 1;
 #endif
