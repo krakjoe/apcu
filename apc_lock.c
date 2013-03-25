@@ -46,7 +46,7 @@ zend_bool apc_lock_init(TSRMLS_D) {
 
 	/* once per process please */
 	apc_lock_ready = 1;
-	
+
 # ifndef APC_NATIVE_RWLOCK
 	if (pthread_mutexattr_init(&apc_lock_attr) == SUCCESS) {
 		if (pthread_mutexattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
@@ -61,6 +61,7 @@ zend_bool apc_lock_init(TSRMLS_D) {
 		}
 	}
 # endif
+	return 0;
 #else
 	return 1;
 #endif

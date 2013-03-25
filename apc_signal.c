@@ -47,7 +47,9 @@ static apc_signal_info_t apc_signal_info = {0};
 static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*) TSRMLS_DC);
 static void apc_rehandle_signal(int signo, siginfo_t *siginfo, void *context);
 static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context);
+#if defined(SIGUSR1) && defined(APC_SIGNAL_CLEAR)
 static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context);
+#endif
 
 extern apc_cache_t* apc_user_cache;
 
@@ -68,6 +70,8 @@ static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 #endif
 } /* }}} */
 
+
+#if defined(SIGUSR1) && defined(APC_SIGNAL_CLEAR)
 /* {{{ apc_reload_cache */
 static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
 	TSRMLS_FETCH();
@@ -85,6 +89,7 @@ static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
     raise(signo);
 #endif
 } /* }}} */
+#endif
 
 /* {{{ apc_rehandle_signal
  *  Call the previously registered handler for a signal
