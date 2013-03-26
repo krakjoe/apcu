@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.9.4" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
+ <name>apcu</name>
+ <channel>pecl.php.net</channel>
+ <summary>APCu - APC User Cache</summary>
+ <description>APC User Caching</description>
+ <lead>
+  <name>Joe Watkins</name>
+  <user>krakjoe</user>
+  <email>krakjoe@php.net</email>
+  <active>yes</active>
+ </lead>
+ <date>2013-03-26</date>
+ <time>11:30:00</time>
+ <version>
+  <release>0.0.1</release>
+  <api>0.0.1</api>
+ </version>
+ <stability>
+  <release>beta</release>
+  <api>beta</api>
+ </stability>
+ <license uri="http://www.php.net/license">PHP License</license>
+ <notes>
+ Initial Release
+ </notes>
+ <contents>
+  <dir name="/">
+   <file name="tests/023-2.inc" role="test" />
+   <file name="tests/024.phpt" role="test" />
+   <file name="tests/apc_001.phpt" role="test" />
+   <file name="tests/apc_002.phpt" role="test" />
+   <file name="tests/apc_003.phpt" role="test" />
+   <file name="tests/apc_003b.phpt" role="test" />
+   <file name="tests/apc_004.phpt" role="test" />
+   <file name="tests/apc_005.phpt" role="test" />
+   <file name="tests/apc_006.phpt" role="test" />
+   <file name="tests/apc_007.phpt" role="test" />
+   <file name="tests/apc_008.phpt" role="test" />
+   <file name="tests/apc_010.phpt" role="test" />
+   <file name="tests/apc_011.phpt" role="test" />
+   <file name="tests/apc54_014.phpt" role="test" />
+   <file name="tests/apc54_018.phpt" role="test" />
+   <file name="tests/apc_bin_001.phpt" role="test" />
+   <file name="tests/apc_bin_002.phpt" role="test" />
+   <file name="tests/apc_bin_003.phpt" role="test" />
+   <file name="tests/apc_bin_004.phpt" role="test" />
+   <file name="tests/bug63224.phpt" role="test" />
+   <file name="tests/get_included_files_inc1.inc" role="test" />
+   <file name="tests/get_included_files_inc2.inc" role="test" />
+   <file name="tests/get_included_files_inc3.inc" role="test" />
+   <file name="tests/iterator_001.phpt" role="test" />
+   <file name="tests/iterator_002.phpt" role="test" />
+   <file name="tests/iterator_003.phpt" role="test" />
+   <file name="tests/iterator_004.phpt" role="test" />
+   <file name="tests/iterator_005.phpt" role="test" />
+   <file name="tests/iterator_006.phpt" role="test" />
+   <file name="tests/iterator_007.phpt" role="test" />
+   <file name="tests/php_5_3_ns.inc" role="test" />
+   <file name="tests/server_test.inc" role="test" />
+   <file name="tests/skipif.inc" role="test" />
+   <file name="tests/data/abc.data" role="test" />
+   <file name="apc_api.h" role="src" />
+   <file name="apc_bin_api.h" role="src" />
+   <file name="apc_bin.c" role="src" />
+   <file name="apc_bin.h" role="src" />
+   <file name="apc.c" role="src" />
+   <file name="apc_cache_api.h" role="src" />
+   <file name="apc_cache.c" role="src" />
+   <file name="apc_cache.h" role="src" />
+   <file name="apc_globals.h" role="src" />
+   <file name="apc.h" role="src" />
+   <file name="apc_iterator.c" role="src" />
+   <file name="apc_iterator.h" role="src" />
+   <file name="apc_lock_api.h" role="src" />
+   <file name="apc_lock.c" role="src" />
+   <file name="apc_lock.h" role="src" />
+   <file name="apc_mmap.c" role="src" />
+   <file name="apc_mmap.h" role="src" />
+   <file name="apc.php" role="src" />
+   <file name="apc_php.h" role="src" />
+   <file name="apc_php_pcre.h" role="src" />
+   <file name="apc_pool_api.h" role="src" />
+   <file name="apc_pool.c" role="src" />
+   <file name="apc_pool.h" role="src" />
+   <file name="apc_rfc1867.c" role="src" />
+   <file name="apc_shm.c" role="src" />
+   <file name="apc_shm.h" role="src" />
+   <file name="apc_signal.c" role="src" />
+   <file name="apc_signal.h" role="src" />
+   <file name="apc_sma_api.h" role="src" />
+   <file name="apc_sma.c" role="src" />
+   <file name="apc_sma.h" role="src" />
+   <file name="apc_stack.c" role="src" />
+   <file name="apc_stack.h" role="src" />
+   <file name="apc_windows_srwlock_kernel.c" role="src" />
+   <file name="apc_windows_srwlock_kernel.h" role="src" />
+   <file name="CHANGELOG" role="src" />
+   <file name="config.m4" role="src" />
+   <file name="config.w32" role="src" />
+   <file name="INSTALL" role="src" />
+   <file name="LICENSE" role="src" />
+   <file name="Makefile.frag" role="src" />
+   <file name="NOTICE" role="src" />
+   <file name="php_apc.c" role="src" />
+   <file name="php_apc.h" role="src" />
+   <file name="README.md" role="src" />
+   <file name="TECHNOTES.txt" role="src" />
+   <file name="TODO" role="src" />
+  </dir>
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <!--
+        Actually the APC codebase support 5.2+
+        Support can not provided for crusty versions of PHP
+    -->
+    <min>5.3.0</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0b1</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <providesextension>apcu</providesextension>
+ <extsrcrelease />
+</package>
