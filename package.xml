@@ -14,7 +14,7 @@
  <time>11:30:00</time>
  <version>
   <release>0.0.1</release>
-  <api>0.0.1</api>
+  <api>4.0.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,10 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
- Initial Release
+  All opcode caching abilities removed
+  The default locking is now rwlocks
+  APCu API installed in build environment
+  Please see TECHNOTES/README.md
  </notes>
  <contents>
   <dir name="/">
@@ -95,7 +98,6 @@
    <file name="apc_stack.h" role="src" />
    <file name="apc_windows_srwlock_kernel.c" role="src" />
    <file name="apc_windows_srwlock_kernel.h" role="src" />
-   <file name="CHANGELOG" role="src" />
    <file name="config.m4" role="src" />
    <file name="config.w32" role="src" />
    <file name="INSTALL" role="src" />
