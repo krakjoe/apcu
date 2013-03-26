@@ -29,11 +29,8 @@ var_dump(apc_fetch('foo'));
 <?php
 unlink(dirname(__FILE__) . '/foo.bin');
 --EXPECTF--
-Warning: apc_bin_dumpfile(): apc_bin_dumpfile is for BC only. Please use apcu_bin_dumpfile. in %sapc_bin_004.php on line %d
 bool(false)
 int(42)
-
-Warning: apc_bin_dump(): apc_bin_dump is for BC only. Please use apcu_bin_dump. in %sapc_bin_004.php on line %d
 bool(false)
 string(3) "bar"
 ===DONE===
