@@ -947,7 +947,7 @@ PHP_FUNCTION(apcu_bin_dump) {
         RETURN_FALSE;
     }
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &z_vars) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a!", &z_vars) == FAILURE) {
         return;
     }
 
