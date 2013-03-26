@@ -936,6 +936,7 @@ PHP_FUNCTION(apcu_bin_dump) {
     HashTable  *h_vars;
     apc_bd_t *bd;
 
+
     if (!APCG(enabled)) {
         apc_warning("APC is not enabled, apc_bin_dump not available." TSRMLS_CC);
         RETURN_FALSE;
