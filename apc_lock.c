@@ -39,7 +39,7 @@ static zend_bool apc_lock_ready = 0;
 #endif /* }}} */
 
 /* {{{ Initialize the global lock attributes */
-zend_bool apc_lock_init(TSRMLS_D) {
+PHP_APCU_API zend_bool apc_lock_init(TSRMLS_D) {
 #ifndef PHP_WIN32
 	if (apc_lock_ready)
 		return 1;
@@ -68,7 +68,7 @@ zend_bool apc_lock_init(TSRMLS_D) {
 } /* }}} */
 
 /* {{{ Cleanup attributes and statics */
-void apc_lock_cleanup(TSRMLS_D) {
+PHP_APCU_API void apc_lock_cleanup(TSRMLS_D) {
 #ifndef PHP_WIN32
 	if (!apc_lock_ready)
 		return;
@@ -84,7 +84,7 @@ void apc_lock_cleanup(TSRMLS_D) {
 #endif
 } /* }}} */
 
-zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
+PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
 	{
@@ -107,7 +107,7 @@ zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
 #endif
 }
 
-zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC) {
+PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
 	pthread_mutex_lock(&lock->read);
@@ -120,7 +120,7 @@ zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC) {
 	return 1;
 }
 
-zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
+PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
 	pthread_mutex_lock(&lock->read);
@@ -134,7 +134,7 @@ zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
 	return 1;
 }
 
-zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC) {
+PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
 	pthread_mutex_unlock(&lock->read);
@@ -148,7 +148,7 @@ zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC) {
 	return 1;
 }
 
-zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC) {
+PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
 	pthread_mutex_unlock(&lock->read);
@@ -161,7 +161,7 @@ zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC) {
 	return 1;
 }
 
-void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC) {
+PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC) {
 #ifndef PHP_WIN32
 # ifndef APC_NATIVE_RWLOCK
 	pthread_mutex_destroy(&lock->read);

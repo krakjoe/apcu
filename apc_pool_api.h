@@ -119,29 +119,29 @@ typedef struct _apc_context_t {
 /*
  apc_pool_create creates a pool of the specified type, setting the handlers passed on the pool, returns apc_pool*
 */
-extern apc_pool* apc_pool_create(apc_pool_type pool_type,
-                                 apc_malloc_t allocate,
-                                 apc_free_t deallocate,
-                                 apc_protect_t protect,
-                                 apc_unprotect_t unprotect TSRMLS_DC);
+extern PHP_APCU_API apc_pool* apc_pool_create(apc_pool_type pool_type,
+                                              apc_malloc_t allocate,
+                                              apc_free_t deallocate,
+                                              apc_protect_t protect,
+                                              apc_unprotect_t unprotect TSRMLS_DC);
 
 /*
  apc_pool_destroy first calls apc_cleanup_t set during apc_pool_create, then apc_free_t
 */
-extern void apc_pool_destroy(apc_pool* pool TSRMLS_DC);
+extern PHP_APCU_API void apc_pool_destroy(apc_pool* pool TSRMLS_DC);
 
 /*
  apc_pmemcpy performs memcpy using resources provided by pool
 */
-extern void* apc_pmemcpy(const void* p, 
-                         size_t n, 
-                         apc_pool* pool TSRMLS_DC);
+extern PHP_APCU_API void* apc_pmemcpy(const void* p, 
+                                      size_t n, 
+                                      apc_pool* pool TSRMLS_DC);
 
 /*
  apc_pstrdup performs strdup using resources provided by pool
 */
-extern void* apc_pstrdup(const char* s, 
-                         apc_pool* pool TSRMLS_DC);
+extern PHP_APCU_API void* apc_pstrdup(const char* s, 
+                                      apc_pool* pool TSRMLS_DC);
 
 #endif
 

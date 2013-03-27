@@ -37,6 +37,14 @@
 /*
  * This module defines utilities and helper functions used elsewhere in APC.
  */
+ 
+#ifdef PHP_WIN32
+# define PHP_APCU_API __declspec(dllexport)
+#elif defined(__GNUC__) && __GNUC__ >= 4
+# define PHP_APCU_API __attribute__ ((visibility("default")))
+#else
+# define PHP_APCU_API
+#endif
 
 /* Commonly needed C library headers. */
 #include <assert.h>
@@ -66,31 +74,31 @@ typedef void* (*apc_malloc_t)(size_t TSRMLS_DC);
 typedef void  (*apc_free_t)  (void * TSRMLS_DC);
 
 /* wrappers for memory allocation routines */
-extern void* apc_emalloc(size_t n TSRMLS_DC);
-extern void* apc_erealloc(void* p, size_t n TSRMLS_DC);
-extern void* apc_php_malloc(size_t n TSRMLS_DC);
-extern void  apc_php_free(void* p TSRMLS_DC);
-extern void  apc_efree(void* p TSRMLS_DC);
-extern char* apc_estrdup(const char* s TSRMLS_DC);
-extern void* apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC);
-extern void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC);
+extern PHP_APCU_API void* apc_emalloc(size_t n TSRMLS_DC);
+extern PHP_APCU_API void* apc_erealloc(void* p, size_t n TSRMLS_DC);
+extern PHP_APCU_API void* apc_php_malloc(size_t n TSRMLS_DC);
+extern PHP_APCU_API void  apc_php_free(void* p TSRMLS_DC);
+extern PHP_APCU_API void  apc_efree(void* p TSRMLS_DC);
+extern PHP_APCU_API char* apc_estrdup(const char* s TSRMLS_DC);
+extern PHP_APCU_API void* apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC);
+extern PHP_APCU_API void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC);
 
 /* console display functions */
-extern void apc_error(const char *format TSRMLS_DC, ...);
-extern void apc_warning(const char *format TSRMLS_DC, ...);
-extern void apc_notice(const char *format TSRMLS_DC, ...);
-extern void apc_debug(const char *format TSRMLS_DC, ...);
+extern PHP_APCU_API void apc_error(const char *format TSRMLS_DC, ...);
+extern PHP_APCU_API void apc_warning(const char *format TSRMLS_DC, ...);
+extern PHP_APCU_API void apc_notice(const char *format TSRMLS_DC, ...);
+extern PHP_APCU_API void apc_debug(const char *format TSRMLS_DC, ...);
 
 /* string and text manipulation */
-extern char* apc_append(const char* s, const char* t TSRMLS_DC);
-extern char* apc_substr(const char* s, int start, int length TSRMLS_DC);
-extern char** apc_tokenize(const char* s, char delim TSRMLS_DC);
+extern PHP_APCU_API char* apc_append(const char* s, const char* t TSRMLS_DC);
+extern PHP_APCU_API char* apc_substr(const char* s, int start, int length TSRMLS_DC);
+extern PHP_APCU_API char** apc_tokenize(const char* s, char delim TSRMLS_DC);
 
 /* apc_crc32: returns the CRC-32 checksum of the first len bytes in buf */
-extern unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
+extern PHP_APCU_API unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
 
 /* apc_flip_hash flips keys and values for faster searching */
-extern HashTable* apc_flip_hash(HashTable *hash);
+extern PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 
 #define APC_NEGATIVE_MATCH 1
 #define APC_POSITIVE_MATCH 2
@@ -141,18 +149,18 @@ typedef struct apc_serializer_t {
 
 /* {{{ apc_register_serializer 
  registers the serializer using the given name and paramters */
-extern zend_bool apc_register_serializer(const char* name, 
+extern PHP_APCU_API zend_bool apc_register_serializer(const char* name, 
                                          apc_serialize_t serialize, 
                                          apc_unserialize_t unserialize,
                                          void *config TSRMLS_DC); /* }}} */
 
 /* {{{ apc_get_serializers 
  fetches the list of serializers */
-extern apc_serializer_t* apc_get_serializers(TSRMLS_D); /* }}} */
+extern PHP_APCU_API apc_serializer_t* apc_get_serializers(TSRMLS_D); /* }}} */
 
 /* {{{ apc_find_serializer
  finds a previously registered serializer by name */
-extern apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC); /* }}} */
+extern PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC); /* }}} */
 
 #endif
 

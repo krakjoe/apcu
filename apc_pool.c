@@ -43,11 +43,11 @@ static apc_pool* apc_realpool_create(apc_pool_type type, apc_malloc_t, apc_free_
 /* }}} */
 
 /* {{{ apc_pool_create */
-apc_pool* apc_pool_create(apc_pool_type pool_type,
-                          apc_malloc_t allocate, 
-                          apc_free_t deallocate,
-                          apc_protect_t protect,
-                          apc_unprotect_t unprotect TSRMLS_DC) 
+PHP_APCU_API apc_pool* apc_pool_create(apc_pool_type pool_type,
+                                       apc_malloc_t allocate, 
+                                       apc_free_t deallocate,
+                                       apc_protect_t protect,
+                                       apc_unprotect_t unprotect TSRMLS_DC) 
 {
     if(pool_type == APC_UNPOOL) {
         return apc_unpool_create(pool_type, allocate, deallocate, protect, unprotect TSRMLS_CC);
@@ -58,7 +58,7 @@ apc_pool* apc_pool_create(apc_pool_type pool_type,
 /* }}} */
 
 /* {{{ apc_pool_destroy */
-void apc_pool_destroy(apc_pool *pool TSRMLS_DC)
+PHP_APCU_API void apc_pool_destroy(apc_pool *pool TSRMLS_DC)
 {
     apc_free_t deallocate = pool->deallocate;
     apc_pcleanup_t cleanup = pool->cleanup;
@@ -473,7 +473,7 @@ static apc_pool* apc_realpool_create(apc_pool_type type,
 /* }}} */
 
 /* {{{ apc_pool_init */
-void apc_pool_init()
+PHP_APCU_API void apc_pool_init()
 {
     /* put all ye sanity checks here */
     assert(sizeof(decaff) > REDZONE_SIZE(ALIGNWORD(sizeof(char))));
@@ -485,7 +485,7 @@ void apc_pool_init()
 /* }}} */
 
 /* {{{ apc_pstrdup */
-void* APC_ALLOC apc_pstrdup(const char* s, 
+PHP_APCU_API void* APC_ALLOC apc_pstrdup(const char* s, 
                             apc_pool* pool TSRMLS_DC)
 {
     return s != NULL ? apc_pmemcpy(s, (strlen(s) + 1), pool TSRMLS_CC) : NULL;
@@ -493,7 +493,7 @@ void* APC_ALLOC apc_pstrdup(const char* s,
 /* }}} */
 
 /* {{{ apc_pmemcpy */
-void* APC_ALLOC apc_pmemcpy(const void* p, 
+PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p, 
                             size_t n, 
                             apc_pool* pool TSRMLS_DC)
 {

@@ -54,17 +54,17 @@ typedef apc_windows_cs_rwlock_t apc_lock_t;
 	apc_lock_cleanup destroys those attributes
   This saves us from having to create and destroy attributes for
   every lock we use at runtime */
-extern zend_bool apc_lock_init(TSRMLS_D);
-extern void      apc_lock_cleanup(TSRMLS_D);
+extern PHP_APCU_API zend_bool apc_lock_init(TSRMLS_D);
+extern PHP_APCU_API void      apc_lock_cleanup(TSRMLS_D);
 /*
   The following functions should be self explanitory:
 */
-extern zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC);
-extern zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC);
-extern zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC);
-extern zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC);
-extern zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC);
-extern void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC); /* }}} */
+extern PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC);
+extern PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC);
+extern PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC);
+extern PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC);
+extern PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC);
+extern PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC); /* }}} */
 
 /* {{{ generic locking macros */
 #define CREATE_LOCK(lock)     apc_lock_create(lock TSRMLS_CC)

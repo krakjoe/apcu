@@ -145,7 +145,7 @@ static void apc_cache_hash_slot(apc_cache_t* cache,
 } /* }}} */
 
 /* {{{ apc_cache_remove_slot  */
-void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot TSRMLS_DC)
+PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot TSRMLS_DC)
 {
     apc_cache_slot_t* dead = *slot;
     
@@ -176,7 +176,7 @@ void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot TSRMLS_DC
 /* }}} */
 
 /* {{{ apc_cache_gc */
-void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
+PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
 {
     apc_cache_slot_t** slot;
 	
@@ -272,7 +272,7 @@ int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 /* }}} */
 
 /* {{{ apc_cache_create */
-apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, int size_hint, int gc_ttl, int ttl, long smart, zend_bool defend TSRMLS_DC) {
+PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, int size_hint, int gc_ttl, int ttl, long smart, zend_bool defend TSRMLS_DC) {
 	apc_cache_t* cache;
     int cache_size;
     int nslots;
@@ -327,7 +327,7 @@ apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, int 
 } /* }}} */
 
 /* {{{ apc_cache_store */
-zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, zend_uint keylen, const zval *val, const zend_uint ttl, const zend_bool exclusive TSRMLS_DC) {
+PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, zend_uint keylen, const zval *val, const zend_uint ttl, const zend_bool exclusive TSRMLS_DC) {
     apc_cache_entry_t *entry;
     apc_cache_key_t key;
     time_t t;
@@ -445,7 +445,7 @@ static int apc_load_data(apc_cache_t* cache, const char *data_file TSRMLS_DC)
 }
 
 /* {{{ apc_cache_preload shall load the prepared data files in path into the specified cache */
-zend_bool apc_cache_preload(apc_cache_t* cache, const char *path TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path TSRMLS_DC)
 {
 #ifndef ZTS	
 	zend_bool result = 0;
@@ -481,14 +481,14 @@ zend_bool apc_cache_preload(apc_cache_t* cache, const char *path TSRMLS_DC)
 } /* }}} */
 
 /* {{{ apc_cache_release */
-void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry TSRMLS_DC)
+PHP_APCU_API void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry TSRMLS_DC)
 {
     entry->ref_count--;
 }
 /* }}} */
 
 /* {{{ apc_cache_destroy */
-void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC)
+PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC)
 {
 	/* destroy lock */
 	DESTROY_LOCK(&cache->header->lock);
@@ -502,7 +502,7 @@ void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_cache_real_expunge */
-void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
+PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
 	/* increment counter */	
 	cache->header->nexpunges++;
 
@@ -530,7 +530,7 @@ void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
 } /* }}} */
 
 /* {{{ apc_cache_clear */
-void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
+PHP_APCU_API void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
 {
 	/* check there is a cache and it is not busy */
     if(!cache || 
@@ -560,7 +560,7 @@ void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_cache_default_expunge */
-void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
+PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 {
     time_t t;
 	size_t suitable = 0L;
@@ -646,12 +646,12 @@ void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_cache_make_context */
-zend_bool apc_cache_make_context(apc_cache_t* cache,
-                                 apc_context_t* context,
-                                 apc_context_type context_type,
-                                 apc_pool_type pool_type,
-                                 apc_copy_type copy_type,
-                                 uint force_update TSRMLS_DC) {
+PHP_APCU_API zend_bool apc_cache_make_context(apc_cache_t* cache,
+                                              apc_context_t* context,
+                                              apc_context_type context_type,
+                                              apc_pool_type pool_type,
+                                              apc_copy_type copy_type,
+                                              uint force_update TSRMLS_DC) {
 	switch (context_type) {
 		case APC_CONTEXT_SHARE: {
 			return apc_cache_make_context_ex(
@@ -683,15 +683,15 @@ zend_bool apc_cache_make_context(apc_cache_t* cache,
 } /* }}} */
 
 /* {{{ apc_cache_make_context_ex */
-zend_bool apc_cache_make_context_ex(apc_context_t* context,
-                                    apc_serializer_t* serializer,
-                                    apc_malloc_t _malloc, 
-                                    apc_free_t _free, 
-                                    apc_protect_t _protect, 
-                                    apc_unprotect_t _unprotect, 
-                                    apc_pool_type pool_type, 
-                                    apc_copy_type copy_type, 
-                                    uint force_update TSRMLS_DC) {
+PHP_APCU_API zend_bool apc_cache_make_context_ex(apc_context_t* context,
+                                                 apc_serializer_t* serializer,
+                                                 apc_malloc_t _malloc, 
+                                                 apc_free_t _free, 
+                                                 apc_protect_t _protect, 
+                                                 apc_unprotect_t _unprotect, 
+                                                 apc_pool_type pool_type, 
+                                                 apc_copy_type copy_type, 
+                                                 uint force_update TSRMLS_DC) {
 	/* attempt to create the pool */
 	context->pool = apc_pool_create(
 		pool_type, _malloc, _free, _protect, _unprotect TSRMLS_CC
@@ -714,7 +714,7 @@ zend_bool apc_cache_make_context_ex(apc_context_t* context,
 } /* }}} */
 
 /* {{{ apc_context_destroy */
-zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC) {
+PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC) {
     if (!context->pool) {
         return 0;
     }
@@ -725,7 +725,12 @@ zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC) {
 } /* }}} */
 
 /* {{{ apc_cache_insert */
-zend_bool apc_cache_insert(apc_cache_t* cache, apc_cache_key_t key, apc_cache_entry_t* value, apc_context_t* ctxt, time_t t, zend_bool exclusive TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache, 
+                                        apc_cache_key_t key, 
+                                        apc_cache_entry_t* value, 
+                                        apc_context_t* ctxt, 
+                                        time_t t, 
+                                        zend_bool exclusive TSRMLS_DC)
 {
     zend_bool result = 0;
 
@@ -817,7 +822,7 @@ nothing:
 /* }}} */
 
 /* {{{ apc_cache_find */
-apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, zend_uint keylen, time_t t TSRMLS_DC)
+PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, zend_uint keylen, time_t t TSRMLS_DC)
 {
 	/* check we are able to deal with the request */
     if(apc_cache_busy(cache TSRMLS_CC)) { 
@@ -888,7 +893,7 @@ apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, zend_uint ke
 /* }}} */
 
 /* {{{ apc_cache_fetch */
-zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, zend_uint keylen, time_t t, zval **dst TSRMLS_DC) 
+PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, zend_uint keylen, time_t t, zval **dst TSRMLS_DC) 
 {
 	apc_cache_entry_t *entry;
 	zend_bool ret = 0;
@@ -924,7 +929,7 @@ zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, zend_uint keylen, ti
 } /* }}} */
 
 /* {{{ apc_cache_exists */
-apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, zend_uint keylen, time_t t TSRMLS_DC)
+PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, zend_uint keylen, time_t t TSRMLS_DC)
 {
     if(apc_cache_busy(cache TSRMLS_CC))
     {
@@ -985,7 +990,7 @@ apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, zend_uint 
 /* }}} */
 
 /* {{{ apc_cache_update */
-zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, zend_uint keylen, apc_cache_updater_t updater, void* data TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, zend_uint keylen, apc_cache_updater_t updater, void* data TSRMLS_DC)
 {
     apc_cache_slot_t** slot;
 	
@@ -1054,7 +1059,7 @@ zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, zend_uint keylen, a
 /* }}} */
 
 /* {{{ apc_cache_delete */
-zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, zend_uint keylen TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, zend_uint keylen TSRMLS_DC)
 {
     apc_cache_slot_t** slot;
 	
@@ -1101,7 +1106,7 @@ deleted:
 /* }}} */
 
 /* {{{ apc_cache_make_key */
-zend_bool apc_cache_make_key(apc_cache_key_t* key, char* str, zend_ulong len TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, char* str, zend_ulong len TSRMLS_DC)
 {
     assert(key != NULL);
 
@@ -1407,7 +1412,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 /* }}} */
 
 /* {{{ apc_copy_zval */
-zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
+PHP_APCU_API zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
 {
     apc_pool* pool = ctxt->pool;
     
@@ -1428,7 +1433,7 @@ zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_cache_store_zval */
-zval* apc_cache_store_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
+PHP_APCU_API zval* apc_cache_store_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
 {
     if (Z_TYPE_P(src) == IS_ARRAY) {
         /* Maintain a list of zvals we've copied to properly handle recursive structures */
@@ -1446,7 +1451,7 @@ zval* apc_cache_store_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRML
 /* }}} */
 
 /* {{{ apc_cache_fetch_zval */
-zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zval* src TSRMLS_DC)
+PHP_APCU_API zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zval* src TSRMLS_DC)
 {
     if (Z_TYPE_P(src) == IS_ARRAY) {
         /* Maintain a list of zvals we've copied to properly handle recursive structures */
@@ -1464,7 +1469,7 @@ zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zval* src TSRML
 /* }}} */
 
 /* {{{ apc_cache_make_entry */
-apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt, const zval* val, const unsigned int ttl TSRMLS_DC)
+PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt, const zval* val, const unsigned int ttl TSRMLS_DC)
 {
     apc_cache_entry_t* entry;
     apc_pool* pool = ctxt->pool;
@@ -1517,7 +1522,7 @@ static zval* apc_cache_link_info(apc_cache_t *cache, apc_cache_slot_t* p TSRMLS_
 /* }}} */
 
 /* {{{ apc_cache_info */
-zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
+PHP_APCU_API zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 {
     zval *info = NULL;
     zval *list = NULL;
@@ -1602,21 +1607,21 @@ zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_cache_busy */
-zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC)
 {	
 	return ((cache->header->state & APC_CACHE_ST_IBUSY)==APC_CACHE_ST_IBUSY);
 }
 /* }}} */
 
 /* {{{ apc_cache_processing */
-zend_bool apc_cache_processing(apc_cache_t* cache TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_processing(apc_cache_t* cache TSRMLS_DC)
 {	
 	return ((cache->header->state & APC_CACHE_ST_GC)==APC_CACHE_ST_GC);
 }
 /* }}} */
 
 /* {{{ apc_cache_defense */
-zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 {
 	zend_bool result = 0;
 
@@ -1665,7 +1670,7 @@ zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key TSRMLS_DC)
 /* }}} */
 
 /* {{{ apc_cache_serializer */
-void apc_cache_serializer(apc_cache_t* cache, const char* name TSRMLS_DC) {
+PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name TSRMLS_DC) {
 	if (!cache->serializer) {
 		cache->serializer = apc_find_serializer(name TSRMLS_CC);
 	}

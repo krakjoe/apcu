@@ -50,7 +50,7 @@
 
 /* {{{ memory allocation wrappers */
 
-void* apc_emalloc(size_t n TSRMLS_DC)
+PHP_APCU_API void* apc_emalloc(size_t n TSRMLS_DC)
 {
     void* p = malloc(n);
     if (p == NULL) {
@@ -60,7 +60,7 @@ void* apc_emalloc(size_t n TSRMLS_DC)
     return p;
 }
 
-void* apc_erealloc(void* p, size_t n TSRMLS_DC)
+PHP_APCU_API void* apc_erealloc(void* p, size_t n TSRMLS_DC)
 {
     void *new;
     new = realloc(p, n);
@@ -71,7 +71,7 @@ void* apc_erealloc(void* p, size_t n TSRMLS_DC)
     return new;
 }
 
-void apc_efree(void* p TSRMLS_DC)
+PHP_APCU_API void apc_efree(void* p TSRMLS_DC)
 {
     if (p == NULL) {
         apc_error("apc_efree: attempt to free null pointer" TSRMLS_CC);
@@ -80,17 +80,17 @@ void apc_efree(void* p TSRMLS_DC)
     free(p);
 }
 
-void* apc_php_malloc(size_t n TSRMLS_DC)
+PHP_APCU_API void* apc_php_malloc(size_t n TSRMLS_DC)
 {
     return emalloc(n);
 }
 
-void apc_php_free(void* p TSRMLS_DC)
+PHP_APCU_API void apc_php_free(void* p TSRMLS_DC)
 {
     efree(p);
 }
 
-char* APC_ALLOC apc_estrdup(const char* s TSRMLS_DC)
+PHP_APCU_API char* APC_ALLOC apc_estrdup(const char* s TSRMLS_DC)
 {
     int len;
     char* dup;
@@ -109,12 +109,12 @@ char* APC_ALLOC apc_estrdup(const char* s TSRMLS_DC)
     return dup;
 }
 
-void* APC_ALLOC apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC)
+PHP_APCU_API void* APC_ALLOC apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC)
 {
     return s != NULL ? apc_xmemcpy(s, strlen(s)+1, f TSRMLS_CC) : NULL;
 }
 
-void* APC_ALLOC apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC)
+PHP_APCU_API void* APC_ALLOC apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC)
 {
     void* q;
 

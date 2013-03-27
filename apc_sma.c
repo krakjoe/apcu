@@ -268,7 +268,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 /* }}} */
 
 /* {{{ APC SMA API */
-void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, zend_uint num, zend_ulong size, char *mask TSRMLS_DC) {
+PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, zend_uint num, zend_ulong size, char *mask TSRMLS_DC) {
 	uint i;
 
     if (sma->initialized) {
@@ -354,7 +354,7 @@ void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, ze
     }	
 }
 
-void apc_sma_api_cleanup(apc_sma_t* sma TSRMLS_DC) {
+PHP_APCU_API void apc_sma_api_cleanup(apc_sma_t* sma TSRMLS_DC) {
 	uint i;
 
     assert(sma->initialized);
@@ -372,7 +372,7 @@ void apc_sma_api_cleanup(apc_sma_t* sma TSRMLS_DC) {
     apc_efree(sma->segs TSRMLS_CC);
 }
 
-void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC) {
+PHP_APCU_API void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC) {
 	size_t off;
     uint i;
     int nuked = 0;
@@ -442,20 +442,20 @@ restart:
     return NULL;
 }
 
-void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong n TSRMLS_DC) 
+PHP_APCU_API void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong n TSRMLS_DC) 
 {
 	zend_ulong allocated;
 	return apc_sma_api_malloc_ex(
 		sma, n, MINBLOCKSIZE, &allocated TSRMLS_CC);
 }
 
-void* apc_sma_api_realloc(apc_sma_t* sma, void* p, zend_ulong n TSRMLS_DC) {
+PHP_APCU_API void* apc_sma_api_realloc(apc_sma_t* sma, void* p, zend_ulong n TSRMLS_DC) {
 	apc_sma_api_free(sma, p TSRMLS_CC);
 	return apc_sma_api_malloc(
 		sma, n TSRMLS_CC);
 }
 
-char* apc_sma_api_strdup(apc_sma_t* sma, const char* s TSRMLS_DC) {
+PHP_APCU_API char* apc_sma_api_strdup(apc_sma_t* sma, const char* s TSRMLS_DC) {
 	void* q;
     int len;
 
@@ -475,7 +475,7 @@ char* apc_sma_api_strdup(apc_sma_t* sma, const char* s TSRMLS_DC) {
     return q;
 }
 
-void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC) {
+PHP_APCU_API void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC) {
 	uint i;
     size_t offset;
 
@@ -502,7 +502,7 @@ void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC) {
 }
 
 #ifdef APC_MEMPROTECT
-void* apc_sma_api_protect(apc_sma_t* sma, void* p) {
+PHP_APCU_API void* apc_sma_api_protect(apc_sma_t* sma, void* p) {
 	unsigned int i = 0;
     size_t offset;
 
@@ -528,7 +528,7 @@ void* apc_sma_api_protect(apc_sma_t* sma, void* p) {
     return NULL;
 }
 
-void* apc_sma_api_unprotect(apc_sma_t* sma, void* p){
+PHP_APCU_API void* apc_sma_api_unprotect(apc_sma_t* sma, void* p){
 	unsigned int i = 0;
     size_t offset;
 
@@ -554,11 +554,11 @@ void* apc_sma_api_unprotect(apc_sma_t* sma, void* p){
     return NULL;
 }
 #else
-void* apc_sma_api_protect(apc_sma_t* sma, void *p) { return p; }
-void* apc_sma_api_unprotect(apc_sma_t* sma, void *p) { return p; }
+PHP_APCU_API void* apc_sma_api_protect(apc_sma_t* sma, void *p) { return p; }
+PHP_APCU_API void* apc_sma_api_unprotect(apc_sma_t* sma, void *p) { return p; }
 #endif
 
-apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited TSRMLS_DC) {
+PHP_APCU_API apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited TSRMLS_DC) {
 	apc_sma_info_t* info;
     apc_sma_link_t** link;
     uint i;
@@ -610,7 +610,7 @@ apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited TSRMLS_DC) {
     return info;
 }
 
-void apc_sma_api_free_info(apc_sma_t* sma, apc_sma_info_t* info TSRMLS_DC) {
+PHP_APCU_API void apc_sma_api_free_info(apc_sma_t* sma, apc_sma_info_t* info TSRMLS_DC) {
 	int i;
 
     for (i = 0; i < info->num_seg; i++) {
@@ -625,7 +625,7 @@ void apc_sma_api_free_info(apc_sma_t* sma, apc_sma_info_t* info TSRMLS_DC) {
     apc_efree(info TSRMLS_CC);
 }
 
-zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma) {
+PHP_APCU_API zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma) {
 	size_t avail_mem = 0;
     uint i;
 
@@ -636,7 +636,7 @@ zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma) {
     return avail_mem;
 }
 
-zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size) {
+PHP_APCU_API zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size) {
 	uint i;
 
     for (i = 0; i < sma->num; i++) {
@@ -648,7 +648,7 @@ zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size) {
     return 0;
 }
 
-void apc_sma_api_check_integrity(apc_sma_t* sma)
+PHP_APCU_API void apc_sma_api_check_integrity(apc_sma_t* sma)
 {
     /* dummy */
 }
