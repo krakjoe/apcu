@@ -150,9 +150,9 @@ typedef struct apc_serializer_t {
 /* {{{ apc_register_serializer 
  registers the serializer using the given name and paramters */
 extern PHP_APCU_API zend_bool apc_register_serializer(const char* name, 
-                                         apc_serialize_t serialize, 
-                                         apc_unserialize_t unserialize,
-                                         void *config TSRMLS_DC); /* }}} */
+                                                      apc_serialize_t serialize, 
+                                                      apc_unserialize_t unserialize,
+                                                      void *config TSRMLS_DC); /* }}} */
 
 /* {{{ apc_get_serializers 
  fetches the list of serializers */

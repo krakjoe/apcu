@@ -370,7 +370,7 @@ static apc_serializer_t apc_serializers[APC_MAX_SERIALIZERS] = {{0,}};
 /* }}} */
 
 /* {{{ apc_register_serializer */
-zend_bool apc_register_serializer(const char* name, 
+PHP_APCU_API zend_bool apc_register_serializer(const char* name, 
                                   apc_serialize_t serialize, 
                                   apc_unserialize_t unserialize,
                                   void *config TSRMLS_DC) {
@@ -396,12 +396,12 @@ zend_bool apc_register_serializer(const char* name,
 } /* }}} */
 
 /* {{{ apc_get_serializers */
-apc_serializer_t* apc_get_serializers(TSRMLS_D)  {
+PHP_APCU_API apc_serializer_t* apc_get_serializers(TSRMLS_D)  {
 	return &(apc_serializers[0]);
 } /* }}} */
 
 /* {{{ apc_find_serializer */
-apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC) {
+PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC) {
 	int i;
     apc_serializer_t *serializer;
 
