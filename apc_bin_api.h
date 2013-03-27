@@ -50,8 +50,8 @@ typedef struct _apc_bd_t {
     void ***swizzled_ptrs;
 } apc_bd_t;
 
-extern PHP_APCU_API apc_bd_t* apc_bin_dump(apc_cache_t* cache, HashTable *user_vars TSRMLS_DC);
-extern PHP_APCU_API int apc_bin_load(apc_cache_t* cache, apc_bd_t *bd, int flags TSRMLS_DC);
+PHP_APCU_API apc_bd_t* apc_bin_dump(apc_cache_t* cache, HashTable *user_vars TSRMLS_DC);
+PHP_APCU_API int apc_bin_load(apc_cache_t* cache, apc_bd_t *bd, int flags TSRMLS_DC);
 
 #endif
 

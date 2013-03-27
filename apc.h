@@ -74,31 +74,31 @@ typedef void* (*apc_malloc_t)(size_t TSRMLS_DC);
 typedef void  (*apc_free_t)  (void * TSRMLS_DC);
 
 /* wrappers for memory allocation routines */
-extern PHP_APCU_API void* apc_emalloc(size_t n TSRMLS_DC);
-extern PHP_APCU_API void* apc_erealloc(void* p, size_t n TSRMLS_DC);
-extern PHP_APCU_API void* apc_php_malloc(size_t n TSRMLS_DC);
-extern PHP_APCU_API void  apc_php_free(void* p TSRMLS_DC);
-extern PHP_APCU_API void  apc_efree(void* p TSRMLS_DC);
-extern PHP_APCU_API char* apc_estrdup(const char* s TSRMLS_DC);
-extern PHP_APCU_API void* apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC);
-extern PHP_APCU_API void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC);
+PHP_APCU_API void* apc_emalloc(size_t n TSRMLS_DC);
+PHP_APCU_API void* apc_erealloc(void* p, size_t n TSRMLS_DC);
+PHP_APCU_API void* apc_php_malloc(size_t n TSRMLS_DC);
+PHP_APCU_API void  apc_php_free(void* p TSRMLS_DC);
+PHP_APCU_API void  apc_efree(void* p TSRMLS_DC);
+PHP_APCU_API char* apc_estrdup(const char* s TSRMLS_DC);
+PHP_APCU_API void* apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC);
+PHP_APCU_API void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC);
 
 /* console display functions */
-extern PHP_APCU_API void apc_error(const char *format TSRMLS_DC, ...);
-extern PHP_APCU_API void apc_warning(const char *format TSRMLS_DC, ...);
-extern PHP_APCU_API void apc_notice(const char *format TSRMLS_DC, ...);
-extern PHP_APCU_API void apc_debug(const char *format TSRMLS_DC, ...);
+PHP_APCU_API void apc_error(const char *format TSRMLS_DC, ...);
+PHP_APCU_API void apc_warning(const char *format TSRMLS_DC, ...);
+PHP_APCU_API void apc_notice(const char *format TSRMLS_DC, ...);
+PHP_APCU_API void apc_debug(const char *format TSRMLS_DC, ...);
 
 /* string and text manipulation */
-extern PHP_APCU_API char* apc_append(const char* s, const char* t TSRMLS_DC);
-extern PHP_APCU_API char* apc_substr(const char* s, int start, int length TSRMLS_DC);
-extern PHP_APCU_API char** apc_tokenize(const char* s, char delim TSRMLS_DC);
+PHP_APCU_API char* apc_append(const char* s, const char* t TSRMLS_DC);
+PHP_APCU_API char* apc_substr(const char* s, int start, int length TSRMLS_DC);
+PHP_APCU_API char** apc_tokenize(const char* s, char delim TSRMLS_DC);
 
 /* apc_crc32: returns the CRC-32 checksum of the first len bytes in buf */
-extern PHP_APCU_API unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
+PHP_APCU_API unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
 
 /* apc_flip_hash flips keys and values for faster searching */
-extern PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
+PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 
 #define APC_NEGATIVE_MATCH 1
 #define APC_POSITIVE_MATCH 2
@@ -149,18 +149,18 @@ typedef struct apc_serializer_t {
 
 /* {{{ apc_register_serializer 
  registers the serializer using the given name and paramters */
-extern PHP_APCU_API zend_bool apc_register_serializer(const char* name, 
-                                                      apc_serialize_t serialize, 
-                                                      apc_unserialize_t unserialize,
-                                                      void *config TSRMLS_DC); /* }}} */
+PHP_APCU_API zend_bool apc_register_serializer(const char* name, 
+                                               apc_serialize_t serialize, 
+                                               apc_unserialize_t unserialize,
+                                               void *config TSRMLS_DC); /* }}} */
 
 /* {{{ apc_get_serializers 
  fetches the list of serializers */
-extern PHP_APCU_API apc_serializer_t* apc_get_serializers(TSRMLS_D); /* }}} */
+PHP_APCU_API apc_serializer_t* apc_get_serializers(TSRMLS_D); /* }}} */
 
 /* {{{ apc_find_serializer
  finds a previously registered serializer by name */
-extern PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC); /* }}} */
+PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC); /* }}} */
 
 #endif
 
