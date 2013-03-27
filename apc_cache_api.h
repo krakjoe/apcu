@@ -176,7 +176,7 @@ extern PHP_APCU_API zend_bool apc_cache_make_context(apc_cache_t* cache,
                                                      uint force_update TSRMLS_DC);
 
 /*
-* apc_cache_make_context_ex is an advanced/extern PHP_APCU_APIal version of make_context
+* apc_cache_make_context_ex is an advanced/external version of make_context
 */
 extern PHP_APCU_API zend_bool apc_cache_make_context_ex(apc_context_t* context,
                                                         apc_serializer_t* serializer,
