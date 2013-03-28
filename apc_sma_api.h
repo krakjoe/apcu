@@ -232,9 +232,9 @@ typedef union { void* p; int i; long l; double d; void (*f)(void); } apc_word_t;
     PHP_APCU_API void* apc_sma_api_func(name, unprotect)(void* p); \
     PHP_APCU_API apc_sma_info_t* apc_sma_api_func(name, info)(zend_bool limited TSRMLS_DC); \
     PHP_APCU_API void apc_sma_api_func(name, free_info)(apc_sma_info_t* info TSRMLS_DC); \
-    PHP_APCU_API zend_ulong apc_sma_api_func(name, get_avail_mem)(); \
+    PHP_APCU_API zend_ulong apc_sma_api_func(name, get_avail_mem)(void); \
     PHP_APCU_API zend_bool apc_sma_api_func(name, get_avail_size)(zend_ulong size); \
-    PHP_APCU_API void apc_sma_api_func(name, check_integrity)(); /* }}} */
+    PHP_APCU_API void apc_sma_api_func(name, check_integrity)(void); /* }}} */
 
 /* {{{ Call in a compilation unit */
 #define apc_sma_api_impl(name, data, expunge) \

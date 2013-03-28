@@ -39,6 +39,6 @@
 /*
  performs alignment checking on pool internals during MINIT
 */
-extern void apc_pool_init();
+extern PHP_APCU_API void apc_pool_init();
 #endif
 
