@@ -3,7 +3,7 @@
 
 ARG_ENABLE('apcu', 'Whether to enable APCu support', 'no');
 ARG_ENABLE('apcu-debug', 'Whether to enable APCu debugging', 'no');
-ARG_ENABLE('apc-bc', 'Wether APCu should provide APC full compatibility support', 'yes');
+ARG_ENABLE('apc-bc', 'Whether APCu should provide APC full compatibility support', 'yes');
 
 if(PHP_APCU != 'no')
 {
