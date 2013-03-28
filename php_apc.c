@@ -499,7 +499,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
         return;
     }
 
-    if (!key) {
+    if (!key || !APCG(enabled)) {
         /* cannot work without key */
         RETURN_FALSE;
     }
@@ -940,7 +940,6 @@ PHP_FUNCTION(apcu_bin_dump) {
     zval *z_vars = NULL;
     HashTable  *h_vars;
     apc_bd_t *bd;
-
 
     if (!APCG(enabled)) {
         apc_warning("APC is not enabled, apc_bin_dump not available." TSRMLS_CC);

@@ -37,7 +37,6 @@
 /*
  * This module defines utilities and helper functions used elsewhere in APC.
  */
- 
 #ifdef PHP_WIN32
 # define PHP_APCU_API __declspec(dllexport)
 #elif defined(__GNUC__) && __GNUC__ >= 4
@@ -115,11 +114,15 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 # else 
 #  define APC_HOTSPOT
 # endif
+# if __GNUC__ > 3 && __GNUC_MINOR__ >= 1
+# define APC_ALIGN __attribute__((aligned))
+# endif
 #else 
 # define APC_UNUSED
 # define APC_USED
 # define APC_ALLOC 
 # define APC_HOTSPOT 
+# define APC_ALIGN
 #endif
 
 /*

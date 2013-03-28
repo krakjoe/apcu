@@ -615,7 +615,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRM
 		                    continue;
 		                }
 		            } else if(cache->ttl) {
-		                if((*slot)->ctime + cache->ttl < t) {
+		                if((time_t) ((*slot)->ctime + cache->ttl) < t) {
 		                    apc_cache_remove_slot(cache, slot TSRMLS_CC);
 		                    continue;
 		                }
@@ -1671,7 +1671,7 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* ke
 
 /* {{{ apc_cache_serializer */
 PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name TSRMLS_DC) {
-	if (!cache->serializer) {
+	if (cache && !cache->serializer) {
 		cache->serializer = apc_find_serializer(name TSRMLS_CC);
 	}
 } /* }}} */
