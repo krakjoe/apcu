@@ -165,6 +165,14 @@ PHP_APCU_API apc_serializer_t* apc_get_serializers(TSRMLS_D); /* }}} */
  finds a previously registered serializer by name */
 PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC); /* }}} */
 
+/* {{{ default serializers */
+PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS);
+PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS); /* }}} */
+
+/* {{{ eval serializers */
+PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS);
+PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS); /* }}} */
+
 #endif
 
 /*

@@ -237,8 +237,92 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
 }
 /* }}} */
 
-/* {{{ apc php serializers */
-int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS) 
+/* {{{ eval serializer */
+PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS)
+{
+    smart_str output = {0,};
+    
+    php_var_export_ex(
+        (zval**)&value, 1, &output TSRMLS_CC);
+    
+    if (output.c) {
+        char path[MAXPATHLEN] = {0,};
+        zend_ulong hash = zend_inline_hash_func(
+            output.c, output.len);
+        zend_ulong slotted = 0;
+        
+        /* TODO check for existence and permission */
+        do {
+           if (((*buf_len) = snprintf(path, MAXPATHLEN,
+                "%s/%lu:%lu.php",
+                APCG(writable), hash, slotted
+           ))) {
+                char *pathed;
+                php_stream *handle = php_stream_open_wrapper(
+                    path, "wb", IGNORE_PATH, &pathed TSRMLS_CC);
+                
+                if (handle) {
+                    (*buf) = emalloc((*buf_len)+1);
+                    memcpy(
+                        (*buf), path, (*buf_len)
+                    );
+                    (*buf)[(*buf_len)] = '\0';
+                    
+                    php_stream_write(handle, "<?php\n", strlen("<?php\n"));
+                    php_stream_write(handle, "return ", strlen("return "));
+                    php_stream_write(handle, output.c, output.len);
+                    php_stream_write(handle, ";\n", strlen(";\n"));
+                    php_stream_write(handle, "?>", strlen("?>"));
+
+                    php_stream_close(handle);
+                    break;
+                }
+           }
+           slotted++;
+           /* below is a nasty hack to avoid infinite looping, will be removed when perms are checked */
+        } while (slotted < 1000000);
+        
+        return 1;
+    } else php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Error serializing content");
+    
+    return 0;
+} /* }}} */
+
+/* {{{ eval unserializer */
+PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS)
+{
+    zend_file_handle zhandle;
+    
+    if (php_stream_open_for_zend_ex(buf, &zhandle, USE_PATH|STREAM_OPEN_FOR_INCLUDE TSRMLS_CC) == SUCCESS) {
+       zend_op_array *op_array = zend_compile_file(&zhandle, ZEND_INCLUDE TSRMLS_CC);
+       zend_op_array *orig_op_array = EG(active_op_array);
+       zval **orig_return_value_ptr_ptr = EG(return_value_ptr_ptr);
+       
+       if (!EG(active_symbol_table)) {
+            zend_rebuild_symbol_table(TSRMLS_C);
+       }
+       
+       EG(active_op_array) = op_array;
+       EG(return_value_ptr_ptr) = value;
+       
+       zend_try {
+         zend_execute(op_array TSRMLS_CC);
+       } zend_catch {
+         /* panic */
+       } zend_end_try();
+       
+       destroy_op_array(op_array TSRMLS_CC);
+       efree(op_array);
+       
+       EG(active_op_array) = orig_op_array;
+       EG(return_value_ptr_ptr) = orig_return_value_ptr_ptr;
+    }
+    
+    return 0;
+} /* }}} */
+
+/* {{{ php serializer */
+PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS) 
 {
     smart_str strbuf = {0};
     php_serialize_data_t var_hash;
@@ -252,9 +336,10 @@ int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS)
         return 1; 
     }
     return 0;
-}
+} /* }}} */
 
-int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS) 
+/* {{{ php unserializer */
+PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS) 
 {
     const unsigned char *tmp = buf;
     php_unserialize_data_t var_hash;
@@ -268,8 +353,7 @@ int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
     }
     PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
     return 1;
-}
-/* }}} */
+} /* }}} */
 
 /* {{{ apc_cache_create */
 PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, int size_hint, int gc_ttl, int ttl, long smart, zend_bool defend TSRMLS_DC) {

@@ -87,7 +87,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
     double rfc1867_freq;          /* Update frequency as percentage or bytes */
     long rfc1867_ttl;             /* TTL for rfc1867 entries */
     apc_rfc1867_data rfc1867_data;/* Per-request data */
-#endif	
+#endif
 
 	void *apc_bd_alloc_ptr;      /* bindump alloc() ptr */
     void *apc_bd_alloc_ubptr;    /* bindump alloc() upper bound ptr */
@@ -97,6 +97,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
     zend_bool use_request_time;  /* use the SAPI request start time for TTL */
 
     char *serializer_name;       /* the serializer config option */
+    char *writable;              /* writable path for general use */
 ZEND_END_MODULE_GLOBALS(apcu)
 
 /* (the following declaration is defined in php_apc.c) */

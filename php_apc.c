@@ -86,10 +86,6 @@ apc_cache_t* apc_user_cache = NULL;
 /* External APC SMA */
 apc_sma_api_extern(apc_sma);
 
-/* Default serializers */
-APC_SERIALIZER_EXTERN(php);
-APC_UNSERIALIZER_EXTERN(php);
-
 /* Global init functions */
 static void php_apc_init_globals(zend_apcu_globals* apcu_globals TSRMLS_DC)
 {
@@ -193,6 +189,7 @@ STD_PHP_INI_ENTRY("apc.preload_path", (char*)NULL,              PHP_INI_SYSTEM, 
 STD_PHP_INI_BOOLEAN("apc.coredump_unmap", "0", PHP_INI_SYSTEM, OnUpdateBool, coredump_unmap, zend_apcu_globals, apcu_globals)
 STD_PHP_INI_BOOLEAN("apc.use_request_time", "1", PHP_INI_ALL, OnUpdateBool, use_request_time,  zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.serializer", "default", PHP_INI_SYSTEM, OnUpdateStringUnempty, serializer_name, zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.writable", "/tmp", PHP_INI_SYSTEM, OnUpdateStringUnempty, writable, zend_apcu_globals, apcu_globals)
 PHP_INI_END()
 
 /* }}} */
@@ -282,7 +279,11 @@ static PHP_MINIT_FUNCTION(apcu)
 
 			/* register default serializer */
 			apc_register_serializer(
-				"php", php_apc_serializer, php_apc_unserializer, NULL TSRMLS_CC);
+				"php", APC_SERIALIZER_NAME(php), APC_UNSERIALIZER_NAME(php), NULL TSRMLS_CC);
+				
+			/* register eval serializer */
+			apc_register_serializer(
+				"eval", APC_SERIALIZER_NAME(eval), APC_UNSERIALIZER_NAME(eval), NULL TSRMLS_CC);
 			
 			/* create user cache */
 			apc_user_cache = apc_cache_create(
