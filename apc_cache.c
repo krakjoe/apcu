@@ -241,6 +241,8 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
 PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS)
 {
     smart_str output = {0,};
+    apc_context_t *context = (apc_context_t*) config;
+    apc_cache_key_t *key = (apc_cache_key_t*) context->key;
     
     if (Z_TYPE_P(value) == IS_OBJECT) {
         if (!zend_hash_exists(&Z_OBJCE_P(value)->function_table, "__set_state", sizeof("__set_state"))) {
@@ -257,15 +259,11 @@ PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS)
     
     if (output.c) {
         char path[MAXPATHLEN] = {0,};
-        zend_ulong hash = zend_inline_hash_func(
-            output.c, output.len);
-        zend_ulong slotted = 0;
-        
-        /* TODO check for existence and permission */
+
         do {
            if (((*buf_len) = snprintf(path, MAXPATHLEN,
-                "%s/%lu:%lu",
-                APCG(writable), hash, slotted
+                "%s/%s.apcu",
+                APCG(writable), key->str
            ))) {
                 char *pathed;
                 php_stream *handle = php_stream_open_wrapper(
@@ -288,9 +286,7 @@ PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS)
                     break;
                 }
            }
-           slotted++;
-           /* below is a nasty hack to avoid infinite looping, will be removed when perms are checked */
-        } while (slotted < 1000000);
+        } while (0);
         
         return 1;
     } else php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Error serializing content");
@@ -440,10 +436,10 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, zend_ui
 
             /* run cache defense */
             if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
-
+                
                 /* initialize the entry for insertion */
-                if ((entry = apc_cache_make_entry(&ctxt, val, ttl TSRMLS_CC))) {
-
+                if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl TSRMLS_CC))) {
+                
                     /* execute an insertion */
                     if (apc_cache_insert(cache, key, entry, &ctxt, t, exclusive TSRMLS_CC)) {
                         ret = 1;
@@ -1230,7 +1226,7 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 
     if(ctxt->serializer) {
         serialize = ctxt->serializer->serialize;
-        config = ctxt->serializer->config;
+        config = (ctxt->serializer->config != NULL) ? ctxt->serializer->config : ctxt;
     }
 
     if(serialize((unsigned char**)&buf.c, &buf.len, src, config TSRMLS_CC)) {
@@ -1256,7 +1252,7 @@ static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ct
 
     if(ctxt->serializer) {
         unserialize = ctxt->serializer->unserialize;
-        config = ctxt->serializer->config;
+        config = (ctxt->serializer->config != NULL) ? ctxt->serializer->config : ctxt;
     }
 
     if(unserialize(&dst, p, Z_STRLEN_P(src), config TSRMLS_CC)) {
@@ -1563,7 +1559,7 @@ PHP_APCU_API zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zv
 /* }}} */
 
 /* {{{ apc_cache_make_entry */
-PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt, const zval* val, const unsigned int ttl TSRMLS_DC)
+PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt, apc_cache_key_t *key, const zval* val, const unsigned int ttl TSRMLS_DC)
 {
     apc_cache_entry_t* entry;
     apc_pool* pool = ctxt->pool;
@@ -1572,6 +1568,9 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt, const 
     if (!entry) {
 		return NULL;
 	}
+	
+	/* set key for serializer */
+	ctxt->key = key;
 	
     entry->val = apc_cache_store_zval(NULL, val, ctxt TSRMLS_CC);
     if(!entry->val) {

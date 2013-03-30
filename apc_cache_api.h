@@ -301,6 +301,7 @@ PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key,
  * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
  */
 PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt,
+                                                     apc_cache_key_t* key,
                                                      const zval *val,
                                                      const zend_uint ttl TSRMLS_DC);
 

@@ -114,6 +114,7 @@ typedef struct _apc_context_t {
     unsigned int       force_update:1;  /* flag to force updates */
     HashTable          copied;          /* copied zvals for recursion support */
     apc_serializer_t*  serializer;      /* serializer */
+    void*              key;             /* set before serializer API is invoked */
 } apc_context_t; /* }}} */
 
 /*
