@@ -242,6 +242,16 @@ PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS)
 {
     smart_str output = {0,};
     
+    if (Z_TYPE_P(value) == IS_OBJECT) {
+        if (!zend_hash_exists(&Z_OBJCE_P(value)->function_table, "__set_state", sizeof("__set_state"))) {
+            /* 
+                TODO XXX this could/should actually do find, check for the ability to call the method static */
+                
+            apc_warning("unable to store object of type %s in cache without static factory method __set_state" TSRMLS_CC, Z_OBJCE_P(value)->name);
+            return FAILURE;
+        }
+    }
+    
     php_var_export_ex(
         (zval**)&value, 1, &output TSRMLS_CC);
     
