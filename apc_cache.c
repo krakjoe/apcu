@@ -247,7 +247,7 @@ PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS)
             /* 
                 TODO XXX this could/should actually do find, check for the ability to call the method static */
                 
-            apc_warning("unable to store object of type %s in cache without static factory method __set_state" TSRMLS_CC, Z_OBJCE_P(value)->name);
+            apc_warning("unable to store object of class %s in cache without static factory method __set_state" TSRMLS_CC, Z_OBJCE_P(value)->name);
             return FAILURE;
         }
     }
