@@ -264,12 +264,12 @@ PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS)
         /* TODO check for existence and permission */
         do {
            if (((*buf_len) = snprintf(path, MAXPATHLEN,
-                "%s/%lu:%lu.php",
+                "%s/%lu:%lu",
                 APCG(writable), hash, slotted
            ))) {
                 char *pathed;
                 php_stream *handle = php_stream_open_wrapper(
-                    path, "wb", IGNORE_PATH, &pathed TSRMLS_CC);
+                    path, "w+b", IGNORE_PATH, &pathed TSRMLS_CC);
                 
                 if (handle) {
                     (*buf) = emalloc((*buf_len)+1);
