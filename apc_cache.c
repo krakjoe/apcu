@@ -255,14 +255,14 @@ PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS)
     }
     
     php_var_export_ex(
-        (zval**)&value, 1, &output TSRMLS_CC);
+        (zval**)&value, -1, &output TSRMLS_CC);
     
     if (output.c) {
-        char path[MAXPATHLEN] = {0,};
-
+        char path[MAXPATHLEN];
+        
         do {
            if (((*buf_len) = snprintf(path, MAXPATHLEN,
-                "%s/%s.apcu",
+                "%s/apcu.%s",
                 APCG(writable), key->str
            ))) {
                 char *pathed;
@@ -301,27 +301,26 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS)
     
     if (php_stream_open_for_zend_ex(buf, &zhandle, USE_PATH|STREAM_OPEN_FOR_INCLUDE TSRMLS_CC) == SUCCESS) {
        zend_op_array *op_array = zend_compile_file(&zhandle, ZEND_INCLUDE TSRMLS_CC);
-       zend_op_array *orig_op_array = EG(active_op_array);
-       zval **orig_return_value_ptr_ptr = EG(return_value_ptr_ptr);
-       
-       if (!EG(active_symbol_table)) {
-            zend_rebuild_symbol_table(TSRMLS_C);
-       }
+       zend_op_array *active_op_array = EG(active_op_array);
+       zval **return_value_ptr_ptr = EG(return_value_ptr_ptr);
        
        EG(active_op_array) = op_array;
        EG(return_value_ptr_ptr) = value;
        
        zend_try {
-         zend_execute(op_array TSRMLS_CC);
+           zend_execute(op_array TSRMLS_CC);
        } zend_catch {
-         /* panic */
+           /* panic */
        } zend_end_try();
        
-       destroy_op_array(op_array TSRMLS_CC);
+       destroy_op_array(
+            op_array TSRMLS_CC);
        efree(op_array);
        
-       EG(active_op_array) = orig_op_array;
-       EG(return_value_ptr_ptr) = orig_return_value_ptr_ptr;
+       EG(active_op_array) = active_op_array;
+       EG(return_value_ptr_ptr) = return_value_ptr_ptr;
+       
+       return 1;
     }
     
     return 0;
