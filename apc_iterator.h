@@ -37,7 +37,7 @@
 #endif
 
 
-#define APC_ITERATOR_NAME "APCIterator"
+#define APC_ITERATOR_NAME "APCUIterator"
 
 #define APC_DEFAULT_CHUNK_SIZE 100
 
