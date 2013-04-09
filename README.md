@@ -1,3 +1,8 @@
+This fork can work with APC on the same machine independently
+
+    * ini settings have prefix "apcu"
+    * iterator class is called APCUIterator
+    * all PHP constants have prefix APCU_
 
 APCu
 ====
