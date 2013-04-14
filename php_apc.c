@@ -316,6 +316,21 @@ static PHP_MINIT_FUNCTION(apcu)
         zend_register_long_constant("APC_BIN_VERIFY_MD5", sizeof("APC_BIN_VERIFY_MD5"), APC_BIN_VERIFY_MD5, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
         zend_register_long_constant("APC_BIN_VERIFY_CRC32", sizeof("APC_BIN_VERIFY_CRC32"), APC_BIN_VERIFY_CRC32, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
     }
+
+    {
+        zend_constant apc_bc;
+        Z_TYPE(apc_bc.value) = IS_BOOL;
+#if defined(APC_FULL_BC) && APC_FULL_BC
+        Z_LVAL(apc_bc.value) = 1;
+#else
+        Z_LVAL(apc_bc.value) = 0;
+#endif
+        apc_bc.flags = (CONST_CS | CONST_PERSISTENT);
+        apc_bc.name = zend_strndup(ZEND_STRL("APCU_APC_FULL_BC"));
+        apc_bc.name_len = sizeof("APCU_APC_FULL_BC");
+        apc_bc.module_number = module_number;
+        zend_register_constant(&apc_bc TSRMLS_CC);
+    }
 #ifdef APC_FULL_BC
 	apc_init(INIT_FUNC_ARGS_PASSTHRU);
 #endif
