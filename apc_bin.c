@@ -392,6 +392,8 @@ PHP_APCU_API apc_bd_t* apc_bin_dump(apc_cache_t* cache, HashTable *user_vars TSR
     /* flip the hash for faster filter checking */
     user_vars = apc_flip_hash(user_vars);
 
+    APC_RLOCK(cache->header);
+
     /* get size and entry counts */
     for(i=0; i < cache->nslots; i++) {
         sp = cache->slots[i];
@@ -480,6 +482,8 @@ PHP_APCU_API apc_bd_t* apc_bin_dump(apc_cache_t* cache, HashTable *user_vars TSR
     bd = apc_swizzle_bd(bd, &ll TSRMLS_CC);
     zend_llist_destroy(&ll);
     zend_hash_destroy(&APCG(apc_bd_alloc_list));
+
+    APC_RUNLOCK(cache->header);
 
     if(user_vars) {
         zend_hash_destroy(user_vars);
