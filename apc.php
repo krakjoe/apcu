@@ -173,21 +173,21 @@ EOB;
 
 // clear cache
 if ($AUTHENTICATED && isset($MYREQUEST['CC']) && $MYREQUEST['CC']) {
-	apc_clear_cache();
+	apcu_clear_cache();
 }
 
 if ($AUTHENTICATED && !empty($MYREQUEST['DU'])) {
-	apc_delete($MYREQUEST['DU']);
+	apcu_delete($MYREQUEST['DU']);
 }
 
-if(!function_exists('apc_cache_info')) {
+if(!function_exists('apcu_cache_info')) {
 	echo "No cache info available.  APC does not appear to be running.";
   exit;
 }
 
-$cache = apc_cache_info(); 
+$cache = apcu_cache_info(); 
 
-$mem=apc_sma_info();
+$mem=apcu_sma_info();
 
 // don't cache this page
 //
@@ -1049,7 +1049,7 @@ EOB;
         echo '</tr>';
 		if ($sh == $MYREQUEST["SH"]) {
 			echo '<tr>';
-			echo '<td colspan="7"><pre>'.print_r(apc_fetch($entry['key']), 1).'</pre></td>';
+			echo '<td colspan="7"><pre>'.print_r(apcu_fetch($entry['key']), 1).'</pre></td>';
 			echo '</tr>';
 		}
         $i++;
