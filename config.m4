@@ -5,17 +5,15 @@ dnl
 PHP_ARG_ENABLE(apcu, whether to enable APCu support,
 [  --enable-apcu           Enable APCu support])
 
+PHP_APC_BC=yes
 AC_MSG_CHECKING(if APCu should provide APC full compatibility support)
 AC_ARG_ENABLE(apc-bc,
-[  --disable-apc-bc        Disable APC full compatibility support],
-[
-  PHP_APC_BC=no
-  AC_MSG_RESULT(no)
-],
-[
-  PHP_APC_BC=yes
-  AC_MSG_RESULT(yes)
+[  --enable-apc-bc        Enable APC full compatibility support],
+[ if test "x$enableval" = "xno"; then
+    PHP_APC_BC=no
+  fi
 ])
+AC_MSG_RESULT($PHP_APC_BC)
 
 AC_MSG_CHECKING(if APCu should be allowed to use rwlocks)
 AC_ARG_ENABLE(apcu-rwlocks,
