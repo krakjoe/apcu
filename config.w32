@@ -26,6 +26,9 @@ if(PHP_APCU != 'no')
     if (PHP_APC_BC != 'no')
 	{
 	    AC_DEFINE('APC_FULL_BC', 1);
+	    MESSAGE("APCu: full APC compatibility is enabled");
+	} else {
+	    WARNING("APCu: full APC compatibility is NOT enabled");
 	}
 
 	PHP_INSTALL_HEADERS("ext/apcu", "apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_bin_api.h");
