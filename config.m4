@@ -11,6 +11,8 @@ AC_ARG_ENABLE(apc-bc,
 [  --enable-apc-bc        Enable APC full compatibility support],
 [ if test "x$enableval" = "xno"; then
     PHP_APC_BC=no
+  else
+    PHP_APC_BC=yes
   fi
 ])
 AC_MSG_RESULT($PHP_APC_BC)
