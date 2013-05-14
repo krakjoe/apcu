@@ -19,8 +19,8 @@
  <date>2013-04-28</date>
  <time>03:10:00</time>
  <version>
-  <release>4.0.1</release>
-  <api>4.0.1</api>
+  <release>4.0.2</release>
+  <api>4.0.2</api>
  </version>
  <stability>
   <release>beta</release>
@@ -28,13 +28,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-  - Fix crash in cli on apc_store where enable_cli=0
-  - Testing eval serializers
-  - Change apc_* to apcu_* in apc.php
-  - Fix exports in API
-  - Expose to userland whether APCu is compiled with the APC compatibility.
-    See the APCU_APC_FULL_BC constant. (Anatol)
-  - Fixed bin dump producing garbage data in multithreaded env. (Anatol)
+  - Fixed bug #15 APC compatibility option broken. (Anatol)
  </notes>
  <contents>
   <dir name="/">
@@ -140,6 +134,28 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+  </release>
+   <date>2013-04-28</date>
+   <time>03:10:00</time>
+   <version>
+    <release>4.0.1</release>
+    <api>4.0.1</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+  - Fix crash in cli on apc_store where enable_cli=0
+  - Testing eval serializers
+  - Change apc_* to apcu_* in apc.php
+  - Fix exports in API
+  - Expose to userland whether APCu is compiled with the APC compatibility.
+    See the APCU_APC_FULL_BC constant. (Anatol)
+  - Fixed bin dump producing garbage data in multithreaded env. (Anatol)
+   </notes>
   <release>
    <date>2013-03-27</date>
    <time>03:10:00</time>
