@@ -391,10 +391,14 @@ static PHP_RINIT_FUNCTION(apcu)
 }
 /* }}} */
 
-/* {{{ proto void apc_clear_cache() */
+#ifdef APC_FULL_BC
+/* {{{ proto void apc_clear_cache([string cache]) */
 PHP_FUNCTION(apcu_clear_cache)
 {
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "") == FAILURE) {
+    char *ignored;
+    uint ignlen;
+
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ignored, &ignlen) == FAILURE) {
         return;
     }
 
@@ -403,6 +407,20 @@ PHP_FUNCTION(apcu_clear_cache)
     RETURN_TRUE;
 }
 /* }}} */
+#else
+/* {{{ proto void apc_clear_cache() */
+PHP_FUNCTION(apcu_clear_cache)
+{
+    if (zend_parse_parameters_none() == FAILURE) {
+        return;
+    }
+
+    apc_cache_clear(
+		apc_user_cache TSRMLS_CC);
+    RETURN_TRUE;
+}
+/* }}} */
+#endif
 
 /* {{{ proto array apc_cache_info([bool limited]) */
 PHP_FUNCTION(apcu_cache_info)
@@ -1271,10 +1289,16 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_cache_info, 0, 0, 0)
     ZEND_ARG_INFO(0, limited)
 ZEND_END_ARG_INFO()
 
+#ifdef APC_FULL_BC
 PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_clear_cache, 0, 0, 0)
-    ZEND_ARG_INFO(0, info)
+    ZEND_ARG_INFO(0, cache)
 ZEND_END_ARG_INFO()
+#else
+PHP_APC_ARGINFO
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_clear_cache, 0, 0, 0)
+ZEND_END_ARG_INFO()
+#endif
 
 PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_sma_info, 0, 0, 0)
