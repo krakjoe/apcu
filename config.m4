@@ -82,6 +82,24 @@ if test "$PHP_APCU" != "no"; then
 		  AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
     ])
   fi
+
+  AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_cv_APC_GCC_ATOMICS, [
+		  AC_TRY_LINK([],[
+			  int foo = 0;
+			  __sync_fetch_and_add(&foo, 1);
+			  __sync_bool_compare_and_swap(&foo, 0, 1);
+			  return __sync_fetch_and_add(&foo, 1);
+			  ],
+			  [PHP_cv_APC_GCC_ATOMICS=yes],
+			  [PHP_cv_APC_GCC_ATOMICS=no])
+		  ])
+  if test "x${PHP_cv_APC_GCC_ATOMICS}" != "xno"; then
+    AC_DEFINE(HAVE_ATOMIC_OPERATIONS, 1,
+        [Define this if your target compiler supports builtin atomics])
+  else 
+     dnl using rdlock without atomics is unsafe and will not work right
+     AC_DEFINE(APC_NATIVE_RWLOCK, 0, [ ])
+  fi
 	
   AC_CHECK_FUNCS(sigaction)
   AC_CACHE_CHECK(for union semun, php_cv_semun,

@@ -36,10 +36,7 @@
 # ifdef APC_NATIVE_RWLOCK
 typedef pthread_rwlock_t apc_lock_t;
 # else
-typedef struct _apc_lock_t {
-	pthread_mutex_t read;
-	pthread_mutex_t write;
-} apc_lock_t;
+typedef pthread_mutex_t apc_lock_t;
 # endif
 #else
 /* XXX kernel lock mode only for now, compatible through all the wins, add more ifdefs for others */
@@ -84,6 +81,21 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC); /* }}} */
 #define APC_UNLOCK            APC_WUNLOCK
 #define APC_RLOCK(o)          RLOCK(&(o)->lock)
 #define APC_RUNLOCK(o)        RUNLOCK(&(o)->lock) /* }}} */
+
+/* {{{ atomic operations : rdlocks have race conditions on refcounts without these */
+#if APC_NATIVE_RWLOCK
+# ifdef PHP_WIN32
+#  define ATOMIC_INC(a) (void)InterlockedIncrement(&(a))
+#  define ATOMIC_DEC(a) (void)InterlockedDecrement(&(a))
+# else
+#  define ATOMIC_INC(a) (void)__sync_add_and_fetch(&(a), 1)
+#  define ATOMIC_DEC(a) (void)__sync_sub_and_fetch(&(a), 1)
+# endif
+#else /* mutex locks, no more races */
+# define ATOMIC_INC(a) (void)(++(a));
+# define ATOMIC_DEC(a) (void)(--(a));
+#endif
+/* }}} */
 
 #endif
 
