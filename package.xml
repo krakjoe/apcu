@@ -29,6 +29,7 @@
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
   - Fixed bug #15 APC compatibility option broken. (Anatol)
+  - Fixed bug #20 APCu's APCIterator constructor is not compatable with APC. (Anatol)
  </notes>
  <contents>
   <dir name="/">
@@ -62,6 +63,7 @@
    <file name="tests/iterator_005.phpt" role="test" />
    <file name="tests/iterator_006.phpt" role="test" />
    <file name="tests/iterator_007.phpt" role="test" />
+   <file name="tests/iterator_008.phpt" role="test" />
    <file name="tests/php_5_3_ns.inc" role="test" />
    <file name="tests/server_test.inc" role="test" />
    <file name="tests/skipif.inc" role="test" />
