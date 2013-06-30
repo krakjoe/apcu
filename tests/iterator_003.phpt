@@ -9,7 +9,11 @@ apc.file_update_protection=0
 --FILE--
 <?php
 
-$it = new APCIterator(NULL, APC_ITER_ALL, 10);
+if (APCU_APC_FULL_BC) {
+	$it = new APCIterator('schnitzel', NULL, APC_ITER_ALL, 10);
+} else {
+	$it = new APCIterator(NULL, APC_ITER_ALL, 10);
+}
 for($i = 0; $i < 41; $i++) {
   apc_store("key$i", "value$i");
 }

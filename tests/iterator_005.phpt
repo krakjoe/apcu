@@ -9,12 +9,20 @@ apc.enable_cli=1
 <?php
 $vals = array();
 $vals2 = array();
-$it = new APCIterator('/key[0-9]0/');
+if (APCU_APC_FULL_BC) {
+	$it = new APCIterator('user', '/key[0-9]0/');
+} else {
+	$it = new APCIterator('/key[0-9]0/');
+}
 for($i = 0; $i < 41; $i++) {
   apc_store("key$i", "value$i");
 }
 apc_delete($it);
-$it2 = new APCIterator();
+if (APCU_APC_FULL_BC) {
+	$it2 = new APCIterator('ignore');
+} else {
+	$it2 = new APCIterator();
+}
 foreach($it as $key=>$value) {
   $vals[$key] = $value['key'];
 }

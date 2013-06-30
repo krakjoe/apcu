@@ -2,6 +2,7 @@
 APC: APCIterator Overwriting the ctor
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
+<?php if (APCU_APC_FULL_BC) { die('skip compiled with APC compatibility'); } ?>
 --INI--
 apc.enabled=1
 apc.enable_cli=1
