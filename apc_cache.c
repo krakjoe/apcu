@@ -180,8 +180,6 @@ PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** s
 PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
 {
     apc_cache_slot_t** slot;
-	
-    time_t now;
 
     /* This function scans the list of removed cache entries and deletes any
      * entry whose reference count is zero  or that has been on the gc 
@@ -202,9 +200,8 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
     {
 		slot = &cache->header->gc;
 
-		now = time(0);
-
 		while (*slot != NULL) {
+			time_t now = time(0);
 			time_t gc_sec = cache->gc_ttl ? (now - (*slot)->dtime) : 0;
 
 			if (!(*slot)->value->ref_count || gc_sec > (time_t)cache->gc_ttl) {
