@@ -205,9 +205,9 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
 		now = time(0);
 
 		while (*slot != NULL) {
-			int gc_sec = cache->gc_ttl ? (now - (*slot)->dtime) : 0;
+			time_t gc_sec = cache->gc_ttl ? (now - (*slot)->dtime) : 0;
 
-			if (!(*slot)->value->ref_count || gc_sec > cache->gc_ttl) {
+			if (!(*slot)->value->ref_count || gc_sec > (time_t)cache->gc_ttl) {
                 apc_cache_slot_t* dead = *slot;
 
 				/* good ol' whining */
@@ -876,7 +876,7 @@ PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache,
 		     * access ttl on it and removing entries that haven't been accessed for ttl seconds and secondly
 		     * we see if the entry has a hard ttl on it and remove it if it has been around longer than its ttl
 		     */
-		    if((cache->ttl && (*slot)->atime < (t - cache->ttl)) || 
+		    if((cache->ttl && (time_t)(*slot)->atime < (t - (time_t)cache->ttl)) || 
 		       ((*slot)->value->ttl && (time_t) ((*slot)->ctime + (*slot)->value->ttl) < t)) {
                 apc_cache_remove_slot(cache, slot TSRMLS_CC);
 		        continue;
@@ -1622,7 +1622,7 @@ PHP_APCU_API zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_D
     zval *gc = NULL;
     zval *slots = NULL;
     apc_cache_slot_t* p;
-    int i, j;
+    zend_ulong i, j;
 
     if(!cache) {
 		return NULL;
