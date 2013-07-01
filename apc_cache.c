@@ -36,6 +36,7 @@
 #include "php_scandir.h"
 #include "SAPI.h"
 #include "TSRM.h"
+#include "php_main.h"
 #include "ext/standard/md5.h"
 #include "ext/standard/php_var.h"
 #include "ext/standard/php_smart_str.h"
