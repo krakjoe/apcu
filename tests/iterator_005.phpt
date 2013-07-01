@@ -19,7 +19,7 @@ for($i = 0; $i < 41; $i++) {
 }
 apc_delete($it);
 if (APCU_APC_FULL_BC) {
-	$it2 = new APCIterator('ignore');
+	$it2 = new APCIterator('user');
 } else {
 	$it2 = new APCIterator();
 }

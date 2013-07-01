@@ -10,7 +10,7 @@ apc.file_update_protection=0
 <?php
 
 if (APCU_APC_FULL_BC) {
-	$it = new APCIterator('schnitzel', NULL, APC_ITER_ALL, 10);
+	$it = new APCIterator('user', NULL, APC_ITER_ALL, 10);
 } else {
 	$it = new APCIterator(NULL, APC_ITER_ALL, 10);
 }

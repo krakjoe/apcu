@@ -40,6 +40,10 @@
 # include "apc_cache_api.h"
 #endif
 
+#ifdef APC_FULL_BC
+# define APC_CACHE_IS_USER(ct, ct_len) ((ct_len) == 4 && !strncasecmp("user", (ct), 4))
+#endif
+
 #endif
 
 /*
