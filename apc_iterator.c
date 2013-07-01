@@ -155,6 +155,9 @@ static zend_object_value apc_iterator_create(zend_class_entry *ce TSRMLS_DC) {
 #endif
     iterator->obj.guards = NULL;
     iterator->initialized = 0;
+    iterator->stack = NULL;
+    iterator->regex_len = 0;
+    iterator->search_hash = NULL;
     retval.handle = zend_objects_store_put(iterator, apc_iterator_destroy, apc_iterator_free, NULL TSRMLS_CC);
     retval.handlers = &apc_iterator_object_handlers;
 
@@ -347,6 +350,12 @@ PHP_METHOD(apc_iterator, __construct) {
         apc_warning("APCIterator invalid list type." TSRMLS_CC);
         return;
     }
+#if defined(APC_FULL_BC) && APC_FULL_BC
+    if (!APC_CACHE_IS_USER(cache_type, cache_type_len)) {
+        iterator->initialized = 0;
+        return;
+    }
+#endif
 	
     iterator->slot_idx = 0;
     iterator->stack_idx = 0;

@@ -31,7 +31,7 @@ $it_array = array();
 
 foreach ($formats as $idx => $format) {
 	if (APCU_APC_FULL_BC) {
-		$it_array[$idx] = new APCIterator('dummy', NULL, $format);
+		$it_array[$idx] = new APCIterator('user', NULL, $format);
 	} else {
 		$it_array[$idx] = new APCIterator(NULL, $format);
 	}

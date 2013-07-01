@@ -10,7 +10,7 @@ apc.file_update_protection=0
 <?php
 
 if (APCU_APC_FULL_BC) {
-	$it = new APCIterator('dummy', '/key[0-9]0/');
+	$it = new APCIterator('user', '/key[0-9]0/');
 } else {
 	$it = new APCIterator('/key[0-9]0/');
 }

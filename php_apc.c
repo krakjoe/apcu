@@ -402,7 +402,7 @@ PHP_FUNCTION(apcu_clear_cache)
         return;
     }
 
-    if (ignored == 4 && strncasecmp("user", ignlen, 4)) {
+    if (APC_CACHE_IS_USER(ignored, ignlen)) {
         apc_cache_clear(apc_user_cache TSRMLS_CC);
     }
 
