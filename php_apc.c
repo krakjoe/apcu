@@ -396,13 +396,13 @@ static PHP_RINIT_FUNCTION(apcu)
 PHP_FUNCTION(apcu_clear_cache)
 {
     char *ignored;
-    int ignlen;
+    int ignlen = 0;
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &ignored, &ignlen) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &ignored, &ignlen) == FAILURE) {
         return;
     }
 
-    if (APC_CACHE_IS_USER(ignored, ignlen)) {
+    if (0 == ignlen || APC_CACHE_IS_USER(ignored, ignlen)) {
         apc_cache_clear(apc_user_cache TSRMLS_CC);
     }
 
