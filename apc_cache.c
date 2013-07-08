@@ -297,7 +297,7 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS)
 {
     zend_file_handle zhandle;
     
-    if (php_stream_open_for_zend_ex(buf, &zhandle, USE_PATH|STREAM_OPEN_FOR_INCLUDE TSRMLS_CC) == SUCCESS) {
+    if (php_stream_open_for_zend_ex((const char *)buf, &zhandle, USE_PATH|STREAM_OPEN_FOR_INCLUDE TSRMLS_CC) == SUCCESS) {
        zend_op_array *op_array = zend_compile_file(&zhandle, ZEND_INCLUDE TSRMLS_CC);
        zend_op_array *active_op_array = EG(active_op_array);
        zval **return_value_ptr_ptr = EG(return_value_ptr_ptr);
