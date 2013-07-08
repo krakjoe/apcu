@@ -1121,7 +1121,7 @@ PHP_FUNCTION(apcu_bin_dumpfile) {
 PHP_FUNCTION(apc_bin_dumpfile) {
 
     zval *z_files = NULL, *z_user_vars = NULL;
-    HashTable *h_files, *h_user_vars;
+    HashTable *h_user_vars;
     char *filename = NULL;
     int filename_len;
     long flags=0;
@@ -1146,7 +1146,6 @@ PHP_FUNCTION(apc_bin_dumpfile) {
         RETURN_FALSE;
     }
 
-    h_files = z_files ? Z_ARRVAL_P(z_files) : NULL;
     h_user_vars = z_user_vars ? Z_ARRVAL_P(z_user_vars) : NULL;
     bd = apc_bin_dump(apc_user_cache, h_user_vars TSRMLS_CC);
     if(!bd) {
