@@ -127,19 +127,8 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 
 /*
 * Serializer API
-* Note: This used to live in apc_serializer.h
 */
-#define APC_SERIALIZER_NAME(module) module##_apc_serializer
-#define APC_SERIALIZER_EXTERN(module) extern apc_serialize_t module##_apc_serializer
-#define APC_UNSERIALIZER_NAME(module) module##_apc_unserializer
-#define APC_UNSERIALIZER_EXTERN(module) extern apc_unserialize_t module##_apc_unserializer
-
-#define APC_SERIALIZER_ARGS unsigned char **buf, size_t *buf_len, const zval *value, void *config TSRMLS_DC
-#define APC_UNSERIALIZER_ARGS zval **value, unsigned char *buf, size_t buf_len, void *config TSRMLS_DC
-
-/* {{{ */
-typedef int (*apc_serialize_t)(APC_SERIALIZER_ARGS);
-typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS); /* }}} */
+#include "apc_serializer.h"
 
 /* {{{ struct definition: apc_serializer_t */
 typedef struct apc_serializer_t {
@@ -150,10 +139,10 @@ typedef struct apc_serializer_t {
 } apc_serializer_t;
 /* }}} */
 
-/* {{{ apc_register_serializer 
+/* {{{ _apc_register_serializer
  registers the serializer using the given name and paramters */
-PHP_APCU_API zend_bool apc_register_serializer(const char* name, 
-                                               apc_serialize_t serialize, 
+PHP_APCU_API int _apc_register_serializer(const char* name,
+                                               apc_serialize_t serialize,
                                                apc_unserialize_t unserialize,
                                                void *config TSRMLS_DC); /* }}} */
 
