@@ -577,6 +577,10 @@ PHP_APCU_API void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry
 /* {{{ apc_cache_destroy */
 PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC)
 {
+	if (!cache) {
+		return;
+	}
+
 	/* destroy lock */
 	DESTROY_LOCK(&cache->header->lock);
 
