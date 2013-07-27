@@ -292,7 +292,7 @@ static PHP_MINIT_FUNCTION(apcu)
 				"eval", APC_SERIALIZER_NAME(eval), APC_UNSERIALIZER_NAME(eval), NULL TSRMLS_CC);
 
 			/* test out the constant function pointer */
-			assert(apc_serializers[0].name != NULL);
+			assert(apc_get_serializers()->name != NULL);
 
 			/* create user cache */
 			apc_user_cache = apc_cache_create(
