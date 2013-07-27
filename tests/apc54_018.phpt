@@ -18,7 +18,11 @@ for(\$i=0;\$i<50000;\$i++) {
 }
 
 //then later (usually after a few minutes) this won't work correctly:
-\$it = new ApcIterator('#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
+if (APCU_APC_FULL_BC) {
+	\$it = new ApcIterator('user', '#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
+} else {
+	\$it = new ApcIterator('#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
+}
 var_dump(\$it->getTotalCount()); //returns 50000
 var_dump(\$it->current()); //returns false on error
 FL;
