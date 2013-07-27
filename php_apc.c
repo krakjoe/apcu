@@ -281,6 +281,8 @@ static PHP_MINIT_FUNCTION(apcu)
 			apc_sma.init(APCG(shm_segments), APCG(shm_size), NULL TSRMLS_CC);
 #endif
 
+			REGISTER_LONG_CONSTANT(APC_SERIALIZER_CONSTANT, (long)&_apc_register_serializer, CONST_PERSISTENT | CONST_CS);
+
 			/* register default serializer */
 			apc_register_serializer(
 				"php", APC_SERIALIZER_NAME(php), APC_UNSERIALIZER_NAME(php), NULL TSRMLS_CC);
@@ -288,7 +290,10 @@ static PHP_MINIT_FUNCTION(apcu)
 			/* register eval serializer */
 			apc_register_serializer(
 				"eval", APC_SERIALIZER_NAME(eval), APC_UNSERIALIZER_NAME(eval), NULL TSRMLS_CC);
-			
+
+			/* test out the constant function pointer */
+			assert(apc_get_serializers()->name != NULL);
+
 			/* create user cache */
 			apc_user_cache = apc_cache_create(
 				&apc_sma,
@@ -1116,7 +1121,7 @@ PHP_FUNCTION(apcu_bin_dumpfile) {
 PHP_FUNCTION(apc_bin_dumpfile) {
 
     zval *z_files = NULL, *z_user_vars = NULL;
-    HashTable *h_files, *h_user_vars;
+    HashTable *h_user_vars;
     char *filename = NULL;
     int filename_len;
     long flags=0;
@@ -1141,7 +1146,6 @@ PHP_FUNCTION(apc_bin_dumpfile) {
         RETURN_FALSE;
     }
 
-    h_files = z_files ? Z_ARRVAL_P(z_files) : NULL;
     h_user_vars = z_user_vars ? Z_ARRVAL_P(z_user_vars) : NULL;
     bd = apc_bin_dump(apc_user_cache, h_user_vars TSRMLS_CC);
     if(!bd) {

@@ -370,8 +370,8 @@ static apc_serializer_t apc_serializers[APC_MAX_SERIALIZERS] = {{0,}};
 /* }}} */
 
 /* {{{ apc_register_serializer */
-PHP_APCU_API zend_bool apc_register_serializer(const char* name, 
-                                  apc_serialize_t serialize, 
+PHP_APCU_API int _apc_register_serializer(const char* name,
+                                  apc_serialize_t serialize,
                                   apc_unserialize_t unserialize,
                                   void *config TSRMLS_DC) {
     int i;
