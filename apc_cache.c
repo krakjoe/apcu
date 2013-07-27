@@ -477,12 +477,14 @@ static zval* data_unserialize(const char *filename TSRMLS_DC)
     tmp = contents = malloc(len);
 
     if(!contents) {
-       return NULL;
+        fclose(fp);
+        return NULL;
     }
 
     if(fread(contents, 1, len, fp) < 1) {	
-      free(contents);
-      return NULL;
+        fclose(fp);
+        free(contents);
+        return NULL;
     }
 
     MAKE_STD_ZVAL(retval);
@@ -491,6 +493,7 @@ static zval* data_unserialize(const char *filename TSRMLS_DC)
     
     /* I wish I could use json */
     if(!php_var_unserialize(&retval, (const unsigned char**)&tmp, (const unsigned char*)(contents+len), &var_hash TSRMLS_CC)) {
+        fclose(fp);
         zval_ptr_dtor(&retval);
         return NULL;
     }
