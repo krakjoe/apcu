@@ -33,13 +33,12 @@ AC_MSG_CHECKING(if APCu should be built in debug mode)
 AC_ARG_ENABLE(apcu-debug,
 [  --enable-apcu-debug     Enable APCu debugging],
 [
-  PHP_APCU_DEBUG=yes
-	AC_MSG_RESULT(yes)
+  PHP_APCU_DEBUG=$enableval
 ], 
 [
   PHP_APCU_DEBUG=no
-  AC_MSG_RESULT(no)
 ])
+AC_MSG_RESULT($PHP_APCU_DEBUG)
 
 AC_MSG_CHECKING(if APCu should clear on SIGUSR1)
 AC_ARG_ENABLE(apcu-clear-signal,
