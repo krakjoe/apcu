@@ -90,7 +90,7 @@ if test "$PHP_APCU" != "no"; then
 #include <sys/ipc.h>
 #include <sys/sem.h>
     ], [union semun x; x.val=1], [
-      hp_cv_semun=yesp
+      php_cv_semun=yes
     ],[
       php_cv_semun=no
     ])
