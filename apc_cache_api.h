@@ -46,7 +46,7 @@ struct apc_cache_key_t {
     zend_ulong h;                 /* pre-computed hash of key */
     time_t mtime;                 /* the mtime of this cached entry */
     apc_cache_owner_t owner;      /* the context that created this key */
-} APC_ALIGN; /* }}} */
+}; /* }}} */
 
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct apc_cache_entry_t apc_cache_entry_t;
@@ -56,7 +56,7 @@ struct apc_cache_entry_t {
     int ref_count;                /* the reference count of this entry */
     size_t mem_size;              /* memory used */
     apc_pool *pool;               /* pool which allocated the value */
-} APC_ALIGN;
+};
 /* }}} */
 
 /* {{{ struct definition: apc_cache_slot_t */
@@ -69,7 +69,7 @@ struct apc_cache_slot_t {
     time_t ctime;               /* time slot was initialized */
     time_t dtime;               /* time slot was removed from cache */
     time_t atime;               /* time slot was last accessed */
-} APC_ALIGN;
+};
 /* }}} */
 
 /* {{{ state constants */
