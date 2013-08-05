@@ -322,11 +322,11 @@ static PHP_MINIT_FUNCTION(apcu)
             apc_iterator_init(module_number TSRMLS_CC);
         }
 
-        zend_register_long_constant("APC_BIN_VERIFY_MD5", sizeof("APC_BIN_VERIFY_MD5"), APC_BIN_VERIFY_MD5, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
-        zend_register_long_constant("APC_BIN_VERIFY_CRC32", sizeof("APC_BIN_VERIFY_CRC32"), APC_BIN_VERIFY_CRC32, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
+        REGISTER_LONG_CONSTANT("APC_BIN_VERIFY_MD5", APC_BIN_VERIFY_MD5, CONST_CS | CONST_PERSISTENT);
+        REGISTER_LONG_CONSTANT("APC_BIN_VERIFY_CRC32", APC_BIN_VERIFY_CRC32, CONST_CS | CONST_PERSISTENT);
     }
 
-#if PHP_VERSION_ID < 50600
+#ifndef REGISTER_BOOL_CONSTANT
     {
         zend_constant apc_bc;
         Z_TYPE(apc_bc.value) = IS_BOOL;
@@ -343,9 +343,9 @@ static PHP_MINIT_FUNCTION(apcu)
     }
 #else
 #if defined(APC_FULL_BC) && APC_FULL_BC
-    zend_register_bool_constant("APCU_APC_FULL_BC", sizeof("APCU_APC_FULL_BC"), 1, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
+    REGISTER_BOOL_CONSTANT("APCU_APC_FULL_BC", 1, CONST_CS | CONST_PERSISTENT);
 #else
-    zend_register_bool_constant("APCU_APC_FULL_BC", sizeof("APCU_APC_FULL_BC"), 0, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
+    REGISTER_BOOL_CONSTANT("APCU_APC_FULL_BC", 0, CONST_CS | CONST_PERSISTENT);
 #endif
 #endif
 
