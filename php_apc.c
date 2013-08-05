@@ -326,7 +326,7 @@ static PHP_MINIT_FUNCTION(apcu)
         zend_register_long_constant("APC_BIN_VERIFY_CRC32", sizeof("APC_BIN_VERIFY_CRC32"), APC_BIN_VERIFY_CRC32, (CONST_CS | CONST_PERSISTENT), module_number TSRMLS_CC);
     }
 
-#if PHP_API_VERSION < 50600
+#if PHP_VERSION_ID < 50600
     {
         zend_constant apc_bc;
         Z_TYPE(apc_bc.value) = IS_BOOL;
