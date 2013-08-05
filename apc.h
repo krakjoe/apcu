@@ -114,8 +114,8 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 # else 
 #  define APC_HOTSPOT
 # endif
-# if __GNUC__ > 3 && __GNUC_MINOR__ >= 1
-# define APC_ALIGN __attribute__((aligned))
+# if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
+# define APC_ALIGN __attribute__((aligned(8)))
 # endif
 #else 
 # define APC_UNUSED
