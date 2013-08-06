@@ -263,9 +263,8 @@ PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS)
                 "%s/apcu.%s",
                 APCG(writable), key->str
            ))) {
-                char *pathed;
                 php_stream *handle = php_stream_open_wrapper(
-                    path, "w+b", IGNORE_PATH, &pathed TSRMLS_CC);
+                    path, "w+b", IGNORE_PATH, NULL);
                 
                 if (handle) {
                     (*buf) = emalloc((*buf_len)+1);
