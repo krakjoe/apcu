@@ -62,7 +62,11 @@ static APC_UNUSED int apc_register_serializer(const char* name,
 
     /* zend_get_constant will return 1 on success, otherwise apc_magic_constant wouldn't be touched at all */
     if (zend_get_constant(APC_SERIALIZER_CONSTANT, sizeof(APC_SERIALIZER_CONSTANT)-1, &apc_magic_constant TSRMLS_CC)) {
+#if defined(PHP_WIN32) && defined(_WIN64)
+        apc_register_serializer_t register_func = (apc_register_serializer_t)_atoi64(Z_STRVAL(apc_magic_constant));
+#else
         apc_register_serializer_t register_func = (apc_register_serializer_t)(Z_LVAL(apc_magic_constant));
+#endif
         if(register_func) {
             retval = register_func(name, serialize, unserialize, NULL TSRMLS_CC);
         }
