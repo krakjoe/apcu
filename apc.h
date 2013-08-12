@@ -124,7 +124,17 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 /*
 * Serializer API
 */
-#include "apc_serializer.h"
+#define APC_SERIALIZER_ABI "0"
+#define APC_SERIALIZER_CONSTANT "\000apc_register_serializer-" APC_SERIALIZER_ABI
+
+#define APC_SERIALIZER_NAME(module) module##_apc_serializer
+#define APC_UNSERIALIZER_NAME(module) module##_apc_unserializer
+
+#define APC_SERIALIZER_ARGS unsigned char **buf, size_t *buf_len, const zval *value, void *config TSRMLS_DC
+#define APC_UNSERIALIZER_ARGS zval **value, unsigned char *buf, size_t buf_len, void *config TSRMLS_DC
+
+typedef int (*apc_serialize_t)(APC_SERIALIZER_ARGS);
+typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);
 
 /* {{{ struct definition: apc_serializer_t */
 typedef struct apc_serializer_t {

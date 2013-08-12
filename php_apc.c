@@ -298,11 +298,11 @@ static PHP_MINIT_FUNCTION(apcu)
 #endif
 
 			/* register default serializer */
-			apc_register_serializer(
+			_apc_register_serializer(
 				"php", APC_SERIALIZER_NAME(php), APC_UNSERIALIZER_NAME(php), NULL TSRMLS_CC);
 				
 			/* register eval serializer */
-			apc_register_serializer(
+			_apc_register_serializer(
 				"eval", APC_SERIALIZER_NAME(eval), APC_UNSERIALIZER_NAME(eval), NULL TSRMLS_CC);
 
 			/* test out the constant function pointer */
