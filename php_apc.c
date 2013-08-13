@@ -1336,18 +1336,22 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_store, 0, 0, 2)
     ZEND_ARG_INFO(0, ttl)
 ZEND_END_ARG_INFO()
 
+#ifdef APC_FULL_BC
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_cache_info, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_cache_info, 0, 0, 1)
     ZEND_ARG_INFO(0, type)
     ZEND_ARG_INFO(0, limited)
 ZEND_END_ARG_INFO()
-
-#ifdef APC_FULL_BC
 PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_clear_cache, 0, 0, 0)
     ZEND_ARG_INFO(0, cache)
 ZEND_END_ARG_INFO()
 #else
+PHP_APC_ARGINFO
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_cache_info, 0, 0, 0)
+    ZEND_ARG_INFO(0, limited)
+ZEND_END_ARG_INFO()
+
 PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_clear_cache, 0, 0, 0)
 ZEND_END_ARG_INFO()
