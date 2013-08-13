@@ -437,6 +437,30 @@ PHP_FUNCTION(apcu_clear_cache)
     RETURN_TRUE;
 }
 /* }}} */
+
+/* {{{ proto array apc_cache_info(string cache_type, [bool limited]) */
+PHP_FUNCTION(apcu_cache_info)
+{
+    zval* info;
+    zend_bool limited = 0;
+    char *ct;
+    ulong ctlen;
+    
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &cache_type, &ctlen, &limited) == FAILURE) {
+        return;
+    }
+
+    info = apc_cache_info(apc_user_cache, limited TSRMLS_CC);
+
+    if (!info) {
+        php_error_docref(NULL TSRMLS_CC, E_WARNING, "No APC info available.  Perhaps APC is not enabled? Check apc.enabled in your ini file");
+        RETURN_FALSE;
+    }
+
+    RETURN_ZVAL(info, 0, 1);
+
+}
+/* }}} */
 #else
 /* {{{ proto void apc_clear_cache() */
 PHP_FUNCTION(apcu_clear_cache)
@@ -450,7 +474,6 @@ PHP_FUNCTION(apcu_clear_cache)
     RETURN_TRUE;
 }
 /* }}} */
-#endif
 
 /* {{{ proto array apc_cache_info([bool limited]) */
 PHP_FUNCTION(apcu_cache_info)
@@ -473,6 +496,7 @@ PHP_FUNCTION(apcu_cache_info)
 
 }
 /* }}} */
+#endif
 
 /* {{{ proto array apc_sma_info([bool limited]) */
 PHP_FUNCTION(apcu_sma_info)
