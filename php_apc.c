@@ -857,7 +857,8 @@ PHP_FUNCTION(apcu_fetch) {
 				    if (Z_TYPE_PP(hentry) == IS_STRING) {
 
 				        /* perform find using this index as key */
-						if ((entry = apc_cache_find(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1), t TSRMLS_CC))) {
+						if ((entry = apc_cache_find(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1), t 
+TSRMLS_CC))) {
 							zval *result_entry;
 
 						    /* deep-copy returned shm zval to emalloc'ed return_value */
@@ -869,7 +870,8 @@ PHP_FUNCTION(apcu_fetch) {
 								apc_user_cache, entry TSRMLS_CC);
 							/* add the emalloced value to return array */
 						    zend_hash_add(
-								Z_ARRVAL_P(result), Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) +1, &result_entry, sizeof(zval*), NULL);
+								Z_ARRVAL_P(result), Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) +1, &result_entry, 
+sizeof(zval*), NULL);
 						}
 				    } else {
 
@@ -1184,7 +1186,8 @@ PHP_FUNCTION(apc_bin_dumpfile) {
     }
 
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a!a!s|lr!", &z_files, &z_user_vars, &filename, &filename_len, &flags, &zcontext) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a!a!s|lr!", &z_files, &z_user_vars, &filename, &filename_len, &flags, &zcontext) == 
+FAILURE) {
         return;
     }
 
@@ -1256,7 +1259,8 @@ PHP_FUNCTION(apcu_bin_load) {
     }
 
     if (!data_len || data_len != ((apc_bd_t*)data)->size -1) {
-        apc_error("apc_bin_load string argument does not appear to be a valid APC binary dump due to size (%d vs expected %d)." TSRMLS_CC, data_len, ((apc_bd_t*)data)->size -1);
+        apc_error("apc_bin_load string argument does not appear to be a valid APC binary dump due to size (%d vs expected %d)." TSRMLS_CC, data_len, 
+((apc_bd_t*)data)->size -1);
         RETURN_FALSE;
     }
 
@@ -1310,7 +1314,8 @@ PHP_FUNCTION(apcu_bin_loadfile) {
         apc_warning("Error reading file passed to apc_bin_loadfile: %s." TSRMLS_CC, filename);
         RETURN_FALSE;
     } else if (len != ((apc_bd_t*)data)->size) {
-        apc_warning("file passed to apc_bin_loadfile does not appear to be valid due to size (%d vs expected %d)." TSRMLS_CC, len, ((apc_bd_t*)data)->size -1);
+        apc_warning("file passed to apc_bin_loadfile does not appear to be valid due to size (%d vs expected %d)." TSRMLS_CC, len, 
+((apc_bd_t*)data)->size -1);
         RETURN_FALSE;
     }
     php_stream_close(stream);
@@ -1338,7 +1343,8 @@ ZEND_END_ARG_INFO()
 
 #ifdef APC_FULL_BC
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_cache_info, 0, 0, 1)
+/* this will generate different reflection but retains functional compatibility */
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_cache_info, 0, 0, 0)
     ZEND_ARG_INFO(0, type)
     ZEND_ARG_INFO(0, limited)
 ZEND_END_ARG_INFO()
