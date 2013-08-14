@@ -446,8 +446,10 @@ PHP_FUNCTION(apcu_cache_info)
     char *ct;
     ulong ctlen;
     
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &ct, &ctlen, &limited) == FAILURE) {
-        return;
+    if (ZEND_NUM_ARGS()) {
+        if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|b", &ct, &ctlen, &limited) == FAILURE) {
+            return;
+        }
     }
 
     info = apc_cache_info(apc_user_cache, limited TSRMLS_CC);
