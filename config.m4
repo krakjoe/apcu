@@ -61,6 +61,18 @@ AC_ARG_ENABLE(apcu-mmap,
   AC_MSG_RESULT(mmap)
 ])
 
+PHP_APCU_SPINLOCK=no
+AC_MSG_CHECKING(if APCu should utilize spinlocks before flocks)
+AC_ARG_ENABLE(apcu-spinlocks,
+[  --enable-apcu-spinlocks        Use spinlocks before flocks],
+[ if test "x$enableval" = "xno"; then
+    PHP_APCU_SPINLOCK=no
+  else
+    PHP_APCU_SPINLOCK=yes
+  fi
+])
+AC_MSG_RESULT($PHP_APCU_SPINLOCK)
+
 if test "$PHP_APCU" != "no"; then
 	if test "$PHP_APC_BC" != "no"; then
 		AC_DEFINE(APC_FULL_BC, 1, [APC full compatibility support])
@@ -106,7 +118,6 @@ rwlock's.");
 				      return -1; 
 			      }
 
-			      puts("pthread rwlocks are supported!");
 			      return 0;
           }
 		    ],
@@ -114,6 +125,7 @@ rwlock's.");
 			    PHP_ADD_LIBRARY(pthread)
 			    APC_CFLAGS="-D_GNU_SOURCE"
 			    AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
+			    AC_MSG_WARN([APCu has access to native rwlocks])
 		    ],
 		    [ dnl -Failure-
 			    AC_MSG_WARN([It doesn't appear that pthread rwlocks are supported on your system])
@@ -158,23 +170,34 @@ shared mutex's.");
 					    puts("Unable to destroy mutex (pthread_mutex_destroy).");
 					    return -1; 
 				    }
-
-				    puts("pthread mutexs are supported!");
 				    return 0;
         }
 			  ],
 			  [ dnl -Success-
 				  PHP_ADD_LIBRARY(pthread)
+				  AC_MSG_WARN([APCu has access to mutexes])
 			  ],
 			  [ dnl -Failure-
 				  AC_MSG_WARN([It doesn't appear that pthread mutexes are supported on your system])
-    			AC_DEFINE(APC_FCNTL_LOCK, 1, [ ])
+    			PHP_APCU_MUTEX=no
 			  ],
 			  [
 				  PHP_ADD_LIBRARY(pthread)
 			  ]
 	  )
 	  LIBS="$orig_LIBS"
+  fi
+  
+  if test "$PHP_APCU_RWLOCKS" == "no"; then
+   if test "$PHP_APCU_MUTEX" == "no"; then
+    if test "$PHP_APCU_SPINLOCK" != "no"; then
+      AC_DEFINE(APC_SPIN_LOCK, 1, [ ])
+      AC_MSG_WARN([APCu spin locking enabled])
+    else
+      AC_DEFINE(APC_FCNTL_LOCK, 1, [ ])
+      AC_MSG_WARN([APCu file locking enabled])
+    fi
+   fi
   fi
 	
   AC_CHECK_FUNCS(sigaction)
@@ -207,6 +230,19 @@ shared mutex's.");
   		[AC_DEFINE([HAVE_VALGRIND_MEMCHECK_H],1, [enable valgrind memchecks])])
   ])
 
+  if test "$PHP_APCU_SPINLOCK" != "no"; then
+  apc_sources="pgsql_s_lock.c apc.c apc_lock.c php_apc.c \
+               apc_cache.c \
+               apc_mmap.c \
+               apc_shm.c \
+               apc_sma.c \
+               apc_stack.c \
+               apc_rfc1867.c \
+               apc_signal.c \
+               apc_pool.c \
+               apc_iterator.c \
+							 apc_bin.c "
+  else
   apc_sources="apc.c apc_lock.c php_apc.c \
                apc_cache.c \
                apc_mmap.c \
@@ -218,7 +254,8 @@ shared mutex's.");
                apc_pool.c \
                apc_iterator.c \
 							 apc_bin.c "
-
+  fi
+  
   PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
   PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
   PHP_SUBST(APCU_SHARED_LIBADD)
