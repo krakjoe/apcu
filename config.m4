@@ -101,8 +101,7 @@ if test "$PHP_APCU" != "no"; then
 				      return -1; 
 			      }
 			      if(pthread_rwlockattr_setpshared(&attr, PTHREAD_PROCESS_SHARED)) { 
-				      puts("Unable to set PTHREAD_PROCESS_SHARED (pthread_rwlockattr_setpshared), your system may not support shared 
-rwlock's.");
+				      puts("Unable to set PTHREAD_PROCESS_SHARED (pthread_rwlockattr_setpshared), your system may not support shared rwlock's.");
 				      return -1; 
 			      }	
 			      if(pthread_rwlock_init(&rwlock, &attr)) { 
@@ -154,8 +153,7 @@ rwlock's.");
 					    return -1; 
 				    }
 				    if(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED)) { 
-					    puts("Unable to set PTHREAD_PROCESS_SHARED (pthread_mutexattr_setpshared), your system may not support 
-shared mutex's.");
+					    puts("Unable to set PTHREAD_PROCESS_SHARED (pthread_mutexattr_setpshared), your system may not support shared mutex's.");
 					    return -1; 
 				    }	
 				    if(pthread_mutex_init(&mutex, &attr)) { 
