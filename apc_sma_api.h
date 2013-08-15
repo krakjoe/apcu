@@ -86,7 +86,7 @@ typedef struct _apc_sma_t {
     apc_sma_malloc_ex_f malloc_ex;               /* malloc_ex */
     apc_sma_realloc_f realloc;                   /* realloc */
     apc_sma_strdup_f strdup;                     /* strdup */
-    apc_sma_free_f free;                         /* free */
+    apc_sma_free_f sfree;                        /* free */
     apc_sma_protect_f protect;                   /* protect */
     apc_sma_unprotect_f unprotect;               /* unprotect */
     apc_sma_info_f info;                         /* info */

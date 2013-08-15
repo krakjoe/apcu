@@ -751,7 +751,7 @@ PHP_APCU_API zend_bool apc_cache_make_context(apc_cache_t* cache,
 				context,
                 cache->serializer,
 				(apc_malloc_t) cache->sma->smalloc,
-                cache->sma->free,
+                cache->sma->sfree,
                 cache->sma->protect,
                 cache->sma->unprotect,
 				pool_type, copy_type, force_update TSRMLS_CC
