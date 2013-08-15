@@ -33,17 +33,22 @@
 #  define __USE_UNIX98
 # endif
 # include "pthread.h"
-# ifndef APC_FCNTL_LOCK
-#   ifdef APC_NATIVE_RWLOCK
-    typedef pthread_rwlock_t apc_lock_t;
+# ifndef APC_SPIN_LOCK
+#   ifndef APC_FCNTL_LOCK
+#       ifdef APC_NATIVE_RWLOCK
+        typedef pthread_rwlock_t apc_lock_t;
+#       else
+        typedef struct _apc_lock_t {
+	        pthread_mutex_t read;
+	        pthread_mutex_t write;
+        } apc_lock_t;
+#       endif
 #   else
-    typedef struct _apc_lock_t {
-	    pthread_mutex_t read;
-	    pthread_mutex_t write;
-    } apc_lock_t;
+        typedef int apc_lock_t;
 #   endif
 # else
-    typedef int apc_lock_t;
+# include "pgsql_s_lock.h"
+typedef slock_t apc_lock_t; 
 # endif
 #else
 /* XXX kernel lock mode only for now, compatible through all the wins, add more ifdefs for others */

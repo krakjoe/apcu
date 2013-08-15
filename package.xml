@@ -105,6 +105,8 @@
    <file name="apc_stack.h" role="src" />
    <file name="apc_windows_srwlock_kernel.c" role="src" />
    <file name="apc_windows_srwlock_kernel.h" role="src" />
+   <file name="pgsql_s_lock.h" role="src" />
+   <file name="pgsql_s_lock.c" role="src" />
    <file name="config.m4" role="src" />
    <file name="config.w32" role="src" />
    <file name="INSTALL" role="src" />
