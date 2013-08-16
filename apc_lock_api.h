@@ -47,8 +47,15 @@
         typedef int apc_lock_t;
 #   endif
 # else
-# include "pgsql_s_lock.h"
-typedef slock_t apc_lock_t; 
+# define APC_LOCK_NICE 1
+typedef struct {
+    unsigned long state;
+} apc_lock_t;
+
+PHP_APCU_API int apc_lock_init(apc_lock_t* lock);
+PHP_APCU_API int apc_lock_try(apc_lock_t* lock);
+PHP_APCU_API int apc_lock_get(apc_lock_t* lock);
+PHP_APCU_API int apc_lock_release(apc_lock_t* lock);
 # endif
 #else
 /* XXX kernel lock mode only for now, compatible through all the wins, add more ifdefs for others */

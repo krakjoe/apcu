@@ -228,8 +228,7 @@ if test "$PHP_APCU" != "no"; then
   		[AC_DEFINE([HAVE_VALGRIND_MEMCHECK_H],1, [enable valgrind memchecks])])
   ])
 
-  if test "$PHP_APCU_SPINLOCK" != "no"; then
-    apc_sources="pgsql_s_lock.c apc.c apc_lock.c php_apc.c \
+  apc_sources="apc.c apc_lock.c php_apc.c \
                  apc_cache.c \
                  apc_mmap.c \
                  apc_shm.c \
@@ -240,20 +239,6 @@ if test "$PHP_APCU" != "no"; then
                  apc_pool.c \
                  apc_iterator.c \
 							   apc_bin.c "
-		PHP_INSTALL_HEADERS(ext/apcu, [pgsql_s_lock.h])
-  else
-    apc_sources="apc.c apc_lock.c php_apc.c \
-                 apc_cache.c \
-                 apc_mmap.c \
-                 apc_shm.c \
-                 apc_sma.c \
-                 apc_stack.c \
-                 apc_rfc1867.c \
-                 apc_signal.c \
-                 apc_pool.c \
-                 apc_iterator.c \
-							   apc_bin.c "
-  fi
   
   PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
   PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))

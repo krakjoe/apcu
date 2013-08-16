@@ -58,6 +58,52 @@
             return(ret);
         }
 #   endif
+# else
+PHP_APCU_API int apc_lock_init(apc_lock_t* lock)
+{
+    lock->state = 0;
+}
+
+PHP_APCU_API int apc_lock_try(apc_lock_t* lock)
+{
+    int failed = 1;
+    
+    asm volatile
+    (
+        "xchgl %0, 0(%1)" :
+        "=r" (failed) : "r" (&lock->state), 
+        "0" (failed)    
+    );
+    
+    return failed;   
+}
+
+PHP_APCU_API int apc_lock_get(apc_lock_t* lock)
+{
+    int failed = 1;
+    
+    do {
+        failed = apc_lock_try(
+            lock);
+#ifdef APC_LOCK_NICE
+        usleep(0);
+#endif
+    } while (failed);
+    
+    return failed;
+}
+
+PHP_APCU_API int apc_lock_release(apc_lock_t* lock)
+{
+    int released = 0;
+    
+    asm volatile (
+        "xchg %0, 0(%1)" : "=r" (released) : "r" (&lock->state),
+        "0" (released)
+    );
+    
+    return !released;
+}
 # endif
 static zend_bool apc_lock_ready = 0;
 #endif /* }}} */
@@ -153,7 +199,7 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
 #else
     {
         /* SPIN */
-        S_INIT_LOCK(lock);
+        lock->state = 0;
         return 1;
     }
     
@@ -184,7 +230,7 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC) {
 #else
     {
         /* SPIN */
-        S_LOCK(lock);
+        apc_lock_get(lock);
     }
 #endif
     HANDLE_UNBLOCK_INTERRUPTIONS();
@@ -214,7 +260,7 @@ PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
 #else
     {
         /* SPIN */
-        S_LOCK(lock);
+        apc_lock_get(lock);
     }
 #endif
     HANDLE_UNBLOCK_INTERRUPTIONS();
@@ -244,7 +290,7 @@ PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC) {
 #else
     {
         /* SPIN */
-        S_UNLOCK(lock);
+        apc_lock_release(lock);
     }
 #endif
     HANDLE_UNBLOCK_INTERRUPTIONS();
@@ -273,7 +319,7 @@ PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC) {
 #else
     {
         /* SPIN */
-        S_UNLOCK(lock);
+        apc_lock_release(lock);
     }
 #endif
     HANDLE_UNBLOCK_INTERRUPTIONS();
