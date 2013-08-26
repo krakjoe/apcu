@@ -17,16 +17,41 @@
 
  */
 
-/* $Id: apc_bin.h 328743 2012-12-12 07:58:32Z ab $ */
-
-#ifndef APC_BIN_H
-#define APC_BIN_H
-
-#include "apc.h"
+/* $Id: apc_bin_api.h 328743 2012-12-12 07:58:32Z ab $ */
 
 #ifndef APC_BIN_API_H
-# include "apc_bin_api.h"
-#endif
+#define APC_BIN_API_H
+
+#include "ext/standard/basic_functions.h"
+
+/* APC binload flags */
+#define APC_BIN_VERIFY_MD5    1 << 0
+#define APC_BIN_VERIFY_CRC32  1 << 1
+
+typedef struct _apc_bd_entry_t {
+    unsigned char type;
+    uint num_functions;
+    uint num_classes;
+	struct {
+		char*  str;
+		uint   len;
+	} key;
+    apc_cache_entry_t val;
+} apc_bd_entry_t;
+
+typedef struct _apc_bd_t {
+    unsigned int size;
+    int swizzled;
+    unsigned char md5[16];
+    php_uint32 crc;
+    unsigned int num_entries;
+    apc_bd_entry_t *entries;
+    int num_swizzled_ptrs;
+    void ***swizzled_ptrs;
+} apc_bd_t;
+
+PHP_APCU_API apc_bd_t* apc_bin_dump(apc_cache_t* cache, HashTable *user_vars TSRMLS_DC);
+PHP_APCU_API int apc_bin_load(apc_cache_t* cache, apc_bd_t *bd, int flags TSRMLS_DC);
 
 #endif
 

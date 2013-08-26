@@ -22,124 +22,286 @@
 # include "apc_lock.h"
 #endif
 
-int apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
-#ifndef _WIN32
-	{
-		/*
-		 Initialize attributes suitable for APC locks to function in all environments
-		 Locks must be suitable for sharing among processes and contain a read and write mutex
-		*/
-		pthread_mutexattr_t attr;
+/*
+ APCu never checks the return value of a locking call, it assumes it should not fail
+ and execution continues regardless, therefore it is pointless to check the return
+ values of calls to locking functions, lets save ourselves the comparison.
+*/
 
-		switch (pthread_mutexattr_init(&attr)) {
-			case SUCCESS: switch(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED)) {
-				case SUCCESS: {
-					pthread_mutex_init(&lock->read, &attr);
-					pthread_mutex_init(&lock->write, &attr);
-					pthread_mutexattr_destroy(
-						&attr);
+/* {{{ There's very little point in initializing a billion sets of attributes */
+#ifndef PHP_WIN32
+# ifndef APC_SPIN_LOCK
+#   ifndef APC_FCNTL_LOCK
+#       ifndef APC_NATIVE_RWLOCK
+	        static pthread_mutexattr_t apc_lock_attr;
+#       else
+	        static pthread_rwlockattr_t apc_lock_attr;
+#       endif
+#   else
+#       include <unistd.h>
+#       include <fcntl.h>
+    
+        static int apc_fcntl_call(int fd, int cmd, int type, off_t offset, int whence, off_t len) {
+            int ret;
+            struct flock lock;
 
-					return 1;
-				}
-			}
-			
-			default:
-				apc_error("pthread mutex error: APC failed to initialize lock attributes." TSRMLS_CC);
-		}
-	}
-#else
+            lock.l_type = type;
+            lock.l_start = offset;
+            lock.l_whence = whence;
+            lock.l_len = len;
+            lock.l_pid = 0;
 
-#endif	
+            do { 
+                ret = fcntl(fd, cmd, &lock) ; 
+            } while(ret < 0 && errno == EINTR);
+            
+            return(ret);
+        }
+#   endif
+# endif
+static zend_bool apc_lock_ready = 0;
+#endif /* }}} */
 
-	return 0;
-}
+/* {{{ Initialize the global lock attributes */
+PHP_APCU_API zend_bool apc_lock_init(TSRMLS_D) {
+#ifndef PHP_WIN32
+	if (apc_lock_ready)
+		return 1;
 
-int apc_lock_rlock(apc_lock_t *lock TSRMLS_DC) {
-#ifndef _WIN32
-	int rc = SUCCESS;
-	switch ((rc = pthread_mutex_lock(&lock->read))) {
-		/* this might seem crazy, it's sound */
-		case EDEADLK:
-		case SUCCESS:
-			return 1;
-		
-		default:
-			apc_error("pthread mutex error: APC failed to acquire read lock (%i)." TSRMLS_CC, rc);
-	}
-#else
-	
+	/* once per process please */
+	apc_lock_ready = 1;
+
+#ifndef APC_SPIN_LOCK
+# ifndef APC_FCNTL_LOCK
+#   ifndef APC_NATIVE_RWLOCK
+	    if (pthread_mutexattr_init(&apc_lock_attr) == SUCCESS) {
+		    if (pthread_mutexattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
+			    pthread_mutexattr_settype(&apc_lock_attr, PTHREAD_MUTEX_RECURSIVE);
+			    return 1;
+		    }
+	    }
+#   else
+	    if (pthread_rwlockattr_init(&apc_lock_attr) == SUCCESS) {
+		    if (pthread_rwlockattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
+			    return 1;
+		    }
+	    }
+#   endif
+# endif
 #endif
-
 	return 0;
-}
-
-int apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
-#ifndef _WIN32
-	int rc = SUCCESS;
-	switch ((rc = pthread_mutex_lock(&lock->read))) {
-		case EDEADLK:
-		case SUCCESS: switch((rc = pthread_mutex_lock(&lock->write))) {
-			case SUCCESS:
-			case EDEADLK: {
-				return 1;
-			} break;
-		} break;
-
-		default:
-			apc_error("pthread mutex error: APC failed to acquire write lock (%i)" TSRMLS_CC, rc);
-	}
 #else
-
+	return 1;
 #endif
-	
-	return 0;
-}
+} /* }}} */
 
-int apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC) {
-#ifndef _WIN32
-	int rc = SUCCESS;
-	switch ((rc = pthread_mutex_unlock(&lock->read))) {		
-		case SUCCESS: switch((rc = pthread_mutex_unlock(&lock->write))){
-			case SUCCESS: {
-				return 1;
-			} break;
-		} break;
+/* {{{ Cleanup attributes and statics */
+PHP_APCU_API void apc_lock_cleanup(TSRMLS_D) {
+#ifndef PHP_WIN32
+	if (!apc_lock_ready)
+		return;
 
-		default:
-			apc_error("pthread mutex error: APC failed to release write lock (%i)" TSRMLS_CC, rc);
-	}
-#else
+	/* once per process please */
+	apc_lock_ready = 0;
 
+#ifndef APC_SPIN_LOCK
+# ifndef APC_FCNTL_LOCK
+#   ifndef APC_NATIVE_RWLOCK
+	    pthread_mutexattr_destroy(&apc_lock_attr);
+#   else
+	    pthread_rwlockattr_destroy(&apc_lock_attr);
+#   endif
+# endif
 #endif
-
-	return 0;
-}
-
-int apc_lock_runlock(apc_lock_t *lock TSRMLS_DC) {
-#ifndef _WIN32
-	int rc = SUCCESS;
-	switch ((rc = pthread_mutex_unlock(&lock->read))) {
-		case SUCCESS: {
-			return 1;
-		} break;
-
-		default:
-			apc_error("pthread mutex error: APC failed to release read lock (%i)" TSRMLS_CC, rc);
-	}
-#else
-
 #endif
+} /* }}} */
 
-	return 0;
+PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
+#ifndef PHP_WIN32
+# ifndef APC_SPIN_LOCK
+#   ifndef APC_FCNTL_LOCK
+#       ifndef APC_NATIVE_RWLOCK
+	        {
+		        /* Emulated */
+		        pthread_mutex_init(&lock->read, &apc_lock_attr);
+		        pthread_mutex_init(&lock->write, &apc_lock_attr);
+
+		        return 1;
+	        }
+#       else
+	        {
+		        /* Native */
+		        return (pthread_rwlock_init(lock, &apc_lock_attr)==SUCCESS);
+	        }
+#       endif
+# else
+    {
+        /* FCNTL */
+        char lock_path[] = "/tmp/.apc.XXXXXX";
+        mktemp(
+            lock_path);
+        (*lock) = open(lock_path, O_RDWR|O_CREAT, 0666);
+        if((*lock) > 0 ) {
+            unlink(
+                lock_path);
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+# endif
+#else
+    {
+        /* SPIN */
+        S_INIT_LOCK(lock);
+        return 1;
+    }
+    
+#endif
+#else
+	lock = (apc_lock_t *)apc_windows_cs_create((apc_windows_cs_rwlock_t *)lock TSRMLS_CC);
+
+	return (NULL != lock);
+#endif
 }
 
-void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC) {
-#ifndef _WIN32
-	/* this should be checked, and will be */
-	//pthread_mutex_destroy(&lock->read);
-	//pthread_mutex_destroy(&lock->write);
+PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC) {
+#ifndef PHP_WIN32
+    HANDLE_BLOCK_INTERRUPTIONS();
+#ifndef APC_SPIN_LOCK
+# ifndef APC_FCNTL_LOCK
+#   ifndef APC_NATIVE_RWLOCK
+	    pthread_mutex_lock(&lock->read);
+#   else
+	    pthread_rwlock_rdlock(lock);
+#   endif    
+# else
+    {
+        /* FCNTL */
+        apc_fcntl_call((*lock), F_SETLKW, F_RDLCK, 0, SEEK_SET, 0);
+    }
+# endif
 #else
-	
+    {
+        /* SPIN */
+        S_LOCK(lock);
+    }
+#endif
+    HANDLE_UNBLOCK_INTERRUPTIONS();
+#else
+	apc_windows_cs_rdlock((apc_windows_cs_rwlock_t *)lock TSRMLS_CC);
+#endif
+	return 1;
+}
+
+PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
+#ifndef PHP_WIN32
+    HANDLE_BLOCK_INTERRUPTIONS();
+#ifndef APC_SPIN_LOCK
+# ifndef APC_FCNTL_LOCK
+#   ifndef APC_NATIVE_RWLOCK
+	    pthread_mutex_lock(&lock->read);
+	    pthread_mutex_lock(&lock->write);
+#   else	
+	    pthread_rwlock_wrlock(lock);
+#   endif
+# else
+    {
+        /* FCNTL */
+        apc_fcntl_call((*lock), F_SETLKW, F_WRLCK, 0, SEEK_SET, 0);
+    }
+# endif
+#else
+    {
+        /* SPIN */
+        S_LOCK(lock);
+    }
+#endif
+    HANDLE_UNBLOCK_INTERRUPTIONS();
+#else
+	apc_windows_cs_lock((apc_windows_cs_rwlock_t *)lock TSRMLS_CC);
+#endif
+	return 1;
+}
+
+PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC) {
+#ifndef PHP_WIN32
+    HANDLE_BLOCK_INTERRUPTIONS();
+#ifndef APC_SPIN_LOCK
+# ifndef APC_FCNTL_LOCK
+#   ifndef APC_NATIVE_RWLOCK
+	    pthread_mutex_unlock(&lock->read);
+	    pthread_mutex_unlock(&lock->write);
+#   else
+	    pthread_rwlock_unlock(lock);
+#   endif
+# else
+    {
+        /* FCNTL */
+        apc_fcntl_call((*lock), F_SETLKW, F_UNLCK, 0, SEEK_SET, 0);
+    }
+# endif
+#else
+    {
+        /* SPIN */
+        S_UNLOCK(lock);
+    }
+#endif
+    HANDLE_UNBLOCK_INTERRUPTIONS();
+#else
+	apc_windows_cs_unlock_wr((apc_windows_cs_rwlock_t *)lock TSRMLS_CC);
+#endif
+	return 1;
+}
+
+PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC) {
+#ifndef PHP_WIN32
+    HANDLE_BLOCK_INTERRUPTIONS();
+#ifndef APC_SPIN_LOCK
+# ifndef APC_FCNTL_LOCK
+#   ifndef APC_NATIVE_RWLOCK
+	    pthread_mutex_unlock(&lock->read);
+#   else
+	    pthread_rwlock_unlock(lock);
+#   endif
+# else
+    {
+        /* FCNTL */
+        apc_fcntl_call((*lock), F_SETLKW, F_UNLCK, 0, SEEK_SET, 0);
+    }
+# endif
+#else
+    {
+        /* SPIN */
+        S_UNLOCK(lock);
+    }
+#endif
+    HANDLE_UNBLOCK_INTERRUPTIONS();
+#else
+	apc_windows_cs_unlock_rd((apc_windows_cs_rwlock_t *)lock TSRMLS_CC);
+#endif
+	return 1;
+}
+
+PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC) {
+#ifndef PHP_WIN32
+#ifndef APC_SPIN_LOCK
+# ifndef APC_FCNTL_LOCK
+#   ifndef APC_NATIVE_RWLOCK
+	    pthread_mutex_destroy(&lock->read);
+	    pthread_mutex_destroy(&lock->write);
+#   else
+        pthread_rwlock_destroy(lock);
+#   endif
+# else
+    {
+        /* FCNTL */
+        close ((*lock));
+    }
+# endif
+#endif
+#else
+	apc_windows_cs_destroy((apc_windows_cs_rwlock_t *)lock);
 #endif
 } 
 #endif

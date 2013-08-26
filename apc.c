@@ -50,7 +50,7 @@
 
 /* {{{ memory allocation wrappers */
 
-void* apc_emalloc(size_t n TSRMLS_DC)
+PHP_APCU_API void* apc_emalloc(size_t n TSRMLS_DC)
 {
     void* p = malloc(n);
     if (p == NULL) {
@@ -60,7 +60,7 @@ void* apc_emalloc(size_t n TSRMLS_DC)
     return p;
 }
 
-void* apc_erealloc(void* p, size_t n TSRMLS_DC)
+PHP_APCU_API void* apc_erealloc(void* p, size_t n TSRMLS_DC)
 {
     void *new;
     new = realloc(p, n);
@@ -71,7 +71,7 @@ void* apc_erealloc(void* p, size_t n TSRMLS_DC)
     return new;
 }
 
-void apc_efree(void* p TSRMLS_DC)
+PHP_APCU_API void apc_efree(void* p TSRMLS_DC)
 {
     if (p == NULL) {
         apc_error("apc_efree: attempt to free null pointer" TSRMLS_CC);
@@ -80,17 +80,17 @@ void apc_efree(void* p TSRMLS_DC)
     free(p);
 }
 
-void* apc_php_malloc(size_t n TSRMLS_DC)
+PHP_APCU_API void* apc_php_malloc(size_t n TSRMLS_DC)
 {
     return emalloc(n);
 }
 
-void apc_php_free(void* p TSRMLS_DC)
+PHP_APCU_API void apc_php_free(void* p TSRMLS_DC)
 {
     efree(p);
 }
 
-char* APC_ALLOC apc_estrdup(const char* s TSRMLS_DC)
+PHP_APCU_API char* APC_ALLOC apc_estrdup(const char* s TSRMLS_DC)
 {
     int len;
     char* dup;
@@ -109,12 +109,12 @@ char* APC_ALLOC apc_estrdup(const char* s TSRMLS_DC)
     return dup;
 }
 
-void* APC_ALLOC apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC)
+PHP_APCU_API void* APC_ALLOC apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC)
 {
     return s != NULL ? apc_xmemcpy(s, strlen(s)+1, f TSRMLS_CC) : NULL;
 }
 
-void* APC_ALLOC apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC)
+PHP_APCU_API void* APC_ALLOC apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC)
 {
     void* q;
 
@@ -148,7 +148,7 @@ APC_PRINT_FUNCTION(error, E_ERROR)
 APC_PRINT_FUNCTION(warning, E_WARNING)
 APC_PRINT_FUNCTION(notice, E_NOTICE)
 
-#ifdef __DEBUG_APC__
+#ifdef APC_DEBUG
 APC_PRINT_FUNCTION(debug, E_NOTICE)
 #else
 void apc_debug(const char *format TSRMLS_DC, ...) {}
@@ -328,31 +328,9 @@ unsigned int apc_crc32(const unsigned char* buf, unsigned int len)
 
     /* postconditioning */
     return ~crc;
-}
+} /* }}} */
 
-/* crc32gen: generate the nth (0..255) crc32 table value */
-#if 0
-static unsigned long crc32gen(int n)
-{
-    int i;
-    unsigned long crc;
-
-    crc = n;
-    for (i = 8; i >= 0; i--) {
-        if (crc & 1) {
-            crc = (crc >> 1) ^ 0xEDB88320;
-        }
-        else {
-            crc >>= 1;
-        }
-    }
-    return crc;
-}
-#endif
-
-/* }}} */
-
-/* {{{ apc_flip_hash() */
+/* {{{ apc_flip_hash */
 HashTable* apc_flip_hash(HashTable *hash) {
     zval **entry, *data;
     HashTable *new_hash;
@@ -381,6 +359,60 @@ HashTable* apc_flip_hash(HashTable *hash) {
     return new_hash;
 }
 /* }}} */
+
+/*
+* Serializer API
+*/
+#define APC_MAX_SERIALIZERS 16
+
+/* pointer to the list of serializers */
+static apc_serializer_t apc_serializers[APC_MAX_SERIALIZERS] = {{0,}};
+/* }}} */
+
+/* {{{ apc_register_serializer */
+PHP_APCU_API int _apc_register_serializer(const char* name,
+                                  apc_serialize_t serialize,
+                                  apc_unserialize_t unserialize,
+                                  void *config TSRMLS_DC) {
+    int i;
+    apc_serializer_t *serializer;
+
+    for(i = 0; i < APC_MAX_SERIALIZERS; i++) {
+        serializer = &apc_serializers[i];
+        if(!serializer->name) {
+            /* empty entry */
+            serializer->name = name;
+            serializer->serialize = serialize;
+            serializer->unserialize = unserialize;
+            serializer->config = config;
+            if (i < APC_MAX_SERIALIZERS - 1) {
+                apc_serializers[i+1].name = NULL;
+            }
+            return 1;
+        }
+    }
+
+    return 0;
+} /* }}} */
+
+/* {{{ apc_get_serializers */
+PHP_APCU_API apc_serializer_t* apc_get_serializers(TSRMLS_D)  {
+	return &(apc_serializers[0]);
+} /* }}} */
+
+/* {{{ apc_find_serializer */
+PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC) {
+	int i;
+    apc_serializer_t *serializer;
+
+    for(i = 0; i < APC_MAX_SERIALIZERS; i++) {
+        serializer = &apc_serializers[i];
+        if(serializer->name && (strcmp(serializer->name, name) == 0)) {
+            return serializer;
+        }
+    }
+    return NULL;
+} /* }}} */
 
 /*
  * Local variables:

@@ -31,9 +31,9 @@ zend_class_entry *apc_iterator_ce;
 zend_object_handlers apc_iterator_object_handlers;
 
 /* {{{ apc_iterator_item */
-static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, slot_t **slot_pp TSRMLS_DC) {
+static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc_cache_slot_t **slot_pp TSRMLS_DC) {
     zval *zvalue;
-    slot_t *slot = *slot_pp;
+    apc_cache_slot_t *slot = *slot_pp;
     apc_context_t ctxt = {0, };
     apc_iterator_item_t *item = ecalloc(1, sizeof(apc_iterator_item_t));
 
@@ -41,8 +41,8 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, slo
     array_init(item->value);
 
 	item->key = estrndup(
-		slot->key.identifier, slot->key.identifier_len);
-	item->key_len = slot->key.identifier_len;	
+		slot->key.str, slot->key.len);
+	item->key_len = slot->key.len;	
 	
     if (APC_ITER_KEY & iterator->format) {
         add_assoc_stringl(item->value, "key", item->key, (item->key_len - 1), 1);
@@ -53,24 +53,24 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, slo
         ctxt.copy = APC_COPY_OUT;
 
         MAKE_STD_ZVAL(zvalue);
-        apc_cache_fetch_zval(zvalue, slot->value->val, &ctxt TSRMLS_CC);
+        apc_cache_fetch_zval(&ctxt, zvalue, slot->value->val TSRMLS_CC);
         apc_pool_destroy(ctxt.pool TSRMLS_CC);
         add_assoc_zval(item->value, "value", zvalue);
     }
     if (APC_ITER_NUM_HITS & iterator->format) {
-        add_assoc_long(item->value, "num_hits", slot->num_hits);
+        add_assoc_long(item->value, "nhits", slot->nhits);
     }
     if (APC_ITER_MTIME & iterator->format) {
         add_assoc_long(item->value, "mtime", slot->key.mtime);
     }
     if (APC_ITER_CTIME & iterator->format) {
-        add_assoc_long(item->value, "creation_time", slot->creation_time);
+        add_assoc_long(item->value, "ctime", slot->ctime);
     }
     if (APC_ITER_DTIME & iterator->format) {
-        add_assoc_long(item->value, "deletion_time", slot->deletion_time);
+        add_assoc_long(item->value, "dtime", slot->dtime);
     }
     if (APC_ITER_ATIME & iterator->format) {
-        add_assoc_long(item->value, "access_time", slot->access_time);
+        add_assoc_long(item->value, "atime", slot->atime);
     }
     if (APC_ITER_REFCOUNT & iterator->format) {
         add_assoc_long(item->value, "ref_count", slot->value->ref_count);
@@ -155,6 +155,9 @@ static zend_object_value apc_iterator_create(zend_class_entry *ce TSRMLS_DC) {
 #endif
     iterator->obj.guards = NULL;
     iterator->initialized = 0;
+    iterator->stack = NULL;
+    iterator->regex_len = 0;
+    iterator->search_hash = NULL;
     retval.handle = zend_objects_store_put(iterator, apc_iterator_destroy, apc_iterator_free, NULL TSRMLS_CC);
     retval.handlers = &apc_iterator_object_handlers;
 
@@ -165,15 +168,15 @@ static zend_object_value apc_iterator_create(zend_class_entry *ce TSRMLS_DC) {
 /* {{{ apc_iterator_search_match
  *       Verify if the key matches our search parameters
  */
-static int apc_iterator_search_match(apc_iterator_t *iterator, slot_t **slot) {
+static int apc_iterator_search_match(apc_iterator_t *iterator, apc_cache_slot_t **slot) {
     char *key;
     int key_len;
     char *fname_key = NULL;
     int fname_key_len = 0;
     int rval = 1;
 
-    key = (char*)(*slot)->key.identifier;
-    key_len = (*slot)->key.identifier_len;
+    key = (char*)(*slot)->key.str;
+    key_len = (*slot)->key.len;
 
 #ifdef ITERATOR_PCRE
     if (iterator->regex) {
@@ -197,14 +200,14 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, slot_t **slot) {
 /* }}} */
 
 /* {{{ apc_iterator_check_expiry */
-static int apc_iterator_check_expiry(apc_cache_t* cache, slot_t **slot, time_t t)
+static int apc_iterator_check_expiry(apc_cache_t* cache, apc_cache_slot_t **slot, time_t t)
 {
     if((*slot)->value->ttl) {
-        if((time_t) ((*slot)->creation_time + (*slot)->value->ttl) < t) {
+        if((time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
             return 0;
         }
     } else if(cache->ttl) {
-        if((*slot)->creation_time + cache->ttl < t) {
+        if((*slot)->ctime + cache->ttl < t) {
             return 0;
         }
     }
@@ -216,7 +219,7 @@ static int apc_iterator_check_expiry(apc_cache_t* cache, slot_t **slot, time_t t
 /* {{{ apc_iterator_fetch_active */
 static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
     int count=0;
-    slot_t **slot;
+    apc_cache_slot_t **slot;
     apc_iterator_item_t *item;
     time_t t;
 
@@ -226,8 +229,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
         apc_iterator_item_dtor(apc_stack_pop(iterator->stack));
     }
 
-    CACHE_LOCK(apc_user_cache);
-    while(count <= iterator->chunk_size && iterator->slot_idx < apc_user_cache->num_slots) {
+    while(count <= iterator->chunk_size && iterator->slot_idx < apc_user_cache->nslots) {
         slot = &apc_user_cache->slots[iterator->slot_idx];
         while(*slot) {
             if (apc_iterator_check_expiry(apc_user_cache, slot, t)) {
@@ -243,7 +245,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
         }
         iterator->slot_idx++;
     }
-    CACHE_UNLOCK(apc_user_cache);
+
     iterator->stack_idx = 0;
     return count;
 }
@@ -252,11 +254,11 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
 /* {{{ apc_iterator_fetch_deleted */
 static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
     int count=0;
-    slot_t **slot;
+    apc_cache_slot_t **slot;
     apc_iterator_item_t *item;
 
-    CACHE_LOCK(apc_user_cache);
-    slot = &apc_user_cache->header->deleted_list;
+	APC_RLOCK(apc_user_cache->header);
+    slot = &apc_user_cache->header->gc;
     while ((*slot) && count <= iterator->slot_idx) {
         count++;
         slot = &(*slot)->next;
@@ -272,31 +274,32 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
         }
         slot = &(*slot)->next;
     }
-    CACHE_UNLOCK(apc_user_cache);
+
     iterator->slot_idx += count;
     iterator->stack_idx = 0;
+	APC_RUNLOCK(apc_user_cache->header);
+
     return count;
 }
 /* }}} */
 
 /* {{{ apc_iterator_totals */
 static void apc_iterator_totals(apc_iterator_t *iterator TSRMLS_DC) {
-    slot_t **slot;
+    apc_cache_slot_t **slot;
     int i;
 
-    CACHE_LOCK(apc_user_cache);
-    for (i=0; i < apc_user_cache->num_slots; i++) {
+    for (i=0; i < apc_user_cache->nslots; i++) {
         slot = &apc_user_cache->slots[i];
         while((*slot)) {
             if (apc_iterator_search_match(iterator, slot)) {
                 iterator->size += (*slot)->value->mem_size;
-                iterator->hits += (*slot)->num_hits;
+                iterator->hits += (*slot)->nhits;
                 iterator->count++;
             }
             slot = &(*slot)->next;
         }
     }
-    CACHE_UNLOCK(apc_user_cache);
+
     iterator->totals_flag = 1;
 }
 /* }}} */
@@ -309,10 +312,21 @@ PHP_METHOD(apc_iterator, __construct) {
     long chunk_size=0;
     zval *search = NULL;
     long list = APC_LIST_ACTIVE;
+#if defined(APC_FULL_BC) && APC_FULL_BC
+    /* these are ignored */
+    char *cache_type;
+    int cache_type_len;
+#endif
 
+#if defined(APC_FULL_BC) && APC_FULL_BC
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|zlll", &cache_type, &cache_type_len, &search, &format, &chunk_size, &list) == FAILURE) {
+        return;
+    }
+#else
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|zlll", &search, &format, &chunk_size, &list) == FAILURE) {
         return;
     }
+#endif
 
     if (!APCG(enabled)) {
         apc_error("APC must be enabled to use APCIterator." TSRMLS_CC);
@@ -336,6 +350,12 @@ PHP_METHOD(apc_iterator, __construct) {
         apc_warning("APCIterator invalid list type." TSRMLS_CC);
         return;
     }
+#if defined(APC_FULL_BC) && APC_FULL_BC
+    if (!APC_CACHE_IS_USER(cache_type, cache_type_len)) {
+        iterator->initialized = 0;
+        return;
+    }
+#endif
 	
     iterator->slot_idx = 0;
     iterator->stack_idx = 0;
@@ -550,7 +570,9 @@ PHP_METHOD(apc_iterator, getTotalCount) {
 
 PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator___construct, 0, 0, 1)
+#if defined(APC_FULL_BC) && APC_FULL_BC
 	ZEND_ARG_INFO(0, cache)
+#endif
 	ZEND_ARG_INFO(0, search)
 	ZEND_ARG_INFO(0, format)
 	ZEND_ARG_INFO(0, chunk_size)
@@ -586,21 +608,21 @@ int apc_iterator_init(int module_number TSRMLS_DC) {
     apc_iterator_ce->create_object = apc_iterator_create;
     zend_class_implements(apc_iterator_ce TSRMLS_CC, 1, zend_ce_iterator);
 
-    zend_register_long_constant("APC_LIST_ACTIVE", sizeof("APC_LIST_ACTIVE"), APC_LIST_ACTIVE, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_LIST_DELETED", sizeof("APC_LIST_DELETED"), APC_LIST_DELETED, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
+    REGISTER_LONG_CONSTANT("APC_LIST_ACTIVE", APC_LIST_ACTIVE, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_LIST_DELETED", APC_LIST_DELETED, CONST_PERSISTENT | CONST_CS);
 
-    zend_register_long_constant("APC_ITER_KEY", sizeof("APC_ITER_KEY"), APC_ITER_KEY, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_VALUE", sizeof("APC_ITER_VALUE"), APC_ITER_VALUE, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_NUM_HITS", sizeof("APC_ITER_NUM_HITS"), APC_ITER_NUM_HITS, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_MTIME", sizeof("APC_ITER_MTIME"), APC_ITER_MTIME, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_CTIME", sizeof("APC_ITER_CTIME"), APC_ITER_CTIME, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_DTIME", sizeof("APC_ITER_DTIME"), APC_ITER_DTIME, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_ATIME", sizeof("APC_ITER_ATIME"), APC_ITER_ATIME, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_REFCOUNT", sizeof("APC_ITER_REFCOUNT"), APC_ITER_REFCOUNT, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_MEM_SIZE", sizeof("APC_ITER_MEM_SIZE"), APC_ITER_MEM_SIZE, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_TTL", sizeof("APC_ITER_TTL"), APC_ITER_TTL, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_NONE", sizeof("APC_ITER_NONE"), APC_ITER_NONE, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
-    zend_register_long_constant("APC_ITER_ALL", sizeof("APC_ITER_ALL"), APC_ITER_ALL, CONST_PERSISTENT | CONST_CS, module_number TSRMLS_CC);
+    REGISTER_LONG_CONSTANT("APC_ITER_KEY", APC_ITER_KEY, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_VALUE", APC_ITER_VALUE, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_NUM_HITS", APC_ITER_NUM_HITS, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_MTIME", APC_ITER_MTIME, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_CTIME", APC_ITER_CTIME, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_DTIME", APC_ITER_DTIME, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_ATIME", APC_ITER_ATIME, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_REFCOUNT", APC_ITER_REFCOUNT, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_MEM_SIZE", APC_ITER_MEM_SIZE, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_TTL", APC_ITER_TTL, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_NONE", APC_ITER_NONE, CONST_PERSISTENT | CONST_CS);
+    REGISTER_LONG_CONSTANT("APC_ITER_ALL", APC_ITER_ALL, CONST_PERSISTENT | CONST_CS);
 
     memcpy(&apc_iterator_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
     apc_iterator_object_handlers.clone_obj = apc_iterator_clone;

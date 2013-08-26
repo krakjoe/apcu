@@ -1,70 +1,203 @@
 dnl
 dnl $Id: config.m4 327593 2012-09-10 11:50:58Z pajoye $
 dnl
-
 PHP_ARG_ENABLE(apcu, whether to enable APCu support,
-[  --enable-apc           Enable APCu support])
+[  --enable-apcu           Enable APCu support])
 
+PHP_APC_BC=yes
+AC_MSG_CHECKING(if APCu should provide APC full compatibility support)
+AC_ARG_ENABLE(apc-bc,
+[  --enable-apc-bc        Enable APC full compatibility support],
+[ if test "x$enableval" = "xno"; then
+    PHP_APC_BC=no
+  else
+    PHP_APC_BC=yes
+  fi
+])
+AC_MSG_RESULT($PHP_APC_BC)
+
+AC_MSG_CHECKING(if APCu should be allowed to use rwlocks)
+AC_ARG_ENABLE(apcu-rwlocks,
+[  --disable-apcu-rwlocks  Disable rwlocks in APCu],
+[
+  PHP_APCU_RWLOCKS=no
+  AC_MSG_RESULT(no)
+],
+[
+  PHP_APCU_RWLOCKS=yes
+  AC_MSG_RESULT(yes)
+])
+
+AC_MSG_CHECKING(if APCu should be built in debug mode)
 AC_ARG_ENABLE(apcu-debug,
-[  --enable-apc-debug     Enable APCu debugging], 
+[  --enable-apcu-debug     Enable APCu debugging],
 [
   PHP_APCU_DEBUG=$enableval
 ], 
 [
   PHP_APCU_DEBUG=no
 ])
+AC_MSG_RESULT($PHP_APCU_DEBUG)
 
-AC_MSG_CHECKING(whether we should use mmap)
-AC_ARG_ENABLE(apcu-mmap,
-[  --disable-apcu-mmap
-                          Disable mmap support and use IPC shm instead],
+AC_MSG_CHECKING(if APCu should clear on SIGUSR1)
+AC_ARG_ENABLE(apcu-clear-signal,
+[  --enable-apcu-clear-signal  Enable SIGUSR1 clearing handler],
 [
-  PHP_APCU_MMAP=$enableval
-  AC_MSG_RESULT($enableval)
-], [
-  PHP_APCU_MMAP=yes
+  AC_DEFINE(APC_CLEAR_SIGNAL, 1, [ ])
   AC_MSG_RESULT(yes)
-])
-
-AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_cv_APC_GCC_ATOMICS, [
-		AC_TRY_LINK([],[
-				int foo = 0;
-				__sync_fetch_and_add(&foo, 1);
-				__sync_bool_compare_and_swap(&foo, 0, 1);
-				return __sync_fetch_and_add(&foo, 1);
-			],
-			[PHP_cv_APC_GCC_ATOMICS=yes],
-			[PHP_cv_APC_GCC_ATOMICS=no])
-	])
-
-if test "x${PHP_cv_APC_GCC_ATOMICS}" != "xno"; then
-		AC_DEFINE(HAVE_ATOMIC_OPERATIONS, 1,
-			[Define this if your target compiler supports builtin atomics])
-fi
-
-AC_MSG_CHECKING(whether we should enable memory protection)
-AC_ARG_ENABLE(apcu-memprotect,
-[  --enable-apcu-memprotect
-                          Enable mmap/shm memory protection],
+],
 [
-  PHP_APCU_MEMPROTECT=$enableval
-  AC_MSG_RESULT($enableval)
-], [
-  PHP_APCU_MEMPROTECT=no
   AC_MSG_RESULT(no)
 ])
 
+AC_MSG_CHECKING(if APCu will use mmap or shm)
+AC_ARG_ENABLE(apcu-mmap,
+[  --disable-apcu-mmap     Disable mmap, falls back on shm],
+[
+  PHP_APCU_MMAP=no
+  AC_MSG_RESULT(shm)
+], [
+  PHP_APCU_MMAP=yes
+  AC_MSG_RESULT(mmap)
+])
+
+PHP_APCU_SPINLOCK=no
+AC_MSG_CHECKING(if APCu should utilize spinlocks before flocks)
+AC_ARG_ENABLE(apcu-spinlocks,
+[  --enable-apcu-spinlocks        Use spinlocks before flocks],
+[ if test "x$enableval" = "xno"; then
+    PHP_APCU_SPINLOCK=no
+  else
+    PHP_APCU_SPINLOCK=yes
+  fi
+])
+AC_MSG_RESULT($PHP_APCU_SPINLOCK)
+
 if test "$PHP_APCU" != "no"; then
-  test "$PHP_APCU_MMAP" != "no" && AC_DEFINE(APC_MMAP, 1, [ ])
-
+	if test "$PHP_APC_BC" != "no"; then
+		AC_DEFINE(APC_FULL_BC, 1, [APC full compatibility support])
+	fi
 	if test "$PHP_APCU_DEBUG" != "no"; then
-		AC_DEFINE(__DEBUG_APC__, 1, [ ])
+		AC_DEFINE(APC_DEBUG, 1, [ ])
+	fi
+  
+	if test "$PHP_APCU_MMAP" != "no"; then
+		AC_DEFINE(APC_MMAP, 1, [ ])
 	fi
 
-	if test "$PHP_APCU_MEMPROTECT" != "no"; then
-		AC_DEFINE(APC_MEMPROTECT, 1, [ shm/mmap memory protection ])
-	fi
+  if test "$PHP_APCU_RWLOCKS" != "no"; then
+	    orig_LIBS="$LIBS"
+	    LIBS="$LIBS -lpthread"
+	    AC_TRY_RUN(
+		    [
+			    #include <sys/types.h>
+			    #include <pthread.h>
+          main() {
+			      pthread_rwlock_t rwlock;
+			      pthread_rwlockattr_t attr;	
 
+			      if(pthread_rwlockattr_init(&attr)) { 
+				      puts("Unable to initialize pthread attributes (pthread_rwlockattr_init).");
+				      return -1; 
+			      }
+			      if(pthread_rwlockattr_setpshared(&attr, PTHREAD_PROCESS_SHARED)) { 
+				      puts("Unable to set PTHREAD_PROCESS_SHARED (pthread_rwlockattr_setpshared), your system may not support shared rwlock's.");
+				      return -1; 
+			      }	
+			      if(pthread_rwlock_init(&rwlock, &attr)) { 
+				      puts("Unable to initialize the rwlock (pthread_rwlock_init).");
+				      return -1; 
+			      }
+			      if(pthread_rwlockattr_destroy(&attr)) { 
+				      puts("Unable to destroy rwlock attributes (pthread_rwlockattr_destroy).");
+				      return -1; 
+			      }
+			      if(pthread_rwlock_destroy(&rwlock)) { 
+				      puts("Unable to destroy rwlock (pthread_rwlock_destroy).");
+				      return -1; 
+			      }
+
+			      return 0;
+          }
+		    ],
+		    [ dnl -Success-
+			    PHP_ADD_LIBRARY(pthread)
+			    APC_CFLAGS="-D_GNU_SOURCE"
+			    AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
+			    AC_MSG_WARN([APCu has access to native rwlocks])
+		    ],
+		    [ dnl -Failure-
+			    AC_MSG_WARN([It doesn't appear that pthread rwlocks are supported on your system])
+    			PHP_APCU_RWLOCKS=no
+		    ],
+		    [
+			    PHP_ADD_LIBRARY(pthread)
+		    ]
+    )
+    LIBS="$orig_LIBS"
+  fi
+  
+  if test "$PHP_APCU_RWLOCKS" == "no"; then
+    orig_LIBS="$LIBS"
+	  LIBS="$LIBS -lpthread"
+	  AC_TRY_RUN(
+			  [
+				  #include <sys/types.h>
+				  #include <pthread.h>
+          main() {
+				    pthread_mutex_t mutex;
+				    pthread_mutexattr_t attr;	
+
+				    if(pthread_mutexattr_init(&attr)) { 
+					    puts("Unable to initialize pthread attributes (pthread_mutexattr_init).");
+					    return -1; 
+				    }
+				    if(pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED)) { 
+					    puts("Unable to set PTHREAD_PROCESS_SHARED (pthread_mutexattr_setpshared), your system may not support shared mutex's.");
+					    return -1; 
+				    }	
+				    if(pthread_mutex_init(&mutex, &attr)) { 
+					    puts("Unable to initialize the mutex (pthread_mutex_init).");
+					    return -1; 
+				    }
+				    if(pthread_mutexattr_destroy(&attr)) { 
+					    puts("Unable to destroy mutex attributes (pthread_mutexattr_destroy).");
+					    return -1; 
+				    }
+				    if(pthread_mutex_destroy(&mutex)) { 
+					    puts("Unable to destroy mutex (pthread_mutex_destroy).");
+					    return -1; 
+				    }
+				    return 0;
+        }
+			  ],
+			  [ dnl -Success-
+				  PHP_ADD_LIBRARY(pthread)
+				  AC_MSG_WARN([APCu has access to mutexes])
+			  ],
+			  [ dnl -Failure-
+				  AC_MSG_WARN([It doesn't appear that pthread mutexes are supported on your system])
+    			PHP_APCU_MUTEX=no
+			  ],
+			  [
+				  PHP_ADD_LIBRARY(pthread)
+			  ]
+	  )
+	  LIBS="$orig_LIBS"
+  fi
+  
+  if test "$PHP_APCU_RWLOCKS" == "no"; then
+   if test "$PHP_APCU_MUTEX" == "no"; then
+    if test "$PHP_APCU_SPINLOCK" != "no"; then
+      AC_DEFINE(APC_SPIN_LOCK, 1, [ ])
+      AC_MSG_WARN([APCu spin locking enabled])
+    else
+      AC_DEFINE(APC_FCNTL_LOCK, 1, [ ])
+      AC_MSG_WARN([APCu file locking enabled])
+    fi
+   fi
+  fi
+	
   AC_CHECK_FUNCS(sigaction)
   AC_CACHE_CHECK(for union semun, php_cv_semun,
   [
@@ -84,38 +217,49 @@ if test "$PHP_APCU" != "no"; then
     AC_DEFINE(HAVE_SEMUN, 0, [ ])
   fi
 
-  AC_MSG_CHECKING(whether we should enable valgrind support)
   AC_ARG_ENABLE(valgrind-checks,
   [  --disable-valgrind-checks
                           Disable valgrind based memory checks],
   [
-    PHP_APCU_VALGRIND=$enableval
-    AC_MSG_RESULT($enableval)
+    PHP_APCU_VALGRIND=no
   ], [
     PHP_APCU_VALGRIND=yes
-    AC_MSG_RESULT(yes)
     AC_CHECK_HEADER(valgrind/memcheck.h, 
   		[AC_DEFINE([HAVE_VALGRIND_MEMCHECK_H],1, [enable valgrind memchecks])])
   ])
 
-  apc_sources="apc.c apc_lock.c php_apc.c \
-               apc_cache.c \
-               apc_debug.c \
-               apc_mmap.c \
-               apc_shm.c \
-               apc_sma.c \
-               apc_stack.c \
-               apc_rfc1867.c \
-               apc_signal.c \
-               apc_pool.c \
-               apc_iterator.c \
-							 apc_bin.c "
-
-  PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APC_SHARED_LIBADD)])
-  PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APC_CFLAGS))
-  PHP_SUBST(APC_SHARED_LIBADD)
-  PHP_SUBST(APC_CFLAGS)
-  PHP_INSTALL_HEADERS(ext/apcu, [apc_sma_api.h apc_serializer.h])
+  if test "$PHP_APCU_SPINLOCK" != "no"; then
+    apc_sources="pgsql_s_lock.c apc.c apc_lock.c php_apc.c \
+                 apc_cache.c \
+                 apc_mmap.c \
+                 apc_shm.c \
+                 apc_sma.c \
+                 apc_stack.c \
+                 apc_rfc1867.c \
+                 apc_signal.c \
+                 apc_pool.c \
+                 apc_iterator.c \
+							   apc_bin.c "
+		PHP_INSTALL_HEADERS(ext/apcu, [pgsql_s_lock.h])
+  else
+    apc_sources="apc.c apc_lock.c php_apc.c \
+                 apc_cache.c \
+                 apc_mmap.c \
+                 apc_shm.c \
+                 apc_sma.c \
+                 apc_stack.c \
+                 apc_rfc1867.c \
+                 apc_signal.c \
+                 apc_pool.c \
+                 apc_iterator.c \
+							   apc_bin.c "
+  fi
+  
+  PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
+  PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
+  PHP_SUBST(APCU_SHARED_LIBADD)
+  PHP_SUBST(APCU_CFLAGS)
+  PHP_INSTALL_HEADERS(ext/apcu, [apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_bin_api.h apc_serializer.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
 fi
 
@@ -135,7 +279,8 @@ if test "$PHP_COVERAGE" = "yes"; then
   esac
 
   if test "$gcc_ccache" = "yes" && (test -z "$CCACHE_DISABLE" || test "$CCACHE_DISABLE" != "1"); then
-    AC_MSG_ERROR([ccache must be disabled when --enable-coverage option is used. You can disable ccache by setting environment variable CCACHE_DISABLE=1.])
+    AC_MSG_ERROR([ccache must be disabled when --enable-coverage option is used. You can disable ccache by setting environment variable 
+CCACHE_DISABLE=1.])
   fi
   
   lcov_version_list="1.5 1.6 1.7 1.9"

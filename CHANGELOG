@@ -1,3 +1,10 @@
+4.0.0 : 2013-03-26
+
+- APCu released on PECL
+- All opcode caching abilities removed from APC
+- The default locking is now rwlocks
+- Locks are much simplified
+- APCu API installed in build environment
 
 3.1.2 : 2008-12-12
 

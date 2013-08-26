@@ -54,9 +54,6 @@ struct sma_header_t {
     apc_lock_t sma_lock;    /* segment lock */
     size_t segsize;         /* size of entire segment */
     size_t avail;           /* bytes available (not necessarily contiguous) */
-#if ALLOC_DISTRIBUTION
-    size_t adist[30];
-#endif
 };
 
 #define SMA_HDR(sma, i)  ((sma_header_t*)((sma->segs[i]).shmaddr))
@@ -64,7 +61,7 @@ struct sma_header_t {
 #define SMA_RO(sma, i)   ((char*)(sma->segs[i]).roaddr)
 #define SMA_LCK(sma, i)  ((SMA_HDR(sma, i))->sma_lock)
 
-#ifdef APC_SMA_DEBUG
+#if 0
 /* global counter for identifying blocks
  * Technically it is possible to do the same
  * using offsets, but double allocations of the
@@ -81,7 +78,7 @@ struct block_t {
 #ifdef APC_SMA_CANARIES
     size_t canary;     /* canary to check for memory overwrites */
 #endif
-#ifdef APC_SMA_DEBUG
+#if 0
     size_t id;         /* identifier for the memory block */
 #endif
 };
@@ -113,7 +110,7 @@ struct block_t {
 /* }}} */
 
 /* {{{ sma_allocate: tries to allocate at least size bytes in a segment */
-static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, size_t size, size_t fragment, size_t *allocated)
+static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, zend_ulong size, zend_ulong fragment, zend_ulong *allocated)
 {
     void* shmaddr;          /* header of shared memory segment */
     block_t* prv;           /* block prior to working block */
@@ -187,7 +184,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, size_t size, size_t
         nxt->fprev = cur->fprev;
         BLOCKAT(nxt->fnext)->fprev = OFFSET(nxt);
         BLOCKAT(nxt->fprev)->fnext = OFFSET(nxt);
-#ifdef APC_SMA_DEBUG
+#if 0
         nxt->id = -1;
 #endif
     }
@@ -196,13 +193,10 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, size_t size, size_t
 
     /* update the block header */
     header->avail -= cur->size;
-#if ALLOC_DISTRIBUTION
-    header->adist[(int)(log(size)/log(2))]++;
-#endif
 
     SET_CANARY(cur);
 
-#ifdef APC_SMA_DEBUG
+#if 0
     cur->id = ++block_id;
     fprintf(stderr, "allocate(realsize=%d,size=%d,id=%d)\n", (int)(size), (int)(cur->size), cur->id);
 #endif
@@ -253,7 +247,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 
 		CHECK_CANARY(nxt);
 
-#ifdef APC_SMA_DEBUG
+#if 0
         nxt->id = -1; /* assert this or set it ? */
 #endif
 
@@ -274,7 +268,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 /* }}} */
 
 /* {{{ APC SMA API */
-void apc_sma_api_init(apc_sma_t* sma, zend_uint num, zend_ulong size, char *mask TSRMLS_DC) {
+PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, zend_uint num, zend_ulong size, char *mask TSRMLS_DC) {
 	uint i;
 
     if (sma->initialized) {
@@ -282,7 +276,9 @@ void apc_sma_api_init(apc_sma_t* sma, zend_uint num, zend_ulong size, char *mask
     }
 
     sma->initialized = 1;
-
+	sma->expunge = expunge;
+	sma->data = data;
+	
 #if APC_MMAP
     /*
      * I don't think multiple anonymous mmaps makes any sense
@@ -327,19 +323,14 @@ void apc_sma_api_init(apc_sma_t* sma, zend_uint num, zend_ulong size, char *mask
         CREATE_LOCK(&header->sma_lock);
         header->segsize = sma->size;
         header->avail = sma->size - ALIGNWORD(sizeof(sma_header_t)) - ALIGNWORD(sizeof(block_t)) - ALIGNWORD(sizeof(block_t));
-#if ALLOC_DISTRIBUTION
-        {
-           int j;
-           for(j=0; j<30; j++) header->adist[j] = 0;
-        }
-#endif
+
         first = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
         first->size = 0;
         first->fnext = ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t));
         first->fprev = 0;
         first->prev_size = 0;
         SET_CANARY(first);
-#ifdef APC_SMA_DEBUG
+#if 0
         first->id = -1;
 #endif
         empty = BLOCKAT(first->fnext);
@@ -348,7 +339,7 @@ void apc_sma_api_init(apc_sma_t* sma, zend_uint num, zend_ulong size, char *mask
         empty->fprev = ALIGNWORD(sizeof(sma_header_t));
         empty->prev_size = 0;
         SET_CANARY(empty);
-#ifdef APC_SMA_DEBUG
+#if 0
         empty->id = -1;
 #endif
         last = BLOCKAT(empty->fnext);
@@ -357,13 +348,13 @@ void apc_sma_api_init(apc_sma_t* sma, zend_uint num, zend_ulong size, char *mask
         last->fprev =  OFFSET(empty);
         last->prev_size = empty->size;
         SET_CANARY(last);
-#ifdef APC_SMA_DEBUG
+#if 0
         last->id = -1;
 #endif
     }	
 }
 
-void apc_sma_api_cleanup(apc_sma_t* sma TSRMLS_DC) {
+PHP_APCU_API void apc_sma_api_cleanup(apc_sma_t* sma TSRMLS_DC) {
 	uint i;
 
     assert(sma->initialized);
@@ -381,66 +372,67 @@ void apc_sma_api_cleanup(apc_sma_t* sma TSRMLS_DC) {
     apc_efree(sma->segs TSRMLS_CC);
 }
 
-void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC) {
+PHP_APCU_API void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC) {
 	size_t off;
     uint i;
     int nuked = 0;
 
 restart:
     assert(sma->initialized);
-    LOCK(&SMA_LCK(sma, sma->last));
+
+    WLOCK(&SMA_LCK(sma, sma->last));
 
     off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
 
-    if(off == -1) { 
+    if(off == -1) {
         /* retry failed allocation after we expunge */
-        UNLOCK(&SMA_LCK(sma, sma->last));
-		apc_user_cache->expunge_cb(
-			apc_user_cache, (n+fragment) TSRMLS_CC);
-        LOCK(&SMA_LCK(sma, sma->last));
+        WUNLOCK(&SMA_LCK(sma, sma->last));
+		sma->expunge(
+			*(sma->data), (n+fragment) TSRMLS_CC);
+        WLOCK(&SMA_LCK(sma, sma->last));
         off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
     }
 
     if (off != -1) {
         void* p = (void *)(SMA_ADDR(sma, sma->last) + off);
-        UNLOCK(&SMA_LCK(sma, sma->last));
+        WUNLOCK(&SMA_LCK(sma, sma->last));
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
         VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
         return p;
     }
     
-    UNLOCK(&SMA_LCK(sma, sma->last));
+    WUNLOCK(&SMA_LCK(sma, sma->last));
 
     for (i = 0; i < sma->num; i++) {
         if (i == sma->last) {
             continue;
         }
-        LOCK(&SMA_LCK(sma, i));
+        WLOCK(&SMA_LCK(sma, i));
         off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
         if(off == -1) { 
             /* retry failed allocation after we expunge */
-            UNLOCK(&SMA_LCK(sma, i));
-			apc_user_cache->expunge_cb(
-				apc_user_cache, (n+fragment) TSRMLS_CC);
-            LOCK(&SMA_LCK(sma, i));
+            WUNLOCK(&SMA_LCK(sma, i));
+			sma->expunge(
+				*(sma->data), (n+fragment) TSRMLS_CC);
+            WLOCK(&SMA_LCK(sma, i));
             off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
         }
         if (off != -1) {
             void* p = (void *)(SMA_ADDR(sma, i) + off);
-            UNLOCK(&SMA_LCK(sma, i));
+            WUNLOCK(&SMA_LCK(sma, i));
             sma->last = i;
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
             VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
             return p;
         }
-        UNLOCK(&SMA_LCK(sma, i));
+        WUNLOCK(&SMA_LCK(sma, i));
     }
 
     /* I've tried being nice, but now you're just asking for it */
     if(!nuked) {
-        apc_user_cache->expunge_cb(apc_user_cache, (n+fragment) TSRMLS_CC);
+        sma->expunge(*(sma->data), (n+fragment) TSRMLS_CC);
         nuked = 1;
         goto restart;
     }
@@ -450,20 +442,20 @@ restart:
     return NULL;
 }
 
-void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong n TSRMLS_DC) 
+PHP_APCU_API void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong n TSRMLS_DC) 
 {
-	size_t allocated;
+	zend_ulong allocated;
 	return apc_sma_api_malloc_ex(
 		sma, n, MINBLOCKSIZE, &allocated TSRMLS_CC);
 }
 
-void* apc_sma_api_realloc(apc_sma_t* sma, void* p, zend_ulong n TSRMLS_DC) {
+PHP_APCU_API void* apc_sma_api_realloc(apc_sma_t* sma, void* p, zend_ulong n TSRMLS_DC) {
 	apc_sma_api_free(sma, p TSRMLS_CC);
 	return apc_sma_api_malloc(
 		sma, n TSRMLS_CC);
 }
 
-char* apc_sma_api_strdup(apc_sma_t* sma, const char* s TSRMLS_DC) {
+PHP_APCU_API char* apc_sma_api_strdup(apc_sma_t* sma, const char* s TSRMLS_DC) {
 	void* q;
     int len;
 
@@ -483,7 +475,7 @@ char* apc_sma_api_strdup(apc_sma_t* sma, const char* s TSRMLS_DC) {
     return q;
 }
 
-void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC) {
+PHP_APCU_API void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC) {
 	uint i;
     size_t offset;
 
@@ -493,13 +485,12 @@ void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC) {
 
     assert(sma->initialized);
 
-    
     for (i = 0; i < sma->num; i++) {
         offset = (size_t)((char *)p - SMA_ADDR(sma, i));
         if (p >= (void*)SMA_ADDR(sma, i) && offset < sma->size) {
-            LOCK(&SMA_LCK(sma, i));
+            WLOCK(&SMA_LCK(sma, i));
             sma_deallocate(SMA_HDR(sma, i), offset);
-            UNLOCK(&SMA_LCK(sma, i));
+            WUNLOCK(&SMA_LCK(sma, i));
 #ifdef VALGRIND_FREELIKE_BLOCK
             VALGRIND_FREELIKE_BLOCK(p, 0);
 #endif
@@ -511,7 +502,7 @@ void apc_sma_api_free(apc_sma_t* sma, void* p TSRMLS_DC) {
 }
 
 #ifdef APC_MEMPROTECT
-void* apc_sma_api_protect(apc_sma_t* sma, void* p) {
+PHP_APCU_API void* apc_sma_api_protect(apc_sma_t* sma, void* p) {
 	unsigned int i = 0;
     size_t offset;
 
@@ -537,7 +528,7 @@ void* apc_sma_api_protect(apc_sma_t* sma, void* p) {
     return NULL;
 }
 
-void* apc_sma_api_unprotect(apc_sma_t* sma, void* p){
+PHP_APCU_API void* apc_sma_api_unprotect(apc_sma_t* sma, void* p){
 	unsigned int i = 0;
     size_t offset;
 
@@ -563,11 +554,11 @@ void* apc_sma_api_unprotect(apc_sma_t* sma, void* p){
     return NULL;
 }
 #else
-void* apc_sma_api_protect(apc_sma_t* sma, void *p) { return p; }
-void* apc_sma_api_unprotect(apc_sma_t* sma, void *p) { return p; }
+PHP_APCU_API void* apc_sma_api_protect(apc_sma_t* sma, void *p) { return p; }
+PHP_APCU_API void* apc_sma_api_unprotect(apc_sma_t* sma, void *p) { return p; }
 #endif
 
-apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited TSRMLS_DC) {
+PHP_APCU_API apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited TSRMLS_DC) {
 	apc_sma_info_t* info;
     apc_sma_link_t** link;
     uint i;
@@ -612,12 +603,6 @@ apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited TSRMLS_DC) {
             link = &(*link)->next;
 
             prv = cur;
-
-#if ALLOC_DISTRIBUTION
-            sma_header_t* header = (sma_header_t*) segment->shmaddr;
-            memcpy(info->seginfo[i].adist, header->adist, sizeof(size_t) * 30);
-#endif
-
         }
         RUNLOCK(&SMA_LCK(sma, i));
     }
@@ -625,7 +610,7 @@ apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited TSRMLS_DC) {
     return info;
 }
 
-void apc_sma_api_free_info(apc_sma_t* sma, apc_sma_info_t* info TSRMLS_DC) {
+PHP_APCU_API void apc_sma_api_free_info(apc_sma_t* sma, apc_sma_info_t* info TSRMLS_DC) {
 	int i;
 
     for (i = 0; i < info->num_seg; i++) {
@@ -640,7 +625,7 @@ void apc_sma_api_free_info(apc_sma_t* sma, apc_sma_info_t* info TSRMLS_DC) {
     apc_efree(info TSRMLS_CC);
 }
 
-zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma) {
+PHP_APCU_API zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma) {
 	size_t avail_mem = 0;
     uint i;
 
@@ -651,7 +636,7 @@ zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma) {
     return avail_mem;
 }
 
-zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size) {
+PHP_APCU_API zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size) {
 	uint i;
 
     for (i = 0; i < sma->num; i++) {
@@ -663,8 +648,13 @@ zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size) {
     return 0;
 }
 
+PHP_APCU_API void apc_sma_api_check_integrity(apc_sma_t* sma)
+{
+    /* dummy */
+}
+
 /* {{{ APC SMA */
-apc_sma_api_impl(apc_sma); 
+apc_sma_api_impl(apc_sma, &apc_user_cache, apc_cache_default_expunge); 
 /* }}} */
 
  /* }}} */

@@ -16,8 +16,8 @@
   +----------------------------------------------------------------------+
  */
 
-#ifndef APC_LOCK
-#define APC_LOCK
+#ifndef APC_LOCK_H
+#define APC_LOCK_H
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -25,35 +25,8 @@
 
 #include "apc.h"
 
-#ifndef _WIN32
-# include "pthread.h"
-/*
- Note: this is not an MRL
-*/
-typedef struct _apc_lock_t {
-	pthread_mutex_t read;
-	pthread_mutex_t write;
-} apc_lock_t;
-#else
-
+#ifndef APC_LOCK_API_H
+# include "apc_lock_api.h"
 #endif
-
-int apc_lock_create(apc_lock_t *lock TSRMLS_DC);
-int apc_lock_rlock(apc_lock_t *lock TSRMLS_DC);
-int apc_lock_wlock(apc_lock_t *lock TSRMLS_DC);
-int apc_lock_runlock(apc_lock_t *lock TSRMLS_DC);
-int apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC);
-void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC);
-
-/* {{{ generic locking macros */
-#define CREATE_LOCK(lock)     apc_lock_create(lock TSRMLS_CC)
-#define DESTROY_LOCK(lock)    apc_lock_destroy(lock TSRMLS_CC)
-#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock TSRMLS_CC); }
-#define LOCK                  WLOCK
-#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock TSRMLS_CC); }
-#define WUNLOCK(lock)         { apc_lock_wunlock(lock TSRMLS_CC); HANDLE_UNBLOCK_INTERRUPTIONS(); }
-#define UNLOCK                WUNLOCK
-#define RUNLOCK(lock)         { apc_lock_runlock(lock TSRMLS_CC); HANDLE_UNBLOCK_INTERRUPTIONS(); }
-/* }}} */
 
 #endif
