@@ -1711,8 +1711,7 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
     zval *stat;
     apc_cache_slot_t** slot;
 	zend_ulong h, s;
-    volatile apc_cache_entry_t* value = NULL;
-
+    
 	/* calculate hash and slot */
 	apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
 	
