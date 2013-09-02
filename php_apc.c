@@ -61,6 +61,7 @@
 PHP_FUNCTION(apcu_cache_info);
 PHP_FUNCTION(apcu_clear_cache);
 PHP_FUNCTION(apcu_sma_info);
+PHP_FUNCTION(apcu_key_info);
 PHP_FUNCTION(apcu_store);
 PHP_FUNCTION(apcu_fetch);
 PHP_FUNCTION(apcu_delete);
@@ -192,7 +193,7 @@ STD_PHP_INI_ENTRY("apc.rfc1867_ttl", "3600", PHP_INI_SYSTEM, OnUpdateLong, rfc18
 STD_PHP_INI_ENTRY("apc.preload_path", (char*)NULL,              PHP_INI_SYSTEM, OnUpdateString,       preload_path,  zend_apcu_globals, apcu_globals)
 STD_PHP_INI_BOOLEAN("apc.coredump_unmap", "0", PHP_INI_SYSTEM, OnUpdateBool, coredump_unmap, zend_apcu_globals, apcu_globals)
 STD_PHP_INI_BOOLEAN("apc.use_request_time", "1", PHP_INI_ALL, OnUpdateBool, use_request_time,  zend_apcu_globals, apcu_globals)
-STD_PHP_INI_ENTRY("apc.serializer", "default", PHP_INI_SYSTEM, OnUpdateStringUnempty, serializer_name, zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.serializer", "php", PHP_INI_SYSTEM, OnUpdateStringUnempty, serializer_name, zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.writable", "/tmp", PHP_INI_SYSTEM, OnUpdateStringUnempty, writable, zend_apcu_globals, apcu_globals)
 PHP_INI_END()
 
@@ -499,6 +500,22 @@ PHP_FUNCTION(apcu_cache_info)
 }
 /* }}} */
 #endif
+
+PHP_FUNCTION(apcu_key_info)
+{
+    zval *stat;
+    char *strkey;
+    zend_uint keylen;
+    
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &strkey, &keylen) == FAILURE) {
+        return;
+    }
+    
+    stat = apc_cache_stat(
+        apc_user_cache, strkey, keylen+1 TSRMLS_CC);
+    
+    RETURN_ZVAL(stat, 0, 1);
+}
 
 /* {{{ proto array apc_sma_info([bool limited]) */
 PHP_FUNCTION(apcu_sma_info)
@@ -1366,6 +1383,11 @@ ZEND_END_ARG_INFO()
 #endif
 
 PHP_APC_ARGINFO
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_key_info, 0, 0, 1)
+    ZEND_ARG_INFO(0, key)
+ZEND_END_ARG_INFO()
+
+PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_sma_info, 0, 0, 0)
     ZEND_ARG_INFO(0, limited)
 ZEND_END_ARG_INFO()
@@ -1380,6 +1402,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_fetch, 0, 0, 1)
     ZEND_ARG_INFO(0, key)
     ZEND_ARG_INFO(1, success)
 ZEND_END_ARG_INFO()
+
 
 PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_inc, 0, 0, 1)
@@ -1450,6 +1473,7 @@ zend_function_entry apcu_functions[] = {
     PHP_FE(apcu_cache_info,         arginfo_apcu_cache_info)
     PHP_FE(apcu_clear_cache,        arginfo_apcu_clear_cache)
     PHP_FE(apcu_sma_info,           arginfo_apcu_sma_info)
+    PHP_FE(apcu_key_info,           arginfo_apcu_key_info)
     PHP_FE(apcu_store,              arginfo_apcu_store)
     PHP_FE(apcu_fetch,              arginfo_apcu_fetch)
     PHP_FE(apcu_delete,             arginfo_apcu_delete)

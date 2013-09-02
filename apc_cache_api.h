@@ -310,6 +310,13 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt,
 */
 PHP_APCU_API zval* apc_cache_info(apc_cache_t* cache,
                                   zend_bool limited TSRMLS_DC);
+                                  
+/*
+ fetches information about the key provided
+*/
+PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
+                                  char *strkey,
+                                  zend_uint keylen TSRMLS_DC);
 
 /*
 * apc_cache_busy returns true while the cache is busy

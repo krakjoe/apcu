@@ -1702,6 +1702,53 @@ PHP_APCU_API zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_D
 }
 /* }}} */
 
+/*
+ fetches information about the key provided
+*/
+PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
+                                  char *strkey,
+                                  zend_uint keylen TSRMLS_DC) {
+    zval *stat;
+    apc_cache_slot_t** slot;
+	zend_ulong h, s;
+    volatile apc_cache_entry_t* value = NULL;
+
+	/* calculate hash and slot */
+	apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
+	
+	/* allocate stat buffer */
+	ALLOC_INIT_ZVAL(stat);
+
+    /* read lock header */
+	APC_RLOCK(cache->header);
+
+	/* find head */
+	slot = &cache->slots[s];
+
+	while (*slot) {
+		/* check for a matching key by has and identifier */
+	    if ((h == (*slot)->key.h) && !memcmp((*slot)->key.str, strkey, keylen)) {
+            array_init(stat);
+            
+            add_assoc_long(stat, "hits",  (*slot)->nhits);
+            add_assoc_long(stat, "atime", (*slot)->atime);
+            add_assoc_long(stat, "ctime", (*slot)->ctime);
+            add_assoc_long(stat, "dtime", (*slot)->dtime);
+	        add_assoc_long(stat, "ttl",   (*slot)->value->ttl);
+	        add_assoc_long(stat, "refs",  (*slot)->value->ref_count);
+	        
+	        break;
+	    }
+
+		/* next */
+	    slot = &(*slot)->next;		
+	}
+    
+    APC_RUNLOCK(cache->header);
+    
+    return stat;
+}
+
 /* {{{ apc_cache_busy */
 PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC)
 {	
