@@ -155,13 +155,27 @@
    </stability>
    <license uri="http://www.php.net/license">PHP License</license>
    <notes>
-  - Fix crash in cli on apc_store where enable_cli=0
-  - Testing eval serializers
-  - Change apc_* to apcu_* in apc.php
-  - Fix exports in API
-  - Expose to userland whether APCu is compiled with the APC compatibility.
-    See the APCU_APC_FULL_BC constant. (Anatol)
-  - Fixed bin dump producing garbage data in multithreaded env. (Anatol)
+  - Fixed bug #15 APC compatibility option broken (Anatol)
+  - Changes to m4/w32, various (Anatol)
+  - Fix build is always in debug mode, Related to #15 (Anatol)
+  - Fix apc_clear_cache compatibility issues, Issue #18 (Joe)
+  - Fix APCIterator compatibility issues, Issue #20 (Anatol)
+  - Assert cache clear only when 'user' was passed #18 (Anatol)
+  - fix type casts time_t vs ulong (Anatol)
+  - Fixed the gc routine (Anatol)
+  - Restore APC hook for register serializer, Issue #24, #25 (Remi Collet)
+  - Compiler warnings avoided, various (Remi Collet)
+  - Don't segfault if mmap() failed, Issue #27 (Anatol)
+  - Fix variable typo in config.m4 for php_cv_semun (Kevin Abel)
+  - Revert horribleness related to APC_ALIGN (Joe)
+  - Fix call to stream open wrapper (Joe)
+  - php_apcu.dll does not load anymore under X64, Issue #29 (Anatol)
+  - Fix external api functionality (Joe)
+  - Bring back fcntl support for FreeBSD, Issue #36 (Joe)
+  - Bring back spinlocks, various issues (Joe)
+  - Fixed symbol clashing, windows debug mode, again (Anatol)
+  - apcu_key_info / apc_cache_stat functions (Joe)
+  
    </notes>
   <release>
    <date>2013-03-27</date>
