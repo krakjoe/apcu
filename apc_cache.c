@@ -1491,14 +1491,14 @@ static zval* apc_cache_link_info(apc_cache_t *cache, apc_cache_slot_t* p TSRMLS_
 
     array_init(link);
 
-    add_assoc_stringl(link, "key", (char*) p->key.str, p->key.len-1, 1);
+    add_assoc_stringl(link, "info", (char*) p->key.str, p->key.len-1, 1);
     add_assoc_long(link, "ttl", (long)p->value->ttl);
 
-    add_assoc_double(link, "nhits", (double)p->nhits);
+    add_assoc_double(link, "num_hits", (double)p->nhits);
     add_assoc_long(link, "mtime", p->key.mtime);
-    add_assoc_long(link, "ctime", p->ctime);
-    add_assoc_long(link, "dtime", p->dtime);
-    add_assoc_long(link, "atime", p->atime);
+    add_assoc_long(link, "creation_time", p->ctime);
+    add_assoc_long(link, "deletion_time", p->dtime);
+    add_assoc_long(link, "access_time", p->atime);
     add_assoc_long(link, "ref_count", p->value->ref_count);
     add_assoc_long(link, "mem_size", p->value->mem_size);
 
@@ -1516,26 +1516,24 @@ PHP_APCU_API zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_D
     apc_cache_slot_t* p;
     zend_ulong i, j;
 
-    if(!cache) {
-		return NULL;
-	}
+    if (!cache) {
+        return NULL;
+    }
 
     ALLOC_INIT_ZVAL(info);
 
-	/* read lock header */
-	APC_RLOCK(cache->header);
+    /* read lock header */
+    APC_RLOCK(cache->header);
 
     array_init(info);
-    add_assoc_long(info, "nslots", cache->nslots);
+    add_assoc_long(info, "num_slots", cache->nslots);
     add_assoc_long(info, "ttl", cache->ttl);
-
-    add_assoc_double(info, "nhits", (double)cache->header->nhits);
-    add_assoc_double(info, "nmisses", (double)cache->header->nmisses);
-    add_assoc_double(info, "ninserts", (double)cache->header->ninserts);
-    add_assoc_long(info,   "nentries", cache->header->nentries);
-    add_assoc_double(info, "nexpunges", (double)cache->header->nexpunges);
-    
-    add_assoc_long(info, "stime", cache->header->stime);
+    add_assoc_double(info, "num_hits", (double)cache->header->nhits);
+    add_assoc_double(info, "num_misses", (double)cache->header->nmisses);
+    add_assoc_double(info, "num_inserts", (double)cache->header->ninserts);
+    add_assoc_long(info,   "num_entries", cache->header->nentries);
+    add_assoc_double(info, "num_expunges", (double)cache->header->nexpunges);
+    add_assoc_long(info, "start_time", cache->header->stime);
     add_assoc_double(info, "mem_size", (double)cache->header->mem_size);
 
 #ifdef MULTIPART_EVENT_FORMDATA
@@ -1549,7 +1547,7 @@ PHP_APCU_API zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_D
     add_assoc_stringl(info, "memory_type", "IPC shared", sizeof("IPC shared")-1, 1);
 #endif
 
-    if(!limited) {
+    if (!limited) {
         /* For each hashtable slot */
         ALLOC_INIT_ZVAL(list);
         array_init(list);
