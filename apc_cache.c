@@ -209,7 +209,7 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
 
 				/* good ol' whining */
 			    if (dead->value->ref_count > 0) {
-			        apc_warning(
+			        apc_debug(
 						"GC cache entry '%s' was on gc-list for %d seconds" TSRMLS_CC, 
 						dead->key.str, gc_sec
 					);
