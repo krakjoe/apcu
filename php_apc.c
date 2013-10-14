@@ -301,10 +301,6 @@ static PHP_MINIT_FUNCTION(apcu)
 			/* register default serializer */
 			_apc_register_serializer(
 				"php", APC_SERIALIZER_NAME(php), APC_UNSERIALIZER_NAME(php), NULL TSRMLS_CC);
-				
-			/* register eval serializer */
-			_apc_register_serializer(
-				"eval", APC_SERIALIZER_NAME(eval), APC_UNSERIALIZER_NAME(eval), NULL TSRMLS_CC);
 
 			/* test out the constant function pointer */
 			assert(apc_get_serializers(TSRMLS_C)->name != NULL);
@@ -876,8 +872,7 @@ PHP_FUNCTION(apcu_fetch) {
 				    if (Z_TYPE_PP(hentry) == IS_STRING) {
 
 				        /* perform find using this index as key */
-						if ((entry = apc_cache_find(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1), t 
-TSRMLS_CC))) {
+						if ((entry = apc_cache_find(apc_user_cache, Z_STRVAL_PP(hentry), (Z_STRLEN_PP(hentry) + 1), t TSRMLS_CC))) {
 							zval *result_entry;
 
 						    /* deep-copy returned shm zval to emalloc'ed return_value */
@@ -889,8 +884,7 @@ TSRMLS_CC))) {
 								apc_user_cache, entry TSRMLS_CC);
 							/* add the emalloced value to return array */
 						    zend_hash_add(
-								Z_ARRVAL_P(result), Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) +1, &result_entry, 
-sizeof(zval*), NULL);
+								Z_ARRVAL_P(result), Z_STRVAL_PP(hentry), Z_STRLEN_PP(hentry) +1, &result_entry, sizeof(zval*), NULL);
 						}
 				    } else {
 

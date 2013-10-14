@@ -16,8 +16,8 @@
   <email>ab@php.net</email>
   <active>yes</active>
  </developer>
- <date>2013-04-28</date>
- <time>03:10:00</time>
+ <date>2013-09-14</date>
+ <time>21:00:00</time>
  <version>
   <release>4.0.2</release>
   <api>4.0.2</api>
@@ -142,12 +142,12 @@
  </extsrcrelease>
  <changelog>
   <release>
-  </release>
-   <date>2013-04-28</date>
-   <time>03:10:00</time>
+  </release> 
+   <date>2013-09-14</date>
+   <time>21:00:00</time>
    <version>
-    <release>4.0.1</release>
-    <api>4.0.1</api>
+    <release>4.0.2</release>
+    <api>4.0.2</api>
    </version>
    <stability>
     <release>beta</release>

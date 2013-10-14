@@ -73,10 +73,8 @@ struct apc_cache_slot_t {
 /* }}} */
 
 /* {{{ state constants */
-#define APC_CACHE_ST_NONE 0
-#define APC_CACHE_ST_BUSY 1
-#define APC_CACHE_ST_GC   2
-#define APC_CACHE_ST_IBUSY (APC_CACHE_ST_BUSY|APC_CACHE_ST_GC) /* }}} */
+#define APC_CACHE_ST_NONE  0
+#define APC_CACHE_ST_BUSY  0x00000001 /* }}} */
 
 /* {{{ struct definition: apc_cache_header_t
    Any values that must be shared among processes should go in here. */
@@ -329,11 +327,6 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
 * Note: garbage collection can be invoked by the SMA and is invoked on insert
 */
 PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC);
-
-/*
-* apc_cache_processing returns true while the cache is in gc
-*/
-PHP_APCU_API zend_bool apc_cache_processing(apc_cache_t* cache TSRMLS_DC);
 
 /*
 * apc_cache_defense: guard against slamming a key

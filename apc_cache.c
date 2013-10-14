@@ -179,26 +179,17 @@ PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** s
 /* {{{ apc_cache_gc */
 PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
 {
-    apc_cache_slot_t** slot;
-
     /* This function scans the list of removed cache entries and deletes any
      * entry whose reference count is zero  or that has been on the gc 
 	 * list for more than cache->gc_ttl seconds 
 	 *   (we issue a warning in the latter case).
      */
-	if (!cache->header->gc) {
+	if (!cache || !cache->header->gc || apc_cache_busy(cache TSRMLS_CC)) {
 		return;
 	}
 
-    /* just incase */
-	if(apc_cache_processing(cache TSRMLS_CC)) {
-        return;
-    }
-	
-	cache->header->state |= APC_CACHE_ST_GC;
-	
     {
-		slot = &cache->header->gc;
+		apc_cache_slot_t** slot = &cache->header->gc;
 
 		while (*slot != NULL) {
 			time_t now = time(0);
@@ -230,98 +221,8 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
 			}
 		}
 	}
-	
-	cache->header->state &= ~APC_CACHE_ST_GC;
 }
 /* }}} */
-
-/* {{{ eval serializer */
-PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS)
-{
-    smart_str output = {0,};
-    apc_context_t *context = (apc_context_t*) config;
-    apc_cache_key_t *key = (apc_cache_key_t*) context->key;
-    
-    if (Z_TYPE_P(value) == IS_OBJECT) {
-        if (!zend_hash_exists(&Z_OBJCE_P(value)->function_table, "__set_state", sizeof("__set_state"))) {
-            /* 
-                TODO XXX this could/should actually do find, check for the ability to call the method static */
-                
-            apc_warning("unable to store object of class %s in cache without static factory method __set_state" TSRMLS_CC, Z_OBJCE_P(value)->name);
-            return FAILURE;
-        }
-    }
-    
-    php_var_export_ex(
-        (zval**)&value, -1, &output TSRMLS_CC);
-    
-    if (output.c) {
-        char path[MAXPATHLEN];
-        
-        do {
-           if (((*buf_len) = snprintf(path, MAXPATHLEN,
-                "%s/apcu.%s",
-                APCG(writable), key->str
-           ))) {
-                php_stream *handle = php_stream_open_wrapper(
-                    path, "w+b", IGNORE_PATH, NULL);
-                
-                if (handle) {
-                    (*buf) = emalloc((*buf_len)+1);
-                    memcpy(
-                        (*buf), path, (*buf_len)
-                    );
-                    (*buf)[(*buf_len)] = '\0';
-                    
-                    php_stream_write(handle, "<?php\n", strlen("<?php\n"));
-                    php_stream_write(handle, "return ", strlen("return "));
-                    php_stream_write(handle, output.c, output.len);
-                    php_stream_write(handle, ";\n", strlen(";\n"));
-                    php_stream_write(handle, "?>", strlen("?>"));
-
-                    php_stream_close(handle);
-                    break;
-                }
-           }
-        } while (0);
-        
-        return 1;
-    } else php_error_docref(NULL TSRMLS_CC, E_NOTICE, "Error serializing content");
-    
-    return 0;
-} /* }}} */
-
-/* {{{ eval unserializer */
-PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS)
-{
-    zend_file_handle zhandle;
-    
-    if (php_stream_open_for_zend_ex((const char *)buf, &zhandle, USE_PATH|STREAM_OPEN_FOR_INCLUDE TSRMLS_CC) == SUCCESS) {
-       zend_op_array *op_array = zend_compile_file(&zhandle, ZEND_INCLUDE TSRMLS_CC);
-       zend_op_array *active_op_array = EG(active_op_array);
-       zval **return_value_ptr_ptr = EG(return_value_ptr_ptr);
-       
-       EG(active_op_array) = op_array;
-       EG(return_value_ptr_ptr) = value;
-       
-       zend_try {
-           zend_execute(op_array TSRMLS_CC);
-       } zend_catch {
-           /* panic */
-       } zend_end_try();
-       
-       destroy_op_array(
-            op_array TSRMLS_CC);
-       efree(op_array);
-       
-       EG(active_op_array) = active_op_array;
-       EG(return_value_ptr_ptr) = return_value_ptr_ptr;
-       
-       return 1;
-    }
-    
-    return 0;
-} /* }}} */
 
 /* {{{ php serializer */
 PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS) 
@@ -423,7 +324,7 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, zend_ui
     t = apc_time();
 
     HANDLE_BLOCK_INTERRUPTIONS();
-
+    
 	/* initialize a context suitable for making an insert */
     if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
 
@@ -626,8 +527,7 @@ PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
 PHP_APCU_API void apc_cache_clear(apc_cache_t* cache TSRMLS_DC)
 {
 	/* check there is a cache and it is not busy */
-    if(!cache || 
-		apc_cache_busy(cache TSRMLS_CC)) {
+    if(!cache || apc_cache_busy(cache TSRMLS_CC)) {
 		return;
 	}
 	
@@ -662,7 +562,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRM
     t = apc_time();
 
 	/* check there is a cache, and it is not busy */
-    if(!cache) {
+    if(!cache || apc_cache_busy(cache TSRMLS_CC)) {
 		return;
 	}
 	
@@ -833,7 +733,7 @@ PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache,
 	}
 	
 	/* check we are able to deal with this request */
-	if (apc_cache_busy(cache TSRMLS_CC)) {
+	if (!cache || apc_cache_busy(cache TSRMLS_CC)) {
 		return result;
 	}
 
@@ -918,7 +818,7 @@ nothing:
 PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, zend_uint keylen, time_t t TSRMLS_DC)
 {
 	/* check we are able to deal with the request */
-    if(apc_cache_busy(cache TSRMLS_CC)) { 
+    if(!cache || apc_cache_busy(cache TSRMLS_CC)) {
         return NULL;
     }
 
@@ -1751,14 +1651,7 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
 /* {{{ apc_cache_busy */
 PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC)
 {	
-	return ((cache->header->state & APC_CACHE_ST_IBUSY)==APC_CACHE_ST_IBUSY);
-}
-/* }}} */
-
-/* {{{ apc_cache_processing */
-PHP_APCU_API zend_bool apc_cache_processing(apc_cache_t* cache TSRMLS_DC)
-{	
-	return ((cache->header->state & APC_CACHE_ST_GC)==APC_CACHE_ST_GC);
+	return (cache->header->state & APC_CACHE_ST_BUSY);
 }
 /* }}} */
 

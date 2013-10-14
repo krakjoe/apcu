@@ -85,10 +85,10 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC); /* }}} */
 /* {{{ generic locking macros */
 #define CREATE_LOCK(lock)     apc_lock_create(lock TSRMLS_CC)
 #define DESTROY_LOCK(lock)    apc_lock_destroy(lock TSRMLS_CC)
-#define WLOCK(lock)           apc_lock_wlock(lock TSRMLS_CC)
-#define WUNLOCK(lock)         apc_lock_wunlock(lock TSRMLS_CC)
-#define RLOCK(lock)           apc_lock_rlock(lock TSRMLS_CC)
-#define RUNLOCK(lock)         apc_lock_runlock(lock TSRMLS_CC)
+#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock TSRMLS_CC); }
+#define WUNLOCK(lock)         { HANDLE_UNBLOCK_INTERRUPTIONS(); apc_lock_wunlock(lock TSRMLS_CC); }
+#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock TSRMLS_CC); }
+#define RUNLOCK(lock)         { HANDLE_UNBLOCK_INTERRUPTIONS(); apc_lock_runlock(lock TSRMLS_CC); }
 #define LOCK                  WLOCK
 #define UNLOCK                WUNLOCK
 /* }}} */
