@@ -611,6 +611,8 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
         RETURN_FALSE;
     }
 
+    HANDLE_BLOCK_INTERRUPTIONS();
+    
 	/* keep it tidy */
     {
 		if (APCG(serializer_name)) {
@@ -649,19 +651,22 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
             if (Z_TYPE_P(key) == IS_STRING) {
 			    if (!val) {
                     /* nothing to store */
-    	            RETURN_FALSE;
+    	            ZVAL_BOOL(return_value, 0);
     	        }
                 /* return true on success */
     			if(apc_cache_store(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (zend_uint) ttl, exclusive TSRMLS_CC)) {
-    	            RETURN_TRUE;
+    	            ZVAL_BOOL(return_value, 0);
                 }
     		} else {
                 apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs." TSRMLS_CC);
     		}
         }
 	}
+	
+	HANDLE_UNBLOCK_INTERRUPTIONS();
+	
 	/* default */
-    RETURN_FALSE;
+    ZVAL_BOOL(return_value, 0);
 }
 /* }}} */
 
