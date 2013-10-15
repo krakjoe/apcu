@@ -655,11 +655,13 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
             if (Z_TYPE_P(key) == IS_STRING) {
 			    if (!val) {
                     /* nothing to store */
-    	            ZVAL_BOOL(return_value, 0);
+    	            HANDLE_UNBLOCK_INTERRUPTIONS();
+    	            RETURN_FALSE;
     	        }
                 /* return true on success */
     			if(apc_cache_store(apc_user_cache, Z_STRVAL_P(key), Z_STRLEN_P(key) + 1, val, (zend_uint) ttl, exclusive TSRMLS_CC)) {
-    	            ZVAL_BOOL(return_value, 0);
+			        HANDLE_UNBLOCK_INTERRUPTIONS();
+    	            RETURN_TRUE;
                 }
     		} else {
                 apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs." TSRMLS_CC);
@@ -670,7 +672,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 	HANDLE_UNBLOCK_INTERRUPTIONS();
 	
 	/* default */
-    ZVAL_BOOL(return_value, 0);
+    RETURN_FALSE;
 }
 /* }}} */
 

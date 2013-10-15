@@ -153,8 +153,6 @@ PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** s
     /* think here is safer */
 	*slot = (*slot)->next;
 
-	HANDLE_BLOCK_INTERRUPTIONS();
-
 	/* adjust header info */
 	if (cache->header->mem_size)
     	cache->header->mem_size -= dead->value->mem_size;
@@ -171,8 +169,6 @@ PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** s
         dead->dtime = time(0);
         cache->header->gc = dead;
     }
-	
-	HANDLE_UNBLOCK_INTERRUPTIONS();
 }
 /* }}} */
 
@@ -323,8 +319,6 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, zend_ui
 
     t = apc_time();
 
-    HANDLE_BLOCK_INTERRUPTIONS();
-    
 	/* initialize a context suitable for making an insert */
     if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
 
@@ -350,8 +344,6 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, zend_ui
             apc_cache_destroy_context(&ctxt TSRMLS_CC);
         }
     }
-
-    HANDLE_UNBLOCK_INTERRUPTIONS();
 
     return ret;
 } /* }}} */
@@ -499,7 +491,7 @@ PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC)
 PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
 	/* increment counter */	
 	cache->header->nexpunges++;
-
+    
 	/* expunge */
     {
 		zend_ulong i;
@@ -512,6 +504,9 @@ PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC) {
 		    cache->slots[i] = NULL;
 		}
 	}
+	
+	/* set new time so counters make sense */
+	cache->header->stime = apc_time();
 
 	/* reset counters */
 	cache->header->ninserts = 0;
