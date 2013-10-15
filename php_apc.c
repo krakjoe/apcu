@@ -202,10 +202,6 @@ PHP_INI_END()
 /* {{{ PHP_MINFO_FUNCTION(apcu) */
 static PHP_MINFO_FUNCTION(apcu)
 {
-    apc_serializer_t *serializer = NULL;
-    smart_str names = {0,};
-    int i;
-
     php_info_print_table_start();
     php_info_print_table_header(2, "APCu Support", APCG(enabled) ? "Enabled" : "Disabled");
     php_info_print_table_row(2, "Version", PHP_APC_VERSION);
@@ -222,6 +218,10 @@ static PHP_MINFO_FUNCTION(apcu)
 #endif
 
     if (APCG(enabled)) {
+        apc_serializer_t *serializer = NULL;
+        smart_str names = {0,};
+        int i;
+    
         for( i = 0, serializer = apc_get_serializers(TSRMLS_C); 
                     serializer->name != NULL; 
                     serializer++, i++) {
