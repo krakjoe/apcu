@@ -184,7 +184,7 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC)
 	 * list for more than cache->gc_ttl seconds 
 	 *   (we issue a warning in the latter case).
      */
-	if (!cache || !cache->header->gc || apc_cache_busy(cache TSRMLS_CC)) {
+	if (!cache || !cache->header->gc) {
 		return;
 	}
 
