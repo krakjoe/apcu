@@ -207,7 +207,7 @@ static PHP_MINFO_FUNCTION(apcu)
     int i;
 
     php_info_print_table_start();
-    php_info_print_table_header(2, "APCu Support", APCG(enabled) ? "enabled" : "disabled");
+    php_info_print_table_header(2, "APCu Support", APCG(enabled) ? "Enabled" : "Disabled");
     php_info_print_table_row(2, "Version", PHP_APC_VERSION);
 #ifdef APC_DEBUG
     php_info_print_table_row(2, "APCu Debugging", "Enabled");
@@ -221,21 +221,25 @@ static PHP_MINFO_FUNCTION(apcu)
     php_info_print_table_row(2, "MMAP Support", "Disabled");
 #endif
 
-    for( i = 0, serializer = apc_get_serializers(TSRMLS_C); 
-                serializer->name != NULL; 
-                serializer++, i++) {
-        if (i != 0) {
-			smart_str_appends(&names, ", ");
-		}
-        smart_str_appends(&names, serializer->name);
-    }
-
-    if (names.c) {
-        smart_str_0(&names);
-        php_info_print_table_row(2, "Serialization Support", names.c);
-        smart_str_free(&names);
+    if (APCG(enabled)) {
+        for( i = 0, serializer = apc_get_serializers(TSRMLS_C); 
+                    serializer->name != NULL; 
+                    serializer++, i++) {
+            if (i != 0) {
+			    smart_str_appends(&names, ", ");
+		    }
+            smart_str_appends(&names, serializer->name);
+        }
+    
+        if (names.c) {
+            smart_str_0(&names);
+            php_info_print_table_row(2, "Serialization Support", names.c);
+            smart_str_free(&names);
+        } else {
+            php_info_print_table_row(2, "Serialization Support", "Broken");
+        }
     } else {
-        php_info_print_table_row(2, "Serialization Support", "broken");
+        php_info_print_table_row(2, "Serialization Support", "Disabled");
     }
 
     php_info_print_table_row(2, "Revision", "$Revision: 328290 $");
