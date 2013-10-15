@@ -886,8 +886,6 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, zend_ui
 	apc_cache_entry_t *entry;
 	zend_bool ret = 0;
 	
-	HANDLE_BLOCK_INTERRUPTIONS();
-
 	/* find the entry */
 	if ((entry = apc_cache_find(cache, strkey, keylen, t TSRMLS_CC))) {
         /* context for copying out */
@@ -911,8 +909,6 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, zend_ui
 		}
 	}
 	
-	HANDLE_UNBLOCK_INTERRUPTIONS();
-
 	return ret;
 } /* }}} */
 
