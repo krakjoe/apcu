@@ -670,6 +670,12 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 }
 /* }}} */
 
+/* {{{ proto bool apcu_enabled(void)
+    returns true when apcu is usable in the current environment */
+PHP_FUNCTION(apcu_enabled) {
+    RETURN_BOOL(APCG(enabled));
+}  /* }}} */
+
 /* {{{ proto int apc_store(mixed key, mixed var [, long ttl ])
  */
 PHP_FUNCTION(apcu_store) {
@@ -1359,6 +1365,10 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_store, 0, 0, 2)
     ZEND_ARG_INFO(0, ttl)
 ZEND_END_ARG_INFO()
 
+PHP_APC_ARGINFO
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_enabled, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 #ifdef APC_FULL_BC
 PHP_APC_ARGINFO
 /* this will generate different reflection but retains functional compatibility */
@@ -1473,6 +1483,7 @@ zend_function_entry apcu_functions[] = {
     PHP_FE(apcu_clear_cache,        arginfo_apcu_clear_cache)
     PHP_FE(apcu_sma_info,           arginfo_apcu_sma_info)
     PHP_FE(apcu_key_info,           arginfo_apcu_key_info)
+    PHP_FE(apcu_enabled,            arginfo_apcu_enabled)
     PHP_FE(apcu_store,              arginfo_apcu_store)
     PHP_FE(apcu_fetch,              arginfo_apcu_fetch)
     PHP_FE(apcu_delete,             arginfo_apcu_delete)
