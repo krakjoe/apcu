@@ -121,8 +121,9 @@ if test "$PHP_APCU" != "no"; then
           }
 		    ],
 		    [ dnl -Success-
+			    APCU_CFLAGS="-D_GNU_SOURCE"
 			    PHP_ADD_LIBRARY(pthread)
-			    APC_CFLAGS="-D_GNU_SOURCE"
+				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 			    AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
 			    AC_MSG_WARN([APCu has access to native rwlocks])
 		    ],
@@ -131,7 +132,9 @@ if test "$PHP_APCU" != "no"; then
     			PHP_APCU_RWLOCKS=no
 		    ],
 		    [
+			    APCU_CFLAGS="-D_GNU_SOURCE"
 			    PHP_ADD_LIBRARY(pthread)
+				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 		    ]
     )
     LIBS="$orig_LIBS"
@@ -172,7 +175,9 @@ if test "$PHP_APCU" != "no"; then
         }
 			  ],
 			  [ dnl -Success-
+				  APCU_CFLAGS="-D_GNU_SOURCE"
 				  PHP_ADD_LIBRARY(pthread)
+				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 				  AC_MSG_WARN([APCu has access to mutexes])
 			  ],
 			  [ dnl -Failure-
@@ -180,7 +185,9 @@ if test "$PHP_APCU" != "no"; then
     			PHP_APCU_MUTEX=no
 			  ],
 			  [
+				  APCU_CFLAGS="-D_GNU_SOURCE"
 				  PHP_ADD_LIBRARY(pthread)
+				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 			  ]
 	  )
 	  LIBS="$orig_LIBS"
@@ -239,11 +246,12 @@ if test "$PHP_APCU" != "no"; then
                  apc_pool.c \
                  apc_iterator.c \
 							   apc_bin.c "
-  
+							   
   PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
   PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
   PHP_SUBST(APCU_SHARED_LIBADD)
   PHP_SUBST(APCU_CFLAGS)
+  PHP_SUBST(PHP_LDFLAGS)
   PHP_INSTALL_HEADERS(ext/apcu, [apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_bin_api.h apc_serializer.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
 fi
