@@ -22,8 +22,8 @@ $formats = array(
                   APC_ITER_MEM_SIZE,
                   APC_ITER_TTL,
                   APC_ITER_NONE,
-                  APC_ITER_ALL,
-                  APC_ITER_ALL & ~APC_ITER_TTL,
+                  APC_ITER_ALL & ~APC_ITER_TYPE,
+                  APC_ITER_ALL & ~APC_ITER_TTL & ~APC_ITER_TYPE,
                   APC_ITER_KEY | APC_ITER_NUM_HITS | APC_ITER_MEM_SIZE,
                 );
 
