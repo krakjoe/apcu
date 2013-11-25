@@ -63,19 +63,19 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
         add_assoc_zval(item->value, "value", zvalue);
     }
     if (APC_ITER_NUM_HITS & iterator->format) {
-        add_assoc_long(item->value, "nhits", slot->nhits);
+        add_assoc_long(item->value, "num_hits", slot->nhits);
     }
     if (APC_ITER_MTIME & iterator->format) {
-        add_assoc_long(item->value, "mtime", slot->key.mtime);
+        add_assoc_long(item->value, "modified_time", slot->key.mtime);
     }
     if (APC_ITER_CTIME & iterator->format) {
-        add_assoc_long(item->value, "ctime", slot->ctime);
+        add_assoc_long(item->value, "creation_time", slot->ctime);
     }
     if (APC_ITER_DTIME & iterator->format) {
-        add_assoc_long(item->value, "dtime", slot->dtime);
+        add_assoc_long(item->value, "deletion_time", slot->dtime);
     }
     if (APC_ITER_ATIME & iterator->format) {
-        add_assoc_long(item->value, "atime", slot->atime);
+        add_assoc_long(item->value, "access_time", slot->atime);
     }
     if (APC_ITER_REFCOUNT & iterator->format) {
         add_assoc_long(item->value, "ref_count", slot->value->ref_count);

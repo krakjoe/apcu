@@ -181,57 +181,57 @@ IT #2
 ============================
 string(5) "key10"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 string(4) "key0"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 string(4) "key1"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 string(4) "key2"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 string(4) "key3"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 string(4) "key4"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 string(4) "key5"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 string(4) "key6"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 string(4) "key7"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 string(4) "key8"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 string(4) "key9"
 array(1) {
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
 }
 ============================
@@ -240,57 +240,57 @@ IT #3
 ============================
 string(5) "key10"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 string(4) "key0"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 string(4) "key1"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 string(4) "key2"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 string(4) "key3"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 string(4) "key4"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 string(4) "key5"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 string(4) "key6"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 string(4) "key7"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 string(4) "key8"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 string(4) "key9"
 array(1) {
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
 }
 ============================
@@ -299,57 +299,57 @@ IT #4
 ============================
 string(5) "key10"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 string(4) "key0"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 string(4) "key1"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 string(4) "key2"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 string(4) "key3"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 string(4) "key4"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 string(4) "key5"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 string(4) "key6"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 string(4) "key7"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 string(4) "key8"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 string(4) "key9"
 array(1) {
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
 }
 ============================
@@ -358,57 +358,57 @@ IT #5
 ============================
 string(5) "key10"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 string(4) "key0"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 string(4) "key1"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 string(4) "key2"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 string(4) "key3"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 string(4) "key4"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 string(4) "key5"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 string(4) "key6"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 string(4) "key7"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 string(4) "key8"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 string(4) "key9"
 array(1) {
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
 }
 ============================
@@ -417,57 +417,57 @@ IT #6
 ============================
 string(5) "key10"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 string(4) "key0"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 string(4) "key1"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 string(4) "key2"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 string(4) "key3"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 string(4) "key4"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 string(4) "key5"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 string(4) "key6"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 string(4) "key7"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 string(4) "key8"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 string(4) "key9"
 array(1) {
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
 }
 ============================
@@ -694,15 +694,15 @@ array(10) {
   string(5) "key10"
   ["value"]=>
   string(7) "value10"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -717,15 +717,15 @@ array(10) {
   string(4) "key0"
   ["value"]=>
   string(6) "value0"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -740,15 +740,15 @@ array(10) {
   string(4) "key1"
   ["value"]=>
   string(6) "value1"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -763,15 +763,15 @@ array(10) {
   string(4) "key2"
   ["value"]=>
   string(6) "value2"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -786,15 +786,15 @@ array(10) {
   string(4) "key3"
   ["value"]=>
   string(6) "value3"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -809,15 +809,15 @@ array(10) {
   string(4) "key4"
   ["value"]=>
   string(6) "value4"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -832,15 +832,15 @@ array(10) {
   string(4) "key5"
   ["value"]=>
   string(6) "value5"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -855,15 +855,15 @@ array(10) {
   string(4) "key6"
   ["value"]=>
   string(6) "value6"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -878,15 +878,15 @@ array(10) {
   string(4) "key7"
   ["value"]=>
   string(6) "value7"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -901,15 +901,15 @@ array(10) {
   string(4) "key8"
   ["value"]=>
   string(6) "value8"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -924,15 +924,15 @@ array(10) {
   string(4) "key9"
   ["value"]=>
   string(6) "value9"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -951,15 +951,15 @@ array(9) {
   string(5) "key10"
   ["value"]=>
   string(7) "value10"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -972,15 +972,15 @@ array(9) {
   string(4) "key0"
   ["value"]=>
   string(6) "value0"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -993,15 +993,15 @@ array(9) {
   string(4) "key1"
   ["value"]=>
   string(6) "value1"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -1014,15 +1014,15 @@ array(9) {
   string(4) "key2"
   ["value"]=>
   string(6) "value2"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -1035,15 +1035,15 @@ array(9) {
   string(4) "key3"
   ["value"]=>
   string(6) "value3"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -1056,15 +1056,15 @@ array(9) {
   string(4) "key4"
   ["value"]=>
   string(6) "value4"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -1077,15 +1077,15 @@ array(9) {
   string(4) "key5"
   ["value"]=>
   string(6) "value5"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -1098,15 +1098,15 @@ array(9) {
   string(4) "key6"
   ["value"]=>
   string(6) "value6"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -1119,15 +1119,15 @@ array(9) {
   string(4) "key7"
   ["value"]=>
   string(6) "value7"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -1140,15 +1140,15 @@ array(9) {
   string(4) "key8"
   ["value"]=>
   string(6) "value8"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -1161,15 +1161,15 @@ array(9) {
   string(4) "key9"
   ["value"]=>
   string(6) "value9"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -1184,7 +1184,7 @@ string(5) "key10"
 array(3) {
   ["key"]=>
   string(5) "key10"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
@@ -1193,7 +1193,7 @@ string(4) "key0"
 array(3) {
   ["key"]=>
   string(4) "key0"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
@@ -1202,7 +1202,7 @@ string(4) "key1"
 array(3) {
   ["key"]=>
   string(4) "key1"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
@@ -1211,7 +1211,7 @@ string(4) "key2"
 array(3) {
   ["key"]=>
   string(4) "key2"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
@@ -1220,7 +1220,7 @@ string(4) "key3"
 array(3) {
   ["key"]=>
   string(4) "key3"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
@@ -1229,7 +1229,7 @@ string(4) "key4"
 array(3) {
   ["key"]=>
   string(4) "key4"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
@@ -1238,7 +1238,7 @@ string(4) "key5"
 array(3) {
   ["key"]=>
   string(4) "key5"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
@@ -1247,7 +1247,7 @@ string(4) "key6"
 array(3) {
   ["key"]=>
   string(4) "key6"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
@@ -1256,7 +1256,7 @@ string(4) "key7"
 array(3) {
   ["key"]=>
   string(4) "key7"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
@@ -1265,7 +1265,7 @@ string(4) "key8"
 array(3) {
   ["key"]=>
   string(4) "key8"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
@@ -1274,7 +1274,7 @@ string(4) "key9"
 array(3) {
   ["key"]=>
   string(4) "key9"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
   ["mem_size"]=>
   int(%d)
