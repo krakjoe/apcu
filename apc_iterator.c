@@ -54,9 +54,9 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
     }
 
     if (APC_ITER_VALUE & iterator->format) {
-        ctxt.pool = apc_pool_create(APC_UNPOOL, apc_php_malloc, apc_php_free, NULL, NULL TSRMLS_CC);
-        ctxt.copy = APC_COPY_OUT;
-
+    	apc_cache_make_context(
+    		apc_user_cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0 TSRMLS_CC);
+    	
         MAKE_STD_ZVAL(zvalue);
         apc_cache_fetch_zval(&ctxt, zvalue, slot->value->val TSRMLS_CC);
         apc_pool_destroy(ctxt.pool TSRMLS_CC);
