@@ -42,20 +42,22 @@ echo 'done';
 
 --EXPECTF--
 int(50000)
-array(10) {
+array(11) {
+  ["type"]=>
+  string(4) "user"
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -65,20 +67,22 @@ array(10) {
   int(0)
 }
 int(50000)
-array(10) {
+array(11) {
+  ["type"]=>
+  string(4) "user"
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -88,20 +92,22 @@ array(10) {
   int(0)
 }
 int(50000)
-array(10) {
+array(11) {
+  ["type"]=>
+  string(4) "user"
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -111,20 +117,22 @@ array(10) {
   int(0)
 }
 int(50000)
-array(10) {
+array(11) {
+  ["type"]=>
+  string(4) "user"
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -134,20 +142,22 @@ array(10) {
   int(0)
 }
 int(50000)
-array(10) {
+array(11) {
+  ["type"]=>
+  string(4) "user"
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -157,20 +167,22 @@ array(10) {
   int(0)
 }
 int(50000)
-array(10) {
+array(11) {
+  ["type"]=>
+  string(4) "user"
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -180,20 +192,22 @@ array(10) {
   int(0)
 }
 int(50000)
-array(10) {
+array(11) {
+  ["type"]=>
+  string(4) "user"
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -203,20 +217,22 @@ array(10) {
   int(0)
 }
 int(50000)
-array(10) {
+array(11) {
+  ["type"]=>
+  string(4) "user"
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
@@ -226,20 +242,22 @@ array(10) {
   int(0)
 }
 int(50000)
-array(10) {
+array(11) {
+  ["type"]=>
+  string(4) "user"
   ["key"]=>
   string(42) "test-niko-asdfasdfasdfkjasdflkasjdfasf%d"
   ["value"]=>
   string(%d) "%s"
-  ["nhits"]=>
+  ["num_hits"]=>
   int(0)
-  ["mtime"]=>
+  ["modified_time"]=>
   int(%d)
-  ["ctime"]=>
+  ["creation_time"]=>
   int(%d)
-  ["dtime"]=>
+  ["deletion_time"]=>
   int(0)
-  ["atime"]=>
+  ["access_time"]=>
   int(%d)
   ["ref_count"]=>
   int(0)
