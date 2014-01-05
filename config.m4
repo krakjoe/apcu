@@ -19,14 +19,8 @@ AC_MSG_RESULT($PHP_APC_BC)
 AC_MSG_CHECKING(if APCu should be allowed to use rwlocks)
 AC_ARG_ENABLE(apcu-rwlocks,
 [  --disable-apcu-rwlocks  Disable rwlocks in APCu],
-[
-  PHP_APCU_RWLOCKS=no
-  AC_MSG_RESULT(no)
-],
-[
-  PHP_APCU_RWLOCKS=yes
-  AC_MSG_RESULT(yes)
-])
+[ PHP_APCU_RWLOCKS="$enableval" ], [ PHP_APCU_RWLOCKS=yes ])
+AC_MSG_RESULT($PHP_APCU_RWLOCKS)
 
 AC_MSG_CHECKING(if APCu should be built in debug mode)
 AC_ARG_ENABLE(apcu-debug,
@@ -53,13 +47,12 @@ AC_ARG_ENABLE(apcu-clear-signal,
 AC_MSG_CHECKING(if APCu will use mmap or shm)
 AC_ARG_ENABLE(apcu-mmap,
 [  --disable-apcu-mmap     Disable mmap, falls back on shm],
-[
-  PHP_APCU_MMAP=no
+[ PHP_APCU_MMAP="$enableval" ], [ PHP_APCU_MMAP=yes ])
+if test "x$enableval" = "xno"; then
   AC_MSG_RESULT(shm)
-], [
-  PHP_APCU_MMAP=yes
+else
   AC_MSG_RESULT(mmap)
-])
+fi
 
 PHP_APCU_SPINLOCK=no
 AC_MSG_CHECKING(if APCu should utilize spinlocks before flocks)
