@@ -1622,7 +1622,7 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
             
             add_assoc_long(stat, "hits",  (*slot)->nhits);
             add_assoc_long(stat, "atime", (*slot)->atime);
-            add_assoc_long(stat, "mtime", (*slot)->mtime);
+            add_assoc_long(stat, "mtime", (*slot)->key.mtime);
             add_assoc_long(stat, "ctime", (*slot)->ctime);
             add_assoc_long(stat, "dtime", (*slot)->dtime);
 	        add_assoc_long(stat, "ttl",   (*slot)->value->ttl);
