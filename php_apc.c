@@ -1552,7 +1552,7 @@ zend_function_entry apc_functions[] = {
 
 zend_module_entry apc_module_entry = {
 	STANDARD_MODULE_HEADER,
-	PHP_APCU_EXTNAME,
+	"apc",
 	apc_functions,
 	NULL,
 	NULL,
