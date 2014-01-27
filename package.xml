@@ -19,8 +19,8 @@
  <date>2013-09-14</date>
  <time>21:00:00</time>
  <version>
-  <release>4.0.2</release>
-  <api>4.0.2</api>
+  <release>4.0.3</release>
+  <api>4.0.3</api>
  </version>
  <stability>
   <release>beta</release>
@@ -28,10 +28,10 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-  - Fixed bug #15 APC compatibility option broken. (Anatol)
-  - Fixed bug #20 APCu's APCIterator constructor is not compatable with APC. (Anatol)
-  - Fixed resource leak when data preload fails. (Anatol)
-  - Fixed issue #29 php_apcu.dll does not load anymore under X64. (Anatol)
+  - Fix various compatibility problems
+  - Fix a few lingering faults
+  - Remove experimental eval serializer
+  - Fix iterator for compatibility
  </notes>
  <contents>
   <dir name="/">
