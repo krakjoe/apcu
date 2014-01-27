@@ -204,7 +204,7 @@ static PHP_MINFO_FUNCTION(apcu)
 {
     php_info_print_table_start();
     php_info_print_table_header(2, "APCu Support", APCG(enabled) ? "Enabled" : "Disabled");
-    php_info_print_table_row(2, "Version", PHP_APC_VERSION);
+    php_info_print_table_row(2, "Version", PHP_APCU_VERSION);
 #ifdef APC_DEBUG
     php_info_print_table_row(2, "APCu Debugging", "Enabled");
 #else
@@ -1510,14 +1510,14 @@ zend_function_entry apcu_functions[] = {
 
 zend_module_entry apcu_module_entry = {
     STANDARD_MODULE_HEADER,
-    "apcu",
+    PHP_APCU_EXTNAME,
     apcu_functions,
     PHP_MINIT(apcu),
     PHP_MSHUTDOWN(apcu),
     PHP_RINIT(apcu),
     NULL,
     PHP_MINFO(apcu),
-    PHP_APC_VERSION,
+    PHP_APCU_VERSION,
     STANDARD_MODULE_PROPERTIES
 };
 
@@ -1552,14 +1552,14 @@ zend_function_entry apc_functions[] = {
 
 zend_module_entry apc_module_entry = {
 	STANDARD_MODULE_HEADER,
-	"apc",
+	PHP_APCU_EXTNAME,
 	apc_functions,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	PHP_MINFO(apc),
-	PHP_APC_VERSION,
+	PHP_APCU_VERSION,
 	STANDARD_MODULE_PROPERTIES,
 };
 
