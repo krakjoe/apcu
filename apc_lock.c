@@ -334,10 +334,9 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC) {
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifndef APC_NATIVE_RWLOCK
-	    pthread_mutex_destroy(&lock->read);
-	    pthread_mutex_destroy(&lock->write);
+	    /* nothing */
 #   else
-        pthread_rwlock_destroy(lock);
+        /* nothing */
 #   endif
 # else
     {
