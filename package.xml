@@ -16,11 +16,11 @@
   <email>ab@php.net</email>
   <active>yes</active>
  </developer>
- <date>2014-01-27</date>
- <time>09:00:00</time>
+ <date>2014-03-01</date>
+ <time>08:00:00</time>
  <version>
-  <release>4.0.3</release>
-  <api>4.0.3</api>
+  <release>4.0.4</release>
+  <api>4.0.4</api>
  </version>
  <stability>
   <release>beta</release>
@@ -28,10 +28,8 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-  - Fix various compatibility problems
-  - Fix a few lingering faults
-  - Remove experimental eval serializer
-  - Fix iterator for compatibility
+  - Fix deadlocking due to destroyed locks
+  - Fix various compatibility bugs
  </notes>
  <contents>
   <dir name="/">
@@ -142,7 +140,25 @@
  </extsrcrelease>
  <changelog>
   <release>
-  </release> 
+	<date>2014-01-27</date>
+ 	<time>09:00:00</time>
+  	<version>
+    <release>4.0.3</release>
+    <api>4.0.3</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+  - Fix various compatibility problems
+  - Fix a few lingering faults
+  - Remove experimental eval serializer
+  - Fix iterator for compatibility
+   </notes>
+  </release>
+  <release>
    <date>2013-09-14</date>
    <time>21:00:00</time>
    <version>
@@ -177,6 +193,7 @@
   - apcu_key_info / apc_cache_stat functions (Joe)
   
    </notes>
+  </release>
   <release>
    <date>2013-03-27</date>
    <time>03:10:00</time>
