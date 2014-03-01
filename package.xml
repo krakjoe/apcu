@@ -108,15 +108,15 @@
    <file name="apc_serializer.h" role="src" />
    <file name="config.m4" role="src" />
    <file name="config.w32" role="src" />
-   <file name="INSTALL" role="src" />
-   <file name="LICENSE" role="src" />
+   <file name="INSTALL" role="doc" />
+   <file name="LICENSE" role="doc" />
    <file name="Makefile.frag" role="src" />
-   <file name="NOTICE" role="src" />
+   <file name="NOTICE" role="doc" />
    <file name="php_apc.c" role="src" />
    <file name="php_apc.h" role="src" />
-   <file name="README.md" role="src" />
-   <file name="TECHNOTES.txt" role="src" />
-   <file name="TODO" role="src" />
+   <file name="README.md" role="doc" />
+   <file name="TECHNOTES.txt" role="doc" />
+   <file name="TODO" role="doc" />
   </dir>
  </contents>
  <dependencies>
