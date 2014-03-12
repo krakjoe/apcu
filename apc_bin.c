@@ -43,12 +43,12 @@ extern zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRML
 
 #define SWIZZLE(bd, ptr)  \
     do { \
-        if((long)bd < (long)ptr && (ulong)ptr < ((long)bd + bd->size)) { \
+        if((ptrdiff_t)bd < (ptrdiff_t)ptr && (size_t)ptr < ((size_t)bd + bd->size)) { \
             printf("SWIZZLE: %x ~> ", ptr); \
-            ptr = (void*)((long)(ptr) - (long)(bd)); \
+            ptr = (void*)((ptrdiff_t)(ptr) - (ptrdiff_t)(bd)); \
             printf("%x in %s on line %d", ptr, __FILE__, __LINE__); \
-        } else if((long)ptr > bd->size) { /* not swizzled */ \
-            apc_error("pointer to be swizzled is not within allowed memory range! (%x < %x < %x) in %s on %d" TSRMLS_CC, (long)bd, ptr, ((long)bd + bd->size), __FILE__, __LINE__); \
+        } else if((ptrdiff_t)ptr > bd->size) { /* not swizzled */ \
+            apc_error("pointer to be swizzled is not within allowed memory range! (%x < %x < %x) in %s on %d" TSRMLS_CC, (ptrdiff_t)bd, ptr, ((size_t)bd + bd->size), __FILE__, __LINE__); \
             return; \
         } \
         printf("\n"); \
@@ -57,7 +57,7 @@ extern zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRML
 #define UNSWIZZLE(bd, ptr)  \
     do { \
       printf("UNSWIZZLE: %x -> ", ptr); \
-      ptr = (void*)((long)(ptr) + (long)(bd)); \
+      ptr = (void*)((ptrdiff_t)(ptr) + (ptrdiff_t)(bd)); \
       printf("%x in %s on line %d \n", ptr, __FILE__, __LINE__); \
     } while(0);
 
@@ -65,17 +65,17 @@ extern zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRML
 
 #define SWIZZLE(bd, ptr) \
     do { \
-        if((long)bd < (long)ptr && (ulong)ptr < ((long)bd + bd->size)) { \
-            ptr = (void*)((long)(ptr) - (long)(bd)); \
-        } else if((ulong)ptr > bd->size) { /* not swizzled */ \
-            apc_error("pointer to be swizzled is not within allowed memory range! (%x < %x < %x) in %s on %d" TSRMLS_CC, (long)bd, ptr, ((long)bd + bd->size), __FILE__, __LINE__); \
+        if((ptrdiff_t)bd < (ptrdiff_t)ptr && (size_t)ptr < ((size_t)bd + bd->size)) { \
+            ptr = (void*)((ptrdiff_t)(ptr) - (ptrdiff_t)(bd)); \
+        } else if((size_t)ptr > bd->size) { /* not swizzled */ \
+            apc_error("pointer to be swizzled is not within allowed memory range! (%x < %x < %x) in %s on %d" TSRMLS_CC, (ptrdiff_t)bd, ptr, ((size_t)bd + bd->size), __FILE__, __LINE__); \
             return NULL; \
         } \
     } while(0);
 
 #define UNSWIZZLE(bd, ptr) \
     do { \
-      ptr = (void*)((long)(ptr) + (long)(bd)); \
+      ptr = (void*)((ptrdiff_t)(ptr) + (ptrdiff_t)(bd)); \
     } while(0);
 
 #endif
@@ -148,14 +148,14 @@ static void *apc_bd_alloc_ex(void *ptr_new, size_t size TSRMLS_DC) {
 /* {{{ _apc_swizzle_ptr */
 static void _apc_swizzle_ptr(apc_bd_t *bd, apc_context_t* ctxt, zend_llist *ll, void **ptr, const char* file, int line TSRMLS_DC) {
     if(*ptr) {
-        if((long)bd < (long)*ptr && (ulong)*ptr < ((long)bd + bd->size)) {
+        if((ptrdiff_t)bd < (ptrdiff_t)*ptr && (size_t)*ptr < ((size_t)bd + bd->size)) {
             zend_llist_add_element(ll, &ptr);
 #if APC_BINDUMP_DEBUG
             printf("[%06d] apc_swizzle_ptr: %x -> %x ", zend_llist_count(ll), ptr, *ptr);
             printf(" in %s on line %d \n", file, line);
 #endif
-        } else if((ulong)ptr > bd->size) {
-            apc_error("pointer to be swizzled is not within allowed memory range! (%x < %x < %x) in %s on %d" TSRMLS_CC, (long)bd, *ptr, ((long)bd + bd->size), file, line); \
+        } else if((size_t)ptr > bd->size) {
+            apc_error("pointer to be swizzled is not within allowed memory range! (%x < %x < %x) in %s on %d" TSRMLS_CC, (ptrdiff_t)bd, *ptr, ((ptrdiff_t)bd + bd->size), file, line); \
             return;
         }
     }
@@ -264,7 +264,7 @@ static apc_bd_t* apc_swizzle_bd(apc_bd_t* bd, zend_llist *ll TSRMLS_DC) {
         printf("[%06d] ", i+1);
 #endif
         SWIZZLE(bd, **ptr); /* swizzle ptr */
-        if((long)bd < (long)*ptr && (ulong)*ptr < ((long)bd + bd->size)) {  /* exclude ptrs that aren't actually included in the ptr list */
+        if((ptrdiff_t)bd < (ptrdiff_t)*ptr && (size_t)*ptr < ((size_t)bd + bd->size)) {  /* exclude ptrs that aren't actually included in the ptr list */
 #if APC_BINDUMP_DEBUG
             printf("[------] ");
 #endif
@@ -420,7 +420,7 @@ PHP_APCU_API apc_bd_t* apc_bin_dump(apc_cache_t* cache, HashTable *user_vars TSR
     }
 
     ctxt.copy = APC_COPY_OTHER; /* avoid stupid ALLOC_ZVAL calls here, hack */
-    apc_bd_alloc_ex((void*)((long)bd + sizeof(apc_bd_t)), bd->size - sizeof(apc_bd_t) -1 TSRMLS_CC);
+    apc_bd_alloc_ex((void*)((size_t)bd + sizeof(apc_bd_t)), bd->size - sizeof(apc_bd_t) -1 TSRMLS_CC);
     bd->num_entries = count;
     bd->entries = apc_bd_alloc_ex(NULL, sizeof(apc_bd_entry_t) * count TSRMLS_CC);
 
