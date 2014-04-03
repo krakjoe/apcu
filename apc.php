@@ -1049,7 +1049,7 @@ EOB;
         echo '</tr>';
 		if ($sh == $MYREQUEST["SH"]) {
 			echo '<tr>';
-			echo '<td colspan="7"><pre>'.print_r(apcu_fetch($entry['key']), 1).'</pre></td>';
+			echo '<td colspan="7"><pre>'.htmlentities(print_r(apcu_fetch($entry['key']), 1)).'</pre></td>';
 			echo '</tr>';
 		}
         $i++;
