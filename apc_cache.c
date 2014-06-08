@@ -1001,9 +1001,8 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, zend_u
         if ((h == (*slot)->key.h) &&
             !memcmp((*slot)->key.str, strkey, keylen)) {
 			/* attempt to perform update */
-            switch(Z_TYPE_P((*slot)->value->val) & ~IS_CONSTANT_INDEX) {
+            switch(Z_TYPE_P((*slot)->value->val) & ~IS_CONSTANT_TYPE_MASK) {
                 case IS_ARRAY:
-                case IS_CONSTANT_ARRAY:
                 case IS_OBJECT:
                 {
                     if(cache->serializer) {
@@ -1124,7 +1123,7 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
     }
 
     if(serialize((unsigned char**)&buf.c, &buf.len, src, config TSRMLS_CC)) {
-        dst->type = src->type & ~IS_CONSTANT_INDEX; 
+        dst->type = src->type & ~IS_CONSTANT; 
         dst->value.str.len = buf.len;
         CHECK(dst->value.str.val = apc_pmemcpy(buf.c, (buf.len + 1), pool TSRMLS_CC));
     }
@@ -1357,7 +1356,6 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
         break;
 
     case IS_ARRAY:
-    case IS_CONSTANT_ARRAY:
         if(ctxt->serializer == NULL) {
 
             CHECK(dst->value.ht =

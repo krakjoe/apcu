@@ -235,7 +235,6 @@ static void apc_swizzle_zval(apc_bd_t *bd, apc_context_t* ctxt, zend_llist *ll, 
             apc_swizzle_ptr(bd, ctxt, ll, &zv->value.str.val);
             break;
         case IS_ARRAY:
-        case IS_CONSTANT_ARRAY:
             apc_swizzle_hashtable(bd, ctxt, ll, zv->value.ht, (apc_swizzle_cb_t)apc_swizzle_zval, 1 TSRMLS_CC);
             apc_swizzle_ptr(bd, ctxt, ll, &zv->value.ht);
             break;
