@@ -34,6 +34,12 @@
 
 #include "ext/standard/md5.h"
 
+#ifdef HAVE_PTRDIFF_T
+#include <stddef.h>
+#else
+typedef long ptrdiff_t;
+#endif
+
 /* in apc_cache.c */
 extern zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC);
 
