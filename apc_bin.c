@@ -34,9 +34,7 @@
 
 #include "ext/standard/md5.h"
 
-#ifdef HAVE_PTRDIFF_T
-#include <stddef.h>
-#else
+#if !defined(HAVE_PTRDIFF_T) && !defined(_PTRDIFF_T_DEFINED)
 typedef long ptrdiff_t;
 #endif
 
