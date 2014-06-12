@@ -1,0 +1,13 @@
+language: php
+
+php:
+    - 5.3
+    - 5.4
+    - 5.5
+    - 5.6
+
+script:
+    - phpize
+    - ./configure
+    - make
+    - SHOW_ONLY_GROUPS="FAIL,XFAIL,BORK,WARN,LEAK,SKIP" NO_INTERACTION=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -p `phpenv which php` --show-diff --set-timeout 120
