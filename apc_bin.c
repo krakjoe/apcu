@@ -34,10 +34,6 @@
 
 #include "ext/standard/md5.h"
 
-#if !defined(HAVE_PTRDIFF_T) && !defined(_PTRDIFF_T_DEFINED)
-typedef long ptrdiff_t;
-#endif
-
 /* in apc_cache.c */
 extern zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC);
 
