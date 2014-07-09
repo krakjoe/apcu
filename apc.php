@@ -913,7 +913,7 @@ case OB_USER_CACHE:
 		echo '</div>';
 		break;
 	}
-	$fieldname='key';
+	$fieldname='info';
 	$fieldheading='User Entry Label';
 	$fieldkey='key';
 
