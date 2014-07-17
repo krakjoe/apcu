@@ -988,6 +988,11 @@ EOB;
 	$list = array();
 
 	foreach($cache[$scope_list[$MYREQUEST['SCOPE']]] as $i => $entry) {
+		$entry['info']=$entry['info']?:$entry['key'];
+		$entry['access_time']=$entry['access_time']?:$entry['atime'];
+		$entry['deletion_time']=$entry['deletion_time']?:$entry['dtime'];
+		$entry['creation_time']=$entry['creation_time']?:$entry['ctime'];
+		$entry['num_hits']=$entry['num_hits']?:$entry['nhits'];		
 		switch($MYREQUEST['SORT1']) {
 			case 'A': $k=sprintf('%015d-',$entry['access_time']);  	    break;
 			case 'H': $k=sprintf('%015d-',$entry['num_hits']); 		    break;
