@@ -989,20 +989,20 @@ EOB;
 
 	foreach($cache[$scope_list[$MYREQUEST['SCOPE']]] as $i => $entry) {
 		switch($MYREQUEST['SORT1']) {
-			case 'A': $k=sprintf('%015d-',$entry['access_time']);  	    break;
+			case 'A': $k=sprintf('%015d-',$entry['atime']);  	    break;
 			case 'H': $k=sprintf('%015d-',$entry['nhits']); 		    break;
 			case 'Z': $k=sprintf('%015d-',$entry['mem_size']); 		    break;
 			case 'M': $k=sprintf('%015d-',$entry['mtime']);			    break;
-			case 'C': $k=sprintf('%015d-',$entry['creation_time']);     break;
+			case 'C': $k=sprintf('%015d-',$entry['ctime']);     break;
 			case 'T': $k=sprintf('%015d-',$entry['ttl']);			    break;
-			case 'D': $k=sprintf('%015d-',$entry['deletion_time']);     break;
+			case 'D': $k=sprintf('%015d-',$entry['dtime']);     break;
 			case 'S': $k=$entry["info"];								break;
 		}
 		if (!$AUTHENTICATED) {
 			// hide all path entries if not logged in
-			$list[$k.$entry[$fieldname]]=preg_replace('/^.*(\\/|\\\\)/','*hidden*/',$entry);
+			$list[$k.$entry[$fieldkey]]=preg_replace('/^.*(\\/|\\\\)/','*hidden*/',$entry);
 		} else {
-			$list[$k.$entry[$fieldname]]=$entry;
+			$list[$k.$entry[$fieldkey]]=$entry;
 		}
 	}
 
@@ -1017,17 +1017,17 @@ EOB;
 		// output list
 		$i=0;
 		foreach($list as $k => $entry) {
-      if(!$MYREQUEST['SEARCH'] || preg_match($MYREQUEST['SEARCH'], $entry[$fieldname]) != 0) {
-		$sh=md5($entry["info"]);
-        $field_value = htmlentities(strip_tags($entry[$fieldname],''), ENT_QUOTES, 'UTF-8');
+      if(!$MYREQUEST['SEARCH'] || preg_match($MYREQUEST['SEARCH'], $entry[$fieldkey]) != 0) {
+		$sh=md5($entry[$fieldkey]);
+        $field_value = htmlentities(strip_tags($entry[$fieldkey],''), ENT_QUOTES, 'UTF-8');
         echo
           '<tr class=tr-',$i%2,'>',
           "<td class=td-0><a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],"&SH=",$sh,"\">",$field_value,'</a></td>',
           '<td class="td-n center">',$entry['nhits'],'</td>',
           '<td class="td-n right">',$entry['mem_size'],'</td>',
-          '<td class="td-n center">',date(DATE_FORMAT,$entry['access_time']),'</td>',
+          '<td class="td-n center">',date(DATE_FORMAT,$entry['atime']),'</td>',
           '<td class="td-n center">',date(DATE_FORMAT,$entry['mtime']),'</td>',
-          '<td class="td-n center">',date(DATE_FORMAT,$entry['creation_time']),'</td>';
+          '<td class="td-n center">',date(DATE_FORMAT,$entry['ctime']),'</td>';
 
         if($fieldname=='info') {
           if($entry['ttl'])
@@ -1035,9 +1035,9 @@ EOB;
           else
             echo '<td class="td-n center">None</td>';
         }
-        if ($entry['deletion_time']) {
+        if ($entry['dtime']) {
 
-          echo '<td class="td-last center">', date(DATE_FORMAT,$entry['deletion_time']), '</td>';
+          echo '<td class="td-last center">', date(DATE_FORMAT,$entry['dtime']), '</td>';
         } else if ($MYREQUEST['OB'] == OB_USER_CACHE) {
 
           echo '<td class="td-last center">';
@@ -1049,7 +1049,7 @@ EOB;
         echo '</tr>';
 		if ($sh == $MYREQUEST["SH"]) {
 			echo '<tr>';
-			echo '<td colspan="7"><pre>'.htmlentities(print_r(apcu_fetch($entry['info']), 1)).'</pre></td>';
+			echo '<td colspan="7"><pre>'.htmlentities(print_r(apcu_fetch($entry[$fieldkey]), 1)).'</pre></td>';
 			echo '</tr>';
 		}
         $i++;
