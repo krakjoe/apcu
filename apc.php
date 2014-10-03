@@ -375,11 +375,11 @@ if (isset($MYREQUEST['IMG']))
 		break;
 
 	case 2:
-		$s=$cache['num_hits']+$cache['num_misses'];
-		$a=$cache['num_hits'];
+		$s=$cache['nhits']+$cache['nmisses'];
+		$a=$cache['nhits'];
 
-		fill_box($image, 30,$size,50,$s ? (-$a*($size-21)/$s) : 0,$col_black,$col_green,sprintf("%.1f%%",$s ? $cache['num_hits']*100/$s : 0));
-		fill_box($image,130,$size,50,$s ? -max(4,($s-$a)*($size-21)/$s) : 0,$col_black,$col_red,sprintf("%.1f%%",$s ? $cache['num_misses']*100/$s : 0));
+		fill_box($image, 30,$size,50,$s ? (-$a*($size-21)/$s) : 0,$col_black,$col_green,sprintf("%.1f%%",$s ? $cache['nhits']*100/$s : 0));
+		fill_box($image,130,$size,50,$s ? -max(4,($s-$a)*($size-21)/$s) : 0,$col_black,$col_red,sprintf("%.1f%%",$s ? $cache['nmisses']*100/$s : 0));
 		break;
 
 	case 3:
@@ -424,11 +424,11 @@ if (isset($MYREQUEST['IMG']))
 		break;
 
 		case 4:
-			$s=$cache['num_hits']+$cache['num_misses'];
-			$a=$cache['num_hits'];
+			$s=$cache['nhits']+$cache['nmisses'];
+			$a=$cache['nhits'];
 
-			fill_box($image, 30,$size,50,$s ? -$a*($size-21)/$s : 0,$col_black,$col_green,sprintf("%.1f%%", $s ? $cache['num_hits']*100/$s : 0));
-			fill_box($image,130,$size,50,$s ? -max(4,($s-$a)*($size-21)/$s) : 0,$col_black,$col_red,sprintf("%.1f%%", $s ? $cache['num_misses']*100/$s : 0));
+			fill_box($image, 30,$size,50,$s ? -$a*($size-21)/$s : 0,$col_black,$col_green,sprintf("%.1f%%", $s ? $cache['nhits']*100/$s : 0));
+			fill_box($image,130,$size,50,$s ? -max(4,($s-$a)*($size-21)/$s) : 0,$col_black,$col_red,sprintf("%.1f%%", $s ? $cache['nmisses']*100/$s : 0));
 		break;
 	}
 
@@ -753,13 +753,13 @@ case OB_HOST_STATS:
 	$mem_avail= $mem['avail_mem'];
 	$mem_used = $mem_size-$mem_avail;
 	$seg_size = bsize($mem['seg_size']);
-	$req_rate_user = sprintf("%.2f", $cache['num_hits'] ? (($cache['num_hits']+$cache['num_misses'])/($time-$cache['start_time'])) : 0);
-	$hit_rate_user = sprintf("%.2f", $cache['num_hits'] ? (($cache['num_hits'])/($time-$cache['start_time'])) : 0);
-	$miss_rate_user = sprintf("%.2f", $cache['num_misses'] ? (($cache['num_misses'])/($time-$cache['start_time'])) : 0);
-	$insert_rate_user = sprintf("%.2f", $cache['num_inserts'] ? (($cache['num_inserts'])/($time-$cache['start_time'])) : 0);
+	$req_rate_user = sprintf("%.2f", $cache['nhits'] ? (($cache['nhits']+$cache['nmisses'])/($time-$cache['stime'])) : 0);
+	$hit_rate_user = sprintf("%.2f", $cache['nhits'] ? (($cache['nhits'])/($time-$cache['stime'])) : 0);
+	$miss_rate_user = sprintf("%.2f", $cache['nmisses'] ? (($cache['nmisses'])/($time-$cache['stime'])) : 0);
+	$insert_rate_user = sprintf("%.2f", $cache['ninserts'] ? (($cache['ninserts'])/($time-$cache['stime'])) : 0);
 	$apcversion = phpversion('apcu');
 	$phpversion = phpversion();
-	$number_vars = $cache['num_entries'];
+	$number_vars = $cache['nentries'];
     $size_vars = bsize($cache['mem_size']);
 	$i=0;
 	echo <<< EOB
@@ -779,8 +779,8 @@ EOB;
     <br/> ({$cache['memory_type']} memory)
     </td></tr>
 EOB;
-	echo   '<tr class=tr-1><td class=td-0>Start Time</td><td>',date(DATE_FORMAT,$cache['start_time']),'</td></tr>';
-	echo   '<tr class=tr-0><td class=td-0>Uptime</td><td>',duration($cache['start_time']),'</td></tr>';
+	echo   '<tr class=tr-1><td class=td-0>Start Time</td><td>',date(DATE_FORMAT,$cache['stime']),'</td></tr>';
+	echo   '<tr class=tr-0><td class=td-0>Uptime</td><td>',duration($cache['stime']),'</td></tr>';
 	echo   '<tr class=tr-1><td class=td-0>File Upload Support</td><td>',$cache['file_upload_progress'],'</td></tr>';
 	echo <<<EOB
 		</tbody></table>
@@ -790,13 +790,13 @@ EOB;
 		<table cellspacing=0>
 		<tbody>
     		<tr class=tr-0><td class=td-0>Cached Variables</td><td>$number_vars ($size_vars)</td></tr>
-			<tr class=tr-1><td class=td-0>Hits</td><td>{$cache['num_hits']}</td></tr>
-			<tr class=tr-0><td class=td-0>Misses</td><td>{$cache['num_misses']}</td></tr>
+			<tr class=tr-1><td class=td-0>Hits</td><td>{$cache['nhits']}</td></tr>
+			<tr class=tr-0><td class=td-0>Misses</td><td>{$cache['nmisses']}</td></tr>
 			<tr class=tr-1><td class=td-0>Request Rate (hits, misses)</td><td>$req_rate_user cache requests/second</td></tr>
 			<tr class=tr-0><td class=td-0>Hit Rate</td><td>$hit_rate_user cache requests/second</td></tr>
 			<tr class=tr-1><td class=td-0>Miss Rate</td><td>$miss_rate_user cache requests/second</td></tr>
 			<tr class=tr-0><td class=td-0>Insert Rate</td><td>$insert_rate_user cache requests/second</td></tr>
-			<tr class=tr-1><td class=td-0>Cache full count</td><td>{$cache['num_expunges']}</td></tr>
+			<tr class=tr-1><td class=td-0>Cache full count</td><td>{$cache['nexpunges']}</td></tr>
 		</tbody>
 		</table>
 		</div>
@@ -838,11 +838,11 @@ EOB;
 			: "",
 		'<tr>',
 		'<td class=td-0><span class="green box">&nbsp;</span>Free: ',bsize($mem_avail).sprintf(" (%.1f%%)",$mem_avail*100/$mem_size),"</td>\n",
-		'<td class=td-1><span class="green box">&nbsp;</span>Hits: ',$cache['num_hits'].@sprintf(" (%.1f%%)",$cache['num_hits']*100/($cache['num_hits']+$cache['num_misses'])),"</td>\n",
+		'<td class=td-1><span class="green box">&nbsp;</span>Hits: ',$cache['nhits'].@sprintf(" (%.1f%%)",$cache['nhits']*100/($cache['nhits']+$cache['nmisses'])),"</td>\n",
 		'</tr>',
 		'<tr>',
 		'<td class=td-0><span class="red box">&nbsp;</span>Used: ',bsize($mem_used).sprintf(" (%.1f%%)",$mem_used *100/$mem_size),"</td>\n",
-		'<td class=td-1><span class="red box">&nbsp;</span>Misses: ',$cache['num_misses'].@sprintf(" (%.1f%%)",$cache['num_misses']*100/($cache['num_hits']+$cache['num_misses'])),"</td>\n";
+		'<td class=td-1><span class="red box">&nbsp;</span>Misses: ',$cache['nmisses'].@sprintf(" (%.1f%%)",$cache['nmisses']*100/($cache['nhits']+$cache['nmisses'])),"</td>\n";
 	echo <<< EOB
 		</tr>
 		</tbody></table>
@@ -994,20 +994,20 @@ EOB;
 		$entry['creation_time']=$entry['creation_time']?:$entry['ctime'];
 		$entry['num_hits']=$entry['num_hits']?:$entry['nhits'];		
 		switch($MYREQUEST['SORT1']) {
-			case 'A': $k=sprintf('%015d-',$entry['access_time']);  	    break;
-			case 'H': $k=sprintf('%015d-',$entry['num_hits']); 		    break;
+			case 'A': $k=sprintf('%015d-',$entry['atime']);  	    break;
+			case 'H': $k=sprintf('%015d-',$entry['nhits']); 		    break;
 			case 'Z': $k=sprintf('%015d-',$entry['mem_size']); 		    break;
 			case 'M': $k=sprintf('%015d-',$entry['mtime']);			    break;
-			case 'C': $k=sprintf('%015d-',$entry['creation_time']);     break;
+			case 'C': $k=sprintf('%015d-',$entry['ctime']);     break;
 			case 'T': $k=sprintf('%015d-',$entry['ttl']);			    break;
-			case 'D': $k=sprintf('%015d-',$entry['deletion_time']);     break;
+			case 'D': $k=sprintf('%015d-',$entry['dtime']);     break;
 			case 'S': $k=$entry["info"];								break;
 		}
 		if (!$AUTHENTICATED) {
 			// hide all path entries if not logged in
-			$list[$k.$entry[$fieldname]]=preg_replace('/^.*(\\/|\\\\)/','*hidden*/',$entry);
+			$list[$k.$entry[$fieldkey]]=preg_replace('/^.*(\\/|\\\\)/','*hidden*/',$entry);
 		} else {
-			$list[$k.$entry[$fieldname]]=$entry;
+			$list[$k.$entry[$fieldkey]]=$entry;
 		}
 	}
 
@@ -1022,17 +1022,17 @@ EOB;
 		// output list
 		$i=0;
 		foreach($list as $k => $entry) {
-      if(!$MYREQUEST['SEARCH'] || preg_match($MYREQUEST['SEARCH'], $entry[$fieldname]) != 0) {
-		$sh=md5($entry["info"]);
-        $field_value = htmlentities(strip_tags($entry[$fieldname],''), ENT_QUOTES, 'UTF-8');
+      if(!$MYREQUEST['SEARCH'] || preg_match($MYREQUEST['SEARCH'], $entry[$fieldkey]) != 0) {
+		$sh=md5($entry[$fieldkey]);
+        $field_value = htmlentities(strip_tags($entry[$fieldkey],''), ENT_QUOTES, 'UTF-8');
         echo
           '<tr class=tr-',$i%2,'>',
           "<td class=td-0><a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],"&SH=",$sh,"\">",$field_value,'</a></td>',
-          '<td class="td-n center">',$entry['num_hits'],'</td>',
+          '<td class="td-n center">',$entry['nhits'],'</td>',
           '<td class="td-n right">',$entry['mem_size'],'</td>',
-          '<td class="td-n center">',date(DATE_FORMAT,$entry['access_time']),'</td>',
+          '<td class="td-n center">',date(DATE_FORMAT,$entry['atime']),'</td>',
           '<td class="td-n center">',date(DATE_FORMAT,$entry['mtime']),'</td>',
-          '<td class="td-n center">',date(DATE_FORMAT,$entry['creation_time']),'</td>';
+          '<td class="td-n center">',date(DATE_FORMAT,$entry['ctime']),'</td>';
 
         if($fieldname=='info') {
           if($entry['ttl'])
@@ -1040,9 +1040,9 @@ EOB;
           else
             echo '<td class="td-n center">None</td>';
         }
-        if ($entry['deletion_time']) {
+        if ($entry['dtime']) {
 
-          echo '<td class="td-last center">', date(DATE_FORMAT,$entry['deletion_time']), '</td>';
+          echo '<td class="td-last center">', date(DATE_FORMAT,$entry['dtime']), '</td>';
         } else if ($MYREQUEST['OB'] == OB_USER_CACHE) {
 
           echo '<td class="td-last center">';
@@ -1054,7 +1054,7 @@ EOB;
         echo '</tr>';
 		if ($sh == $MYREQUEST["SH"]) {
 			echo '<tr>';
-			echo '<td colspan="7"><pre>'.htmlentities(print_r(apcu_fetch($entry['info']), 1)).'</pre></td>';
+			echo '<td colspan="7"><pre>'.htmlentities(print_r(apcu_fetch($entry[$fieldkey]), 1)).'</pre></td>';
 			echo '</tr>';
 		}
         $i++;
