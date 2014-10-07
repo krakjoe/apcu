@@ -375,6 +375,8 @@ if (isset($MYREQUEST['IMG']))
 		break;
 
 	case 2:
+		$cache['num_hits']=isset($cache['num_hits']) ? $cache['num_hits'] : $cache['nhits'];
+		$cache['num_misses']=isset($cache['num_misses']) ? $cache['num_misses'] : $cache['nmisses'];
 		$s=$cache['num_hits']+$cache['num_misses'];
 		$a=$cache['num_hits'];
 
@@ -749,6 +751,12 @@ switch ($MYREQUEST['OB']) {
 // Host Stats
 // -----------------------------------------------
 case OB_HOST_STATS:
+	$cache['num_hits']=isset($cache['num_hits']) ? $cache['num_hits'] : $cache['nhits'];
+	$cache['num_misses']=isset($cache['num_misses']) ? $cache['num_misses'] : $cache['nmisses'];
+	$cache['start_time']=isset($cache['start_time']) ? $cache['start_time'] : $cache['stime'];
+	$cache['num_inserts']=isset($cache['num_inserts']) ? $cache['num_inserts'] : $cache['ninserts'];
+	$cache['num_entries']=isset($cache['num_entries']) ? $cache['num_entries'] : $cache['nentries'];
+	$cache['num_expunges']=isset($cache['num_expunges']) ? $cache['num_expunges'] : $cache['nexpunges'];
 	$mem_size = $mem['num_seg']*$mem['seg_size'];
 	$mem_avail= $mem['avail_mem'];
 	$mem_used = $mem_size-$mem_avail;
@@ -988,11 +996,11 @@ EOB;
 	$list = array();
 
 	foreach($cache[$scope_list[$MYREQUEST['SCOPE']]] as $i => $entry) {
-		$entry['info']=$entry['info']?:$entry['key'];
-		$entry['access_time']=$entry['access_time']?:$entry['atime'];
-		$entry['deletion_time']=$entry['deletion_time']?:$entry['dtime'];
-		$entry['creation_time']=$entry['creation_time']?:$entry['ctime'];
-		$entry['num_hits']=$entry['num_hits']?:$entry['nhits'];		
+		$entry['info']=isset($entry['info'])? $entry['info']:$entry['key'];
+		$entry['access_time']=isset($entry['access_time'])?$entry['access_time']:$entry['atime'];
+		$entry['deletion_time']=isset($entry['deletion_time'])?$entry['deletion_time']:$entry['dtime'];
+		$entry['creation_time']=isset($entry['creation_time'])?$entry['creation_time']:$entry['ctime'];
+		$entry['num_hits']=isset($entry['num_hits'])?:$entry['nhits'];
 		switch($MYREQUEST['SORT1']) {
 			case 'A': $k=sprintf('%015d-',$entry['access_time']);  	    break;
 			case 'H': $k=sprintf('%015d-',$entry['num_hits']); 		    break;
