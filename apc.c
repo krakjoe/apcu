@@ -332,7 +332,11 @@ unsigned int apc_crc32(const unsigned char* buf, unsigned int len)
 
 /* {{{ apc_flip_hash */
 HashTable* apc_flip_hash(HashTable *hash) {
+#if PHP_VERSION_ID >= 50700
+    zval *entry, *data;
+#else
     zval **entry, *data;
+#endif
     HashTable *new_hash;
     HashPosition pos;
 
@@ -345,6 +349,17 @@ HashTable* apc_flip_hash(HashTable *hash) {
     zend_hash_init(new_hash, hash->nTableSize, NULL, ZVAL_PTR_DTOR, 0);
 
     zend_hash_internal_pointer_reset_ex(hash, &pos);
+#if PHP_VERSION_ID >= 50700
+    while ((entry = zend_hash_get_current_data_ex(hash, &pos)) != NULL) {
+        if(Z_TYPE_P(entry) == IS_STRING) {
+            zend_hash_update(new_hash, Z_STRVAL_P(entry), &data);
+        } else {
+            zend_hash_index_update(new_hash, Z_LVAL_P(entry), &data);
+        }
+        Z_ADDREF_P(data);
+        zend_hash_move_forward_ex(hash, &pos);
+    }
+#else
     while (zend_hash_get_current_data_ex(hash, (void **)&entry, &pos) == SUCCESS) {
         if(Z_TYPE_PP(entry) == IS_STRING) {
             zend_hash_update(new_hash, Z_STRVAL_PP(entry), Z_STRLEN_PP(entry) +1, &data, sizeof(data), NULL);
@@ -354,6 +369,7 @@ HashTable* apc_flip_hash(HashTable *hash) {
         Z_ADDREF_P(data);
         zend_hash_move_forward_ex(hash, &pos);
     }
+#endif
     zval_ptr_dtor(&data);
 
     return new_hash;

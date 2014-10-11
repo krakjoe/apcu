@@ -988,20 +988,15 @@ EOB;
 	$list = array();
 
 	foreach($cache[$scope_list[$MYREQUEST['SCOPE']]] as $i => $entry) {
-		$entry['info']=$entry['info']?:$entry['key'];
-		$entry['access_time']=$entry['access_time']?:$entry['atime'];
-		$entry['deletion_time']=$entry['deletion_time']?:$entry['dtime'];
-		$entry['creation_time']=$entry['creation_time']?:$entry['ctime'];
-		$entry['num_hits']=$entry['num_hits']?:$entry['nhits'];		
 		switch($MYREQUEST['SORT1']) {
-			case 'A': $k=sprintf('%015d-',$entry['access_time']);  	    break;
-			case 'H': $k=sprintf('%015d-',$entry['num_hits']); 		    break;
-			case 'Z': $k=sprintf('%015d-',$entry['mem_size']); 		    break;
-			case 'M': $k=sprintf('%015d-',$entry['mtime']);			    break;
-			case 'C': $k=sprintf('%015d-',$entry['creation_time']);     break;
-			case 'T': $k=sprintf('%015d-',$entry['ttl']);			    break;
-			case 'D': $k=sprintf('%015d-',$entry['deletion_time']);     break;
-			case 'S': $k=$entry["info"];								break;
+			case 'A': $k=sprintf('%015d-',$entry['access_time']);  	     break;
+			case 'H': $k=sprintf('%015d-',$entry['num_hits']); 	     break;
+			case 'Z': $k=sprintf('%015d-',$entry['mem_size']); 	     break;
+			case 'M': $k=sprintf('%015d-',$entry['modification_time']);  break;
+			case 'C': $k=sprintf('%015d-',$entry['creation_time']);      break;
+			case 'T': $k=sprintf('%015d-',$entry['ttl']);		     break;
+			case 'D': $k=sprintf('%015d-',$entry['deletion_time']);      break;
+			case 'S': $k=$entry["info"];				     break;
 		}
 		if (!$AUTHENTICATED) {
 			// hide all path entries if not logged in
@@ -1031,7 +1026,7 @@ EOB;
           '<td class="td-n center">',$entry['num_hits'],'</td>',
           '<td class="td-n right">',$entry['mem_size'],'</td>',
           '<td class="td-n center">',date(DATE_FORMAT,$entry['access_time']),'</td>',
-          '<td class="td-n center">',date(DATE_FORMAT,$entry['mtime']),'</td>',
+          '<td class="td-n center">',date(DATE_FORMAT,$entry['modification_time']),'</td>',
           '<td class="td-n center">',date(DATE_FORMAT,$entry['creation_time']),'</td>';
 
         if($fieldname=='info') {
