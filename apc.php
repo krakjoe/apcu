@@ -1021,8 +1021,8 @@ EOB;
 		$sh=md5($entry["info"]);
         $field_value = htmlentities(strip_tags($entry[$fieldname],''), ENT_QUOTES, 'UTF-8');
         echo
-          '<tr class=tr-',$i%2,'>',
-          "<td class=td-0><a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],"&SH=",$sh,"\">",$field_value,'</a></td>',
+          '<tr id="key-'. $sh .'" class=tr-',$i%2,'>',
+          "<td class=td-0><a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],"&SH=",$sh,"#key-". $sh ."\">",$field_value,'</a></td>',
           '<td class="td-n center">',$entry['num_hits'],'</td>',
           '<td class="td-n right">',$entry['mem_size'],'</td>',
           '<td class="td-n center">',date(DATE_FORMAT,$entry['access_time']),'</td>',
