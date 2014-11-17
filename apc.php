@@ -187,6 +187,21 @@ if(!function_exists('apcu_cache_info')) {
 
 $cache = apcu_cache_info();
 
+function rename_cache_info($cache) {
+    // add compatibility with old and new versions of apc info reported in $cache
+    $names = array( 'num_hits' => 'nhits', 'num_misses' => 'nmisses', 'num_entries' => 'nentries', 'num_expunges' => 'nexpunges', 'num_inserts' => 'ninserts',
+                    'start_time' => 'stime', 'deletion_time' => 'dtime', 'modification_time' => 'mtime', 'creation_time' => 'ctime', 'access_time' => 'atime',
+                    'info' => 'key' );
+    foreach ($names as $old => $new) {
+        if (!isset($cache[$old]) && isset($cache[$new])) { $cache[$old] = $cache[$new]; }
+        foreach ($cache['cache_list'] as &$cacheListItem) {
+            if (!isset($cacheListItem[$old]) && isset($cacheListItem[$new])) $cacheListItem[$old] = $cacheListItem[$new];
+        }
+    }
+    return $cache;
+}
+$cache = rename_cache_info($cache);
+
 $mem=apcu_sma_info();
 
 // don't cache this page
