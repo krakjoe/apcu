@@ -254,7 +254,7 @@ These instructions assume your PHP installation is located in /usr/local/php.
 							cache. Set to zero or omit if you're not sure.
                             (Default: 4096)
 
-    apc.mmap_file_mask      If compiled with MMAP support by using --enable-mmap
+    apc.mmap_file_mask      If compiled with MMAP support by using --enable-apcu-mmap
                             this is the mktemp-style file_mask to pass to the
                             mmap module for determing whether your mmap'ed memory
                             region is going to be file-backed or shared memory
