@@ -224,7 +224,7 @@ static int apc_iterator_check_expiry(apc_cache_t* cache, apc_cache_slot_t **slot
 /* {{{ apc_iterator_fetch_active */
 static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
     int count=0;
-    apc_cache_slot_t **slot;
+    apc_cache_slot_t *slot;
     apc_iterator_item_t *item;
     time_t t;
 
@@ -235,18 +235,18 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
     }
 
     while(count <= iterator->chunk_size && iterator->slot_idx < apc_user_cache->nslots) {
-        slot = &apc_user_cache->slots[iterator->slot_idx];
-        while(*slot) {
-            if (apc_iterator_check_expiry(apc_user_cache, slot, t)) {
-                if (apc_iterator_search_match(iterator, slot)) {
+        slot = apc_user_cache->slots[iterator->slot_idx];
+        while(slot) {
+            if (apc_iterator_check_expiry(apc_user_cache, &slot, t)) {
+                if (apc_iterator_search_match(iterator, &slot)) {
                     count++;
-                    item = apc_iterator_item_ctor(iterator, slot TSRMLS_CC);
+                    item = apc_iterator_item_ctor(iterator, &slot TSRMLS_CC);
                     if (item) {
                         apc_stack_push(iterator->stack, item TSRMLS_CC);
                     }
                 }
             }
-            slot = &(*slot)->next;
+            slot = slot->next;
         }
         iterator->slot_idx++;
     }
@@ -259,25 +259,25 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
 /* {{{ apc_iterator_fetch_deleted */
 static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
     int count=0;
-    apc_cache_slot_t **slot;
+    apc_cache_slot_t *slot;
     apc_iterator_item_t *item;
 
 	APC_RLOCK(apc_user_cache->header);
-    slot = &apc_user_cache->header->gc;
-    while ((*slot) && count <= iterator->slot_idx) {
+    slot = apc_user_cache->header->gc;
+    while (slot && count <= iterator->slot_idx) {
         count++;
-        slot = &(*slot)->next;
+        slot = slot->next;
     }
     count = 0;
-    while ((*slot) && count < iterator->chunk_size) {
-        if (apc_iterator_search_match(iterator, slot)) {
+    while (slot && count < iterator->chunk_size) {
+        if (apc_iterator_search_match(iterator, &slot)) {
             count++;
-            item = apc_iterator_item_ctor(iterator, slot TSRMLS_CC);
+            item = apc_iterator_item_ctor(iterator, &slot TSRMLS_CC);
             if (item) {
                 apc_stack_push(iterator->stack, item TSRMLS_CC);
             }
         }
-        slot = &(*slot)->next;
+        slot = slot->next;
     }
 
     iterator->slot_idx += count;
@@ -290,18 +290,18 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
 
 /* {{{ apc_iterator_totals */
 static void apc_iterator_totals(apc_iterator_t *iterator TSRMLS_DC) {
-    apc_cache_slot_t **slot;
+    apc_cache_slot_t *slot;
     int i;
 
     for (i=0; i < apc_user_cache->nslots; i++) {
-        slot = &apc_user_cache->slots[i];
-        while((*slot)) {
-            if (apc_iterator_search_match(iterator, slot)) {
-                iterator->size += (*slot)->value->mem_size;
-                iterator->hits += (*slot)->nhits;
+        slot = apc_user_cache->slots[i];
+        while(slot) {
+            if (apc_iterator_search_match(iterator, &slot)) {
+                iterator->size += slot->value->mem_size;
+                iterator->hits += slot->nhits;
                 iterator->count++;
             }
-            slot = &(*slot)->next;
+            slot = slot->next;
         }
     }
 
