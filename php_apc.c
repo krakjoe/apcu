@@ -754,36 +754,68 @@ PHP_FUNCTION(apcu_dec) {
 
 /* {{{ php_cas_updater */
 static zend_bool php_cas_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
-    long* vals = ((long*)data);
-    long old = vals[0];
-    long new = vals[1];
+    zval** vals = ((zval**)data);
+    zval* old = vals[0];
+    zval* new = vals[1];
     zval* val = entry->val;
 
-    if (Z_TYPE_P(val) == IS_LONG) {
-        if (Z_LVAL_P(val) == old) {
-            Z_LVAL_P(val) = new;
+    // only scalars are allowed as new values
+    if (Z_TYPE_P(new) != IS_NULL
+        && Z_TYPE_P(new) != IS_BOOL
+        && Z_TYPE_P(new) != IS_LONG
+        && Z_TYPE_P(new) != IS_DOUBLE
+        && Z_TYPE_P(new) != IS_STRING
+    ) {
+        return 0;
+    }
+
+    if (Z_TYPE_P(val) != Z_TYPE_P(old)) {
+        return 0;
+    }
+
+    if (Z_TYPE_P(val) == IS_STRING) {
+        if (Z_STRLEN_P(val) == Z_STRLEN_P(old) && !memcmp(Z_STRVAL_P(val), Z_STRVAL_P(old), Z_STRLEN_P(val))) {
+            ZVAL_COPY_VALUE(val, new);
             return 1;
         }
+    } else if (Z_TYPE_P(val) == IS_LONG) {
+        if (Z_LVAL_P(val) == Z_LVAL_P(old)) {
+            ZVAL_COPY_VALUE(val, new);
+            return 1;
+        }
+    } else if (Z_TYPE_P(val) == IS_DOUBLE) {
+        if (Z_DVAL_P(val) == Z_DVAL_P(old)) {
+            ZVAL_COPY_VALUE(val, new);
+            return 1;
+        }
+    } else if (Z_TYPE_P(val) == IS_BOOL) {
+        if (Z_BVAL_P(val) == Z_BVAL_P(old)) {
+            ZVAL_COPY_VALUE(val, new);
+            return 1;
+        }
+    } else if (Z_TYPE_P(val) == IS_NULL) {
+        ZVAL_COPY_VALUE(val, new);
+        return 1;
     }
 
     return 0;
 }
 /* }}} */
 
-/* {{{ proto int apc_cas(string key, int old, int new)
+/* {{{ proto int apc_cas(string key, mixed old, mixed new)
  */
 PHP_FUNCTION(apcu_cas) {
     char *strkey;
     int strkey_len;
-    long vals[2];
+    zval* vals[2];
 
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sll", &strkey, &strkey_len, &vals[0], &vals[1]) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "szz", &strkey, &strkey_len, &vals[0], &vals[1]) == FAILURE) {
         return;
     }
 
-    if (php_apc_update(strkey, strkey_len, php_cas_updater, &vals TSRMLS_CC)) {
-		RETURN_TRUE;
-	}
+    if (php_apc_update(strkey, strkey_len, php_cas_updater, vals TSRMLS_CC)) {
+        RETURN_TRUE;
+    }
 
     RETURN_FALSE;
 }
