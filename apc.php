@@ -915,7 +915,6 @@ case OB_USER_CACHE:
 	}
 	$fieldname='info';
 	$fieldheading='User Entry Label';
-	$fieldkey='key';
 
 	$cols=6;
 	echo <<<EOB
@@ -1041,7 +1040,7 @@ EOB;
         } else if ($MYREQUEST['OB'] == OB_USER_CACHE) {
 
           echo '<td class="td-last center">';
-          echo '[<a href="', $MY_SELF, '&OB=', $MYREQUEST['OB'], '&DU=', urlencode($entry[$fieldkey]), '">Delete Now</a>]';
+          echo '[<a href="', $MY_SELF, '&OB=', $MYREQUEST['OB'], '&DU=', urlencode($entry[$fieldname]), '">Delete Now</a>]';
           echo '</td>';
         } else {
           echo '<td class="td-last center"> &nbsp; </td>';
