@@ -109,17 +109,14 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 	if ((p = value->pool->palloc(value->pool, sizeof(apc_cache_slot_t) TSRMLS_CC))) {	
 		
 		/* copy identifier */
-		char* strkey = (char*) apc_pmemcpy(
-			key->str, key->len, 
-			value->pool TSRMLS_CC
-		);
+		zend_string *copiedKey = apc_pstrcpy(key->str, value->pool);
 
-		if (strkey) {
+		if (copiedKey) {
 			/* set idenfieir */
-			key->str = strkey;
+			key->str = copiedKey;
 			
 			/* set slot data */
-			p->key = key[0];
+			p->key = *key;
 			p->value = value;
 			
 			/* set slot relation */
@@ -149,11 +146,10 @@ static void free_slot(apc_cache_slot_t* slot TSRMLS_DC)
 /* {{{ apc_cache_hash_slot
  Note: These calculations can and should be done outside of a lock */
 static void apc_cache_hash_slot(apc_cache_t* cache, 
-                                char *str,
-                                int32_t len, 
+                                zend_string *key,
                                 zend_ulong* hash, 
                                 zend_ulong* slot) {
-	(*hash) = zend_inline_hash_func(str, len);
+	(*hash) = ZSTR_HASH(key);
 	(*slot) = (*hash) % (cache->nslots);
 } /* }}} */
 
@@ -321,7 +317,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 } /* }}} */
 
 /* {{{ apc_cache_store */
-PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int32_t keylen, const zval *val, const int32_t ttl, const zend_bool exclusive TSRMLS_DC) {
+PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, zend_string *strkey, const zval *val, const int32_t ttl, const zend_bool exclusive TSRMLS_DC) {
     apc_cache_entry_t *entry;
     apc_cache_key_t key;
     time_t t;
@@ -334,7 +330,7 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, char *strkey, int32_t
     if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0 TSRMLS_CC)) {
 
         /* initialize the key for insertion */
-        if (apc_cache_make_key(&key, strkey, keylen TSRMLS_CC)) {
+        if (apc_cache_make_key(&key, strkey TSRMLS_CC)) {
 
             /* run cache defense */
             if (!apc_cache_defense(cache, &key TSRMLS_CC)) {
@@ -416,7 +412,7 @@ static int apc_load_data(apc_cache_t* cache, const char *data_file TSRMLS_DC)
     unsigned int key_len;
     zval data;
 
-    p = strrchr(data_file, DEFAULT_SLASH);
+    /*p = strrchr(data_file, DEFAULT_SLASH);
 
     if(p && p[1]) {
         strlcpy(key, p+1, sizeof(key));
@@ -432,7 +428,7 @@ static int apc_load_data(apc_cache_t* cache, const char *data_file TSRMLS_DC)
             }
             return 1;
         }
-    }
+    }*/
 
     return 0;
 }
@@ -756,12 +752,12 @@ PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache,
 		/*
 		* select appropriate slot ...
 		*/
-		slot = &cache->slots[key.h % cache->nslots];
+		slot = &cache->slots[ZSTR_HASH(key.str) % cache->nslots];
 
 		while (*slot) {
 			
 			/* check for a match by hash and string */
-		    if (((*slot)->key.h == key.h) && (!memcmp((*slot)->key.str, key.str, key.len))) {
+		    if ((ZSTR_HASH((*slot)->key.str) == ZSTR_HASH(key.str)) && (!memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key.str), ZSTR_LEN(key.str)))) {
 
 		        /* 
 		         * At this point we have found the user cache entry.  If we are doing 
@@ -821,7 +817,7 @@ nothing:
 /* }}} */
 
 /* {{{ apc_cache_find */
-PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey, int32_t keylen, time_t t TSRMLS_DC)
+PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *key, time_t t TSRMLS_DC)
 {
 	/* check we are able to deal with the request */
     if(!cache || apc_cache_busy(cache TSRMLS_CC)) {
@@ -836,7 +832,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey,
         volatile apc_cache_entry_t* value = NULL;
         
 		/* calculate hash and slot */
-		apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
+		apc_cache_hash_slot(cache, key, &h, &s);
 
         /* read lock header */
 		APC_RLOCK(cache->header);
@@ -846,7 +842,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey,
 
 		while (*slot) {
 			/* check for a matching key by has and identifier */
-		    if ((h == (*slot)->key.h) && !memcmp((*slot)->key.str, strkey, keylen)) {
+		    if ((h == ZSTR_HASH((*slot)->key.str)) && !memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key))) {
 
 		        /* Check to make sure this entry isn't expired by a hard TTL */
 		        if((*slot)->value->ttl && (time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
@@ -892,13 +888,13 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey,
 /* }}} */
 
 /* {{{ apc_cache_fetch */
-PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, int32_t keylen, time_t t, zval **dst TSRMLS_DC) 
+PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval **dst TSRMLS_DC) 
 {
 	apc_cache_entry_t *entry;
 	zend_bool ret = 0;
 	
 	/* find the entry */
-	if ((entry = apc_cache_find(cache, strkey, keylen, t TSRMLS_CC))) {
+	if ((entry = apc_cache_find(cache, key, t TSRMLS_CC))) {
         /* context for copying out */
 		apc_context_t ctxt = {0, };
 
@@ -924,7 +920,7 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, char* strkey, int32_t
 } /* }}} */
 
 /* {{{ apc_cache_exists */
-PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strkey, int32_t keylen, time_t t TSRMLS_DC)
+PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, zend_string *key, time_t t TSRMLS_DC)
 {
     if(apc_cache_busy(cache TSRMLS_CC))
     {
@@ -940,7 +936,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strke
 		zend_ulong h, s;
 
         /* get hash and slot */
-		apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
+		apc_cache_hash_slot(cache, key, &h, &s);
 
         /* read lock header */
 		APC_RLOCK(cache->header);	
@@ -950,8 +946,8 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strke
 
 		while (*slot) {
 			/* check for match by hash and identifier */
-		    if ((h == (*slot)->key.h) &&
-		        !memcmp((*slot)->key.str, strkey, keylen)) {
+		    if ((h == ZSTR_HASH((*slot)->key.str)) &&
+		        !memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key))) {
 
 		        /* Check to make sure this entry isn't expired by a hard TTL */
 		        if((*slot)->value->ttl && (time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
@@ -985,7 +981,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strke
 /* }}} */
 
 /* {{{ apc_cache_update */
-PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int32_t keylen, apc_cache_updater_t updater, void* data TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, apc_cache_updater_t updater, void* data TSRMLS_DC)
 {
     apc_cache_slot_t** slot;
 	
@@ -999,7 +995,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int32_
     }
 
     /* calculate hash */
-    apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
+    apc_cache_hash_slot(cache, key, &h, &s);
 	
 	/* lock header */
 	APC_LOCK(cache->header);
@@ -1009,8 +1005,8 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int32_
 
     while (*slot) {
 		/* check for a match by hash and identifier */
-        if ((h == (*slot)->key.h) &&
-            !memcmp((*slot)->key.str, strkey, keylen)) {
+        if ((h == ZSTR_HASH((*slot)->key.str)) &&
+            !memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key))) {
 			/* attempt to perform update */
             switch(Z_TYPE((*slot)->value->val)) {
                 case IS_ARRAY:
@@ -1051,7 +1047,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, int32_
 /* }}} */
 
 /* {{{ apc_cache_delete */
-PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, int32_t keylen TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache, zend_string *key TSRMLS_DC)
 {
     apc_cache_slot_t** slot;
 	
@@ -1062,18 +1058,18 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache, char *strkey, int32_
 	}
 
     /* calculate hash and slot */
-    apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
+    apc_cache_hash_slot(cache, key, &h, &s);
 
 	/* lock cache */
-	APC_LOCK(cache->header);	
+	APC_LOCK(cache->header);
 	
 	/* find head */
     slot = &cache->slots[s];
 
     while (*slot) {
 		/* check for a match by hash and identifier */
-        if ((h == (*slot)->key.h) && 
-            !memcmp((*slot)->key.str, strkey, keylen)) {
+        if ((h == ZSTR_HASH((*slot)->key.str)) && 
+            !memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key))) {
 			/* executing removal */
             apc_cache_remove_slot(
 				cache, slot TSRMLS_CC);
@@ -1098,20 +1094,15 @@ deleted:
 /* }}} */
 
 /* {{{ apc_cache_make_key */
-PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, char* str, zend_ulong len TSRMLS_DC)
+PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, zend_string *str TSRMLS_DC)
 {
     assert(key != NULL);
 
     if (!str) {
 	    return 0;
     }
-    
-	if (!len)
-	    len = strlen(str) + 1;
 	
     key->str = str;
-    key->len = len;
-    key->h = zend_inline_hash_func((char *)key->str, key->len);
     key->mtime = apc_time();
 
     return 1;
@@ -1482,7 +1473,7 @@ static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_slot_t* p TSRMLS_D
 
     array_init(&link);
 
-    add_assoc_stringl(&link, "info", (char*) p->key.str, p->key.len-1);
+    add_assoc_str(&link, "info", p->key.str);
     add_assoc_long(&link, "ttl", (long)p->value->ttl);
 
     add_assoc_double(&link, "num_hits", (double)p->nhits);
@@ -1574,18 +1565,12 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_DC
 /*
  fetches information about the key provided
 */
-PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
-                                  char *strkey,
-                                  int32_t keylen TSRMLS_DC) {
-    zval *stat;
+PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *stat TSRMLS_DC) {
     apc_cache_slot_t** slot;
 	zend_ulong h, s;
     
 	/* calculate hash and slot */
-	apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
-	
-	/* allocate stat buffer */
-	ALLOC_INIT_ZVAL(stat);
+	apc_cache_hash_slot(cache, key, &h, &s);
 
     /* read lock header */
 	APC_RLOCK(cache->header);
@@ -1595,7 +1580,7 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
 
 	while (*slot) {
 		/* check for a matching key by has and identifier */
-	    if ((h == (*slot)->key.h) && !memcmp((*slot)->key.str, strkey, keylen)) {
+	    if ((h == ZSTR_HASH((*slot)->key.str)) && !memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key))) {
             array_init(stat);
             
             add_assoc_long(stat, "hits",  (*slot)->nhits);
@@ -1639,8 +1624,12 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* ke
 		/* for copy of locking key struct */
 		apc_cache_key_t *last = &cache->header->lastkey;
 
+		if (!last->str) {
+			return 0;
+		}
+		
 		/* check the hash and length match */
-		if(last->h == key->h && last->len == key->len) {
+		if(ZSTR_HASH(last->str) == ZSTR_HASH(key->str) && ZSTR_LEN(last->str) == ZSTR_LEN(key->str)) {
 			/* TODO: implement defense */
 			/* check the time ( last second considered slam ) and context */
 			if(0) {
@@ -1651,8 +1640,7 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* ke
 			    result = 1;
 			} else {
 				/* sets enough information for an educated guess, but is not exact */
-				last->h = key->h;
-				last->len = key->len;
+				last->str = key->str;
 				last->mtime = apc_time();
 
 				/* required to tell contexts apart */

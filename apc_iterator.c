@@ -39,7 +39,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
 
     array_init(&item->value);
 
-	item->key = zend_string_init(slot->key.str, slot->key.len, 1);
+	item->key = zend_string_init(slot->key.str->val, slot->key.str->len, 1);
 	
 	/* for bc, in any mode */
     if (APC_ITER_KEY & iterator->format) {
@@ -146,30 +146,16 @@ static zend_object* apc_iterator_create(zend_class_entry *ce TSRMLS_DC) {
  *       Verify if the key matches our search parameters
  */
 static int apc_iterator_search_match(apc_iterator_t *iterator, apc_cache_slot_t **slot) {
-    char *key;
-    int key_len;
-    char *fname_key = NULL;
-    int fname_key_len = 0;
     int rval = 1;
-
-    key = (char*)(*slot)->key.str;
-    key_len = (*slot)->key.len;
 
 #ifdef ITERATOR_PCRE
     if (iterator->regex) {
-        rval = (pcre_exec(iterator->re, NULL, key, strlen(key), 0, 0, NULL, 0) >= 0);
+        rval = (pcre_exec(iterator->re, NULL, ZSTR_VAL((*slot)->key.str), ZSTR_LEN((*slot)->key.str), 0, 0, NULL, 0) >= 0);
     }
 #endif
 
     if (iterator->search_hash) {
-        rval = zend_hash_str_exists(iterator->search_hash, key, key_len);
-        if (!rval && fname_key) {
-            rval = zend_hash_str_exists(iterator->search_hash, fname_key, fname_key_len+1);
-        }
-    }
-
-    if (fname_key) {
-        efree(fname_key);
+        rval = zend_hash_exists(iterator->search_hash, (*slot)->key.str);
     }
 
     return rval;
@@ -631,7 +617,7 @@ int apc_iterator_delete(zval *zobj TSRMLS_DC) {
         while (iterator->stack_idx < apc_stack_size(iterator->stack)) {
             item = apc_stack_get(iterator->stack, iterator->stack_idx++);
             apc_cache_delete(
-				apc_user_cache, item->key, 0 TSRMLS_CC);
+				apc_user_cache, item->key TSRMLS_CC);
         }
     }
 

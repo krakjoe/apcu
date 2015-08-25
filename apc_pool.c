@@ -508,6 +508,21 @@ PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p,
 /* }}} */
 
 /*
+ apc_pmemcpy performs memcpy using resources provided by pool
+*/
+PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool TSRMLS_DC) {
+	zend_string* p = (zend_string*) pool->palloc(pool, sizeof(zend_string));
+	
+	if (!p) {
+		return NULL;
+	}
+	memset(p, 0, sizeof(zend_string));
+	memcpy((char*)&p->val, ZSTR_VAL(str), ZSTR_LEN(str));	
+	str->len = ZSTR_LEN(str);
+	return str;
+}
+
+/*
  * Local variables:
  * tab-width: 4
  * c-basic-offset: 4
