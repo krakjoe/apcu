@@ -642,14 +642,11 @@ struct php_inc_updater_args {
 };
 
 static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
-
     struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
-    
-    zval* val = &entry->val;
 
-    if (Z_TYPE_P(val) == IS_LONG) {
-        Z_LVAL_P(val) += args->step;
-        args->lval = Z_LVAL_P(val);
+    if (Z_TYPE(entry->val) == IS_LONG) {
+        Z_LVAL(entry->val) += args->step;
+        args->lval = Z_LVAL(entry->val);
         return 1;
     }
 
@@ -676,7 +673,6 @@ PHP_FUNCTION(apcu_inc) {
         if (success) {
 			ZVAL_TRUE(success);
 		}
-
         RETURN_LONG(args.lval);
     }
     

@@ -521,8 +521,10 @@ PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool TSRMLS_DC
 	GC_TYPE_INFO(p) = IS_STRING;
 	memcpy(ZSTR_VAL(p), 
 		ZSTR_VAL(str), ZSTR_LEN(str));
-	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';
 	p->len = ZSTR_LEN(str);
+	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';	
+	zend_string_forget_hash_val(p);
+
 	return p;
 }
 

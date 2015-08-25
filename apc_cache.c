@@ -1006,7 +1006,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
     while (*slot) {
 		/* check for a match by hash and identifier */
         if ((h == ZSTR_HASH((*slot)->key.str)) &&
-            !memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key))) {
+            memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
 			/* attempt to perform update */
             switch(Z_TYPE((*slot)->value->val)) {
                 case IS_ARRAY:
@@ -1015,27 +1015,27 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
                     if(cache->serializer) {
                         retval = 0;
                         break;
-                    } else {
-                        /* fall through */
                     }
                 }
-                /* fall through */
+
+                /* break intentionally omitted */
+
                 default:
                 {
-		    /* executing update */
+		    		/* executing update */
                     retval = updater(cache, (*slot)->value, data);
-		    /* set modified time */
+		    		/* set modified time */
                     (*slot)->key.mtime = apc_time();
                 }
                 break;
             }
-	    /* unlock header */
-	    APC_UNLOCK(cache->header);
+	    	/* unlock header */
+	    	APC_UNLOCK(cache->header);
 
             return retval;
         }
 
-	/* set next slot */
+		/* set next slot */
         slot = &(*slot)->next;
 	}
 	
