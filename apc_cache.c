@@ -1305,11 +1305,8 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 
     memcpy(dst, src, sizeof(src[0]));
 
-    if(ctxt->copied.nTableSize) {
+    if(zend_hash_num_elements(&ctxt->copied)) {
         if((tmp = zend_hash_index_find(&ctxt->copied, (ulong)src))) {
-            if(Z_ISREF_P((zval*)src)) {
-                Z_SET_ISREF_P(tmp);
-            }
             Z_ADDREF_P(tmp);
             return tmp;
         }
@@ -1320,11 +1317,9 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
     if(ctxt->copy == APC_COPY_OUT || ctxt->copy == APC_COPY_IN) {
         /* deep copies are refcount(1), but moved up for recursive 
          * arrays,  which end up being add_ref'd during its copy. */
-        Z_SET_REFCOUNT_P(dst, 1);
-    } else {
-        /* code uses refcount=2 for consts */
-        Z_SET_REFCOUNT_P(dst, Z_REFCOUNT_P((zval*)src));
-        Z_SET_ISREF_TO_P(dst, Z_ISREF_P((zval*)src));
+        if (Z_REFCOUNTED_P(dst)) {
+			Z_SET_REFCOUNT_P(dst, 1);
+		}
     }
 
     switch (Z_TYPE_P(src)) {
