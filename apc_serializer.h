@@ -27,7 +27,7 @@
 #define APC_UNSERIALIZER_NAME(module) module##_apc_unserializer
 
 #define APC_SERIALIZER_ARGS unsigned char **buf, size_t *buf_len, const zval *value, void *config TSRMLS_DC
-#define APC_UNSERIALIZER_ARGS zval **value, unsigned char *buf, size_t buf_len, void *config TSRMLS_DC
+#define APC_UNSERIALIZER_ARGS zval *value, unsigned char *buf, size_t buf_len, void *config TSRMLS_DC
 
 typedef int (*apc_serialize_t)(APC_SERIALIZER_ARGS);
 typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);

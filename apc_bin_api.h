@@ -22,6 +22,7 @@
 #ifndef APC_BIN_API_H
 #define APC_BIN_API_H
 
+#include "zend_smart_str.h"
 #include "ext/standard/basic_functions.h"
 
 /* APC binload flags */
@@ -43,7 +44,7 @@ typedef struct _apc_bd_t {
     unsigned int size;
     int swizzled;
     unsigned char md5[16];
-    php_uint32 crc;
+    uint32_t crc;
     unsigned int num_entries;
     apc_bd_entry_t *entries;
     int num_swizzled_ptrs;

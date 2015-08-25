@@ -43,7 +43,7 @@
 #   else
 #       include "ext/pcre/php_pcre.h"
 #   endif
-#   include "ext/standard/php_smart_str.h"
+#   include "zend_smart_str.h"
 #endif
 
 #define NELEMS(a) (sizeof(a)/sizeof((a)[0]))
@@ -128,19 +128,13 @@ PHP_APCU_API void* APC_ALLOC apc_xmemcpy(const void* p, size_t n, apc_malloc_t f
 /* }}} */
 
 /* {{{ console display functions */
-#ifdef ZTS
-# define APC_PRINT_FUNCTION_PARAMETER TSRMLS_C
-#else
-# define APC_PRINT_FUNCTION_PARAMETER format
-#endif
-
 #define APC_PRINT_FUNCTION(name, verbosity)					\
-	void apc_##name(const char *format TSRMLS_DC, ...)			\
+	void apc_##name(const char *format, ...)				\
 	{									\
 		va_list args;							\
 										\
-		va_start(args, APC_PRINT_FUNCTION_PARAMETER);			\
-		php_verror(NULL, "", verbosity, format, args TSRMLS_CC);	\
+		va_start(args, format);						\
+		php_verror(NULL, "", verbosity, format, args);			\
 		va_end(args);							\
 	}
 
@@ -332,44 +326,27 @@ unsigned int apc_crc32(const unsigned char* buf, unsigned int len)
 
 /* {{{ apc_flip_hash */
 HashTable* apc_flip_hash(HashTable *hash) {
-#if PHP_VERSION_ID >= 50700
-    zval *entry, *data;
-#else
-    zval **entry, *data;
-#endif
+    zval data, *entry;
     HashTable *new_hash;
     HashPosition pos;
 
     if(hash == NULL) return hash;
 
-    MAKE_STD_ZVAL(data);
-    ZVAL_LONG(data, 1);
-    
-    new_hash = emalloc(sizeof(HashTable));
-    zend_hash_init(new_hash, hash->nTableSize, NULL, ZVAL_PTR_DTOR, 0);
+    ZVAL_LONG(&data, 1);
+   
+    ALLOC_HASHTABLE(new_hash);
+    zend_hash_init(new_hash, zend_hash_num_elements(hash), NULL, ZVAL_PTR_DTOR, 0);
 
     zend_hash_internal_pointer_reset_ex(hash, &pos);
-#if PHP_VERSION_ID >= 50700
     while ((entry = zend_hash_get_current_data_ex(hash, &pos)) != NULL) {
         if(Z_TYPE_P(entry) == IS_STRING) {
-            zend_hash_update(new_hash, Z_STRVAL_P(entry), &data);
+            zend_hash_update(new_hash, Z_STR_P(entry), &data);
         } else {
             zend_hash_index_update(new_hash, Z_LVAL_P(entry), &data);
         }
-        Z_ADDREF_P(data);
+        Z_TRY_ADDREF(data);
         zend_hash_move_forward_ex(hash, &pos);
     }
-#else
-    while (zend_hash_get_current_data_ex(hash, (void **)&entry, &pos) == SUCCESS) {
-        if(Z_TYPE_PP(entry) == IS_STRING) {
-            zend_hash_update(new_hash, Z_STRVAL_PP(entry), Z_STRLEN_PP(entry) +1, &data, sizeof(data), NULL);
-        } else {
-            zend_hash_index_update(new_hash, Z_LVAL_PP(entry), &data, sizeof(data), NULL);
-        }
-        Z_ADDREF_P(data);
-        zend_hash_move_forward_ex(hash, &pos);
-    }
-#endif
     zval_ptr_dtor(&data);
 
     return new_hash;

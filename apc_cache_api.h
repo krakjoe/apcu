@@ -42,7 +42,7 @@ typedef pid_t apc_cache_owner_t;
 typedef struct apc_cache_key_t apc_cache_key_t;
 struct apc_cache_key_t {
     const char *str;		      /* pointer to constant string key */
-    zend_uint len;                /* length of data at str */
+    int32_t len;                /* length of data at str */
     zend_ulong h;                 /* pre-computed hash of key */
     time_t mtime;                 /* the mtime of this cached entry */
     apc_cache_owner_t owner;      /* the context that created this key */
@@ -51,15 +51,16 @@ struct apc_cache_key_t {
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
-    zval *val;                    /* the zval copied at store time */
-    zend_uint ttl;                /* the ttl on this specific entry */
-    int ref_count;                /* the reference count of this entry */
-    size_t mem_size;              /* memory used */
-    apc_pool *pool;               /* pool which allocated the value */
+    zval val;			/* the zval copied at store time */
+    int32_t ttl;		/* the ttl on this specific entry */
+    int ref_count;		/* the reference count of this entry */
+    size_t mem_size;		/* memory used */
+    apc_pool *pool;		/* pool which allocated the value */
 };
 /* }}} */
 
-/* {{{ struct definition: apc_cache_slot_t */
+/* {{{ struct defin
+ition: apc_cache_slot_t */
 typedef struct apc_cache_slot_t apc_cache_slot_t;
 struct apc_cache_slot_t {
     apc_cache_key_t key;        /* slot key */
@@ -87,7 +88,7 @@ typedef struct _apc_cache_header_t {
     zend_ulong nentries;             /* entry count */
     zend_ulong mem_size;             /* used */
     time_t stime;                    /* start time */
-    zend_ushort state;               /* cache state */
+    ushort state;                    /* cache state */
     apc_cache_key_t lastkey;         /* last key inserted (not necessarily without error) */
     apc_cache_slot_t* gc;            /* gc list */
 } apc_cache_header_t; /* }}} */
@@ -216,16 +217,16 @@ PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache,
  */
 PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache,
                                        char *strkey,
-                                       zend_uint keylen,
+                                       int32_t keylen,
                                        const zval *val,
-                                       const zend_uint ttl,
+                                       const int32_t ttl,
                                        const zend_bool exclusive TSRMLS_DC);
 /*
 * apc_cache_update updates an entry in place, this is used for rfc1867 and inc/dec/cas
 */
 PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache,
                                         char *strkey,
-                                        zend_uint keylen,
+                                        int32_t keylen,
                                         apc_cache_updater_t updater,
                                         void* data TSRMLS_DC);
 
@@ -236,7 +237,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache,
  */
 PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
                                                char* strkey,
-                                               zend_uint keylen,
+                                               int32_t keylen,
                                                time_t t TSRMLS_DC);
 
 /*
@@ -245,7 +246,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
  */
 PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache,
                                        char* strkey,
-                                       zend_uint keylen,
+                                       int32_t keylen,
                                        time_t t,
                                        zval **dst TSRMLS_DC);
 
@@ -258,7 +259,7 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache,
  */
 PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache,
                                                  char* strkey,
-                                                 zend_uint keylen,
+                                                 int32_t keylen,
                                                  time_t t TSRMLS_DC);
 
 /*
@@ -266,7 +267,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache,
  */
 PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache,
                                         char *strkey,
-                                        zend_uint keylen TSRMLS_DC);
+                                        int32_t keylen TSRMLS_DC);
 
 /* apc_cach_fetch_zval takes a zval in the cache and reconstructs a runtime
  * zval from it.
@@ -301,12 +302,12 @@ PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key,
 PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt,
                                                      apc_cache_key_t* key,
                                                      const zval *val,
-                                                     const zend_uint ttl TSRMLS_DC);
+                                                     const int32_t ttl);
 
 /*
  fetches information about the cache provided for userland status functions
 */
-PHP_APCU_API zval* apc_cache_info(apc_cache_t* cache,
+PHP_APCU_API zval apc_cache_info(apc_cache_t* cache,
                                   zend_bool limited TSRMLS_DC);
                                   
 /*
@@ -314,7 +315,7 @@ PHP_APCU_API zval* apc_cache_info(apc_cache_t* cache,
 */
 PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
                                   char *strkey,
-                                  zend_uint keylen TSRMLS_DC);
+                                  int32_t keylen TSRMLS_DC);
 
 /*
 * apc_cache_busy returns true while the cache is busy

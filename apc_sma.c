@@ -268,7 +268,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 /* }}} */
 
 /* {{{ APC SMA API */
-PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, zend_uint num, zend_ulong size, char *mask TSRMLS_DC) {
+PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, int32_t num, zend_ulong size, char *mask TSRMLS_DC) {
 	uint i;
 
     if (sma->initialized) {

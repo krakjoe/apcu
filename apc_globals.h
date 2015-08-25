@@ -39,28 +39,6 @@
 #include "apc_stack.h"
 #include "apc_php.h"
 
-/* {{{ struct apc_rfc1867_data */
-
-typedef struct _apc_rfc1867_data apc_rfc1867_data;
-
-struct _apc_rfc1867_data {
-    char tracking_key[64];
-    int  key_length;
-    size_t content_length;
-    char filename[128];
-    char name[64];
-    char *temp_filename;
-    int cancel_upload;
-    double start_time;
-    size_t bytes_processed;
-    size_t prev_bytes_processed;
-    int update_freq;
-    double rate;
-    int started;
-};
-/* }}} */
-
-
 ZEND_BEGIN_MODULE_GLOBALS(apcu)
     /* configuration parameters */
     zend_bool enabled;      /* if true, apc is enabled (defaults to true) */
@@ -80,18 +58,6 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
     zend_bool enable_cli;        /* Flag to override turning APC off for CLI */
     zend_bool slam_defense;      /* true for user cache slam defense */ 
 
-#ifdef MULTIPART_EVENT_FORMDATA
-    zend_bool rfc1867;            /* Flag to enable rfc1867 handler */
-    char* rfc1867_prefix;         /* Key prefix */
-    char* rfc1867_name;           /* Name of hidden field to activate upload progress/key suffix */
-    double rfc1867_freq;          /* Update frequency as percentage or bytes */
-    long rfc1867_ttl;             /* TTL for rfc1867 entries */
-    apc_rfc1867_data rfc1867_data;/* Per-request data */
-#endif
-
-	void *apc_bd_alloc_ptr;      /* bindump alloc() ptr */
-    void *apc_bd_alloc_ubptr;    /* bindump alloc() upper bound ptr */
-    HashTable apc_bd_alloc_list; /* bindump alloc() ptr list */
 	char *preload_path;          /* preload path */
     zend_bool coredump_unmap;    /* trap signals that coredump and unmap shared memory */
     zend_bool use_request_time;  /* use the SAPI request start time for TTL */
@@ -100,7 +66,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
     char *writable;              /* writable path for general use */
 ZEND_END_MODULE_GLOBALS(apcu)
 
-/* (the following declaration is defined in php_apc.c) */
+/* (the following is defined in php_apc.c) */
 ZEND_EXTERN_MODULE_GLOBALS(apcu)
 
 #ifdef ZTS
@@ -109,8 +75,7 @@ ZEND_EXTERN_MODULE_GLOBALS(apcu)
 # define APCG(v) (apcu_globals.v)
 #endif
 
-/* True globals */
-extern apc_cache_t* apc_user_cache;  /* the global cache */
+extern apc_cache_t* apc_user_cache;
 #endif
 
 /*

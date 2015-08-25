@@ -32,7 +32,7 @@
 #   else
 #       include "ext/pcre/php_pcre.h"
 #   endif
-#   include "ext/standard/php_smart_str.h"
+#   include "zend_smart_str.h"
 #   define ITERATOR_PCRE 1
 #endif
 
@@ -64,7 +64,6 @@ typedef void* (*apc_iterator_item_cb_t)(apc_cache_slot_t **slot);
 
 /* {{{ apc_iterator_t */
 typedef struct _apc_iterator_t {
-    zend_object obj;         /* must always be first */
     short int initialized;   /* sanity check in case __construct failed */
     long format;             /* format bitmask of the return values ie: key, value, info */
     int (*fetch)(struct _apc_iterator_t *iterator TSRMLS_DC);
@@ -76,22 +75,24 @@ typedef struct _apc_iterator_t {
 #ifdef ITERATOR_PCRE
     pcre *re;                /* regex filter on entry identifiers */
 #endif
-    char *regex;             /* original regex expression or NULL */
-    int regex_len;           /* regex length */
+    zend_string *regex;
     HashTable *search_hash;  /* hash of keys to iterate over */
     long key_idx;            /* incrementing index for numerical keys */
     short int totals_flag;   /* flag if totals have been calculated */
     long hits;               /* hit total */
     size_t size;             /* size total */
     long count;              /* count total */
+    zend_object obj;
 } apc_iterator_t;
 /* }}} */
 
+#define apc_iterator_fetch_from(o) ((apc_iterator_t*)((char*)o) - XtOffsetOf(apc_iterator_t, obj))
+#define apc_iterator_fetch(z) apc_iterator_fetch_from(Z_OBJ_P(z))
+
 /* {{{ apc_iterator_item */
 typedef struct _apc_iterator_item_t {
-    char *key;              /* string key */
-    long key_len;           /* strlen of key */
-    zval *value;
+    zend_string *key;
+    zval value;
 } apc_iterator_item_t;
 /* }}} */
 

@@ -59,7 +59,7 @@ struct apc_sma_info_t {
 /* }}} */
 
 /* {{{ function definitions for SMA API objects */
-typedef void (*apc_sma_init_f) (zend_uint num, zend_ulong size, char *mask TSRMLS_DC);
+typedef void (*apc_sma_init_f) (int32_t num, zend_ulong size, char *mask TSRMLS_DC);
 typedef void (*apc_sma_cleanup_f) (TSRMLS_D); 
 typedef void* (*apc_sma_malloc_f) (zend_ulong size TSRMLS_DC);
 typedef void* (*apc_sma_malloc_ex_f) (zend_ulong size, zend_ulong fragment, zend_ulong *allocated TSRMLS_DC);
@@ -100,9 +100,9 @@ typedef struct _apc_sma_t {
 	void** data;                                 /* data */	
 	
     /* info */
-    zend_uint  num;                              /* number of segments */
+    int32_t  num;                               /* number of segments */
     zend_ulong size;                             /* segment size */
-    zend_uint  last;                             /* last segment */
+    int32_t  last;                              /* last segment */
 
     /* segments */
     apc_segment_t* segs;                         /* segments */
@@ -116,7 +116,7 @@ typedef struct _apc_sma_t {
 PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma,
                                    void** data,
 							       apc_sma_expunge_f expunge,
-                                   zend_uint num,
+                                   int32_t num,
                                    zend_ulong size,
                                    char *mask TSRMLS_DC);
 
@@ -221,7 +221,7 @@ typedef union { void* p; int i; long l; double d; void (*f)(void); } apc_word_t;
 
 /* {{{ Call in a header somewhere to extern all sma functions */
 #define apc_sma_api_decl(name) \
-    PHP_APCU_API void apc_sma_api_func(name, init)(zend_uint num, zend_ulong size, char* mask TSRMLS_DC); \
+    PHP_APCU_API void apc_sma_api_func(name, init)(int32_t num, zend_ulong size, char* mask TSRMLS_DC); \
     PHP_APCU_API void apc_sma_api_func(name, cleanup)(TSRMLS_D); \
     PHP_APCU_API void* apc_sma_api_func(name, malloc)(zend_ulong size TSRMLS_DC); \
     PHP_APCU_API void* apc_sma_api_func(name, malloc_ex)(zend_ulong size, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC); \
@@ -254,7 +254,7 @@ typedef union { void* p; int i; long l; double d; void (*f)(void); } apc_word_t;
         &apc_sma_api_func(name, get_avail_size), \
         &apc_sma_api_func(name, check_integrity), \
     }; \
-    PHP_APCU_API void apc_sma_api_func(name, init)(zend_uint num, zend_ulong size, char* mask TSRMLS_DC) \
+    PHP_APCU_API void apc_sma_api_func(name, init)(int32_t num, zend_ulong size, char* mask TSRMLS_DC) \
         { apc_sma_api_init(apc_sma_api_ptr(name), (void**) data, (apc_sma_expunge_f) expunge, num, size, mask TSRMLS_CC); } \
     PHP_APCU_API void apc_sma_api_func(name, cleanup)(TSRMLS_D) \
         { apc_sma_api_cleanup(apc_sma_api_ptr(name) TSRMLS_CC); } \
