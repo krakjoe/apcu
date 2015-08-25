@@ -773,7 +773,7 @@ PHP_FUNCTION(apcu_fetch) {
     t = apc_time();
 
     if (success) {
-        ZVAL_BOOL(success, 0);
+        ZVAL_FALSE(success);
     }
 
 	if (Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
@@ -785,22 +785,17 @@ PHP_FUNCTION(apcu_fetch) {
 		
 		/* initialize a context */
 		if (apc_cache_make_context(apc_user_cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0 TSRMLS_CC)) {
-			
 			if (Z_TYPE_P(key) == IS_STRING) {
-
 				/* do find using string as key */
 				if ((entry = apc_cache_find(apc_user_cache, Z_STR_P(key), t TSRMLS_CC))) {
-				    /* deep-copy returned shm zval to emalloc'ed return_value */
-				    apc_cache_fetch_zval(
-						&ctxt, return_value, &entry->val TSRMLS_CC);
+				    /* deep-copy returned shm zval to return_value on stack */
+				    apc_cache_fetch_zval(&ctxt, return_value, &entry->val TSRMLS_CC);
 					/* decrement refcount of entry */
-				    apc_cache_release(
-						apc_user_cache, entry TSRMLS_CC);
+				    apc_cache_release(apc_user_cache, entry TSRMLS_CC);
 					/* set success */
 					if (success) {
-						ZVAL_BOOL(success, 1);
+						ZVAL_TRUE(success);
 					}
-
 				} else { ZVAL_BOOL(return_value, 0); }
 
 			} else if (Z_TYPE_P(key) == IS_ARRAY) {

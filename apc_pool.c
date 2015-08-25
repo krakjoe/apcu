@@ -511,15 +511,19 @@ PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p,
  apc_pmemcpy performs memcpy using resources provided by pool
 */
 PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool TSRMLS_DC) {
-	zend_string* p = (zend_string*) pool->palloc(pool, sizeof(zend_string));
+	zend_string* p = (zend_string*) pool->palloc(pool, 
+		ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(ZSTR_LEN(str))));
 	
 	if (!p) {
 		return NULL;
 	}
-	memset(p, 0, sizeof(zend_string));
-	memcpy((char*)&p->val, ZSTR_VAL(str), ZSTR_LEN(str));	
-	str->len = ZSTR_LEN(str);
-	return str;
+
+	GC_TYPE_INFO(p) = IS_STRING;
+	memcpy(ZSTR_VAL(p), 
+		ZSTR_VAL(str), ZSTR_LEN(str));
+	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';
+	p->len = ZSTR_LEN(str);
+	return p;
 }
 
 /*

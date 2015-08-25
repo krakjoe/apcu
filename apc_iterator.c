@@ -39,8 +39,8 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
 
     array_init(&item->value);
 
-	item->key = zend_string_init(slot->key.str->val, slot->key.str->len, 1);
-	
+	item->key = zend_string_init(slot->key.str->val, slot->key.str->len, 0);
+
 	/* for bc, in any mode */
     if (APC_ITER_KEY & iterator->format) {
         add_assoc_str(&item->value, "key", item->key);
@@ -128,7 +128,7 @@ static void apc_iterator_free(zend_object *object TSRMLS_DC) {
 static zend_object* apc_iterator_create(zend_class_entry *ce TSRMLS_DC) {
     apc_iterator_t *iterator;
 
-    iterator = emalloc(sizeof(apc_iterator_t));
+    iterator = (apc_iterator_t*) emalloc(sizeof(apc_iterator_t));
 
     zend_object_std_init(&iterator->obj, ce);
 

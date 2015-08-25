@@ -118,7 +118,7 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 			/* set slot data */
 			p->key = *key;
 			p->value = value;
-			
+
 			/* set slot relation */
 			p->next = next;
 			
@@ -1302,8 +1302,8 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 
     assert(dst != NULL);
     assert(src != NULL);
-
-    memcpy(dst, src, sizeof(src[0]));
+	
+    memcpy(dst, src, sizeof(zval));
 
     if(zend_hash_num_elements(&ctxt->copied)) {
         if((tmp = zend_hash_index_find(&ctxt->copied, (ulong)src))) {
@@ -1332,7 +1332,13 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
         break;
 
     case IS_CONSTANT:
-    case IS_STRING:
+    case IS_STRING:	
+		if (ctxt->copy == APC_COPY_OUT) {
+			ZVAL_COPY(dst, src);
+		} else {
+			Z_TYPE_INFO_P(dst) = IS_STRING;
+			Z_STR_P(dst) = apc_pstrcpy(Z_STR_P(src), pool);
+		}
         /*if (Z_STRVAL_P(src)) {
             char *mem = apc_pmemcpy(
 				Z_STRVAL_P(src), Z_STRLEN_P(src) + 1, pool);
@@ -1357,12 +1363,12 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 		/* break intentionally omitted */
 
     case IS_OBJECT:
-		ZVAL_UNDEF(dst);
+		/*ZVAL_UNDEF(dst);
         if(ctxt->copy == APC_COPY_IN) {
             dst = my_serialize_object(dst, src, ctxt TSRMLS_CC);
         } else if(ctxt->copy == APC_COPY_OUT) {
             dst = my_unserialize_object(dst, src, ctxt TSRMLS_CC);
-        }
+        }*/
         break;
 #ifdef ZEND_ENGINE_2_4
     case IS_CALLABLE:
