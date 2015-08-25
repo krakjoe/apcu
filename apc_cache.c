@@ -1261,7 +1261,8 @@ static APC_HOTSPOT HashTable* my_copy_hashtable_ex(HashTable* dst,
 
 
 /* {{{ my_copy_zval_ptr */
-static zval** my_copy_zval_ptr(zval** dst, const zval** src, apc_context_t* ctxt TSRMLS_DC)
+/*
+static zval* my_copy_zval_ptr(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
 {
     zval* dst_new;
     apc_pool* pool = ctxt->pool;
@@ -1270,7 +1271,7 @@ static zval** my_copy_zval_ptr(zval** dst, const zval** src, apc_context_t* ctxt
     assert(src != NULL);
 
     if (!dst) {
-        CHECK(dst = (zval**) pool->palloc(pool, sizeof(zval*) TSRMLS_CC));
+        CHECK(dst = (zval*) pool->palloc(pool, sizeof(zval) TSRMLS_CC));
     }
 
     if(usegc) {
@@ -1290,7 +1291,7 @@ static zval** my_copy_zval_ptr(zval** dst, const zval** src, apc_context_t* ctxt
     }
 
     return dst;
-}
+} */
 /* }}} */
 
 /* {{{ my_copy_zval */
@@ -1347,7 +1348,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
         break;
 
     case IS_ARRAY:
-        if(ctxt->serializer == NULL) {
+        /*if(ctxt->serializer == NULL) {
 
             CHECK(Z_ARRVAL_P(dst) =
                 my_copy_hashtable(NULL,
@@ -1356,12 +1357,12 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
                                   1,
                                   ctxt));
             break;
-        } else {
-            /* fall through to object case */
-        }
+        } */
+
+		/* break intentionally omitted */
 
     case IS_OBJECT:
-	ZVAL_UNDEF(dst);
+		ZVAL_UNDEF(dst);
         if(ctxt->copy == APC_COPY_IN) {
             dst = my_serialize_object(dst, src, ctxt TSRMLS_CC);
         } else if(ctxt->copy == APC_COPY_OUT) {
@@ -1386,19 +1387,6 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 /* {{{ apc_copy_zval */
 PHP_APCU_API zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
 {
-    apc_pool* pool = ctxt->pool;
-    
-    assert(src != NULL);
-
-    if (!dst) {
-        if(ctxt->copy == APC_COPY_OUT) {
-            ALLOC_ZVAL(dst);
-            CHECK(dst);
-        } else {
-            CHECK(dst = (zval*) pool->palloc(pool, sizeof(zval) TSRMLS_CC));
-        }
-    }
-
     CHECK(dst = my_copy_zval(dst, src, ctxt TSRMLS_CC));
     return dst;
 }
