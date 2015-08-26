@@ -1356,40 +1356,6 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 	return target;
 }
 
-/* {{{ my_copy_zval_ptr */
-/*
-static zval* my_copy_zval_ptr(zval* dst, const zval* src, apc_context_t* ctxt)
-{
-    zval* dst_new;
-    apc_pool* pool = ctxt->pool;
-    int usegc = (ctxt->copy == APC_COPY_OUT);
-
-    assert(src != NULL);
-
-    if (!dst) {
-        CHECK(dst = (zval*) pool->palloc(pool, sizeof(zval)));
-    }
-
-    if(usegc) {
-        ALLOC_ZVAL(dst[0]);
-        CHECK(dst[0]);
-    } else {
-        CHECK((dst[0] = (zval*) pool->palloc(pool, sizeof(zval))));
-    }
-
-    CHECK((dst_new = my_copy_zval(*dst, *src, ctxt)));
-
-    if(dst_new != *dst) {
-        if(usegc) {
-            FREE_ZVAL(dst[0]);
-        }
-        *dst = dst_new;
-    }
-
-    return dst;
-} */
-/* }}} */
-
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
 static APC_HOTSPOT zval* my_copy_zval_reference(zval *dst, const zval* src, apc_context_t *ctxt) {
 	apc_pool* pool = ctxt->pool;
@@ -1414,6 +1380,7 @@ static APC_HOTSPOT zval* my_copy_zval_reference(zval *dst, const zval* src, apc_
 
 	GC_REFCOUNT(reference) = 1;
 	GC_TYPE_INFO(reference) = IS_REFERENCE;
+
 	Z_REF_P(dst) = reference;
 	my_copy_zval(Z_REFVAL_P(dst), Z_REFVAL_P(src), ctxt);
 	Z_TYPE_INFO_P(dst) = IS_REFERENCE_EX;
@@ -1428,15 +1395,12 @@ static APC_HOTSPOT zval* my_copy_zval_reference(zval *dst, const zval* src, apc_
 
 /* {{{ my_copy_zval */
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt)
-{
-    
+{   
     apc_pool* pool = ctxt->pool;
 
     assert(dst != NULL);
     assert(src != NULL);
 	
-    memcpy(dst, src, sizeof(zval));
-
 	if (Z_REFCOUNTED_P(src)) {
 		if(zend_hash_num_elements(&ctxt->copied)) {
 			zval *tmp;
@@ -1447,6 +1411,8 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 		    }
 		}
 	}
+
+	memcpy(dst, src, sizeof(zval));
     
     if(ctxt->copy == APC_COPY_OUT || ctxt->copy == APC_COPY_IN) {
         /* deep copies are refcount(1), but moved up for recursive 
