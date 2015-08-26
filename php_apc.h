@@ -43,6 +43,10 @@ extern zend_module_entry apcu_module_entry;
 
 #define phpext_apcu_ptr apcu_module_ptr
 
+#if defined(ZTS) && defined(COMPILE_DL_APCU)
+ZEND_TSRMLS_CACHE_EXTERN();
+#endif
+
 #endif /* PHP_APC_H */
 
 /*

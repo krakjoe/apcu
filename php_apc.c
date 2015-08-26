@@ -356,6 +356,10 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 /* {{{ PHP_RINIT_FUNCTION(apcu) */
 static PHP_RINIT_FUNCTION(apcu)
 {
+#if defined(ZTS) && defined(COMPILE_DL_APCU)
+        ZEND_TSRMLS_CACHE_UPDATE();
+#endif
+
     if (APCG(enabled)) {
         if (APCG(serializer_name)) {
 		    /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
