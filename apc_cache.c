@@ -1401,13 +1401,13 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 	
     memcpy(dst, src, sizeof(zval));
 
-    if(zend_hash_num_elements(&ctxt->copied)) {
-        if((tmp = zend_hash_index_find(&ctxt->copied, (ulong)src))) {
+    if(zend_hash_num_elements(&ctxt->copied) && Z_IS_REFCOUNTED_P(src)) {
+        if((tmp = zend_hash_index_find(&ctxt->copied, (ulong)Z_COUNTED_P(src)))) {
             Z_ADDREF_P(tmp);
             return tmp;
         }
 
-        zend_hash_index_update(&ctxt->copied, (ulong)src, dst);
+        zend_hash_index_update(&ctxt->copied, (ulong)Z_COUNTED_P(src), dst);
     }
 
     if(ctxt->copy == APC_COPY_OUT || ctxt->copy == APC_COPY_IN) {
@@ -1415,6 +1415,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
          * arrays,  which end up being add_ref'd during its copy. */
         
     }
+
 
     switch (Z_TYPE_P(src)) {
     case IS_RESOURCE:
