@@ -1480,6 +1480,9 @@ static void apc_init(INIT_FUNC_ARGS)
 
 #ifdef COMPILE_DL_APCU
 ZEND_GET_MODULE(apcu)
+#ifdef ZTS
+ZEND_TSRMLS_CACHE_DEFINE();
+#endif
 #endif
 /* }}} */
 

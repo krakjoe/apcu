@@ -121,7 +121,7 @@ if test "$PHP_APCU" != "no"; then
           }
 		    ],
 		    [ dnl -Success-
-			    APCU_CFLAGS="-D_GNU_SOURCE"
+			    APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
 			    PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 			    AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
@@ -132,7 +132,7 @@ if test "$PHP_APCU" != "no"; then
     			PHP_APCU_RWLOCKS=no
 		    ],
 		    [
-			    APCU_CFLAGS="-D_GNU_SOURCE"
+			    APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
 			    PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 		    ]
@@ -175,7 +175,7 @@ if test "$PHP_APCU" != "no"; then
         }
 			  ],
 			  [ dnl -Success-
-				  APCU_CFLAGS="-D_GNU_SOURCE"
+				  APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
 				  PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 				  AC_MSG_WARN([APCu has access to mutexes])
@@ -185,7 +185,7 @@ if test "$PHP_APCU" != "no"; then
     			PHP_APCU_MUTEX=no
 			  ],
 			  [
-				  APCU_CFLAGS="-D_GNU_SOURCE"
+				  APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
 				  PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 			  ]
