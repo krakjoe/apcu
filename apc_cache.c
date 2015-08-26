@@ -1426,6 +1426,10 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
     case IS_NULL:
         break;
 
+	case IS_INDIRECT:
+		dst = my_copy_zval(dst, Z_INDIRECT_P(src), ctxt);
+	break;
+
     case IS_CONSTANT:
     case IS_STRING:	
 		if (ctxt->copy == APC_COPY_OUT) {
