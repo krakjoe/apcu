@@ -517,9 +517,26 @@ PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool TSRMLS_DC
 	}
 
 	GC_TYPE_INFO(p) = IS_STRING;
-	memcpy(ZSTR_VAL(p), 
-		ZSTR_VAL(str), ZSTR_LEN(str));
+	memcpy(ZSTR_VAL(p), ZSTR_VAL(str), ZSTR_LEN(str));
 	p->len = ZSTR_LEN(str);
+	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';	
+	zend_string_forget_hash_val(p);
+
+	return p;
+} /* }}} */
+
+/* {{{ apc_pstrnew */
+PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_pool* pool TSRMLS_DC) {
+	zend_string* p = (zend_string*) pool->palloc(pool, 
+		ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(buf_len)));
+	
+	if (!p) {
+		return NULL;
+	}
+
+	GC_TYPE_INFO(p) = IS_STRING;
+	memcpy(ZSTR_VAL(p), buf, buf_len);
+	p->len = buf_len;
 	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';	
 	zend_string_forget_hash_val(p);
 

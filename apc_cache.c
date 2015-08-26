@@ -1113,7 +1113,9 @@ PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, zend_string *str
 /* {{{ my_serialize_object */
 static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
 {
-    smart_str buf = {0};
+    unsigned char *buf = NULL;
+	size_t buf_len = 0;
+	
     apc_pool* pool = ctxt->pool;
     apc_serialize_t serialize = APC_SERIALIZER_NAME(php);
     void *config = NULL;
@@ -1123,15 +1125,13 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
         config = (ctxt->serializer->config != NULL) ? ctxt->serializer->config : ctxt;
     }
 
-    if(serialize((unsigned char**)&buf.s->val, &buf.s->len, src, config TSRMLS_CC)) {
-		//Z_TYPE_INFO_P(dst) = Z_TYPE(src)
-        //dst->value.str.len = buf.len;
-        //CHECK(dst->value.str.val = apc_pmemcpy(buf.c, (buf.len + 1), pool TSRMLS_CC));
-    }
+	ZVAL_NULL(dst);
 
-    if(buf.s && buf.s->len) {
-		smart_str_free(&buf);
-	}
+    if(serialize((unsigned char**)&buf, &buf_len, src, config TSRMLS_CC)) {
+		ZVAL_STR(dst, apc_pstrnew(buf, buf_len, pool));
+		Z_TYPE_INFO_P(dst) = IS_OBJECT;
+		efree(buf);
+    }
 
     return dst;
 }
@@ -1141,7 +1141,6 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ctxt TSRMLS_DC)
 {
     apc_unserialize_t unserialize = APC_UNSERIALIZER_NAME(php);
-    unsigned char *p = (unsigned char*)Z_STRVAL_P(src);
     void *config = NULL;
 
     if(ctxt->serializer) {
@@ -1149,7 +1148,7 @@ static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ct
         config = (ctxt->serializer->config != NULL) ? ctxt->serializer->config : ctxt;
     }
 
-    if(unserialize(dst, p, Z_STRLEN_P(src), config TSRMLS_CC)) {
+    if(unserialize(dst, Z_STRVAL_P(src), Z_STRLEN_P(src), config TSRMLS_CC)) {
         return dst;
     } else {
         zval_dtor(dst);
@@ -1355,12 +1354,11 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 		/* break intentionally omitted */
 
     case IS_OBJECT:
-		/*ZVAL_UNDEF(dst);
         if(ctxt->copy == APC_COPY_IN) {
             dst = my_serialize_object(dst, src, ctxt TSRMLS_CC);
         } else if(ctxt->copy == APC_COPY_OUT) {
             dst = my_unserialize_object(dst, src, ctxt TSRMLS_CC);
-        }*/
+        }
         break;
 #ifdef ZEND_ENGINE_2_4
     case IS_CALLABLE:

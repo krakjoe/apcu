@@ -138,10 +138,9 @@ PHP_APCU_API void* apc_pmemcpy(const void* p,
                                size_t n, 
                                apc_pool* pool TSRMLS_DC);
 
-/*
- apc_pmemcpy performs memcpy using resources provided by pool
-*/
+
 PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool TSRMLS_DC);
+PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_pool* pool TSRMLS_DC);
 
 /*
  apc_pstrdup performs strdup using resources provided by pool
