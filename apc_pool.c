@@ -507,9 +507,7 @@ PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p,
 }
 /* }}} */
 
-/*
- apc_pmemcpy performs memcpy using resources provided by pool
-*/
+/* {{{ apc_pstrcpy */
 PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool TSRMLS_DC) {
 	zend_string* p = (zend_string*) pool->palloc(pool, 
 		ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(ZSTR_LEN(str))));
@@ -526,7 +524,7 @@ PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool TSRMLS_DC
 	zend_string_forget_hash_val(p);
 
 	return p;
-}
+} /* }}} */
 
 /*
  * Local variables:

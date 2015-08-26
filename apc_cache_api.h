@@ -204,7 +204,7 @@ PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_D
  * an easier API exists in the form of apc_cache_store
  */
 PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache,
-                                        apc_cache_key_t key,
+                                        apc_cache_key_t* key,
                                         apc_cache_entry_t* value,
                                         apc_context_t* ctxt,
                                         time_t t,
