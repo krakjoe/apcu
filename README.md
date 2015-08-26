@@ -1,3 +1,7 @@
+PHP7
+===
+
+PHP7 is coming and APCu is coming with us ... WIP
 
 APCu
 ====
@@ -10,7 +14,7 @@ Simplifying and documenting the API of APCu completely removes the barrier to ma
 
 APCu only supports userland caching (and dumping) of variables, providing an upgrade path for the future. When O+ takes over, many will be tempted to use 3rd party solutions to userland caching, possibly even distributed solutions; this would be a grave error. The tried and tested APC codebase provides far superior support for local storage of PHP variables.
 
-[![Build Status](https://travis-ci.org/krakjoe/apcu.svg?branch=simplify)](https://travis-ci.org/krakjoe/apcu)
+[![Build Status](https://travis-ci.org/krakjoe/apcu.svg?branch=seven)](https://travis-ci.org/krakjoe/apcu)
 
 Specific Changes
 ================
