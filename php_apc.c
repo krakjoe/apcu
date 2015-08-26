@@ -769,7 +769,8 @@ PHP_FUNCTION(apcu_fetch) {
     t = apc_time();
 
     if (success) {
-        ZVAL_FALSE(&Z_REF_P(success)->val);
+		ZVAL_DEREF(success);
+        ZVAL_FALSE(success);
     }
 
 	if (Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
@@ -790,7 +791,7 @@ PHP_FUNCTION(apcu_fetch) {
 				    apc_cache_release(apc_user_cache, entry TSRMLS_CC);
 					/* set success */
 					if (success) {
-						ZVAL_TRUE(&Z_REF_P(success)->val);
+						ZVAL_TRUE(success);
 					}
 				} else { ZVAL_BOOL(return_value, 0); }
 
@@ -835,13 +836,12 @@ PHP_FUNCTION(apcu_fetch) {
 				RETVAL_ZVAL(&result, 0, 1);
 
 				if (success) {
-					ZVAL_BOOL(&Z_REF_P(success)->val, 1);
+					ZVAL_TRUE(success);
 				}
 			}
 
 			apc_cache_destroy_context(&ctxt TSRMLS_CC );	
 		}
-
 	} else { 
 		apc_warning("apc_fetch() expects a string or array of strings." TSRMLS_CC);
 		RETURN_FALSE; 
