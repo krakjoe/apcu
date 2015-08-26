@@ -1201,9 +1201,8 @@ static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTab
 
 		q->key = p->key;
 		if (!static_keys && q->key) {
-			zend_string_addref(q->key);
 			if (ctxt->copy == APC_COPY_IN) {
-				q->key = apc_pstrcpy(p->key, ctxt->pool);
+				q->key = apc_pstrcpy(q->key, ctxt->pool);
 			} else q->key = zend_string_copy(p->key);
 		}
 
