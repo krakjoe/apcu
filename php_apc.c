@@ -769,7 +769,7 @@ PHP_FUNCTION(apcu_fetch) {
     t = apc_time();
 
     if (success) {
-        ZVAL_FALSE(success);
+        ZVAL_FALSE(&Z_REF_P(success)->val);
     }
 
 	if (Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
@@ -790,7 +790,7 @@ PHP_FUNCTION(apcu_fetch) {
 				    apc_cache_release(apc_user_cache, entry TSRMLS_CC);
 					/* set success */
 					if (success) {
-						ZVAL_TRUE(success);
+						ZVAL_TRUE(&Z_REF_P(success)->val);
 					}
 				} else { ZVAL_BOOL(return_value, 0); }
 
@@ -835,7 +835,7 @@ PHP_FUNCTION(apcu_fetch) {
 				RETVAL_ZVAL(&result, 0, 1);
 
 				if (success) {
-					ZVAL_BOOL(success, 1);
+					ZVAL_BOOL(&Z_REF_P(success)->val, 1);
 				}
 			}
 
