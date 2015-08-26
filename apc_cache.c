@@ -47,9 +47,6 @@ typedef int (*ht_check_copy_fun_t)(Bucket*, va_list);
 #define CHECK(p) { if ((p) == NULL) return NULL; }
 
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
-static HashTable* my_copy_hashtable_ex(HashTable*, HashTable*, ht_copy_fun_t, int, apc_context_t*, ht_check_copy_fun_t, ...);
-#define my_copy_hashtable( dst, src, copy_fn, holds_ptr, ctxt) \
-    my_copy_hashtable_ex(dst, src, copy_fn, holds_ptr, ctxt, NULL)
 
 /* {{{ make_prime */
 static int const primes[] = {
@@ -1158,107 +1155,179 @@ static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ct
 }
 /* }}} */
 
+static const uint32_t uninitialized_bucket[-HT_MIN_MASK] = {HT_INVALID_IDX, HT_INVALID_IDX};
 
-/* {{{ my_copy_hashtable_ex */
-static APC_HOTSPOT HashTable* my_copy_hashtable_ex(HashTable* dst,
-                                    HashTable* src,
-                                    ht_copy_fun_t copy_fn,
-                                    int holds_ptrs,
-                                    apc_context_t* ctxt,
-                                    ht_check_copy_fun_t check_fn,
-                                    ...)
+static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTable *source, HashTable *target, uint32_t idx, Bucket *p, Bucket *q, int packed, int static_keys, int with_holes)
 {
-    Bucket* curr = NULL;
-    Bucket* prev = NULL;
-    Bucket* newp = NULL;
-    int first = 1;
-    apc_pool* pool = ctxt->pool;
+	zval *data = &p->val;
 
-    assert(src != NULL);
+	if (with_holes) {
+		if (!packed && Z_TYPE_INFO_P(data) == IS_INDIRECT) {
+			data = Z_INDIRECT_P(data);
+		}
+		if (UNEXPECTED(Z_TYPE_INFO_P(data) == IS_UNDEF)) {
+			return 0;
+		}
+	} else if (!packed) {
+		/* INDIRECT element may point to UNDEF-ined slots */
+		if (Z_TYPE_INFO_P(data) == IS_INDIRECT) {
+			data = Z_INDIRECT_P(data);
+			if (UNEXPECTED(Z_TYPE_INFO_P(data) == IS_UNDEF)) {
+				return 0;
+			}
+		}
+	}
 
-    /*
-	if (!dst) {
-        CHECK(dst = (HashTable*) pool->palloc(pool, sizeof(src[0])));
-    }
+	do {
+		if (Z_OPT_REFCOUNTED_P(data)) {
+			if (Z_ISREF_P(data) && Z_REFCOUNT_P(data) == 1 &&
+			    (Z_TYPE_P(Z_REFVAL_P(data)) != IS_ARRAY ||
+			      Z_ARRVAL_P(Z_REFVAL_P(data)) != source)) {
+				data = Z_REFVAL_P(data);
+				if (!Z_OPT_REFCOUNTED_P(data)) {
+					break;
+				}
+			}
+		}
+	} while (0);
 
-    memcpy(dst, src, sizeof(src[0]));
+	my_copy_zval(&q->val, data, ctxt);
 
-    CHECK((dst->arBuckets = pool->palloc(pool, (dst->nTableSize * sizeof(Bucket*)))));
+	q->h = p->h;
+	if (packed) {
+		q->key = NULL;
+	} else {
+		uint32_t nIndex;
 
-    memset(dst->arBuckets, 0, dst->nTableSize * sizeof(Bucket*));
-    dst->pInternalPointer = NULL;
-    dst->pListHead = NULL;
+		q->key = p->key;
+		if (!static_keys && q->key) {
+			zend_string_addref(q->key);
+			if (ctxt->copy == APC_COPY_IN) {
+				q->key = apc_pstrcpy(p->key, ctxt->pool);
+			} else q->key = zend_string_copy(p->key);
+		}
 
-    for (curr = src->pListHead; curr != NULL; curr = curr->pListNext) {
-        int n = curr->h % dst->nTableSize;
-
-        if(check_fn) {
-            va_list args;
-            va_start(args, check_fn);
-
-            if(!check_fn(curr, args)) {
-                dst->nNumOfElements--;
-                va_end(args);
-                continue;
-            }
-
-            va_end(args);
-        }
-
-		if (!curr->nKeyLength) {
-            CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket), pool)));
-        } else if (IS_INTERNED(curr->arKey)) {
-            CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket), pool)));
-        } else {
-            CHECK((newp = (Bucket*) apc_pmemcpy(curr, sizeof(Bucket) + curr->nKeyLength, pool)));
-            newp->arKey = (const char*)(newp+1);
-        }
-
-
-        if (dst->arBuckets[n]) {
-            newp->pNext = dst->arBuckets[n];
-            newp->pLast = NULL;
-            newp->pNext->pLast = newp;
-        } else {
-            newp->pNext = newp->pLast = NULL;
-        }
-
-        dst->arBuckets[n] = newp;
-
-
-        CHECK((newp->pData = copy_fn(NULL, curr->pData, ctxt)));
-
-        if (holds_ptrs) {
-            memcpy(&newp->pDataPtr, newp->pData, sizeof(void*));
-        }
-        else {
-            newp->pDataPtr = NULL;
-        }
-
-        newp->pListLast = prev;
-        newp->pListNext = NULL;
-
-        if (prev) {
-            prev->pListNext = newp;
-        }
-
-        if (first) {
-            dst->pListHead = newp;
-            first = 0;
-        }
-
-        prev = newp;
-    }
-
-    dst->pListTail = newp;
-
-    zend_hash_internal_pointer_reset(dst);
-	*/
-
-    return dst;
+		nIndex = q->h | target->nTableMask;
+		Z_NEXT(q->val) = HT_HASH(target, nIndex);
+		HT_HASH(target, nIndex) = HT_IDX_TO_HASH(idx);
+	}
+	return 1;
 }
-/* }}} */
 
+static zend_always_inline void apc_array_dup_packed_elements(apc_context_t *ctxt, HashTable *source, HashTable *target, int with_holes)
+{
+	Bucket *p = source->arData;
+	Bucket *q = target->arData;
+	Bucket *end = p + source->nNumUsed;
+
+	do {
+		if (!apc_array_dup_element(ctxt, source, target, 0, p, q, 1, 1, with_holes)) {
+			if (with_holes) {
+				ZVAL_UNDEF(&q->val);
+			}
+		}
+		p++; q++;
+	} while (p != end);
+}
+
+static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t *ctxt) {
+	uint32_t idx;
+	HashTable *target;
+	apc_pool *pool = ctxt->pool;
+
+	if (ctxt->copy == APC_COPY_IN) {
+		target = (HashTable*) pool->palloc(pool, sizeof(HashTable));
+	} else ALLOC_HASHTABLE(target);
+
+	GC_REFCOUNT(target) = 1;
+	GC_TYPE_INFO(target) = IS_ARRAY;
+
+	target->nTableSize = source->nTableSize;
+	target->pDestructor = source->pDestructor;
+
+	if (source->nNumUsed == 0) {
+		target->u.flags = (source->u.flags & ~(HASH_FLAG_INITIALIZED|HASH_FLAG_PACKED|HASH_FLAG_PERSISTENT)) | HASH_FLAG_APPLY_PROTECTION | HASH_FLAG_STATIC_KEYS;
+		target->nTableMask = HT_MIN_MASK;
+		target->nNumUsed = 0;
+		target->nNumOfElements = 0;
+		target->nNextFreeElement = 0;
+		target->nInternalPointer = HT_INVALID_IDX;
+		HT_SET_DATA_ADDR(target, &uninitialized_bucket);
+	} else if (GC_FLAGS(source) & IS_ARRAY_IMMUTABLE) {
+		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
+		target->nTableMask = source->nTableMask;
+		target->nNumUsed = source->nNumUsed;
+		target->nNumOfElements = source->nNumOfElements;
+		target->nNextFreeElement = source->nNextFreeElement;
+		if (ctxt->copy == APC_COPY_IN) {
+			HT_SET_DATA_ADDR(target, pool->palloc(pool, HT_SIZE(target)));
+		} else HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
+		target->nInternalPointer = source->nInternalPointer;
+		memcpy(HT_GET_DATA_ADDR(target), HT_GET_DATA_ADDR(source), HT_USED_SIZE(source));
+		if (target->nNumOfElements > 0 &&
+		    target->nInternalPointer == HT_INVALID_IDX) {
+			idx = 0;
+			while (Z_TYPE(target->arData[idx].val) == IS_UNDEF) {
+				idx++;
+			}
+			target->nInternalPointer = idx;
+		}
+	} else if (source->u.flags & HASH_FLAG_PACKED) {
+		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
+		target->nTableMask = source->nTableMask;
+		target->nNumUsed = source->nNumUsed;
+		target->nNumOfElements = source->nNumOfElements;
+		target->nNextFreeElement = source->nNextFreeElement;
+		if (ctxt->copy == APC_COPY_IN) {
+			HT_SET_DATA_ADDR(target, pool->palloc(pool, HT_SIZE(target)));
+		} else 	HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
+		target->nInternalPointer = source->nInternalPointer;
+		HT_HASH_RESET_PACKED(target);
+
+		if (target->nNumUsed == target->nNumOfElements) {
+			apc_array_dup_packed_elements(ctxt, source, target, 0);
+		} else {
+			apc_array_dup_packed_elements(ctxt, source, target, 1);
+		}
+		if (target->nNumOfElements > 0 &&
+		    target->nInternalPointer == HT_INVALID_IDX) {
+			idx = 0;
+			while (Z_TYPE(target->arData[idx].val) == IS_UNDEF) {
+				idx++;
+			}
+			target->nInternalPointer = idx;
+		}
+	} else {
+		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
+		target->nTableMask = source->nTableMask;
+		target->nNextFreeElement = source->nNextFreeElement;
+		target->nInternalPointer = HT_INVALID_IDX;
+		if (ctxt->copy == APC_COPY_IN) {
+			HT_SET_DATA_ADDR(target, pool->palloc(pool, HT_SIZE(target)));
+		} else HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
+		HT_HASH_RESET(target);
+
+		if (target->u.flags & HASH_FLAG_STATIC_KEYS) {
+			if (source->nNumUsed == source->nNumOfElements) {
+				idx = apc_array_dup_elements(ctxt, source, target, 1, 0);
+			} else {
+				idx = apc_array_dup_elements(ctxt, source, target, 1, 1);
+			}
+		} else {
+			if (source->nNumUsed == source->nNumOfElements) {
+				idx = apc_array_dup_elements(ctxt, source, target, 0, 0);
+			} else {
+				idx = apc_array_dup_elements(ctxt, source, target, 0, 1);
+			}
+		}
+		target->nNumUsed = idx;
+		target->nNumOfElements = idx;
+		if (idx > 0 && target->nInternalPointer == HT_INVALID_IDX) {
+			target->nInternalPointer = 0;
+		}
+	}
+	return target;
+}
 
 /* {{{ my_copy_zval_ptr */
 /*
@@ -1340,16 +1409,10 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
         break;
 
     case IS_ARRAY:
-        /*if(ctxt->serializer == NULL) {
-
-            CHECK(Z_ARRVAL_P(dst) =
-                my_copy_hashtable(NULL,
-                                  Z_ARRVAL_P(src),
-                                  (ht_copy_fun_t) my_copy_zval_ptr,
-                                  1,
-                                  ctxt));
+        if(ctxt->serializer == NULL) {
+            CHECK(Z_ARRVAL_P(dst) = my_copy_hashtable(Z_ARRVAL_P(src), ctxt));
             break;
-        } */
+        }
 
 		/* break intentionally omitted */
 
