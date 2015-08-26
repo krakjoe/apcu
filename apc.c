@@ -50,47 +50,47 @@
 
 /* {{{ memory allocation wrappers */
 
-PHP_APCU_API void* apc_emalloc(size_t n TSRMLS_DC)
+PHP_APCU_API void* apc_emalloc(size_t n)
 {
     void* p = malloc(n);
     if (p == NULL) {
-        apc_error("apc_emalloc: malloc failed to allocate %u bytes:" TSRMLS_CC, n);
+        apc_error("apc_emalloc: malloc failed to allocate %u bytes:", n);
         return NULL;
     }
     return p;
 }
 
-PHP_APCU_API void* apc_erealloc(void* p, size_t n TSRMLS_DC)
+PHP_APCU_API void* apc_erealloc(void* p, size_t n)
 {
     void *new;
     new = realloc(p, n);
     if (new == NULL) {
-        apc_error("apc_erealloc: realloc failed to allocate %u bytes:" TSRMLS_CC, n);
+        apc_error("apc_erealloc: realloc failed to allocate %u bytes:", n);
         return NULL;
     }
     return new;
 }
 
-PHP_APCU_API void apc_efree(void* p TSRMLS_DC)
+PHP_APCU_API void apc_efree(void* p)
 {
     if (p == NULL) {
-        apc_error("apc_efree: attempt to free null pointer" TSRMLS_CC);
+        apc_error("apc_efree: attempt to free null pointer");
         return;
     }
     free(p);
 }
 
-PHP_APCU_API void* apc_php_malloc(size_t n TSRMLS_DC)
+PHP_APCU_API void* apc_php_malloc(size_t n)
 {
     return emalloc(n);
 }
 
-PHP_APCU_API void apc_php_free(void* p TSRMLS_DC)
+PHP_APCU_API void apc_php_free(void* p)
 {
     efree(p);
 }
 
-PHP_APCU_API char* APC_ALLOC apc_estrdup(const char* s TSRMLS_DC)
+PHP_APCU_API char* APC_ALLOC apc_estrdup(const char* s)
 {
     int len;
     char* dup;
@@ -101,7 +101,7 @@ PHP_APCU_API char* APC_ALLOC apc_estrdup(const char* s TSRMLS_DC)
     len = strlen(s);
     dup = (char*) malloc(len+1);
     if (dup == NULL) {
-        apc_error("apc_estrdup: malloc failed to allocate %u bytes:" TSRMLS_CC, len+1);
+        apc_error("apc_estrdup: malloc failed to allocate %u bytes:", len+1);
         return NULL;
     }
     memcpy(dup, s, len);
@@ -109,16 +109,16 @@ PHP_APCU_API char* APC_ALLOC apc_estrdup(const char* s TSRMLS_DC)
     return dup;
 }
 
-PHP_APCU_API void* APC_ALLOC apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC)
+PHP_APCU_API void* APC_ALLOC apc_xstrdup(const char* s, apc_malloc_t f)
 {
-    return s != NULL ? apc_xmemcpy(s, strlen(s)+1, f TSRMLS_CC) : NULL;
+    return s != NULL ? apc_xmemcpy(s, strlen(s)+1, f) : NULL;
 }
 
-PHP_APCU_API void* APC_ALLOC apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC)
+PHP_APCU_API void* APC_ALLOC apc_xmemcpy(const void* p, size_t n, apc_malloc_t f)
 {
     void* q;
 
-    if (p != NULL && (q = f(n TSRMLS_CC)) != NULL) {
+    if (p != NULL && (q = f(n)) != NULL) {
         memcpy(q, p, n);
         return q;
     }
@@ -145,13 +145,13 @@ APC_PRINT_FUNCTION(notice, E_NOTICE)
 #ifdef APC_DEBUG
 APC_PRINT_FUNCTION(debug, E_NOTICE)
 #else
-void apc_debug(const char *format TSRMLS_DC, ...) {}
+void apc_debug(const char *format, ...) {}
 #endif
 /* }}} */
 
 /* {{{ string and text manipulation */
 
-char* apc_append(const char* s, const char* t TSRMLS_DC)
+char* apc_append(const char* s, const char* t)
 {
     int slen;
     int tlen;
@@ -160,14 +160,14 @@ char* apc_append(const char* s, const char* t TSRMLS_DC)
     slen = strlen(s);
     tlen = strlen(t);
 
-    p = (char*) apc_emalloc((slen + tlen + 1) * sizeof(char) TSRMLS_CC);
+    p = (char*) apc_emalloc((slen + tlen + 1) * sizeof(char));
     memcpy(p, s, slen);
     memcpy(p + slen, t, tlen + 1);
 
     return p;
 }
 
-char* apc_substr(const char* s, int start, int length TSRMLS_DC)
+char* apc_substr(const char* s, int start, int length)
 {
     char* substr;
     int src_len = strlen(s);
@@ -186,12 +186,12 @@ char* apc_substr(const char* s, int start, int length TSRMLS_DC)
     }
 
     /* create the substring */
-    substr = apc_xmemcpy(s + start, length + 1, apc_emalloc TSRMLS_CC);
+    substr = apc_xmemcpy(s + start, length + 1, apc_emalloc);
     substr[length] = '\0';
     return substr;
 }
 
-char** apc_tokenize(const char* s, char delim TSRMLS_DC)
+char** apc_tokenize(const char* s, char delim)
 {
     char** tokens;      /* array of tokens, NULL terminated */
     int size;           /* size of tokens array */
@@ -209,7 +209,7 @@ char** apc_tokenize(const char* s, char delim TSRMLS_DC)
     cur  = 0;
     end  = strlen(s) - 1;
 
-    tokens = (char**) apc_emalloc(size * sizeof(char*) TSRMLS_CC);
+    tokens = (char**) apc_emalloc(size * sizeof(char*));
     tokens[n] = NULL;
 
     while (cur <= end) {
@@ -220,11 +220,11 @@ char** apc_tokenize(const char* s, char delim TSRMLS_DC)
         /* resize token array if necessary */
         if (n == size-1) {
             size *= 2;
-            tokens = (char**) apc_erealloc(tokens, size * sizeof(char*) TSRMLS_CC);
+            tokens = (char**) apc_erealloc(tokens, size * sizeof(char*));
         }
 
         /* save the current token */
-        tokens[n] = apc_substr(s, cur, next-cur TSRMLS_CC);
+        tokens[n] = apc_substr(s, cur, next-cur);
 
         tokens[++n] = NULL;
         cur = next + 1;
@@ -366,7 +366,7 @@ static apc_serializer_t apc_serializers[APC_MAX_SERIALIZERS] = {{0,}};
 PHP_APCU_API int _apc_register_serializer(const char* name,
                                   apc_serialize_t serialize,
                                   apc_unserialize_t unserialize,
-                                  void *config TSRMLS_DC) {
+                                  void *config) {
     int i;
     apc_serializer_t *serializer;
 
@@ -389,12 +389,12 @@ PHP_APCU_API int _apc_register_serializer(const char* name,
 } /* }}} */
 
 /* {{{ apc_get_serializers */
-PHP_APCU_API apc_serializer_t* apc_get_serializers(TSRMLS_D)  {
+PHP_APCU_API apc_serializer_t* apc_get_serializers()  {
 	return &(apc_serializers[0]);
 } /* }}} */
 
 /* {{{ apc_find_serializer */
-PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC) {
+PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name) {
 	int i;
     apc_serializer_t *serializer;
 

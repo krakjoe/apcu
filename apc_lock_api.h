@@ -70,25 +70,25 @@ typedef apc_windows_cs_rwlock_t apc_lock_t;
 	apc_lock_cleanup destroys those attributes
   This saves us from having to create and destroy attributes for
   every lock we use at runtime */
-PHP_APCU_API zend_bool apc_lock_init(TSRMLS_D);
-PHP_APCU_API void      apc_lock_cleanup(TSRMLS_D);
+PHP_APCU_API zend_bool apc_lock_init();
+PHP_APCU_API void      apc_lock_cleanup();
 /*
   The following functions should be self explanitory:
 */
-PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC);
-PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC);
-PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC);
-PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC);
-PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC);
-PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC); /* }}} */
+PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock);
+PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock);
+PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock);
+PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock);
+PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock);
+PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 
 /* {{{ generic locking macros */
-#define CREATE_LOCK(lock)     apc_lock_create(lock TSRMLS_CC)
-#define DESTROY_LOCK(lock)    apc_lock_destroy(lock TSRMLS_CC)
-#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock TSRMLS_CC); }
-#define WUNLOCK(lock)         { apc_lock_wunlock(lock TSRMLS_CC); HANDLE_UNBLOCK_INTERRUPTIONS(); }
-#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock TSRMLS_CC); }
-#define RUNLOCK(lock)         { apc_lock_runlock(lock TSRMLS_CC); HANDLE_UNBLOCK_INTERRUPTIONS(); }
+#define CREATE_LOCK(lock)     apc_lock_create(lock)
+#define DESTROY_LOCK(lock)    apc_lock_destroy(lock)
+#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock); }
+#define WUNLOCK(lock)         { apc_lock_wunlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
+#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock); }
+#define RUNLOCK(lock)         { apc_lock_runlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
 #define LOCK                  WLOCK
 #define UNLOCK                WUNLOCK
 /* }}} */

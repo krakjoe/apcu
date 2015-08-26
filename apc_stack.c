@@ -36,22 +36,22 @@ struct apc_stack_t {
     int size;
 };
 
-apc_stack_t* apc_stack_create(int size_hint TSRMLS_DC)
+apc_stack_t* apc_stack_create(int size_hint)
 {
-    apc_stack_t* stack = (apc_stack_t*) apc_emalloc(sizeof(apc_stack_t) TSRMLS_CC);
+    apc_stack_t* stack = (apc_stack_t*) apc_emalloc(sizeof(apc_stack_t));
 
     stack->capacity = (size_hint > 0) ? size_hint : 10;
     stack->size = 0;
-    stack->data = (void**) apc_emalloc(sizeof(void*) * stack->capacity TSRMLS_CC);
+    stack->data = (void**) apc_emalloc(sizeof(void*) * stack->capacity);
 
     return stack;
 }
 
-void apc_stack_destroy(apc_stack_t* stack TSRMLS_DC)
+void apc_stack_destroy(apc_stack_t* stack)
 {
     if (stack != NULL) {
-        apc_efree(stack->data TSRMLS_CC);
-        apc_efree(stack TSRMLS_CC);
+        apc_efree(stack->data);
+        apc_efree(stack);
     }
 }
 
@@ -61,12 +61,12 @@ void apc_stack_clear(apc_stack_t* stack)
     stack->size = 0;
 }
 
-void apc_stack_push(apc_stack_t* stack, void* item TSRMLS_DC)
+void apc_stack_push(apc_stack_t* stack, void* item)
 {
     assert(stack != NULL);
     if (stack->size == stack->capacity) {
         stack->capacity *= 2;
-        stack->data = apc_erealloc(stack->data, sizeof(void*)*stack->capacity TSRMLS_CC);
+        stack->data = apc_erealloc(stack->data, sizeof(void*)*stack->capacity);
     }
     stack->data[stack->size++] = item;
 }

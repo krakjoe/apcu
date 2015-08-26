@@ -59,21 +59,21 @@ struct apc_sma_info_t {
 /* }}} */
 
 /* {{{ function definitions for SMA API objects */
-typedef void (*apc_sma_init_f) (int32_t num, zend_ulong size, char *mask TSRMLS_DC);
-typedef void (*apc_sma_cleanup_f) (TSRMLS_D); 
-typedef void* (*apc_sma_malloc_f) (zend_ulong size TSRMLS_DC);
-typedef void* (*apc_sma_malloc_ex_f) (zend_ulong size, zend_ulong fragment, zend_ulong *allocated TSRMLS_DC);
-typedef void* (*apc_sma_realloc_f) (void* p, zend_ulong size TSRMLS_DC);
-typedef char* (*apc_sma_strdup_f) (const char* str TSRMLS_DC);
-typedef void (*apc_sma_free_f) (void *p TSRMLS_DC);
+typedef void (*apc_sma_init_f) (int32_t num, zend_ulong size, char *mask);
+typedef void (*apc_sma_cleanup_f) (); 
+typedef void* (*apc_sma_malloc_f) (zend_ulong size);
+typedef void* (*apc_sma_malloc_ex_f) (zend_ulong size, zend_ulong fragment, zend_ulong *allocated);
+typedef void* (*apc_sma_realloc_f) (void* p, zend_ulong size);
+typedef char* (*apc_sma_strdup_f) (const char* str);
+typedef void (*apc_sma_free_f) (void *p);
 typedef void* (*apc_sma_protect_f) (void* p);
 typedef void* (*apc_sma_unprotect_f) (void* p);
-typedef apc_sma_info_t* (*apc_sma_info_f) (zend_bool limited TSRMLS_DC);
-typedef void (*apc_sma_free_info_f) (apc_sma_info_t *info TSRMLS_DC);
+typedef apc_sma_info_t* (*apc_sma_info_f) (zend_bool limited);
+typedef void (*apc_sma_free_info_f) (apc_sma_info_t *info);
 typedef zend_ulong (*apc_sma_get_avail_mem_f) (void);
 typedef zend_bool (*apc_sma_get_avail_size_f) (zend_ulong size);
 typedef void (*apc_sma_check_integrity_f) (void); 
-typedef void (*apc_sma_expunge_f)(void* pointer, zend_ulong size TSRMLS_DC); /* }}} */
+typedef void (*apc_sma_expunge_f)(void* pointer, zend_ulong size); /* }}} */
 
 /* {{{ struct definition: apc_sma_t */
 typedef struct _apc_sma_t {
@@ -118,18 +118,18 @@ PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma,
 							       apc_sma_expunge_f expunge,
                                    int32_t num,
                                    zend_ulong size,
-                                   char *mask TSRMLS_DC);
+                                   char *mask);
 
 /*
 * apc_sma_api_cleanup will free the sma allocator
 */
-PHP_APCU_API void apc_sma_api_cleanup(apc_sma_t* sma TSRMLS_DC);
+PHP_APCU_API void apc_sma_api_cleanup(apc_sma_t* sma);
 
 /*
 * apc_smap_api_malloc will allocate a block from the sma of the given size
 */
 PHP_APCU_API void* apc_sma_api_malloc(apc_sma_t* sma, 
-                                      zend_ulong size TSRMLS_DC);
+                                      zend_ulong size);
 
 /*
 * apc_sma_api_malloc_ex will allocate a block from the sma of the given size
@@ -137,26 +137,26 @@ PHP_APCU_API void* apc_sma_api_malloc(apc_sma_t* sma,
 PHP_APCU_API void* apc_sma_api_malloc_ex(apc_sma_t* sma, 
                                          zend_ulong size, 
                                          zend_ulong fragment, 
-                                         zend_ulong* allocated TSRMLS_DC);
+                                         zend_ulong* allocated);
 
 /*
 * apc_sma_api_realloc will reallocate p using a new block from sma (freeing the original p)
 */
 PHP_APCU_API void* apc_sma_api_realloc(apc_sma_t* sma, 
                                        void* p, 
-                                       zend_ulong size TSRMLS_DC);
+                                       zend_ulong size);
 
 /*
 * apc_sma_api_strdup will duplicate the given string into a block from sma
 */
 PHP_APCU_API char* apc_sma_api_strdup(apc_sma_t* sma, 
-                                      const char* s TSRMLS_DC);
+                                      const char* s);
 
 /*
 * apc_sma_api_free will free p (which should be a pointer to a block allocated from sma)
 */
 PHP_APCU_API void apc_sma_api_free(apc_sma_t* sma, 
-                                   void* p TSRMLS_DC);
+                                   void* p);
 
 /*
 * apc_sma_api_protect will protect p (which should be a pointer to a block allocated from sma)
@@ -174,13 +174,13 @@ PHP_APCU_API void* apc_sma_api_unprotect(apc_sma_t* sma,
 * apc_sma_api_info returns information about the allocator
 */
 PHP_APCU_API apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, 
-                                              zend_bool limited TSRMLS_DC); 
+                                              zend_bool limited); 
 
 /*
 * apc_sma_api_info_free_info is for freeing apc_sma_info_t* returned by apc_sma_api_info
 */
 PHP_APCU_API void apc_sma_api_free_info(apc_sma_t* sma,
-                                        apc_sma_info_t* info TSRMLS_DC); 
+                                        apc_sma_info_t* info); 
 
 /*
 * apc_sma_api_get_avail_mem will return the amount of memory available left to sma
@@ -221,17 +221,17 @@ typedef union { void* p; int i; long l; double d; void (*f)(void); } apc_word_t;
 
 /* {{{ Call in a header somewhere to extern all sma functions */
 #define apc_sma_api_decl(name) \
-    PHP_APCU_API void apc_sma_api_func(name, init)(int32_t num, zend_ulong size, char* mask TSRMLS_DC); \
-    PHP_APCU_API void apc_sma_api_func(name, cleanup)(TSRMLS_D); \
-    PHP_APCU_API void* apc_sma_api_func(name, malloc)(zend_ulong size TSRMLS_DC); \
-    PHP_APCU_API void* apc_sma_api_func(name, malloc_ex)(zend_ulong size, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC); \
-    PHP_APCU_API void* apc_sma_api_func(name, realloc)(void* p, zend_ulong size TSRMLS_DC); \
-    PHP_APCU_API char* apc_sma_api_func(name, strdup)(const char* s TSRMLS_DC); \
-    PHP_APCU_API void apc_sma_api_func(name, free)(void* p TSRMLS_DC); \
+    PHP_APCU_API void apc_sma_api_func(name, init)(int32_t num, zend_ulong size, char* mask); \
+    PHP_APCU_API void apc_sma_api_func(name, cleanup)(); \
+    PHP_APCU_API void* apc_sma_api_func(name, malloc)(zend_ulong size); \
+    PHP_APCU_API void* apc_sma_api_func(name, malloc_ex)(zend_ulong size, zend_ulong fragment, zend_ulong* allocated); \
+    PHP_APCU_API void* apc_sma_api_func(name, realloc)(void* p, zend_ulong size); \
+    PHP_APCU_API char* apc_sma_api_func(name, strdup)(const char* s); \
+    PHP_APCU_API void apc_sma_api_func(name, free)(void* p); \
     PHP_APCU_API void* apc_sma_api_func(name, protect)(void* p); \
     PHP_APCU_API void* apc_sma_api_func(name, unprotect)(void* p); \
-    PHP_APCU_API apc_sma_info_t* apc_sma_api_func(name, info)(zend_bool limited TSRMLS_DC); \
-    PHP_APCU_API void apc_sma_api_func(name, free_info)(apc_sma_info_t* info TSRMLS_DC); \
+    PHP_APCU_API apc_sma_info_t* apc_sma_api_func(name, info)(zend_bool limited); \
+    PHP_APCU_API void apc_sma_api_func(name, free_info)(apc_sma_info_t* info); \
     PHP_APCU_API zend_ulong apc_sma_api_func(name, get_avail_mem)(void); \
     PHP_APCU_API zend_bool apc_sma_api_func(name, get_avail_size)(zend_ulong size); \
     PHP_APCU_API void apc_sma_api_func(name, check_integrity)(void); /* }}} */
@@ -254,28 +254,28 @@ typedef union { void* p; int i; long l; double d; void (*f)(void); } apc_word_t;
         &apc_sma_api_func(name, get_avail_size), \
         &apc_sma_api_func(name, check_integrity), \
     }; \
-    PHP_APCU_API void apc_sma_api_func(name, init)(int32_t num, zend_ulong size, char* mask TSRMLS_DC) \
-        { apc_sma_api_init(apc_sma_api_ptr(name), (void**) data, (apc_sma_expunge_f) expunge, num, size, mask TSRMLS_CC); } \
-    PHP_APCU_API void apc_sma_api_func(name, cleanup)(TSRMLS_D) \
-        { apc_sma_api_cleanup(apc_sma_api_ptr(name) TSRMLS_CC); } \
-    PHP_APCU_API void* apc_sma_api_func(name, malloc)(zend_ulong size TSRMLS_DC) \
-        { return apc_sma_api_malloc(apc_sma_api_ptr(name), size TSRMLS_CC); } \
-    PHP_APCU_API void* apc_sma_api_func(name, malloc_ex)(zend_ulong size, zend_ulong fragment, zend_ulong* allocated TSRMLS_DC) \
-        { return apc_sma_api_malloc_ex(apc_sma_api_ptr(name), size, fragment, allocated TSRMLS_CC); } \
-    PHP_APCU_API void* apc_sma_api_func(name, realloc)(void* p, zend_ulong size TSRMLS_DC) \
-        { return apc_sma_api_realloc(apc_sma_api_ptr(name), p, size TSRMLS_CC); } \
-    PHP_APCU_API char* apc_sma_api_func(name, strdup)(const char* s TSRMLS_DC) \
-        { return apc_sma_api_strdup(apc_sma_api_ptr(name), s TSRMLS_CC); } \
-    PHP_APCU_API void  apc_sma_api_func(name, free)(void* p TSRMLS_DC) \
-        { apc_sma_api_free(apc_sma_api_ptr(name), p TSRMLS_CC); } \
+    PHP_APCU_API void apc_sma_api_func(name, init)(int32_t num, zend_ulong size, char* mask) \
+        { apc_sma_api_init(apc_sma_api_ptr(name), (void**) data, (apc_sma_expunge_f) expunge, num, size, mask); } \
+    PHP_APCU_API void apc_sma_api_func(name, cleanup)() \
+        { apc_sma_api_cleanup(apc_sma_api_ptr(name)); } \
+    PHP_APCU_API void* apc_sma_api_func(name, malloc)(zend_ulong size) \
+        { return apc_sma_api_malloc(apc_sma_api_ptr(name), size); } \
+    PHP_APCU_API void* apc_sma_api_func(name, malloc_ex)(zend_ulong size, zend_ulong fragment, zend_ulong* allocated) \
+        { return apc_sma_api_malloc_ex(apc_sma_api_ptr(name), size, fragment, allocated); } \
+    PHP_APCU_API void* apc_sma_api_func(name, realloc)(void* p, zend_ulong size) \
+        { return apc_sma_api_realloc(apc_sma_api_ptr(name), p, size); } \
+    PHP_APCU_API char* apc_sma_api_func(name, strdup)(const char* s) \
+        { return apc_sma_api_strdup(apc_sma_api_ptr(name), s); } \
+    PHP_APCU_API void  apc_sma_api_func(name, free)(void* p) \
+        { apc_sma_api_free(apc_sma_api_ptr(name), p); } \
     PHP_APCU_API void* apc_sma_api_func(name, protect)(void* p) \
         { return apc_sma_api_protect(apc_sma_api_ptr(name), p); } \
     PHP_APCU_API void* apc_sma_api_func(name, unprotect)(void* p) \
         { return apc_sma_api_unprotect(apc_sma_api_ptr(name), p); } \
-    PHP_APCU_API apc_sma_info_t* apc_sma_api_func(name, info)(zend_bool limited TSRMLS_DC) \
-        { return apc_sma_api_info(apc_sma_api_ptr(name), limited TSRMLS_CC); } \
-    PHP_APCU_API void apc_sma_api_func(name, free_info)(apc_sma_info_t* info TSRMLS_DC) \
-        { apc_sma_api_free_info(apc_sma_api_ptr(name), info TSRMLS_CC); } \
+    PHP_APCU_API apc_sma_info_t* apc_sma_api_func(name, info)(zend_bool limited) \
+        { return apc_sma_api_info(apc_sma_api_ptr(name), limited); } \
+    PHP_APCU_API void apc_sma_api_func(name, free_info)(apc_sma_info_t* info) \
+        { apc_sma_api_free_info(apc_sma_api_ptr(name), info); } \
     PHP_APCU_API zend_ulong apc_sma_api_func(name, get_avail_mem)() \
         { return apc_sma_api_get_avail_mem(apc_sma_api_ptr(name)); } \
     PHP_APCU_API zend_bool apc_sma_api_func(name, get_avail_size)(zend_ulong size) \

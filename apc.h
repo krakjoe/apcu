@@ -70,29 +70,29 @@
 #include "main/php_streams.h"
 
 /* typedefs for extensible memory allocators */
-typedef void* (*apc_malloc_t)(size_t TSRMLS_DC);
-typedef void  (*apc_free_t)  (void * TSRMLS_DC);
+typedef void* (*apc_malloc_t)(size_t);
+typedef void  (*apc_free_t)  (void *);
 
 /* wrappers for memory allocation routines */
-PHP_APCU_API void* apc_emalloc(size_t n TSRMLS_DC);
-PHP_APCU_API void* apc_erealloc(void* p, size_t n TSRMLS_DC);
-PHP_APCU_API void* apc_php_malloc(size_t n TSRMLS_DC);
-PHP_APCU_API void  apc_php_free(void* p TSRMLS_DC);
-PHP_APCU_API void  apc_efree(void* p TSRMLS_DC);
-PHP_APCU_API char* apc_estrdup(const char* s TSRMLS_DC);
-PHP_APCU_API void* apc_xstrdup(const char* s, apc_malloc_t f TSRMLS_DC);
-PHP_APCU_API void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f TSRMLS_DC);
+PHP_APCU_API void* apc_emalloc(size_t n);
+PHP_APCU_API void* apc_erealloc(void* p, size_t n);
+PHP_APCU_API void* apc_php_malloc(size_t n);
+PHP_APCU_API void  apc_php_free(void* p);
+PHP_APCU_API void  apc_efree(void* p);
+PHP_APCU_API char* apc_estrdup(const char* s);
+PHP_APCU_API void* apc_xstrdup(const char* s, apc_malloc_t f);
+PHP_APCU_API void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f);
 
 /* console display functions */
-PHP_APCU_API void apc_error(const char *format TSRMLS_DC, ...);
-PHP_APCU_API void apc_warning(const char *format TSRMLS_DC, ...);
-PHP_APCU_API void apc_notice(const char *format TSRMLS_DC, ...);
-PHP_APCU_API void apc_debug(const char *format TSRMLS_DC, ...);
+PHP_APCU_API void apc_error(const char *format, ...);
+PHP_APCU_API void apc_warning(const char *format, ...);
+PHP_APCU_API void apc_notice(const char *format, ...);
+PHP_APCU_API void apc_debug(const char *format, ...);
 
 /* string and text manipulation */
-PHP_APCU_API char* apc_append(const char* s, const char* t TSRMLS_DC);
-PHP_APCU_API char* apc_substr(const char* s, int start, int length TSRMLS_DC);
-PHP_APCU_API char** apc_tokenize(const char* s, char delim TSRMLS_DC);
+PHP_APCU_API char* apc_append(const char* s, const char* t);
+PHP_APCU_API char* apc_substr(const char* s, int start, int length);
+PHP_APCU_API char** apc_tokenize(const char* s, char delim);
 
 /* apc_crc32: returns the CRC-32 checksum of the first len bytes in buf */
 PHP_APCU_API unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
@@ -104,7 +104,7 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 #define APC_POSITIVE_MATCH 2
 
 #define apc_time() \
-    (APCG(use_request_time) ? (time_t) sapi_get_request_time(TSRMLS_C) : time(0));
+    (APCG(use_request_time) ? (time_t) sapi_get_request_time() : time(0));
 
 #if defined(__GNUC__)
 # define APC_UNUSED __attribute__((unused))
@@ -131,8 +131,8 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 #define APC_SERIALIZER_NAME(module) module##_apc_serializer
 #define APC_UNSERIALIZER_NAME(module) module##_apc_unserializer
 
-#define APC_SERIALIZER_ARGS unsigned char **buf, size_t *buf_len, const zval *value, void *config TSRMLS_DC
-#define APC_UNSERIALIZER_ARGS zval *value, unsigned char *buf, size_t buf_len, void *config TSRMLS_DC
+#define APC_SERIALIZER_ARGS unsigned char **buf, size_t *buf_len, const zval *value, void *config
+#define APC_UNSERIALIZER_ARGS zval *value, unsigned char *buf, size_t buf_len, void *config
 
 typedef int (*apc_serialize_t)(APC_SERIALIZER_ARGS);
 typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);
@@ -151,15 +151,15 @@ typedef struct apc_serializer_t {
 PHP_APCU_API int _apc_register_serializer(const char* name,
                                                apc_serialize_t serialize,
                                                apc_unserialize_t unserialize,
-                                               void *config TSRMLS_DC); /* }}} */
+                                               void *config); /* }}} */
 
 /* {{{ apc_get_serializers 
  fetches the list of serializers */
-PHP_APCU_API apc_serializer_t* apc_get_serializers(TSRMLS_D); /* }}} */
+PHP_APCU_API apc_serializer_t* apc_get_serializers(); /* }}} */
 
 /* {{{ apc_find_serializer
  finds a previously registered serializer by name */
-PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name TSRMLS_DC); /* }}} */
+PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name); /* }}} */
 
 /* {{{ default serializers */
 PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS);

@@ -53,7 +53,7 @@
 # define MAP_ANON MAP_ANONYMOUS
 #endif
 
-apc_segment_t apc_mmap(char *file_mask, size_t size TSRMLS_DC)
+apc_segment_t apc_mmap(char *file_mask, size_t size)
 {
     apc_segment_t segment; 
 
@@ -66,7 +66,7 @@ apc_segment_t apc_mmap(char *file_mask, size_t size TSRMLS_DC)
     /* If no filename was provided, do an anonymous mmap */
     if(!file_mask || (file_mask && !strlen(file_mask))) {
 #if !defined(MAP_ANON)
-        apc_error("Anonymous mmap does not apear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the apc.mmap_file_mask INI option." TSRMLS_CC);
+        apc_error("Anonymous mmap does not apear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the apc.mmap_file_mask INI option.");
 #else
         fd = -1;
         flags = MAP_SHARED | MAP_ANON;
@@ -77,7 +77,7 @@ apc_segment_t apc_mmap(char *file_mask, size_t size TSRMLS_DC)
     } else if(!strcmp(file_mask,"/dev/zero")) { 
         fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
         if(fd == -1) {
-            apc_error("apc_mmap: open on /dev/zero failed:" TSRMLS_CC);
+            apc_error("apc_mmap: open on /dev/zero failed:");
             goto error;
         }
 #ifdef APC_MEMPROTECT
@@ -95,18 +95,18 @@ apc_segment_t apc_mmap(char *file_mask, size_t size TSRMLS_DC)
          * path you want here.
          */
         if(!mktemp(file_mask)) {
-            apc_error("apc_mmap: mktemp on %s failed:" TSRMLS_CC, file_mask);
+            apc_error("apc_mmap: mktemp on %s failed:", file_mask);
             goto error;
         }
         fd = shm_open(file_mask, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
         if(fd == -1) {
-            apc_error("apc_mmap: shm_open on %s failed:" TSRMLS_CC, file_mask);
+            apc_error("apc_mmap: shm_open on %s failed:", file_mask);
             goto error;
         }
         if (ftruncate(fd, size) < 0) {
             close(fd);
             shm_unlink(file_mask);
-            apc_error("apc_mmap: ftruncate failed:" TSRMLS_CC);
+            apc_error("apc_mmap: ftruncate failed:");
             goto error;
         }
         shm_unlink(file_mask);
@@ -116,13 +116,13 @@ apc_segment_t apc_mmap(char *file_mask, size_t size TSRMLS_DC)
          */
         fd = mkstemp(file_mask);
         if(fd == -1) {
-            apc_error("apc_mmap: mkstemp on %s failed:" TSRMLS_CC, file_mask);
+            apc_error("apc_mmap: mkstemp on %s failed:", file_mask);
             goto error;
         }
         if (ftruncate(fd, size) < 0) {
             close(fd);
             unlink(file_mask);
-            apc_error("apc_mmap: ftruncate failed:" TSRMLS_CC);
+            apc_error("apc_mmap: ftruncate failed:");
             goto error;
         }
         unlink(file_mask);
@@ -140,7 +140,7 @@ apc_segment_t apc_mmap(char *file_mask, size_t size TSRMLS_DC)
 #endif
 
     if((long)segment.shmaddr == -1) {
-        apc_error("apc_mmap: mmap failed:" TSRMLS_CC);
+        apc_error("apc_mmap: mmap failed:");
     }
 
     if(fd != -1) close(fd);
@@ -157,15 +157,15 @@ error:
     return segment;
 }
 
-void apc_unmap(apc_segment_t *segment TSRMLS_DC)
+void apc_unmap(apc_segment_t *segment)
 {
     if (munmap(segment->shmaddr, segment->size) < 0) {
-        apc_warning("apc_unmap: munmap failed:" TSRMLS_CC);
+        apc_warning("apc_unmap: munmap failed:");
     }
 
 #ifdef APC_MEMPROTECT
     if (segment->roaddr && munmap(segment->roaddr, segment->size) < 0) {
-        apc_warning("apc_unmap: munmap failed:" TSRMLS_CC);
+        apc_warning("apc_unmap: munmap failed:");
     }
 #endif
 

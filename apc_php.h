@@ -70,8 +70,6 @@
 #define IS_CONSTANT_TYPE_MASK (~IS_CONSTANT_INDEX)
 #endif
 
-#include "rfc1867.h"
-
 #endif
 
 /*

@@ -38,8 +38,8 @@
 /* Wrapper functions for shared memory mapped files */
 
 #if APC_MMAP
-apc_segment_t apc_mmap(char *file_mask, size_t size TSRMLS_DC);
-void apc_unmap(apc_segment_t* segment TSRMLS_DC);
+apc_segment_t apc_mmap(char *file_mask, size_t size);
+void apc_unmap(apc_segment_t* segment);
 #endif
 
 #endif

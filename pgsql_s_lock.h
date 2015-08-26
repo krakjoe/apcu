@@ -885,7 +885,7 @@ extern int	tas_sema(volatile slock_t *lock);
 #define S_LOCK(lock) \
 	do { \
 		if (TAS(lock)) \
-			s_lock((lock), __FILE__, __LINE__ TSRMLS_CC); \
+			s_lock((lock), __FILE__, __LINE__); \
 	} while (0)
 #endif	 /* S_LOCK */
 
@@ -916,7 +916,7 @@ extern int	tas(volatile slock_t *lock);		/* in port/.../tas.s, or
 /*
  * Platform-independent out-of-line support routines
  */
-extern void s_lock(volatile slock_t *lock, const char *file, int line TSRMLS_DC);
+extern void s_lock(volatile slock_t *lock, const char *file, int line);
 
 /* Support for dynamic adjustment of spins_per_delay */
 #define DEFAULT_SPINS_PER_DELAY  100

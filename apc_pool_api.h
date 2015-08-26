@@ -43,9 +43,9 @@
 typedef struct _apc_pool apc_pool; /* }}} */
 
 /* {{{ functions */
-typedef void  (*apc_pcleanup_t)(apc_pool *pool TSRMLS_DC);
-typedef void* (*apc_palloc_t)(apc_pool *pool, size_t size TSRMLS_DC);
-typedef void  (*apc_pfree_t) (apc_pool *pool, void* p TSRMLS_DC);
+typedef void  (*apc_pcleanup_t)(apc_pool *pool);
+typedef void* (*apc_palloc_t)(apc_pool *pool, size_t size);
+typedef void  (*apc_pfree_t) (apc_pool *pool, void* p);
 typedef void* (*apc_protect_t)  (void *p);
 typedef void* (*apc_unprotect_t)(void *p); /* }}} */
 
@@ -124,29 +124,29 @@ PHP_APCU_API apc_pool* apc_pool_create(apc_pool_type pool_type,
                                        apc_malloc_t allocate,
                                        apc_free_t deallocate,
                                        apc_protect_t protect,
-                                       apc_unprotect_t unprotect TSRMLS_DC);
+                                       apc_unprotect_t unprotect);
 
 /*
  apc_pool_destroy first calls apc_cleanup_t set during apc_pool_create, then apc_free_t
 */
-PHP_APCU_API void apc_pool_destroy(apc_pool* pool TSRMLS_DC);
+PHP_APCU_API void apc_pool_destroy(apc_pool* pool);
 
 /*
  apc_pmemcpy performs memcpy using resources provided by pool
 */
 PHP_APCU_API void* apc_pmemcpy(const void* p, 
                                size_t n, 
-                               apc_pool* pool TSRMLS_DC);
+                               apc_pool* pool);
 
 
-PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool TSRMLS_DC);
-PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_pool* pool TSRMLS_DC);
+PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool);
+PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_pool* pool);
 
 /*
  apc_pstrdup performs strdup using resources provided by pool
 */
 PHP_APCU_API void* apc_pstrdup(const char* s, 
-                               apc_pool* pool TSRMLS_DC);
+                               apc_pool* pool);
 
 #endif
 

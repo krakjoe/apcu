@@ -44,7 +44,7 @@
 
 static apc_signal_info_t apc_signal_info = {0};
 
-static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*) TSRMLS_DC);
+static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*));
 static void apc_rehandle_signal(int signo, siginfo_t *siginfo, void *context);
 static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context);
 #if defined(SIGUSR1) && defined(APC_SIGNAL_CLEAR)
@@ -60,7 +60,7 @@ static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 {
     TSRMLS_FETCH();
 	
-    apc_sma_cleanup(TSRMLS_C);
+    apc_sma_cleanup();
     apc_rehandle_signal(signo, siginfo, context);
 
 #if !defined(WIN32) && !defined(NETWARE)
@@ -78,7 +78,7 @@ static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
 	
 	if (apc_user_cache) {	
 		apc_cache_clear(
-			apc_user_cache TSRMLS_CC);
+			apc_user_cache);
 	}
 	
 	apc_rehandle_signal(signo, siginfo, context);
@@ -116,7 +116,7 @@ static void apc_rehandle_signal(int signo, siginfo_t *siginfo, void *context)
  *  Set a handler for a previously installed signal and save so we can 
  *  callback when handled 
  */
-static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*) TSRMLS_DC)
+static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*))
 {
     struct sigaction sa = {{0}};
     apc_signal_entry_t p_sig = {0};
@@ -131,8 +131,8 @@ static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*
             p_sig.siginfo = ((sa.sa_flags & SA_SIGINFO) == SA_SIGINFO);
             p_sig.handler = (void *)sa.sa_handler;
 
-            apc_signal_info.prev = (apc_signal_entry_t **)apc_erealloc(apc_signal_info.prev, (apc_signal_info.installed+1)*sizeof(apc_signal_entry_t *) TSRMLS_CC);
-            apc_signal_info.prev[apc_signal_info.installed] = (apc_signal_entry_t *)apc_emalloc(sizeof(apc_signal_entry_t) TSRMLS_CC);
+            apc_signal_info.prev = (apc_signal_entry_t **)apc_erealloc(apc_signal_info.prev, (apc_signal_info.installed+1)*sizeof(apc_signal_entry_t *));
+            apc_signal_info.prev[apc_signal_info.installed] = (apc_signal_entry_t *)apc_emalloc(sizeof(apc_signal_entry_t));
             *apc_signal_info.prev[apc_signal_info.installed++] = p_sig;
         } else {
             /* inherit flags and mask if already set */
@@ -148,7 +148,7 @@ static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*
         sa.sa_handler = (void*)handler;
 
         if (sigaction(signo, &sa, NULL) < 0) {
-            apc_warning("Error installing apc signal handler for %d" TSRMLS_CC, signo);
+            apc_warning("Error installing apc signal handler for %d", signo);
         }
 
         return SUCCESS;
@@ -158,45 +158,45 @@ static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*
 
 /* {{{ apc_set_signals
  *  Install our signal handlers */
-void apc_set_signals(TSRMLS_D) 
+void apc_set_signals() 
 {
 	if (apc_signal_info.installed == 0) {
 #if defined(SIGUSR1) && defined(APC_SIGNAL_CLEAR)
-		apc_register_signal(SIGUSR1, apc_clear_cache TSRMLS_CC);
+		apc_register_signal(SIGUSR1, apc_clear_cache);
 #endif
 		if (APCG(coredump_unmap)) {
 		    /* ISO C standard signals that coredump */
-		    apc_register_signal(SIGSEGV, apc_core_unmap TSRMLS_CC);
-		    apc_register_signal(SIGABRT, apc_core_unmap TSRMLS_CC);
-		    apc_register_signal(SIGFPE, apc_core_unmap TSRMLS_CC);
-		    apc_register_signal(SIGILL, apc_core_unmap TSRMLS_CC);
+		    apc_register_signal(SIGSEGV, apc_core_unmap);
+		    apc_register_signal(SIGABRT, apc_core_unmap);
+		    apc_register_signal(SIGFPE, apc_core_unmap);
+		    apc_register_signal(SIGILL, apc_core_unmap);
 /* extended signals that coredump */
 #ifdef SIGBUS
-			apc_register_signal(SIGBUS, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGBUS, apc_core_unmap);
 #endif
 #ifdef SIGABORT
-			apc_register_signal(SIGABORT, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGABORT, apc_core_unmap);
 #endif
 #ifdef SIGEMT
-			apc_register_signal(SIGEMT, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGEMT, apc_core_unmap);
 #endif
 #ifdef SIGIOT
-			apc_register_signal(SIGIOT, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGIOT, apc_core_unmap);
 #endif
 #ifdef SIGQUIT
-			apc_register_signal(SIGQUIT, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGQUIT, apc_core_unmap);
 #endif
 #ifdef SIGSYS
-			apc_register_signal(SIGSYS, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGSYS, apc_core_unmap);
 #endif
 #ifdef SIGTRAP
-			apc_register_signal(SIGTRAP, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGTRAP, apc_core_unmap);
 #endif
 #ifdef SIGXCPU
-			apc_register_signal(SIGXCPU, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGXCPU, apc_core_unmap);
 #endif
 #ifdef SIGXFSZ
-			apc_register_signal(SIGXFSZ, apc_core_unmap TSRMLS_CC);
+			apc_register_signal(SIGXFSZ, apc_core_unmap);
 #endif
     	}
 	}
@@ -204,14 +204,14 @@ void apc_set_signals(TSRMLS_D)
 
 /* {{{ apc_set_signals
  *  cleanup signals for shutdown */
-void apc_shutdown_signals(TSRMLS_D) 
+void apc_shutdown_signals() 
 {
     int i=0;
     if (apc_signal_info.installed > 0) {
         for (i=0;  (i < apc_signal_info.installed);  i++) {
-            apc_efree(apc_signal_info.prev[i] TSRMLS_CC);
+            apc_efree(apc_signal_info.prev[i]);
         }
-        apc_efree(apc_signal_info.prev TSRMLS_CC);
+        apc_efree(apc_signal_info.prev);
         apc_signal_info.installed = 0; /* just in case */
 	}
 }

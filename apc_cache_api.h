@@ -140,24 +140,23 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma,
                                            int gc_ttl,
                                            int ttl,
                                            long smart,
-                                           zend_bool defend TSRMLS_DC);
+                                           zend_bool defend);
 /*
 * apc_cache_preload preloads the data at path into the specified cache
 */
-PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache,
-                                         const char* path TSRMLS_DC);
+PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char* path);
 
 /*
  * apc_cache_destroy releases any OS resources associated with a cache object.
  * Under apache, this function can be safely called by the child processes
  * when they exit.
  */
-PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache TSRMLS_DC);
+PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache);
 
 /*
  * apc_cache_clear empties a cache. This can safely be called at any time.
  */
-PHP_APCU_API void apc_cache_clear(apc_cache_t* cache TSRMLS_DC);
+PHP_APCU_API void apc_cache_clear(apc_cache_t* cache);
 
 /*
 * apc_cache_make_context initializes a context with an appropriate pool and options provided
@@ -172,7 +171,7 @@ PHP_APCU_API zend_bool apc_cache_make_context(apc_cache_t* cache,
                                               apc_context_type context_type, 
                                               apc_pool_type pool_type,
                                               apc_copy_type copy_type,
-                                              uint force_update TSRMLS_DC);
+                                              uint force_update);
 
 /*
 * apc_cache_make_context_ex is an advanced/external version of make_context
@@ -185,11 +184,11 @@ PHP_APCU_API zend_bool apc_cache_make_context_ex(apc_context_t* context,
                                                  apc_unprotect_t _unprotect, 
                                                  apc_pool_type pool_type, 
                                                  apc_copy_type copy_type, 
-                                                 uint force_update TSRMLS_DC);
+                                                 uint force_update);
 /*
 * apc_context_destroy should be called when a context is finished being used 
 */
-PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_DC);
+PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context);
 
 /*
  * apc_cache_insert adds an entry to the cache.
@@ -204,43 +203,37 @@ PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context TSRMLS_D
  * an easier API exists in the form of apc_cache_store
  */
 PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache,
-                                        apc_cache_key_t* key,
-                                        apc_cache_entry_t* value,
-                                        apc_context_t* ctxt,
-                                        time_t t,
-                                        zend_bool exclusive TSRMLS_DC);
+										apc_cache_key_t* key,
+										apc_cache_entry_t* value,
+										apc_context_t* ctxt,
+										time_t t,
+										zend_bool exclusive);
 
 /*
  * apc_cache_store creates key, entry and context in which to make an insertion of val into the specified cache
  */
 PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache,
-                                       zend_string *key,
+										zend_string *key,
 										const zval *val,
-                                       const int32_t ttl,
-                                       const zend_bool exclusive TSRMLS_DC);
+										const int32_t ttl,
+										const zend_bool exclusive);
 /*
-* apc_cache_update updates an entry in place, this is used for rfc1867 and inc/dec/cas
+* apc_cache_update updates an entry in place, this is used for inc/dec/cas
 */
-PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache,
-                                        zend_string *key,
-										apc_cache_updater_t updater,
-                                        void* data TSRMLS_DC);
+PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, apc_cache_updater_t updater, void* data);
 
 /*
  * apc_cache_find searches for a cache entry by its hashed identifier,
  * and returns a pointer to the entry if found, NULL otherwise.
  *
  */
-PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache,
-                                               zend_string *key, time_t t TSRMLS_DC);
+PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *key, time_t t);
 
 /*
  * apc_cache_fetch fetches an entry from the cache directly into dst
  *
  */
-PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache,
-                                       zend_string *key, time_t t,
-                                       zval **dst TSRMLS_DC);
+PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval **dst);
 
 /*
  * apc_cache_exists searches for a cache entry by its hashed identifier,
@@ -249,22 +242,18 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache,
  * shared memory segment in any way.
  *
  */
-PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache,
-                                                 zend_string *key, time_t t TSRMLS_DC);
+PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, zend_string *key, time_t t);
 
 /*
  * apc_cache_delete and apc_cache_delete finds an entry in the cache and deletes it.
  */
-PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache,
-                                        zend_string *key TSRMLS_DC);
+PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache, zend_string *key);
 
 /* apc_cach_fetch_zval takes a zval in the cache and reconstructs a runtime
  * zval from it.
  *
  */
-PHP_APCU_API zval* apc_cache_fetch_zval(apc_context_t* ctxt,
-                                        zval* dst,
-                                        const zval* src TSRMLS_DC);
+PHP_APCU_API zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zval* src);
 
 /*
  * apc_cache_release decrements the reference count associated with a cache
@@ -275,14 +264,12 @@ PHP_APCU_API zval* apc_cache_fetch_zval(apc_context_t* ctxt,
  *
  * entry is the cache entry whose ref count you want to decrement.
  */
-PHP_APCU_API void apc_cache_release(apc_cache_t* cache,
-                                    apc_cache_entry_t* entry TSRMLS_DC);
+PHP_APCU_API void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry);
 
 /*
 * apc_cache_make_key creates an apc_cache_key_t from an identifier, it's length and the current time
 */
-PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key,
-                                          zend_string *str TSRMLS_DC);
+PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, zend_string *str);
 
 /*
  * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
@@ -295,13 +282,12 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt,
 /*
  fetches information about the cache provided for userland status functions
 */
-PHP_APCU_API zval apc_cache_info(apc_cache_t* cache,
-                                  zend_bool limited TSRMLS_DC);
+PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited);
                                   
 /*
  fetches information about the key provided
 */
-PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *stat TSRMLS_DC);
+PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *stat);
 
 /*
 * apc_cache_busy returns true while the cache is busy
@@ -313,7 +299,7 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *st
 *
 * Note: garbage collection can be invoked by the SMA and is invoked on insert
 */
-PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC);
+PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache);
 
 /*
 * apc_cache_defense: guard against slamming a key
@@ -324,15 +310,14 @@ PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache TSRMLS_DC);
 * in non-ZTS mode, PID determines owner
 * Note: this function sets the owner of key during execution
 */
-PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache,
-                                         apc_cache_key_t* key TSRMLS_DC);
+PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key);
 
 /*
 * apc_cache_serializer
 * sets the serializer for a cache, and by proxy contexts created for the cache
 * Note: this avoids race conditions between third party serializers and APCu
 */
-PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name TSRMLS_DC);
+PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name);
 
 /*
 * The remaining functions allow a third party to reimplement expunge
@@ -367,7 +352,7 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name TSRM
 *
 * The TTL of an entry takes precedence over the TTL of a cache
 */
-PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRMLS_DC);
+PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size);
 
 /*
 * The remaining functions are used during the APCu implementation of expunge
@@ -378,14 +363,14 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size TSRM
 *
 * Note: it is assumed you have a write lock on the header when you enter real expunge
 */
-PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache TSRMLS_DC);
+PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache);
 
 /*
 * apc_cache_gc: runs garbage collection on cache
 *
 * Note: it is assumed you have a write lock on the header when you enter gc
 */
-PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC);
+PHP_APCU_API void apc_cache_gc(apc_cache_t* cache);
 
 /*
 * apc_cache_remove_slot: removes slot
@@ -395,7 +380,7 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache TSRMLS_DC);
 *
 * Note: it is assumed you have a write lock on the header when you remove slots
 */
-PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot TSRMLS_DC);
+PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot);
 #endif
 
 /*

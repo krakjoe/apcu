@@ -129,7 +129,7 @@ pg_usleep(long microsec)
  * s_lock_stuck() - complain about a stuck spinlock
  */
 static void
-s_lock_stuck(volatile slock_t *lock, const char *file, int line TSRMLS_DC)
+s_lock_stuck(volatile slock_t *lock, const char *file, int line)
 {
 #if defined(S_LOCK_TEST)
 	fprintf(stderr,
@@ -141,7 +141,7 @@ s_lock_stuck(volatile slock_t *lock, const char *file, int line TSRMLS_DC)
 	elog(PANIC, "stuck spinlock (%p) detected at %s:%d",
 		 lock, file, line);
   */
-  apc_error("Stuck spinlock (%p) detected" TSRMLS_CC, lock);
+  apc_error("Stuck spinlock (%p) detected", lock);
 #endif
 }
 
@@ -150,7 +150,7 @@ s_lock_stuck(volatile slock_t *lock, const char *file, int line TSRMLS_DC)
  * s_lock(lock) - platform-independent portion of waiting for a spinlock.
  */
 void
-s_lock(volatile slock_t *lock, const char *file, int line TSRMLS_DC)
+s_lock(volatile slock_t *lock, const char *file, int line)
 {
 	/*
 	 * We loop tightly for awhile, then delay using pg_usleep() and try again.
@@ -209,7 +209,7 @@ s_lock(volatile slock_t *lock, const char *file, int line TSRMLS_DC)
 		if (++spins >= spins_per_delay)
 		{
 			if (++delays > NUM_DELAYS)
-				s_lock_stuck(lock, file, line TSRMLS_CC);
+				s_lock_stuck(lock, file, line);
 
 			if (cur_delay == 0) /* first time to delay? */
 				cur_delay = MIN_DELAY_MSEC;

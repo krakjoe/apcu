@@ -58,7 +58,7 @@ tRtlDumpResource              pRtlDumpResource = 0;
 HINSTANCE ntdll;
 
 void apc_windows_cs_status(apc_windows_cs_rwlock_t *lock );
-apc_windows_cs_rwlock_t *apc_windows_cs_create(apc_windows_cs_rwlock_t *lock TSRMLS_DC) 
+apc_windows_cs_rwlock_t *apc_windows_cs_create(apc_windows_cs_rwlock_t *lock) 
 {
     ntdll = LoadLibrary("ntdll.dll");
     if (ntdll == 0) {
@@ -94,22 +94,22 @@ void apc_windows_cs_destroy(apc_windows_cs_rwlock_t *lock)
     return;
 }
 
-void apc_windows_cs_lock(apc_windows_cs_rwlock_t *lock TSRMLS_DC)
+void apc_windows_cs_lock(apc_windows_cs_rwlock_t *lock)
 {
     pRtlAcquireResourceExclusive(lock, 1);
 }
 
-void apc_windows_cs_rdlock(apc_windows_cs_rwlock_t *lock TSRMLS_DC)
+void apc_windows_cs_rdlock(apc_windows_cs_rwlock_t *lock)
 {
     pRtlAcquireResourceShared(lock, 1);
 }
 
-void apc_windows_cs_unlock_rd(apc_windows_cs_rwlock_t *lock TSRMLS_DC)
+void apc_windows_cs_unlock_rd(apc_windows_cs_rwlock_t *lock)
 {
     pRtlReleaseResource(lock);
 }
 
-void apc_windows_cs_unlock_wr(apc_windows_cs_rwlock_t *lock TSRMLS_DC)
+void apc_windows_cs_unlock_wr(apc_windows_cs_rwlock_t *lock)
 {
     pRtlReleaseResource(lock);
 }

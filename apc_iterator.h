@@ -66,7 +66,7 @@ typedef void* (*apc_iterator_item_cb_t)(apc_cache_slot_t **slot);
 typedef struct _apc_iterator_t {
     short int initialized;   /* sanity check in case __construct failed */
     long format;             /* format bitmask of the return values ie: key, value, info */
-    int (*fetch)(struct _apc_iterator_t *iterator TSRMLS_DC);
+    int (*fetch)(struct _apc_iterator_t *iterator);
                              /* fetch callback to fetch items from cache slots or lists */
     long slot_idx;           /* index to the slot array or linked list */
     long chunk_size;         /* number of entries to pull down per fetch */
@@ -97,8 +97,8 @@ typedef struct _apc_iterator_item_t {
 /* }}} */
 
 
-extern int apc_iterator_init(int module_number TSRMLS_DC);
-extern int apc_iterator_delete(zval *zobj TSRMLS_DC);
+extern int apc_iterator_init(int module_number);
+extern int apc_iterator_delete(zval *zobj);
 
 #endif
 
