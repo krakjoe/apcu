@@ -1390,6 +1390,28 @@ static zval* my_copy_zval_ptr(zval* dst, const zval* src, apc_context_t* ctxt)
 } */
 /* }}} */
 
+static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
+static APC_HOTSPOT zval* my_copy_zval_reference(zval *dst, const zval* src, apc_context_t *ctxt) {
+	apc_pool* pool = ctxt->pool;
+	zend_reference *r;
+	
+	assert(src != NULL);
+	assert(dst != NULL);
+
+	memcpy(dst, src, sizeof(zval));
+	
+	Z_REF_P(dst) = (zend_reference*) pool->palloc(pool, sizeof(zend_reference));
+
+	memcpy(
+		Z_REF_P(dst), 
+		Z_REF_P(src), sizeof(zend_reference));
+
+
+	Z_SET_REFCOUNT_P(dst, 1);
+
+	return dst;	
+}
+
 /* {{{ my_copy_zval */
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt)
 {
@@ -1416,7 +1438,6 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
         
     }
 
-
     switch (Z_TYPE_P(src)) {
     case IS_RESOURCE:
     case IS_TRUE:
@@ -1425,6 +1446,10 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
     case IS_DOUBLE:
     case IS_NULL:
         break;
+
+	case IS_REFERENCE:
+		dst = my_copy_zval_reference(dst, src, ctxt);
+	break;
 
 	case IS_INDIRECT:
 		dst = my_copy_zval(dst, Z_INDIRECT_P(src), ctxt);
