@@ -516,6 +516,7 @@ PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool TSRMLS_DC
 		return NULL;
 	}
 
+	GC_REFCOUNT(p) = 1;
 	GC_TYPE_INFO(p) = IS_STRING;
 	memcpy(ZSTR_VAL(p), ZSTR_VAL(str), ZSTR_LEN(str));
 	p->len = ZSTR_LEN(str);
@@ -534,6 +535,7 @@ PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_po
 		return NULL;
 	}
 
+	GC_REFCOUNT(p) = 1;
 	GC_TYPE_INFO(p) = IS_STRING;
 	memcpy(ZSTR_VAL(p), buf, buf_len);
 	p->len = buf_len;

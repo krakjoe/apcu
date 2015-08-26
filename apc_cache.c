@@ -1354,18 +1354,15 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 		/* break intentionally omitted */
 
     case IS_OBJECT:
-        if(ctxt->copy == APC_COPY_IN) {
+        if(ctxt->copy == APC_COPY_IN || ctxt->copy == APC_COPY_OUT) {
             dst = my_serialize_object(dst, src, ctxt TSRMLS_CC);
-        } else if(ctxt->copy == APC_COPY_OUT) {
-            dst = my_unserialize_object(dst, src, ctxt TSRMLS_CC);
         }
         break;
-#ifdef ZEND_ENGINE_2_4
+
     case IS_CALLABLE:
         /* XXX implement this */
         assert(0);
         break;
-#endif
 
     default:
         assert(0);
