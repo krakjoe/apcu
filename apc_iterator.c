@@ -42,15 +42,21 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
 	item->key = zend_string_init(
 		ZSTR_VAL(slot->key.str), ZSTR_LEN(slot->key.str), 0);
 
-    add_assoc_str(&item->value, "key", zend_string_copy(item->key));
+    if (APC_ITER_TYPE & iterator->format) {
+		add_assoc_string_ex(&item->value, "type", sizeof("type")-1, "user");
+	}
+
+	if (APC_ITER_KEY & iterator->format) {
+		add_assoc_str(&item->value, "key", zend_string_copy(item->key));
+	}
 
     if (APC_ITER_VALUE & iterator->format) {
     	apc_cache_make_context(
     		apc_user_cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0);
     	ZVAL_UNDEF(&zvalue);
         apc_cache_fetch_zval(&ctxt, &zvalue, &slot->value->val);
-        apc_pool_destroy(ctxt.pool);
         add_assoc_zval(&item->value, "value", &zvalue);
+        apc_pool_destroy(ctxt.pool);
     }
     if (APC_ITER_NUM_HITS & iterator->format) {
         add_assoc_long(&item->value, "num_hits", slot->nhits);
@@ -267,18 +273,17 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 PHP_METHOD(apc_iterator, __construct) {
     zval *object = getThis();
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
-    long format = APC_ITER_ALL;
-    long chunk_size=0;
+    zend_long format = APC_ITER_ALL;
+    zend_long chunk_size=0;
     zval *search = NULL;
-    long list = APC_LIST_ACTIVE;
+    zend_long list = APC_LIST_ACTIVE;
 #if defined(APC_FULL_BC) && APC_FULL_BC
     /* these are ignored */
-    char *cache_type;
-    int cache_type_len;
+    zend_string *type;
 #endif
 
 #if defined(APC_FULL_BC) && APC_FULL_BC
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "s|zlll", &cache_type, &cache_type_len, &search, &format, &chunk_size, &list) == FAILURE) {
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|zlll", &type, &search, &format, &chunk_size, &list) == FAILURE) {
         return;
     }
 #else
@@ -310,7 +315,7 @@ PHP_METHOD(apc_iterator, __construct) {
         return;
     }
 #if defined(APC_FULL_BC) && APC_FULL_BC
-    if (!APC_CACHE_IS_USER(cache_type, cache_type_len)) {
+    if (!APC_CACHE_IS_USER(type->val, type->len)) {
         iterator->initialized = 0;
         return;
     }

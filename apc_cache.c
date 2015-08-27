@@ -1119,7 +1119,9 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 
     if(ctxt->serializer) {
         serialize = ctxt->serializer->serialize;
-        config = (ctxt->serializer->config != NULL) ? ctxt->serializer->config : ctxt;
+        config = 
+			(ctxt->serializer->config != NULL) ? 
+			ctxt->serializer->config : ctxt;
     }
 
 	ZVAL_NULL(dst);
@@ -1470,8 +1472,12 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
         assert(0);
     }
 
-	if (Z_REFCOUNTED_P(dst)) {
-		zend_hash_index_update(&ctxt->copied, (ulong)Z_COUNTED_P(src), dst);
+	switch (Z_TYPE_P(dst)) {
+		case IS_ARRAY:
+		case IS_OBJECT:
+		case IS_STRING:
+			//zend_hash_index_update(&ctxt->copied, (ulong)Z_COUNTED_P(src), dst);
+		break;
 	}
 	
     return dst;
