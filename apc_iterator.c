@@ -39,8 +39,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
 
     array_init(&item->value);
 
-	item->key = zend_string_init(
-		ZSTR_VAL(slot->key.str), ZSTR_LEN(slot->key.str), 0);
+	item->key = zend_string_copy(slot->key.str);
 
     if (APC_ITER_TYPE & iterator->format) {
 		add_assoc_string_ex(&item->value, "type", sizeof("type")-1, "user");
@@ -58,6 +57,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
         add_assoc_zval(&item->value, "value", &zvalue);
         apc_pool_destroy(ctxt.pool);
     }
+
     if (APC_ITER_NUM_HITS & iterator->format) {
         add_assoc_long(&item->value, "num_hits", slot->nhits);
     }
@@ -113,6 +113,7 @@ static void apc_iterator_free(zend_object *object) {
     while (apc_stack_size(iterator->stack) > 0) {
         apc_iterator_item_dtor(apc_stack_pop(iterator->stack));
     }
+
     apc_stack_destroy(iterator->stack);
 
 #ifdef ITERATOR_PCRE
@@ -120,6 +121,7 @@ static void apc_iterator_free(zend_object *object) {
         zend_string_release(iterator->regex);
     }
 #endif
+
     if (iterator->search_hash) {
         zend_hash_destroy(iterator->search_hash);
         efree(iterator->search_hash);
@@ -130,7 +132,8 @@ static void apc_iterator_free(zend_object *object) {
 
 /* {{{ apc_iterator_create */
 static zend_object* apc_iterator_create(zend_class_entry *ce) {
-    apc_iterator_t *iterator = (apc_iterator_t*) emalloc(sizeof(apc_iterator_t) + zend_object_properties_size(ce));
+    apc_iterator_t *iterator = 
+		(apc_iterator_t*) emalloc(sizeof(apc_iterator_t) + zend_object_properties_size(ce));
 
     zend_object_std_init(&iterator->obj, ce);
 

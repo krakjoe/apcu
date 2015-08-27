@@ -1458,9 +1458,9 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 		/* break intentionally omitted */
 
     case IS_OBJECT:
-        if(ctxt->copy == APC_COPY_IN || ctxt->copy == APC_COPY_OUT) {
+        if(ctxt->copy == APC_COPY_IN) {
             dst = my_serialize_object(dst, src, ctxt);
-        }
+        } else dst = my_unserialize_object(dst, src, ctxt);
         break;
 
     case IS_CALLABLE:
