@@ -38,31 +38,31 @@ array(9) refcount(2){
   [0]=>
   string(1) "a" refcount(1)
   [1]=>
-  &array(1) refcount(2){
+  &array(1) refcount(1){
     [0]=>
     string(1) "c" refcount(1)
   }
   [2]=>
-  &array(1) refcount(2){
+  &array(1) refcount(1){
     [0]=>
     string(1) "c" refcount(1)
   }
   [3]=>
-  &string(1) "d" refcount(3)
+  &string(1) "d" refcount(1)
   [4]=>
-  &string(1) "d" refcount(3)
+  &string(1) "d" refcount(1)
   [5]=>
-  &string(1) "d" refcount(3)
+  &string(1) "d" refcount(1)
   [6]=>
-  string(1) "e" refcount(2)
+  string(1) "e" refcount(1)
   [7]=>
-  string(1) "e" refcount(2)
+  string(1) "e" refcount(1)
   [8]=>
-  &array(2) refcount(2){
+  &array(2) refcount(1){
     [0]=>
     string(1) "f" refcount(1)
     [1]=>
-    &array(2) refcount(2){
+    &array(2) refcount(1){
       [0]=>
       string(1) "f" refcount(1)
       [1]=>
