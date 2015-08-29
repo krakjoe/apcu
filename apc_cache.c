@@ -233,10 +233,10 @@ PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS)
     php_var_serialize(&strbuf, (zval*) value, &var_hash);
     PHP_VAR_SERIALIZE_DESTROY(var_hash);
     if(strbuf.s->val) {
-        *buf = strbuf.s->val;
-        *buf_len = strbuf.s->len;
-        smart_str_0(&strbuf);
-        return 1; 
+        *buf = estrndup(ZSTR_VAL(strbuf.s), ZSTR_LEN(strbuf.s));
+        *buf_len = ZSTR_LEN(strbuf.s);
+		smart_str_free(&strbuf);
+        return 1;
     }
     return 0;
 } /* }}} */
@@ -1205,7 +1205,7 @@ static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTab
 		if (!static_keys && q->key) {
 			if (ctxt->copy == APC_COPY_IN) {
 				q->key = apc_pstrcpy(q->key, ctxt->pool);
-			} else q->key = zend_string_copy(p->key);
+			} else q->key = p->key;
 		}
 
 		nIndex = q->h | target->nTableMask;
