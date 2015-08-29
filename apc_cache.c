@@ -249,7 +249,7 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
     PHP_VAR_UNSERIALIZE_INIT(var_hash);
     if(!php_var_unserialize(value, &tmp, buf + buf_len, &var_hash)) {
         PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
-        php_error_docref(NULL, E_NOTICE, "Error at offset %ld of %ld bytes", (long)(tmp - buf), (long)buf_len);
+        php_error_docref(NULL, E_NOTICE, "Error at offset %ld of %ld bytes", (zend_long)(tmp - buf), (zend_long)buf_len);
         ZVAL_NULL(value);
         return 0;
     }
@@ -258,10 +258,10 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 } /* }}} */
 
 /* {{{ apc_cache_create */
-PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, int size_hint, int gc_ttl, int ttl, long smart, zend_bool defend) {
+PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, zend_long size_hint, zend_long gc_ttl, zend_long ttl, zend_long smart, zend_bool defend) {
 	apc_cache_t* cache;
-    int cache_size;
-    int nslots;
+    zend_long cache_size;
+    zend_long nslots;
 
 	/* calculate number of slots */
     nslots = make_prime(size_hint > 0 ? size_hint : 2000);
@@ -355,7 +355,7 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, zend_string *strkey, 
 static zval data_unserialize(const char *filename)
 {
     zval retval;
-    long len = 0;
+    zend_long len = 0;
     struct stat sb;
     char *contents, *tmp;
     FILE *fp;
@@ -1560,7 +1560,7 @@ static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_slot_t* p)
     array_init(&link);
 
     add_assoc_str(&link, "info", p->key.str);
-    add_assoc_long(&link, "ttl", (long)p->value->ttl);
+    add_assoc_long(&link, "ttl", p->value->ttl);
 
     add_assoc_double(&link, "num_hits", (double)p->nhits);
     add_assoc_long(&link, "modification_time", p->key.mtime);

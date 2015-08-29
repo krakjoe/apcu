@@ -247,7 +247,7 @@ static PHP_MINIT_FUNCTION(apcu)
 				 }
 			} while (0);
 #else
-			REGISTER_LONG_CONSTANT(APC_SERIALIZER_CONSTANT, (long)&_apc_register_serializer, CONST_PERSISTENT | CONST_CS);
+			REGISTER_LONG_CONSTANT(APC_SERIALIZER_CONSTANT, (zend_long)&_apc_register_serializer, CONST_PERSISTENT | CONST_CS);
 #endif
 
 			/* register default serializer */
