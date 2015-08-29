@@ -277,27 +277,10 @@ static PHP_MINIT_FUNCTION(apcu)
         }
     }
 
-#ifndef REGISTER_BOOL_CONSTANT
-    {
-        zend_constant apc_bc;
-        Z_TYPE(apc_bc.value) = IS_BOOL;
-#if defined(APC_FULL_BC) && APC_FULL_BC
-        Z_LVAL(apc_bc.value) = 1;
-#else
-        Z_LVAL(apc_bc.value) = 0;
-#endif
-        apc_bc.flags = (CONST_CS | CONST_PERSISTENT);
-        apc_bc.name = zend_strndup(ZEND_STRL("APCU_APC_FULL_BC"));
-        apc_bc.name_len = sizeof("APCU_APC_FULL_BC");
-        apc_bc.module_number = module_number;
-        zend_register_constant(&apc_bc);
-    }
-#else
 #if defined(APC_FULL_BC) && APC_FULL_BC
     REGISTER_BOOL_CONSTANT("APCU_APC_FULL_BC", 1, CONST_CS | CONST_PERSISTENT);
 #else
     REGISTER_BOOL_CONSTANT("APCU_APC_FULL_BC", 0, CONST_CS | CONST_PERSISTENT);
-#endif
 #endif
 
 #ifdef APC_FULL_BC
@@ -394,7 +377,7 @@ PHP_FUNCTION(apcu_cache_info)
 
     info = apc_cache_info(apc_user_cache, limited);
 
-    if (!Z_ISARRAY(info)) {
+    if (Z_TYPE(info) != IS_ARRAY) {
         php_error_docref(NULL, E_WARNING, "No APC info available.  Perhaps APC is not enabled? Check apc.enabled in your ini file");
         RETURN_FALSE;
     }
