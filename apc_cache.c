@@ -1522,8 +1522,6 @@ PHP_APCU_API zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zv
     } else {
         dst = apc_copy_zval(dst, src, ctxt);
     }
-
-
     return dst;
 }
 /* }}} */

@@ -260,6 +260,7 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
     apc_cache_slot_t **slot;
     int i;
 
+	APC_RLOCK(apc_user_cache->header);
     for (i=0; i < apc_user_cache->nslots; i++) {
         slot = &apc_user_cache->slots[i];
         while((*slot)) {
@@ -271,6 +272,7 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
             slot = &(*slot)->next;
         }
     }
+	APC_RUNLOCK(apc_user_cache->header);
 
     iterator->totals_flag = 1;
 }
@@ -363,7 +365,7 @@ PHP_METHOD(apc_iterator, __construct) {
 /* {{{ proto APCIterator::rewind() */
 PHP_METHOD(apc_iterator, rewind) {
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
-
+	
     if (zend_parse_parameters_none() == FAILURE) {
         return;
     }
