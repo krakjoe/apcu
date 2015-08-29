@@ -5,7 +5,6 @@ APC: APCIterator formats
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 apc.user_entries_hint=4096
 --FILE--
 <?php
