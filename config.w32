@@ -7,10 +7,15 @@ ARG_ENABLE('apc-bc', 'Whether APCu should provide APC full compatibility support
 
 if(PHP_APCU != 'no')
 {
-	var apc_sources = 	'apc.c php_apc.c apc_cache.c ' + 
-						'apc_iterator.c apc_shm.c apc_lock.c ' + 
-						'apc_sma.c apc_stack.c apc_rfc1867.c apc_pool.c ' +
-						'apc_bin.c apc_windows_srwlock_kernel.c';
+	var apc_sources = 	'apc.c apc_lock.c php_apc.c ' +
+						'apc_cache.c ' +
+						'apc_mmap.c ' +
+						'apc_shm.c ' +
+						'apc_sma.c ' +
+						'apc_stack.c ' +
+						'apc_signal.c ' +
+						'apc_pool.c ' +
+						'apc_iterator.c'; 
 
 	if(PHP_APCU_DEBUG != 'no')
 	{
@@ -31,7 +36,7 @@ if(PHP_APCU != 'no')
 	    WARNING("APCu: full APC compatibility is NOT enabled");
 	}
 
-	PHP_INSTALL_HEADERS("ext/apcu", "apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_bin_api.h apc_serializer.h");
+	PHP_INSTALL_HEADERS("ext/apcu", "apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_serializer.h");
 
 	EXTENSION('apcu', apc_sources);
 }
