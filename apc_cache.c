@@ -1270,6 +1270,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 
 	GC_REFCOUNT(target) = 1;
 	GC_TYPE_INFO(target) = IS_ARRAY;
+    zend_hash_index_update_ptr(&ctxt->copied, (uintptr_t) source, target);
 
 	target->nTableSize = source->nTableSize;
 	target->pDestructor = source->pDestructor;
@@ -1361,38 +1362,25 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
 static APC_HOTSPOT zval* my_copy_zval_reference(zval *dst, const zval* src, apc_context_t *ctxt) {
 	apc_pool* pool = ctxt->pool;
-	zend_reference *reference;
+	zend_reference *ref;
 
 	assert(src != NULL);
 	assert(dst != NULL);
 
-	if (Z_REFCOUNTED_P(Z_REFVAL_P(src))) {
-		if(zend_hash_num_elements(&ctxt->copied)) {
-			zval *tmp;
+    if (ctxt->copy == APC_COPY_IN) {
+        ref = pool->palloc(pool, sizeof(zend_reference));
+    } else {
+        ref = emalloc(sizeof(zend_reference));
+    }
 
-		    if((tmp = zend_hash_index_find(&ctxt->copied, (ulong)Z_COUNTED_P(Z_REFVAL_P(src))))) {
-		        Z_ADDREF_P(tmp);
-		        return tmp;
-		    }
-		}
-	}
+    GC_REFCOUNT(ref) = 1;
+    GC_TYPE_INFO(ref) = IS_REFERENCE;
+    zend_hash_index_update_ptr(&ctxt->copied, (uintptr_t) Z_REF_P(src), ref);
 
-	reference = 
-		(zend_reference*) pool->palloc(pool, sizeof(zend_reference));
+    my_copy_zval(&ref->val, Z_REFVAL_P(src), ctxt);
 
-	GC_REFCOUNT(reference) = 1;
-	GC_TYPE_INFO(reference) = IS_REFERENCE;
-
-	Z_REF_P(dst) = reference;
-	my_copy_zval(Z_REFVAL_P(dst), Z_REFVAL_P(src), ctxt);
-	Z_TYPE_INFO_P(dst) = IS_REFERENCE_EX;
-
-	if (Z_REFCOUNTED_P(Z_REFVAL_P(dst))) {
-		zend_hash_index_update(&ctxt->copied, 
-			(ulong)Z_COUNTED_P(Z_REFVAL_P(src)), dst);
-	}
-
-	return dst;	
+    Z_REF_P(dst) = ref;
+    return dst;
 }
 
 /* {{{ my_copy_zval */
@@ -1402,19 +1390,20 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 
     assert(dst != NULL);
     assert(src != NULL);
-	
-	if (Z_REFCOUNTED_P(src)) {
-		if(zend_hash_num_elements(&ctxt->copied)) {
-			zval *tmp;
-
-		    if((tmp = zend_hash_index_find(&ctxt->copied, (ulong)Z_COUNTED_P(src)))) {
-		        Z_ADDREF_P(tmp);
-		        return tmp;
-		    }
-		}
-	}
 
 	memcpy(dst, src, sizeof(zval));
+	
+	if (Z_REFCOUNTED_P(src)) {
+		if (zend_hash_num_elements(&ctxt->copied)) {
+            zend_refcounted *rc = zend_hash_index_find_ptr(
+                    &ctxt->copied, (uintptr_t) Z_COUNTED_P(src));
+            if (rc) {
+                GC_REFCOUNT(rc)++;
+                Z_COUNTED_P(dst) = rc;
+                return dst;
+            }
+		}
+	}
     
     if(ctxt->copy == APC_COPY_OUT || ctxt->copy == APC_COPY_IN) {
         /* deep copies are refcount(1), but moved up for recursive 
@@ -1471,14 +1460,6 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
     default:
         assert(0);
     }
-
-	switch (Z_TYPE_P(dst)) {
-		case IS_ARRAY:
-		case IS_OBJECT:
-		case IS_STRING:
-			//zend_hash_index_update(&ctxt->copied, (ulong)Z_COUNTED_P(src), dst);
-		break;
-	}
 	
     return dst;
 }
