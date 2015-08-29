@@ -636,8 +636,8 @@ PHP_FUNCTION(apcu_inc) {
     }
     
 	if (success) {
-		zval_dtor(success);
 		ZVAL_DEREF(success);
+		zval_ptr_dtor(success);
 	}
 
     if (php_apc_update(key, php_inc_updater, &args)) {
@@ -667,8 +667,8 @@ PHP_FUNCTION(apcu_dec) {
     }
     
 	if (success) {
-		zval_dtor(success);
 		ZVAL_DEREF(success);
+		zval_ptr_dtor(success);
 	}
 
     args.step = args.step * -1;
@@ -742,6 +742,7 @@ PHP_FUNCTION(apcu_fetch) {
 
     if (success) {
 		ZVAL_DEREF(success);
+        zval_ptr_dtor(success);
         ZVAL_FALSE(success);
     }
 
