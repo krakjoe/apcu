@@ -137,6 +137,7 @@ static zend_object* apc_iterator_create(zend_class_entry *ce) {
 		(apc_iterator_t*) emalloc(sizeof(apc_iterator_t) + zend_object_properties_size(ce));
 
     zend_object_std_init(&iterator->obj, ce);
+    object_properties_init(&iterator->obj, ce);
 
     iterator->initialized = 0;
     iterator->stack = NULL;
@@ -641,6 +642,6 @@ int apc_iterator_delete(zval *zobj) {
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: expandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: expandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */
