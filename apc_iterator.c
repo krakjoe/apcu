@@ -62,7 +62,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
         add_assoc_long(&item->value, "num_hits", slot->nhits);
     }
     if (APC_ITER_MTIME & iterator->format) {
-        add_assoc_long(&item->value, "modified_time", slot->key.mtime);
+        add_assoc_long(&item->value, "mtime", slot->key.mtime);
     }
     if (APC_ITER_CTIME & iterator->format) {
         add_assoc_long(&item->value, "creation_time", slot->ctime);

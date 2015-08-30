@@ -1539,7 +1539,7 @@ static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_slot_t* p)
     add_assoc_long(&link, "ttl", p->value->ttl);
 
     add_assoc_double(&link, "num_hits", (double)p->nhits);
-    add_assoc_long(&link, "modification_time", p->key.mtime);
+    add_assoc_long(&link, "mtime", p->key.mtime);
     add_assoc_long(&link, "creation_time", p->ctime);
     add_assoc_long(&link, "deletion_time", p->dtime);
     add_assoc_long(&link, "access_time", p->atime);
@@ -1648,7 +1648,7 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *st
             
             add_assoc_long(stat, "hits",  (*slot)->nhits);
             add_assoc_long(stat, "access_time", (*slot)->atime);
-            add_assoc_long(stat, "modification_time", (*slot)->key.mtime);
+            add_assoc_long(stat, "mtime", (*slot)->key.mtime);
             add_assoc_long(stat, "creation_time", (*slot)->ctime);
             add_assoc_long(stat, "deletion_time", (*slot)->dtime);
 			add_assoc_long(stat, "ttl",   (*slot)->value->ttl);
