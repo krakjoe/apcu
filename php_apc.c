@@ -615,7 +615,23 @@ static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
     struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
 
     if (Z_TYPE(entry->val) == IS_LONG) {
-        Z_LVAL(entry->val) += args->step;
+        while (args->step--) {
+			fast_long_increment_function(&entry->val);
+		}
+        args->lval = Z_LVAL(entry->val);
+        return 1;
+    }
+
+    return 0;
+}
+
+static zend_bool php_dec_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
+    struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
+
+    if (Z_TYPE(entry->val) == IS_LONG) {
+        while (args->step--) {
+			fast_long_decrement_function(&entry->val);
+		}
         args->lval = Z_LVAL(entry->val);
         return 1;
     }
@@ -642,6 +658,8 @@ PHP_FUNCTION(apcu_inc) {
 
     if (php_apc_update(key, php_inc_updater, &args)) {
         if (success) {
+			ZVAL_DEREF(success);
+			zval_ptr_dtor(success);
 			ZVAL_TRUE(success);
 		}
         RETURN_LONG(args.lval);
@@ -671,10 +689,13 @@ PHP_FUNCTION(apcu_dec) {
 		zval_ptr_dtor(success);
 	}
 
-    args.step = args.step * -1;
+    if (php_apc_update(key, php_dec_updater, &args)) {
+        if (success) {
+			ZVAL_DEREF(success);
+			zval_ptr_dtor(success);
+			ZVAL_TRUE(success);
+		}
 
-    if (php_apc_update(key, php_inc_updater, &args)) {
-        if (success) ZVAL_TRUE(success);
         RETURN_LONG(args.lval);
     }
     
