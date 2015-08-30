@@ -1576,7 +1576,7 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
     add_assoc_double(&info, "num_misses", (double)cache->header->nmisses);
     add_assoc_double(&info, "num_inserts", (double)cache->header->ninserts);
     add_assoc_long(&info,   "num_entries", cache->header->nentries);
-    add_assoc_double(&info, "num_expunges", (double)cache->header->nexpunges);
+    add_assoc_double(&info, "expunges", (double)cache->header->nexpunges);
     add_assoc_long(&info, "start_time", cache->header->stime);
     add_assoc_double(&info, "mem_size", (double)cache->header->mem_size);
 
