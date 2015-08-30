@@ -18,8 +18,10 @@ $i++;
 $j=apc_fetch($key);
 var_dump($i==$j);
 
-apc_inc($key, 1);
-$i++;
+$i=PHP_INT_MIN;
+apc_store($key, $i);
+apc_dec($key, 1);
+$i--;
 $j=apc_fetch($key);
 var_dump($i==$j);
 ?>
