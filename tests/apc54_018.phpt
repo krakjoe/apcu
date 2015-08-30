@@ -51,7 +51,7 @@ array(11) {
   string(%d) "%s"
   ["num_hits"]=>
   int(0)
-  ["modified_time"]=>
+  ["mtime"]=>
   int(%d)
   ["creation_time"]=>
   int(%d)
@@ -76,7 +76,7 @@ array(11) {
   string(%d) "%s"
   ["num_hits"]=>
   int(0)
-  ["modified_time"]=>
+  ["mtime"]=>
   int(%d)
   ["creation_time"]=>
   int(%d)
@@ -101,7 +101,7 @@ array(11) {
   string(%d) "%s"
   ["num_hits"]=>
   int(0)
-  ["modified_time"]=>
+  ["mtime"]=>
   int(%d)
   ["creation_time"]=>
   int(%d)
@@ -126,7 +126,7 @@ array(11) {
   string(%d) "%s"
   ["num_hits"]=>
   int(0)
-  ["modified_time"]=>
+  ["mtime"]=>
   int(%d)
   ["creation_time"]=>
   int(%d)
@@ -151,7 +151,7 @@ array(11) {
   string(%d) "%s"
   ["num_hits"]=>
   int(0)
-  ["modified_time"]=>
+  ["mtime"]=>
   int(%d)
   ["creation_time"]=>
   int(%d)
@@ -176,7 +176,7 @@ array(11) {
   string(%d) "%s"
   ["num_hits"]=>
   int(0)
-  ["modified_time"]=>
+  ["mtime"]=>
   int(%d)
   ["creation_time"]=>
   int(%d)
@@ -201,7 +201,7 @@ array(11) {
   string(%d) "%s"
   ["num_hits"]=>
   int(0)
-  ["modified_time"]=>
+  ["mtime"]=>
   int(%d)
   ["creation_time"]=>
   int(%d)
@@ -226,7 +226,7 @@ array(11) {
   string(%d) "%s"
   ["num_hits"]=>
   int(0)
-  ["modified_time"]=>
+  ["mtime"]=>
   int(%d)
   ["creation_time"]=>
   int(%d)
@@ -251,7 +251,7 @@ array(11) {
   string(%d) "%s"
   ["num_hits"]=>
   int(0)
-  ["modified_time"]=>
+  ["mtime"]=>
   int(%d)
   ["creation_time"]=>
   int(%d)

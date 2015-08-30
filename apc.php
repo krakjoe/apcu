@@ -992,7 +992,7 @@ EOB;
 			case 'A': $k=sprintf('%015d-',$entry['access_time']);  	     break;
 			case 'H': $k=sprintf('%015d-',$entry['num_hits']); 	     break;
 			case 'Z': $k=sprintf('%015d-',$entry['mem_size']); 	     break;
-			case 'M': $k=sprintf('%015d-',$entry['modification_time']);  break;
+			case 'M': $k=sprintf('%015d-',$entry['mtime']);  break;
 			case 'C': $k=sprintf('%015d-',$entry['creation_time']);      break;
 			case 'T': $k=sprintf('%015d-',$entry['ttl']);		     break;
 			case 'D': $k=sprintf('%015d-',$entry['deletion_time']);      break;
@@ -1026,7 +1026,7 @@ EOB;
           '<td class="td-n center">',$entry['num_hits'],'</td>',
           '<td class="td-n right">',$entry['mem_size'],'</td>',
           '<td class="td-n center">',date(DATE_FORMAT,$entry['access_time']),'</td>',
-          '<td class="td-n center">',date(DATE_FORMAT,$entry['modification_time']),'</td>',
+          '<td class="td-n center">',date(DATE_FORMAT,$entry['mtime']),'</td>',
           '<td class="td-n center">',date(DATE_FORMAT,$entry['creation_time']),'</td>';
 
         if($fieldname=='info') {
