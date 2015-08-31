@@ -234,6 +234,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
         apc_iterator_item_dtor(apc_stack_pop(iterator->stack));
     }
 
+	APC_RLOCK(apc_user_cache->header);
     while(count <= iterator->chunk_size && iterator->slot_idx < apc_user_cache->nslots) {
         slot = &apc_user_cache->slots[iterator->slot_idx];
         while(*slot) {
@@ -250,6 +251,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
         }
         iterator->slot_idx++;
     }
+	APC_RUNLOCK(apc_user_cache->header);
 
     iterator->stack_idx = 0;
     return count;
@@ -292,7 +294,8 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
 static void apc_iterator_totals(apc_iterator_t *iterator TSRMLS_DC) {
     apc_cache_slot_t **slot;
     int i;
-
+	
+	APC_RLOCK(apc_user_cache->header);
     for (i=0; i < apc_user_cache->nslots; i++) {
         slot = &apc_user_cache->slots[i];
         while((*slot)) {
@@ -304,6 +307,7 @@ static void apc_iterator_totals(apc_iterator_t *iterator TSRMLS_DC) {
             slot = &(*slot)->next;
         }
     }
+	APC_RUNLOCK(apc_user_cache->header);
 
     iterator->totals_flag = 1;
 }
