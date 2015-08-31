@@ -7,7 +7,7 @@ ARG_ENABLE('apc-bc', 'Whether APCu should provide APC full compatibility support
 
 if(PHP_APCU != 'no')
 {
-	var apc_sources = 	'apc.c apc_lock.c php_apc.c ' +
+	var apc_sources = 	'apc.c apc_lock.c apc_windows_srwlock_kernel.c php_apc.c ' +
 						'apc_cache.c ' +
 						'apc_mmap.c ' +
 						'apc_shm.c ' +

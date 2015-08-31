@@ -86,7 +86,7 @@ typedef struct _apc_cache_header_t {
     zend_long nentries;             /* entry count */
     zend_long mem_size;             /* used */
     time_t stime;                    /* start time */
-    ushort state;                    /* cache state */
+    unsigned short state;            /* cache state */
     apc_cache_key_t lastkey;         /* last key inserted (not necessarily without error) */
     apc_cache_slot_t* gc;            /* gc list */
 } apc_cache_header_t; /* }}} */
