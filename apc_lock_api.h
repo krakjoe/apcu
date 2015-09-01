@@ -38,10 +38,7 @@
 #       ifdef APC_NATIVE_RWLOCK
         typedef pthread_rwlock_t apc_lock_t;
 #       else
-        typedef struct _apc_lock_t {
-	        pthread_mutex_t read;
-	        pthread_mutex_t write;
-        } apc_lock_t;
+        typedef pthread_mutex_t apc_lock_t;
 #       endif
 #   else
         typedef int apc_lock_t;

@@ -168,10 +168,7 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 #   ifndef APC_FCNTL_LOCK
 #       ifndef APC_NATIVE_RWLOCK
 	        {
-		        /* Emulated */
-		        pthread_mutex_init(&lock->read, &apc_lock_attr);
-		        pthread_mutex_init(&lock->write, &apc_lock_attr);
-
+		        pthread_mutex_init(lock, &apc_lock_attr);
 		        return 1;
 	        }
 #       else
@@ -213,11 +210,10 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 
 PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
 #ifndef PHP_WIN32
-    HANDLE_BLOCK_INTERRUPTIONS();
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifndef APC_NATIVE_RWLOCK
-	    pthread_mutex_lock(&lock->read);
+	    pthread_mutex_lock(lock);
 #   else
 	    pthread_rwlock_rdlock(lock);
 #   endif    
@@ -233,7 +229,6 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
         apc_lock_get(lock);
     }
 #endif
-    HANDLE_UNBLOCK_INTERRUPTIONS();
 #else
 	apc_windows_cs_rdlock((apc_windows_cs_rwlock_t *)lock);
 #endif
@@ -242,12 +237,10 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
 
 PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
 #ifndef PHP_WIN32
-    HANDLE_BLOCK_INTERRUPTIONS();
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifndef APC_NATIVE_RWLOCK
-	    pthread_mutex_lock(&lock->read);
-	    pthread_mutex_lock(&lock->write);
+	    pthread_mutex_lock(lock);
 #   else	
 	    pthread_rwlock_wrlock(lock);
 #   endif
@@ -263,7 +256,6 @@ PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
         apc_lock_get(lock);
     }
 #endif
-    HANDLE_UNBLOCK_INTERRUPTIONS();
 #else
 	apc_windows_cs_lock((apc_windows_cs_rwlock_t *)lock);
 #endif
@@ -272,12 +264,10 @@ PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
 
 PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock) {
 #ifndef PHP_WIN32
-    HANDLE_BLOCK_INTERRUPTIONS();
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifndef APC_NATIVE_RWLOCK
-	    pthread_mutex_unlock(&lock->read);
-	    pthread_mutex_unlock(&lock->write);
+	    pthread_mutex_unlock(lock);
 #   else
 	    pthread_rwlock_unlock(lock);
 #   endif
@@ -293,7 +283,6 @@ PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock) {
         apc_lock_release(lock);
     }
 #endif
-    HANDLE_UNBLOCK_INTERRUPTIONS();
 #else
 	apc_windows_cs_unlock_wr((apc_windows_cs_rwlock_t *)lock);
 #endif
@@ -302,11 +291,10 @@ PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock) {
 
 PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock) {
 #ifndef PHP_WIN32
-    HANDLE_BLOCK_INTERRUPTIONS();
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifndef APC_NATIVE_RWLOCK
-	    pthread_mutex_unlock(&lock->read);
+	    pthread_mutex_unlock(lock);
 #   else
 	    pthread_rwlock_unlock(lock);
 #   endif
@@ -322,7 +310,6 @@ PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock) {
         apc_lock_release(lock);
     }
 #endif
-    HANDLE_UNBLOCK_INTERRUPTIONS();
 #else
 	apc_windows_cs_unlock_rd((apc_windows_cs_rwlock_t *)lock);
 #endif

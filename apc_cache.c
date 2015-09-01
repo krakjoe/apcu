@@ -268,12 +268,13 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 
 	/* allocate pointer by normal means */
     cache = (apc_cache_t*) apc_emalloc(sizeof(apc_cache_t));
-	
+
 	/* calculate cache size for shm allocation */
     cache_size = sizeof(apc_cache_header_t) + nslots*sizeof(apc_cache_slot_t*);
 
 	/* allocate shm */
     cache->shmaddr = sma->smalloc(cache_size);
+
     if(!cache->shmaddr) {
         apc_error("Unable to allocate shared memory for cache structures.  (Perhaps your shared memory size isn't large enough?). ");
         return NULL;

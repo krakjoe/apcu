@@ -351,7 +351,7 @@ PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_
 #if 0
         last->id = -1;
 #endif
-    }	
+    }
 }
 
 PHP_APCU_API void apc_sma_api_cleanup(apc_sma_t* sma) {
