@@ -496,15 +496,10 @@ int php_apc_update(zend_string *key, apc_cache_updater_t updater, void* data)
         /* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
         apc_cache_serializer(apc_user_cache, APCG(serializer_name));
     }
-
-    HANDLE_BLOCK_INTERRUPTIONS();
     
     if (!apc_cache_update(apc_user_cache, key, updater, data)) {
-        HANDLE_UNBLOCK_INTERRUPTIONS();
         return 0;
     }
-
-    HANDLE_UNBLOCK_INTERRUPTIONS();
 
     return 1;
 }
@@ -526,8 +521,6 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
         /* cannot work without key */
         RETURN_FALSE;
     }
-
-    HANDLE_BLOCK_INTERRUPTIONS();
     
 	/* keep it tidy */
     {
@@ -563,12 +556,10 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
             if (Z_TYPE_P(key) == IS_STRING) {
 			    if (!val) {
                     /* nothing to store */
-    	            HANDLE_UNBLOCK_INTERRUPTIONS();
     	            RETURN_FALSE;
     	        }
                 /* return true on success */
     			if(apc_cache_store(apc_user_cache, Z_STR_P(key), val, (uint32_t) ttl, exclusive)) {
-			        HANDLE_UNBLOCK_INTERRUPTIONS();
     	            RETURN_TRUE;
                 }
     		} else {
@@ -576,8 +567,6 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
     		}
         }
 	}
-	
-	HANDLE_UNBLOCK_INTERRUPTIONS();
 	
 	/* default */
     RETURN_FALSE;
