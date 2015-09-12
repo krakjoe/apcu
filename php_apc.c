@@ -354,9 +354,7 @@ PHP_FUNCTION(apcu_clear_cache)
         return;
     }
 
-    if (0 == ignlen || APC_CACHE_IS_USER(ignored, ignlen)) {
-        apc_cache_clear(apc_user_cache);
-    }
+    apc_cache_clear(apc_user_cache);
 
     RETURN_TRUE;
 }
