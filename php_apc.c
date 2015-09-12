@@ -347,14 +347,16 @@ static PHP_RINIT_FUNCTION(apcu)
 /* {{{ proto void apc_clear_cache([string cache]) */
 PHP_FUNCTION(apcu_clear_cache)
 {
-    char *ignored;
-    int ignlen = 0;
+    char *ignored = NULL;
+    zend_long ignlen = 0;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|s", &ignored, &ignlen) == FAILURE) {
         return;
     }
 
-    apc_cache_clear(apc_user_cache);
+    if (0 == ignlen || APC_CACHE_IS_USER(ignored, ignlen)) {
+        apc_cache_clear(apc_user_cache);
+    }
 
     RETURN_TRUE;
 }
