@@ -409,7 +409,7 @@ static int apc_load_data(apc_cache_t* cache, const char *data_file)
     unsigned int key_len;
     zval data;
 
-    /*p = strrchr(data_file, DEFAULT_SLASH);
+    p = strrchr(data_file, DEFAULT_SLASH);
 
     if(p && p[1]) {
         strlcpy(key, p+1, sizeof(key));
@@ -417,15 +417,19 @@ static int apc_load_data(apc_cache_t* cache, const char *data_file)
 
         if(p) {
             p[0] = '\0';
-            key_len = strlen(key)+1;
+            key_len = strlen(key);
 
             data = data_unserialize(data_file);
             if(Z_TYPE(data) != IS_UNDEF) {
-                apc_cache_store(cache, key, key_len, &data, 0, 1);
+				zend_string *name = zend_string_init(key, key_len, 0);
+                apc_cache_store(
+					cache, name, &data, 0, 1);
+				zend_string_release(name);
+				zval_dtor(&data);
             }
             return 1;
         }
-    }*/
+    }
 
     return 0;
 }
