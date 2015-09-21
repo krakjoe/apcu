@@ -24,7 +24,7 @@
 #include "apc_cache.h"
 
 #include "ext/standard/md5.h"
-
+#include "SAPI.h"
 #include "zend_interfaces.h"
 
 zend_class_entry *apc_iterator_ce;
