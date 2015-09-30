@@ -357,7 +357,7 @@ static zval data_unserialize(const char *filename)
 {
     zval retval;
     zend_long len = 0;
-    struct stat sb;
+    zend_stat_t sb;
     char *contents, *tmp;
     FILE *fp;
     php_unserialize_data_t var_hash = {0,};
