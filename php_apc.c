@@ -234,21 +234,7 @@ static PHP_MINIT_FUNCTION(apcu)
 			apc_sma.init(APCG(shm_segments), APCG(shm_size), NULL);
 #endif
 
-/* XXX pack this into macros when there are more hooks to handle */
-#if defined(PHP_WIN32) && defined(_WIN64)
-			do {
-				 char buf[65];
-
-				 if (!_i64toa_s((__int64)_apc_register_serializer, buf, 65, 10)) {
-					REGISTER_STRING_CONSTANT(APC_SERIALIZER_CONSTANT, buf, CONST_PERSISTENT | CONST_CS);
-				 } else {
-					/* subsequent apc_register_serializer() calls will be void */
-					php_error_docref(NULL, E_WARNING, "Serializer hook init failed");
-				 }
-			} while (0);
-#else
 			REGISTER_LONG_CONSTANT(APC_SERIALIZER_CONSTANT, (zend_long)&_apc_register_serializer, CONST_PERSISTENT | CONST_CS);
-#endif
 
 			/* register default serializer */
 			_apc_register_serializer(
