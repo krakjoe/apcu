@@ -71,13 +71,13 @@ apc_segment_t apc_shm_attach(int shmid, size_t size)
 {
     apc_segment_t segment; /* shm segment */
 
-    if ((long)(segment.shmaddr = shmat(shmid, 0, 0)) == -1) {
+    if ((zend_long)(segment.shmaddr = shmat(shmid, 0, 0)) == -1) {
         apc_error("apc_shm_attach: shmat failed:");
     }
 
 #ifdef APC_MEMPROTECT
     
-    if ((long)(segment.roaddr = shmat(shmid, 0, SHM_RDONLY)) == -1) {
+    if ((zend_long)(segment.roaddr = shmat(shmid, 0, SHM_RDONLY)) == -1) {
         segment.roaddr = NULL;
     }
 
