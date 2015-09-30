@@ -63,7 +63,6 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
     zend_bool use_request_time;  /* use the SAPI request start time for TTL */
 
     char *serializer_name;       /* the serializer config option */
-    char *writable;              /* writable path for general use */
 ZEND_END_MODULE_GLOBALS(apcu)
 
 /* (the following is defined in php_apc.c) */
