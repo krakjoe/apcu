@@ -43,8 +43,8 @@ typedef struct _apc_segment_t {
 /* {{{ struct definition: apc_sma_link_t */
 typedef struct apc_sma_link_t apc_sma_link_t;
 struct apc_sma_link_t {
-    long size;              /* size of this free block */
-    long offset;            /* offset in segment of this block */
+    zend_long size;              /* size of this free block */
+    zend_long offset;            /* offset in segment of this block */
     apc_sma_link_t* next;   /* link to next free block */
 };
 /* }}} */
