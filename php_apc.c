@@ -194,6 +194,24 @@ static PHP_MINFO_FUNCTION(apcu)
         php_info_print_table_row(2, "Serialization Support", "Disabled");
     }
 
+#ifndef PHP_WIN32
+#ifndef APC_SPIN_LOCK
+# ifndef APC_FCNTL_LOCK
+#   ifndef APC_NATIVE_RWLOCK
+        php_info_print_table_row(2, "APC locking mechanism", "pthread mutex");
+#   else
+        php_info_print_table_row(2, "APC locking mechanism", "pthread rwlock");
+#   endif
+# else
+        php_info_print_table_row(2, "APC locking mechanism", "fcntl");
+# endif
+#else
+        php_info_print_table_row(2, "APC locking mechanism", "spinlock");
+#endif
+#else
+    php_info_print_table_row(2, "APC locking mechanism", "windows rwlock");
+#endif
+
     php_info_print_table_row(2, "Revision", "$Revision: 328290 $");
     php_info_print_table_row(2, "Build Date", __DATE__ " " __TIME__);
     php_info_print_table_end();
