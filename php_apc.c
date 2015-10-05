@@ -402,7 +402,7 @@ PHP_FUNCTION(apcu_clear_cache)
 /* {{{ proto array apc_cache_info([bool limited]) */
 PHP_FUNCTION(apcu_cache_info)
 {
-    zval* info;
+    zval info;
     zend_bool limited = 0;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "|b", &limited) == FAILURE) {
@@ -411,12 +411,12 @@ PHP_FUNCTION(apcu_cache_info)
 
     info = apc_cache_info(apc_user_cache, limited);
 
-    if (!info) {
+    if (Z_TYPE(info) != IS_ARRAY) {
         php_error_docref(NULL, E_WARNING, "No APC info available.  Perhaps APC is not enabled? Check apc.enabled in your ini file");
         RETURN_FALSE;
     }
 
-    RETURN_ZVAL(info, 0, 1);
+    RETURN_ZVAL(&info, 0, 0);
 
 }
 /* }}} */
@@ -1055,6 +1055,7 @@ zend_module_entry apcu_module_entry = {
     PHP_APCU_VERSION,
     STANDARD_MODULE_PROPERTIES
 };
+/* }}} */
 
 #ifdef APC_FULL_BC
 
@@ -1080,6 +1081,7 @@ zend_function_entry apc_functions[] = {
     PHP_FALIAS(apc_exists,       apcu_exists,       arginfo_apcu_exists)
     {NULL, NULL, NULL}
 };
+/* }}} */
 
 zend_module_entry apc_module_entry = {
 	STANDARD_MODULE_HEADER,
