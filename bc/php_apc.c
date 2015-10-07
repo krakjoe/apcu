@@ -79,16 +79,18 @@ PHP_FUNCTION(apc_clear_cache) {
 
 /* {{{ proto array apc_cache_info(string cache [, bool limited = false]) */
 PHP_FUNCTION(apc_cache_info) {
-	zval *params[2] = {&EG(uninitialized_zval), &EG(uninitialized_zval)};
-	zval  proxy;
+	zend_string *ignored;
+	zval  param, *limited = &param, proxy;
 
-	if (zend_parse_paramters(ZEND_NUM_ARGS(), "z|z", &params[0], &params[1]) != SUCCESS) {
+	ZVAL_FALSE(&param);
+
+	if (zend_parse_paramters(ZEND_NUM_ARGS(), "S|z", &ignored, &limited) != SUCCESS) {
 		return;
 	}
 
 	ZVAL_STR(&proxy, 
 		zend_string_init(ZEND_STRL("apcu_cache_info"), 0));
-	call_user_function(EG(function_table), NULL, &proxy, return_value, 2, *params);
+	call_user_function(EG(function_table), NULL, &proxy, return_value, 1, limited);
 	zval_ptr_dtor(&proxy);
 }
 /* }}} */
