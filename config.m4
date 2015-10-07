@@ -3,18 +3,8 @@ dnl $Id: config.m4 327593 2012-09-10 11:50:58Z pajoye $
 dnl
 PHP_ARG_ENABLE(apcu, whether to enable APCu support,
 [  --enable-apcu           Enable APCu support])
-
-PHP_APC_BC=yes
-AC_MSG_CHECKING(if APCu should provide APC full compatibility support)
-AC_ARG_ENABLE(apc-bc,
-[  --enable-apc-bc        Enable APC full compatibility support],
-[ if test "x$enableval" = "xno"; then
-    PHP_APC_BC=no
-  else
-    PHP_APC_BC=yes
-  fi
-])
-AC_MSG_RESULT($PHP_APC_BC)
+PHP_ARG_ENABLE(apcu-bc, whether to enable APC backward compatibility module,
+[	--enable-apcu-bc				 Enable APC backward compatibility support], no, no)
 
 AC_MSG_CHECKING(if APCu should be allowed to use rwlocks)
 AC_ARG_ENABLE(apcu-rwlocks,
@@ -246,6 +236,10 @@ if test "$PHP_APCU" != "no"; then
                  apc_iterator.c "
 							   
   PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
+	if test $PHP_APCU_BC != "no"; then
+		PHP_ADD_BUILD_DIR($ext_builddir/bc, 1)
+		PHP_NEW_EXTENSION(apc, "bc/php_apc.c", $ext_shared,, \\$(APCU_CFLAGS))
+	fi
   PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
   PHP_SUBST(APCU_SHARED_LIBADD)
   PHP_SUBST(APCU_CFLAGS)

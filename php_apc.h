@@ -29,14 +29,25 @@
 
 /* $Id: php_apc.h 328953 2013-01-03 02:19:19Z rasmus $ */
 
-#ifndef PHP_APC_H
-#define PHP_APC_H
+#ifndef PHP_APCU_H
+#define PHP_APCU_H
 
 #include "apc_php.h"
 #include "apc_globals.h"
 
 #define PHP_APCU_VERSION "5.0.0-dev"
 #define PHP_APCU_EXTNAME "apcu"
+
+PHP_FUNCTION(apcu_add);
+PHP_FUNCTION(apcu_delete);
+PHP_FUNCTION(apcu_exists);
+PHP_FUNCTION(apcu_fetch);
+PHP_FUNCTION(apcu_store);
+PHP_FUNCTION(apcu_inc);
+PHP_FUNCTION(apcu_dec);
+PHP_FUNCTION(apcu_cas);
+PHP_FUNCTION(apcu_enabled);
+PHP_FUNCTION(apcu_sma_info);
 
 extern zend_module_entry apcu_module_entry;
 #define apcu_module_ptr &apcu_module_entry
