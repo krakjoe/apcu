@@ -1,5 +1,5 @@
 --TEST--
-APC: apc_fetch resets array pointers
+APC: apcu_fetch resets array pointers
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
@@ -10,9 +10,9 @@ apc.file_update_protection=0
 <?php
 $items = array('bar', 'baz');
 
-apc_store('test', $items);
+apcu_store('test', $items);
 
-$back = apc_fetch('test');
+$back = apcu_fetch('test');
 
 var_dump(current($back));
 var_dump(current($back));

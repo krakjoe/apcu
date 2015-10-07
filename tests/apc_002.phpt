@@ -1,5 +1,5 @@
 --TEST--
-APC: apc_store/fetch with objects
+APC: apcu_store/fetch with objects
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
@@ -12,9 +12,9 @@ apc.file_update_protection=0
 class foo { }
 $foo = new foo;
 var_dump($foo);
-apc_store('foo',$foo);
+apcu_store('foo',$foo);
 unset($foo);
-$bar = apc_fetch('foo');
+$bar = apcu_fetch('foo');
 var_dump($bar);
 $bar->a = true;
 var_dump($bar);

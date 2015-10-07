@@ -9,20 +9,20 @@ apc.enable_cli=1
 <?php
 $key="testkey";
 $i=PHP_INT_MAX;
-apc_store($key, $i);
-$j=apc_fetch($key);
+apcu_store($key, $i);
+$j=apcu_fetch($key);
 var_dump($i==$j);
 
-apc_inc($key, 1);
+apcu_inc($key, 1);
 $i++;
-$j=apc_fetch($key);
+$j=apcu_fetch($key);
 var_dump($i==$j);
 
 $i=PHP_INT_MIN;
-apc_store($key, $i);
-apc_dec($key, 1);
+apcu_store($key, $i);
+apcu_dec($key, 1);
 $i--;
-$j=apc_fetch($key);
+$j=apcu_fetch($key);
 var_dump($i==$j);
 ?>
 ===DONE===

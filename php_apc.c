@@ -201,10 +201,6 @@ static PHP_MINFO_FUNCTION(apcu)
 }
 /* }}} */
 
-#ifdef APC_FULL_BC
-static void apc_init(INIT_FUNC_ARGS);
-#endif
-
 /* {{{ PHP_MINIT_FUNCTION(apcu) */
 static PHP_MINIT_FUNCTION(apcu)
 {
@@ -263,16 +259,6 @@ static PHP_MINIT_FUNCTION(apcu)
         }
     }
 
-#if defined(APC_FULL_BC) && APC_FULL_BC
-    REGISTER_BOOL_CONSTANT("APCU_APC_FULL_BC", 1, CONST_CS | CONST_PERSISTENT);
-#else
-    REGISTER_BOOL_CONSTANT("APCU_APC_FULL_BC", 0, CONST_CS | CONST_PERSISTENT);
-#endif
-
-#ifdef APC_FULL_BC
-	apc_init(INIT_FUNC_ARGS_PASSTHRU);
-#endif
-
     return SUCCESS;
 }
 /* }}} */
@@ -329,49 +315,6 @@ static PHP_RINIT_FUNCTION(apcu)
 }
 /* }}} */
 
-#ifdef APC_FULL_BC
-/* {{{ proto void apc_clear_cache([string cache]) */
-PHP_FUNCTION(apcu_clear_cache)
-{
-    char *ignored = NULL;
-    zend_long ignlen = 0;
-
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "|s", &ignored, &ignlen) == FAILURE) {
-        return;
-    }
-
-    if (0 == ignlen || APC_CACHE_IS_USER(ignored, ignlen)) {
-        apc_cache_clear(apc_user_cache);
-    }
-
-    RETURN_TRUE;
-}
-/* }}} */
-
-/* {{{ proto array apc_cache_info(string cache_type, [bool limited]) */
-PHP_FUNCTION(apcu_cache_info)
-{
-    zval info;
-    zend_bool limited = 0;
-    zend_string *type;
-    
-    if (ZEND_NUM_ARGS()) {
-        if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|b", &type, &limited) == FAILURE) {
-            return;
-        }
-    }
-
-    info = apc_cache_info(apc_user_cache, limited);
-
-    if (Z_TYPE(info) != IS_ARRAY) {
-        php_error_docref(NULL, E_WARNING, "No APC info available.  Perhaps APC is not enabled? Check apc.enabled in your ini file");
-        RETURN_FALSE;
-    }
-
-    RETURN_ZVAL(&info, 0, 0);
-}
-/* }}} */
-#else
 /* {{{ proto void apc_clear_cache() */
 PHP_FUNCTION(apcu_clear_cache)
 {
@@ -403,11 +346,10 @@ PHP_FUNCTION(apcu_cache_info)
     }
 
     RETURN_ZVAL(&info, 0, 0);
-
 }
 /* }}} */
-#endif
 
+/* {{{ */
 PHP_FUNCTION(apcu_key_info)
 {
     zend_string *key;
@@ -417,7 +359,7 @@ PHP_FUNCTION(apcu_key_info)
     }
     
     apc_cache_stat(apc_user_cache, key, return_value);
-}
+} /* }}} */
 
 /* {{{ proto array apc_sma_info([bool limited]) */
 PHP_FUNCTION(apcu_sma_info)
@@ -944,18 +886,6 @@ PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_enabled, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
-#ifdef APC_FULL_BC
-PHP_APC_ARGINFO
-/* this will generate different reflection but retains functional compatibility */
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_cache_info, 0, 0, 0)
-    ZEND_ARG_INFO(0, type)
-    ZEND_ARG_INFO(0, limited)
-ZEND_END_ARG_INFO()
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_clear_cache, 0, 0, 0)
-    ZEND_ARG_INFO(0, cache)
-ZEND_END_ARG_INFO()
-#else
 PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_cache_info, 0, 0, 0)
     ZEND_ARG_INFO(0, limited)
@@ -964,7 +894,6 @@ ZEND_END_ARG_INFO()
 PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_clear_cache, 0, 0, 0)
 ZEND_END_ARG_INFO()
-#endif
 
 PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_key_info, 0, 0, 1)
@@ -1042,53 +971,6 @@ zend_module_entry apcu_module_entry = {
     STANDARD_MODULE_PROPERTIES
 };
 /* }}} */
-
-#ifdef APC_FULL_BC
-
-PHP_MINFO_FUNCTION(apc)
-{
-	php_info_print_table_start();
-	php_info_print_table_row(2, "APC support", "Emulated");
-	php_info_print_table_end();
-}
-
-/* {{{ apc_functions[] */
-zend_function_entry apc_functions[] = {
-    PHP_FALIAS(apc_cache_info,   apcu_cache_info,   arginfo_apcu_cache_info)
-    PHP_FALIAS(apc_clear_cache,  apcu_clear_cache,  arginfo_apcu_clear_cache)
-    PHP_FALIAS(apc_sma_info,     apcu_sma_info,     arginfo_apcu_sma_info)
-    PHP_FALIAS(apc_store,        apcu_store,        arginfo_apcu_store)
-    PHP_FALIAS(apc_fetch,        apcu_fetch,        arginfo_apcu_fetch)
-    PHP_FALIAS(apc_delete,       apcu_delete,       arginfo_apcu_delete)
-    PHP_FALIAS(apc_add,          apcu_add,          arginfo_apcu_store)
-    PHP_FALIAS(apc_inc,          apcu_inc,          arginfo_apcu_inc)
-    PHP_FALIAS(apc_dec,          apcu_dec,          arginfo_apcu_inc)
-    PHP_FALIAS(apc_cas,          apcu_cas,          arginfo_apcu_cas)
-    PHP_FALIAS(apc_exists,       apcu_exists,       arginfo_apcu_exists)
-    {NULL, NULL, NULL}
-};
-/* }}} */
-
-zend_module_entry apc_module_entry = {
-	STANDARD_MODULE_HEADER,
-	"apc",
-	apc_functions,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	PHP_MINFO(apc),
-	PHP_APCU_VERSION,
-	STANDARD_MODULE_PROPERTIES,
-};
-
-static void apc_init(INIT_FUNC_ARGS)
-{
-	zend_register_internal_module(&apc_module_entry);
-}
-
-#endif
-
 
 #ifdef COMPILE_DL_APCU
 ZEND_GET_MODULE(apcu)

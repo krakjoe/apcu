@@ -1,5 +1,5 @@
 --TEST--
-APC: apc_store/fetch with bools 
+APC: apcu_store/fetch with bools 
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
@@ -11,15 +11,15 @@ apc.file_update_protection=0
 
 $foo = false;
 var_dump($foo);     /* false */
-apc_store('foo',$foo);
+apcu_store('foo',$foo);
 //$success = "some string";
 
-$bar = apc_fetch('foo', $success);
+$bar = apcu_fetch('foo', $success);
 var_dump($foo);     /* false */
 var_dump($bar);     /* false */
 var_dump($success); /* true  */
 
-$bar = apc_fetch('not foo', $success);
+$bar = apcu_fetch('not foo', $success);
 var_dump($foo);     /* false */
 var_dump($bar);     /* false */
 var_dump($success); /* false */

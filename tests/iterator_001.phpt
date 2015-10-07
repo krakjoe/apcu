@@ -7,14 +7,10 @@ apc.enabled=1
 apc.enable_cli=1
 --FILE--
 <?php
-if (APCU_APC_FULL_BC) {
-	$it = new APCIterator('user');
-} else {
-	$it = new APCIterator();
-}
+$it = new APCIterator();
 
 for($i = 0; $i < 41; $i++) {
-  apc_store("key$i", "value$i");
+  apcu_store("key$i", "value$i");
 }
 
 foreach($it as $key=>$value) {

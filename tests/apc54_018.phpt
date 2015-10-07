@@ -14,15 +14,11 @@ $file = <<<FL
 //to fill apc cache (~200MB):
 for(\$i=0;\$i<50000;\$i++) {
     \$value = str_repeat(md5(microtime()), 100);
-    apc_store('test-niko-asdfasdfasdfkjasdflkasjdfasf'.\$i, \$value);
+    apcu_store('test-niko-asdfasdfasdfkjasdflkasjdfasf'.\$i, \$value);
 }
 
 //then later (usually after a few minutes) this won't work correctly:
-if (APCU_APC_FULL_BC) {
-	\$it = new ApcIterator('user', '#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
-} else {
-	\$it = new ApcIterator('#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
-}
+\$it = new ApcIterator('#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
 var_dump(\$it->getTotalCount()); //returns 50000
 var_dump(\$it->current()); //returns false on error
 FL;

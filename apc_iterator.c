@@ -287,20 +287,10 @@ PHP_METHOD(apc_iterator, __construct) {
     zend_long chunk_size=0;
     zval *search = NULL;
     zend_long list = APC_LIST_ACTIVE;
-#if defined(APC_FULL_BC) && APC_FULL_BC
-    /* these are ignored */
-    zend_string *type;
-#endif
 
-#if defined(APC_FULL_BC) && APC_FULL_BC
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|zlll", &type, &search, &format, &chunk_size, &list) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zlll", &search, &format, &chunk_size, &list) == FAILURE) {
         return;
     }
-#else
-    if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zlll", &search, &format, &chunk_size, &list) == FAILURE) {
-        return;
-    }
-#endif
 
     if (!APCG(enabled)) {
         apc_error("APC must be enabled to use APCIterator.");
@@ -324,12 +314,6 @@ PHP_METHOD(apc_iterator, __construct) {
         apc_warning("APCIterator invalid list type.");
         return;
     }
-#if defined(APC_FULL_BC) && APC_FULL_BC
-    if (!APC_CACHE_IS_USER(type->val, type->len)) {
-        iterator->initialized = 0;
-        return;
-    }
-#endif
 	
     iterator->slot_idx = 0;
     iterator->stack_idx = 0;
@@ -544,9 +528,6 @@ PHP_METHOD(apc_iterator, getTotalCount) {
 
 PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator___construct, 0, 0, 1)
-#if defined(APC_FULL_BC) && APC_FULL_BC
-	ZEND_ARG_INFO(0, cache)
-#endif
 	ZEND_ARG_INFO(0, search)
 	ZEND_ARG_INFO(0, format)
 	ZEND_ARG_INFO(0, chunk_size)

@@ -1,5 +1,5 @@
 --TEST--
-APC: apc_store/fetch with arrays of objects 
+APC: apcu_store/fetch with arrays of objects 
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
@@ -13,9 +13,9 @@ $foo = array(new stdclass(), new stdclass());
 
 var_dump($foo);
 
-apc_store('foo',$foo);
+apcu_store('foo',$foo);
 
-$bar = apc_fetch('foo');
+$bar = apcu_fetch('foo');
 var_dump($foo);
 var_dump($bar);
 

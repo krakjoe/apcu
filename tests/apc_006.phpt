@@ -1,5 +1,5 @@
 --TEST--
-APC: apc_store/fetch reference test
+APC: apcu_store/fetch reference test
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
@@ -26,8 +26,8 @@ $b[] = $e;
 $f = array('f');
 $f[] = &$f;
 $b[] = &$f;
-apc_store('test', $b);
-$x = apc_fetch('test');
+apcu_store('test', $b);
+$x = apcu_fetch('test');
 debug_zval_dump($x);
 
 ?>

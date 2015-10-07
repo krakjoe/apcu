@@ -8,7 +8,6 @@ apc.enable_cli=1
 apc.user_entries_hint=4096
 --FILE--
 <?php
-
 $formats = array( 
                   APC_ITER_KEY,
                   APC_ITER_VALUE,
@@ -29,15 +28,11 @@ $formats = array(
 $it_array = array();
 
 foreach ($formats as $idx => $format) {
-	if (APCU_APC_FULL_BC) {
-		$it_array[$idx] = new APCIterator('user', NULL, $format);
-	} else {
-		$it_array[$idx] = new APCIterator(NULL, $format);
-	}
+	$it_array[$idx] = new APCIterator(NULL, $format);
 }
 
 for($i = 0; $i < 11; $i++) {
-  apc_store("key$i", "value$i");
+  apcu_store("key$i", "value$i");
 }
 
 foreach ($it_array as $idx => $it) {

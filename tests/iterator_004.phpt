@@ -8,14 +8,9 @@ apc.enable_cli=1
 apc.file_update_protection=0
 --FILE--
 <?php
-
-if (APCU_APC_FULL_BC) {
-	$it = new APCIterator('user', '/key[0-9]0/', APC_ITER_ALL, 1, APC_LIST_ACTIVE);
-} else {
-	$it = new APCIterator('/key[0-9]0/', APC_ITER_ALL, 1, APC_LIST_ACTIVE);
-}
+$it = new APCIterator('/key[0-9]0/', APC_ITER_ALL, 1, APC_LIST_ACTIVE);
 for($i = 0; $i < 41; $i++) {
-  apc_store("key$i", "value$i");
+  apcu_store("key$i", "value$i");
 }
 foreach($it as $key=>$value) {
   $vals[$key] = $value['key'];
