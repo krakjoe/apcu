@@ -66,7 +66,7 @@ PHP_FUNCTION(apc_clear_cache) {
 	zend_string *ignored;
 	zval proxy;
 
-	if (zend_parse_paramters(ZEND_NUM_ARGS(), "S", &ignored) != SUCCESS) { 
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S", &ignored) != SUCCESS) {
 		return;
 	}
 	
@@ -84,7 +84,7 @@ PHP_FUNCTION(apc_cache_info) {
 
 	ZVAL_FALSE(&param);
 
-	if (zend_parse_paramters(ZEND_NUM_ARGS(), "S|z", &ignored, &limited) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|z", &ignored, &limited) != SUCCESS) {
 		return;
 	}
 
