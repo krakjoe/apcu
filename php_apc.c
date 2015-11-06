@@ -806,6 +806,8 @@ PHP_FUNCTION(apcu_exists) {
 			/* don't set values we didn't find */
             zend_hash_move_forward_ex(Z_ARRVAL_P(key), &hpos);
         }
+
+		return;
     } else {
         apc_warning("apc_exists() expects a string or array of strings.");
     }
