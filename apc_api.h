@@ -24,6 +24,5 @@
 #include "apc_pool_api.h"
 #include "apc_sma_api.h"
 #include "apc_cache_api.h"
-#include "apc_bin_api.h"
 
 #endif
