@@ -45,6 +45,8 @@
    <file name="tests/apc_008.phpt" role="test" />
    <file name="tests/apc_010.phpt" role="test" />
    <file name="tests/apc_011.phpt" role="test" />
+   <file name="tests/apc_012.phpt" role="test" />
+   <file name="tests/apc_013_exists.phpt" role="test" />
    <file name="tests/apc54_014.phpt" role="test" />
    <file name="tests/apc54_018.phpt" role="test" />
    <file name="tests/apc_bin_001.phpt" role="test" />
