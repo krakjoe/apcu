@@ -22,10 +22,7 @@
 /*
  APCu works most efficiently where there is access to native read/write locks
  If the current system has native rwlocks present they will be used, if they are
-	not present, APCu will emulate their behavior with standard mutex.
- While APCu is emulating read/write locks, reads and writes are exclusive,
-	additionally the write lock prefers readers, as is the default behaviour of
-	the majority of Posix rwlock implementations
+	not present, APCu will use standard mutex.
 */
 
 #ifndef PHP_WIN32
