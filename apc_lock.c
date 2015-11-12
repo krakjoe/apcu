@@ -168,11 +168,8 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC) {
 #   ifndef APC_FCNTL_LOCK
 #       ifndef APC_NATIVE_RWLOCK
 	        {
-		        /* Emulated */
-		        pthread_mutex_init(&lock->read, &apc_lock_attr);
-		        pthread_mutex_init(&lock->write, &apc_lock_attr);
-
-		        return 1;
+		        pthread_mutex_init(lock, &apc_lock_attr);
+				return 1;
 	        }
 #       else
 	        {
@@ -217,7 +214,7 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifndef APC_NATIVE_RWLOCK
-	    pthread_mutex_lock(&lock->read);
+	    pthread_mutex_lock(lock);
 #   else
 	    pthread_rwlock_rdlock(lock);
 #   endif    
@@ -246,9 +243,8 @@ PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifndef APC_NATIVE_RWLOCK
-	    pthread_mutex_lock(&lock->read);
-	    pthread_mutex_lock(&lock->write);
-#   else	
+	    pthread_mutex_lock(lock);
+#   else
 	    pthread_rwlock_wrlock(lock);
 #   endif
 # else
@@ -276,8 +272,7 @@ PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifndef APC_NATIVE_RWLOCK
-	    pthread_mutex_unlock(&lock->read);
-	    pthread_mutex_unlock(&lock->write);
+	    pthread_mutex_unlock(lock);
 #   else
 	    pthread_rwlock_unlock(lock);
 #   endif
@@ -306,7 +301,7 @@ PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC) {
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifndef APC_NATIVE_RWLOCK
-	    pthread_mutex_unlock(&lock->read);
+	    pthread_mutex_unlock(lock);
 #   else
 	    pthread_rwlock_unlock(lock);
 #   endif
