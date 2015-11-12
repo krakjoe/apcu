@@ -48,6 +48,9 @@ PHP_FUNCTION(apcu_dec);
 PHP_FUNCTION(apcu_cas);
 PHP_FUNCTION(apcu_enabled);
 PHP_FUNCTION(apcu_sma_info);
+#ifdef APC_LOCK_RECURSIVE
+PHP_FUNCTION(apcu_entry);
+#endif
 
 extern zend_module_entry apcu_module_entry;
 #define apcu_module_ptr &apcu_module_entry

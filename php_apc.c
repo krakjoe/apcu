@@ -866,6 +866,21 @@ PHP_FUNCTION(apcu_delete) {
         apc_warning("apc_delete() expects a string, array of strings, or APCIterator instance.");
     }
 }
+
+#ifdef APC_LOCK_RECURSIVE
+PHP_FUNCTION(apcu_entry) {
+	zval *key = NULL;
+	zend_fcall_info fci = empty_fcall_info;
+	zend_fcall_info_cache fcc = empty_fcall_info_cache;
+	zend_long ttl = 0L;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "zf|l", &key, &fci, &fcc, &ttl) != SUCCESS) {
+		return;
+	}
+	
+	apc_cache_entry(apc_user_cache, key, &fci, &fcc, ttl, return_value);	
+}
+#endif
 /* }}} */
 
 /* {{{ arginfo */
@@ -935,6 +950,13 @@ PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO(arginfo_apcu_exists, 0)
     ZEND_ARG_INFO(0, keys)
 ZEND_END_ARG_INFO()
+
+PHP_APC_ARGINFO
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_entry, 0, 0, 2)
+    ZEND_ARG_INFO(0, key)
+	ZEND_ARG_TYPE_INFO(0, generator, IS_CALLABLE, 0)
+	ZEND_ARG_TYPE_INFO(0, generator, IS_LONG, 0)
+ZEND_END_ARG_INFO()
 /* }}} */
 
 /* {{{ apcu_functions[] */
@@ -952,6 +974,9 @@ zend_function_entry apcu_functions[] = {
     PHP_FE(apcu_dec,                arginfo_apcu_inc)
     PHP_FE(apcu_cas,                arginfo_apcu_cas)
     PHP_FE(apcu_exists,             arginfo_apcu_exists)
+#ifdef APC_LOCK_RECURSIVE
+	PHP_FE(apcu_entry,				arginfo_apcu_entry)
+#endif
     {NULL, NULL, NULL}
 };
 /* }}} */

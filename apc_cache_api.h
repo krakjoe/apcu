@@ -381,6 +381,15 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache);
 * Note: it is assumed you have a write lock on the header when you remove slots
 */
 PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot);
+
+#ifdef APC_LOCK_RECURSIVE
+/*
+* apc_cache_entry: generate and create or fetch an entry
+*
+* @see https://github.com/krakjoe/apcu/issues/142
+*/
+PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zval *return_value);
+#endif
 #endif
 
 /*

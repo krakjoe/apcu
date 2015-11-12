@@ -39,6 +39,7 @@
         typedef pthread_rwlock_t apc_lock_t;
 #       else
         typedef pthread_mutex_t apc_lock_t;
+#		define APC_LOCK_RECURSIVE
 #       endif
 #   else
         typedef int apc_lock_t;
