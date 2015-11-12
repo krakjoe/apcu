@@ -64,6 +64,8 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
 
     char *serializer_name;       /* the serializer config option */
     char *writable;              /* writable path for general use */
+
+	volatile zend_bool recursion;
 ZEND_END_MODULE_GLOBALS(apcu)
 
 /* (the following is defined in php_apc.c) */

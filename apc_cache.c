@@ -1775,7 +1775,7 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name) {
 	}
 } /* }}} */
 
-#ifdef APC_LOCK_RECURSIVE
+
 PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zval *return_value) {
 	apc_cache_entry_t *entry = NULL;
 	
@@ -1788,7 +1788,14 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 		return;
 	}
 
+#ifndef APC_LOCK_RECURSIVE
+	if (APCG(recursion)++ == 0) {
+		APC_LOCK(cache->header);
+	}
+#else
 	APC_LOCK(cache->header);
+#endif
+
 	entry = apc_cache_find_internal(
 		cache, Z_STR_P(key), ttl);
 	if (!entry) {
@@ -1803,9 +1810,15 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 			}
 		}
 	} else apc_cache_fetch_internal(cache, Z_STR_P(key), entry, ttl, &return_value);
+
+#ifndef APC_LOCK_RECURSIVE
+	if (--APCG(recursion) == 0) {
+		APC_UNLOCK(cache->header);
+	}
+#else
 	APC_UNLOCK(cache->header);
-}
 #endif
+}
 
 /*
  * Local variables:

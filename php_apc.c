@@ -90,6 +90,7 @@ static void php_apc_init_globals(zend_apcu_globals* apcu_globals)
     apcu_globals->coredump_unmap = 0;
     apcu_globals->use_request_time = 1;
     apcu_globals->serializer_name = NULL;
+	apcu_globals->recursion = 0;
 }
 /* }}} */
 
@@ -870,7 +871,6 @@ PHP_FUNCTION(apcu_delete) {
     }
 }
 
-#ifdef APC_LOCK_RECURSIVE
 PHP_FUNCTION(apcu_entry) {
 	zval *key = NULL;
 	zend_fcall_info fci = empty_fcall_info;
@@ -883,7 +883,6 @@ PHP_FUNCTION(apcu_entry) {
 	
 	apc_cache_entry(apc_user_cache, key, &fci, &fcc, ttl, return_value);	
 }
-#endif
 /* }}} */
 
 /* {{{ apcu_functions[] */
@@ -901,9 +900,7 @@ zend_function_entry apcu_functions[] = {
     PHP_FE(apcu_dec,                arginfo_apcu_inc)
     PHP_FE(apcu_cas,                arginfo_apcu_cas)
     PHP_FE(apcu_exists,             arginfo_apcu_exists)
-#ifdef APC_LOCK_RECURSIVE
 	PHP_FE(apcu_entry,				arginfo_apcu_entry)
-#endif
     PHP_FE_END
 };
 /* }}} */

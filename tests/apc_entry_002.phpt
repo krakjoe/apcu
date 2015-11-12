@@ -2,11 +2,6 @@
 APC: apcu_entry (exception)
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
-<?php
-	if (!function_exists("apcu_entry")) {
-		die("skip: apcu_entry unavailable");
-	}
-?>
 --INI--
 apc.enabled=1
 apc.enable_cli=1
