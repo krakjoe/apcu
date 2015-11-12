@@ -19,8 +19,8 @@
  <date>2014-10-11</date>
  <time>18:00:00</time>
  <version>
-  <release>4.0.7</release>
-  <api>4.0.7</api>
+  <release>5.0.0dev</release>
+  <api>5.0.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -28,49 +28,46 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-  - fix inconsistent member names for entries in userland
+- PHP 7 compatibility
  </notes>
  <contents>
   <dir name="/">
-   <file name="tests/023-2.inc" role="test" />
-   <file name="tests/024.phpt" role="test" />
-   <file name="tests/apc_001.phpt" role="test" />
-   <file name="tests/apc_002.phpt" role="test" />
-   <file name="tests/apc_003.phpt" role="test" />
-   <file name="tests/apc_003b.phpt" role="test" />
-   <file name="tests/apc_004.phpt" role="test" />
-   <file name="tests/apc_005.phpt" role="test" />
-   <file name="tests/apc_006.phpt" role="test" />
-   <file name="tests/apc_007.phpt" role="test" />
-   <file name="tests/apc_008.phpt" role="test" />
-   <file name="tests/apc_010.phpt" role="test" />
-   <file name="tests/apc_011.phpt" role="test" />
-   <file name="tests/apc54_014.phpt" role="test" />
-   <file name="tests/apc54_018.phpt" role="test" />
-   <file name="tests/apc_bin_001.phpt" role="test" />
-   <file name="tests/apc_bin_002.phpt" role="test" />
-   <file name="tests/apc_bin_003.phpt" role="test" />
-   <file name="tests/apc_bin_004.phpt" role="test" />
-   <file name="tests/bug63224.phpt" role="test" />
-   <file name="tests/get_included_files_inc1.inc" role="test" />
-   <file name="tests/get_included_files_inc2.inc" role="test" />
-   <file name="tests/get_included_files_inc3.inc" role="test" />
-   <file name="tests/iterator_001.phpt" role="test" />
-   <file name="tests/iterator_002.phpt" role="test" />
-   <file name="tests/iterator_003.phpt" role="test" />
-   <file name="tests/iterator_004.phpt" role="test" />
-   <file name="tests/iterator_005.phpt" role="test" />
-   <file name="tests/iterator_006.phpt" role="test" />
-   <file name="tests/iterator_007.phpt" role="test" />
-   <file name="tests/iterator_008.phpt" role="test" />
-   <file name="tests/php_5_3_ns.inc" role="test" />
-   <file name="tests/server_test.inc" role="test" />
-   <file name="tests/skipif.inc" role="test" />
-   <file name="tests/data/abc.data" role="test" />
+   <dir name="tests">
+    <file name="023-2.inc" role="test" />
+    <file name="024.phpt" role="test" />
+    <file name="apc_001.phpt" role="test" />
+    <file name="apc_002.phpt" role="test" />
+    <file name="apc_003.phpt" role="test" />
+    <file name="apc_003b.phpt" role="test" />
+    <file name="apc_004.phpt" role="test" />
+    <file name="apc_005.phpt" role="test" />
+    <file name="apc_006.phpt" role="test" />
+    <file name="apc_007.phpt" role="test" />
+    <file name="apc_008.phpt" role="test" />
+    <file name="apc_010.phpt" role="test" />
+    <file name="apc_011.phpt" role="test" />
+    <file name="apc_012.phpt" role="test" />
+    <file name="apc_013_exists.phpt" role="test" />
+    <file name="apc54_014.phpt" role="test" />
+    <file name="apc54_018.phpt" role="test" />
+    <file name="bug63224.phpt" role="test" />
+    <file name="get_included_files_inc1.inc" role="test" />
+    <file name="get_included_files_inc2.inc" role="test" />
+    <file name="get_included_files_inc3.inc" role="test" />
+    <file name="iterator_001.phpt" role="test" />
+    <file name="iterator_002.phpt" role="test" />
+    <file name="iterator_003.phpt" role="test" />
+    <file name="iterator_004.phpt" role="test" />
+    <file name="iterator_005.phpt" role="test" />
+    <file name="iterator_006.phpt" role="test" />
+    <file name="iterator_007.phpt" role="test" />
+    <file name="php_5_3_ns.inc" role="test" />
+    <file name="server_test.inc" role="test" />
+    <file name="skipif.inc" role="test" />
+    <file name="data/abc.data" role="test" />
+   </dir>
    <file name="apc_api.h" role="src" />
-   <file name="apc_bin_api.h" role="src" />
-   <file name="apc_bin.c" role="src" />
-   <file name="apc_bin.h" role="src" />
+   <file name="apc_arginfo.h" role="src" />
    <file name="apc.c" role="src" />
    <file name="apc_cache_api.h" role="src" />
    <file name="apc_cache.c" role="src" />
@@ -90,7 +87,6 @@
    <file name="apc_pool_api.h" role="src" />
    <file name="apc_pool.c" role="src" />
    <file name="apc_pool.h" role="src" />
-   <file name="apc_rfc1867.c" role="src" />
    <file name="apc_shm.c" role="src" />
    <file name="apc_shm.h" role="src" />
    <file name="apc_signal.c" role="src" />
@@ -121,11 +117,7 @@
  <dependencies>
   <required>
    <php>
-    <!--
-        Actually the APC codebase support 5.2+
-        Support can not provided for crusty versions of PHP
-    -->
-    <min>5.3.0</min>
+    <min>7.0.0-dev</min>
    </php>
    <pearinstaller>
     <min>1.4.0b1</min>
@@ -138,6 +130,71 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2014-10-11</date>
+   <time>17:02:21</time>
+   <version>
+    <release>4.0.7</release>
+    <api>4.0.7</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- fix inconsistent member names for entries in userland
+   </notes>
+  </release>
+  <release>
+   <date>2014-06-12</date>
+   <time>13:39:04</time>
+   <version>
+    <release>4.0.6</release>
+    <api>4.0.6</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- fix issues with stddef inclusion causing compilation issue
+   </notes>
+  </release>
+  <release>
+   <date>2014-06-11</date>
+   <time>05:48:25</time>
+   <version>
+    <release>4.0.5</release>
+    <api>4.0.5</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- fix compile with 5.6 beta
+   </notes>
+  </release>
+  <release>
+   <date>2014-03-01</date>
+   <time>07:29:53</time>
+   <version>
+    <release>4.0.4</release>
+    <api>4.0.4</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Fix deadlocking due to destroyed locks
+- Fix various compatibility bugs
+   </notes>
+  </release>
   <release>
 	<date>2014-01-27</date>
  	<time>09:00:00</time>

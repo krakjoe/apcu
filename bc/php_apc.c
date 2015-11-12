@@ -30,6 +30,7 @@
 #include "php_apc.h"
 #include "../php_apc.h"
 #include "ext/standard/info.h"
+#include "../apc_arginfo.h"
 
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
@@ -66,7 +67,7 @@ PHP_FUNCTION(apc_clear_cache) {
 	zend_string *ignored;
 	zval proxy;
 
-	if (zend_parse_paramters(ZEND_NUM_ARGS(), "S", &ignored) != SUCCESS) { 
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S", &ignored) != SUCCESS) {
 		return;
 	}
 	
@@ -84,7 +85,7 @@ PHP_FUNCTION(apc_cache_info) {
 
 	ZVAL_FALSE(&param);
 
-	if (zend_parse_paramters(ZEND_NUM_ARGS(), "S|z", &ignored, &limited) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|z", &ignored, &limited) != SUCCESS) {
 		return;
 	}
 
@@ -97,19 +98,19 @@ PHP_FUNCTION(apc_cache_info) {
 
 /* {{{ apc_functions[] */
 zend_function_entry apc_functions[] = {
-    PHP_FE(apc_cache_info,         NULL)
-    PHP_FE(apc_clear_cache,        NULL)
-	PHP_FALIAS(apc_store, apcu_store, NULL)
-	PHP_FALIAS(apc_fetch, apcu_fetch, NULL)
-	PHP_FALIAS(apc_enabled, apcu_enabled, NULL)
-	PHP_FALIAS(apc_delete, apcu_delete, NULL)
-    PHP_FALIAS(apc_add, apcu_add,		NULL)
-    PHP_FALIAS(apc_sma_info, apcu_sma_info, NULL)
-    PHP_FALIAS(apc_inc, apcu_inc, NULL)
-	PHP_FALIAS(apc_dec, apcu_dec, NULL)
-	PHP_FALIAS(apc_cas, apcu_cas, NULL)
-	PHP_FALIAS(apc_exists, apcu_exists, NULL)
-    {NULL, NULL, NULL}
+	PHP_FE(apc_cache_info,         arginfo_apc_cache_info)
+	PHP_FE(apc_clear_cache,        arginfo_apc_clear_cache)
+	PHP_FALIAS(apc_store,    apcu_store,    arginfo_apcu_store)
+	PHP_FALIAS(apc_fetch,    apcu_fetch,    arginfo_apcu_fetch)
+	PHP_FALIAS(apc_enabled,  apcu_enabled,  arginfo_apcu_enabled)
+	PHP_FALIAS(apc_delete,   apcu_delete,   arginfo_apcu_delete)
+	PHP_FALIAS(apc_add,      apcu_add,      arginfo_apcu_store)
+	PHP_FALIAS(apc_sma_info, apcu_sma_info, arginfo_apcu_sma_info)
+	PHP_FALIAS(apc_inc,      apcu_inc,      arginfo_apcu_inc)
+	PHP_FALIAS(apc_dec,      apcu_dec,      arginfo_apcu_inc)
+	PHP_FALIAS(apc_cas,      apcu_cas,      arginfo_apcu_cas)
+	PHP_FALIAS(apc_exists,   apcu_exists,   arginfo_apcu_exists)
+	PHP_FE_END
 };
 /* }}} */
 

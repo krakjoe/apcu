@@ -43,6 +43,7 @@
 #include "ext/standard/flock_compat.h"
 #include "ext/standard/md5.h"
 #include "ext/standard/php_var.h"
+#include "apc_arginfo.h"
 
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
@@ -805,6 +806,8 @@ PHP_FUNCTION(apcu_exists) {
 			/* don't set values we didn't find */
             zend_hash_move_forward_ex(Z_ARRVAL_P(key), &hpos);
         }
+
+		return;
     } else {
         apc_warning("apc_exists() expects a string or array of strings.");
     }
@@ -883,82 +886,6 @@ PHP_FUNCTION(apcu_entry) {
 #endif
 /* }}} */
 
-/* {{{ arginfo */
-#if (PHP_MAJOR_VERSION >= 6 || (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION >= 3))
-# define PHP_APC_ARGINFO
-#else
-# define PHP_APC_ARGINFO static
-#endif
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_store, 0, 0, 2)
-    ZEND_ARG_INFO(0, key)
-    ZEND_ARG_INFO(0, var)
-    ZEND_ARG_INFO(0, ttl)
-ZEND_END_ARG_INFO()
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_enabled, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_cache_info, 0, 0, 0)
-    ZEND_ARG_INFO(0, limited)
-ZEND_END_ARG_INFO()
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_clear_cache, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_key_info, 0, 0, 1)
-    ZEND_ARG_INFO(0, key)
-ZEND_END_ARG_INFO()
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_sma_info, 0, 0, 0)
-    ZEND_ARG_INFO(0, limited)
-ZEND_END_ARG_INFO()
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO(arginfo_apcu_delete, 0)
-    ZEND_ARG_INFO(0, keys)
-ZEND_END_ARG_INFO()
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_fetch, 0, 0, 1)
-    ZEND_ARG_INFO(0, key)
-    ZEND_ARG_INFO(1, success)
-ZEND_END_ARG_INFO()
-
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_inc, 0, 0, 1)
-    ZEND_ARG_INFO(0, key)
-    ZEND_ARG_INFO(0, step)
-    ZEND_ARG_INFO(1, success)
-ZEND_END_ARG_INFO()
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO(arginfo_apcu_cas, 0)
-    ZEND_ARG_INFO(0, key)
-    ZEND_ARG_INFO(0, old)
-    ZEND_ARG_INFO(0, new)
-ZEND_END_ARG_INFO()
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO(arginfo_apcu_exists, 0)
-    ZEND_ARG_INFO(0, keys)
-ZEND_END_ARG_INFO()
-
-PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_entry, 0, 0, 2)
-    ZEND_ARG_INFO(0, key)
-	ZEND_ARG_TYPE_INFO(0, generator, IS_CALLABLE, 0)
-	ZEND_ARG_TYPE_INFO(0, generator, IS_LONG, 0)
-ZEND_END_ARG_INFO()
-/* }}} */
-
 /* {{{ apcu_functions[] */
 zend_function_entry apcu_functions[] = {
     PHP_FE(apcu_cache_info,         arginfo_apcu_cache_info)
@@ -977,7 +904,7 @@ zend_function_entry apcu_functions[] = {
 #ifdef APC_LOCK_RECURSIVE
 	PHP_FE(apcu_entry,				arginfo_apcu_entry)
 #endif
-    {NULL, NULL, NULL}
+    PHP_FE_END
 };
 /* }}} */
 
