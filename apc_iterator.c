@@ -526,7 +526,7 @@ PHP_METHOD(apc_iterator, getTotalCount) {
 #endif
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator___construct, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, search)
 	ZEND_ARG_INFO(0, format)
 	ZEND_ARG_INFO(0, chunk_size)
