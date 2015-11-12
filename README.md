@@ -35,3 +35,12 @@ Still to Do:
 
 The C api does not retain backward compatibility, anyone relying on APC that will rely on APCu in the future should review the changes as soon as possible and continue to track them.
 The PHP api will retain compatibility with APC, as will common configuration options, providing a drop in replacement.
+
+Contributing
+============
+
+## Bug Reports ##
+Bug reports can be created in [the issues](https://github.com/krakjoe/apcu/issues). When APCu crashes please provide a backtrace.
+
+### Windows ###
+To create a backtrace for windows please refer to the [relevant page](https://bugs.php.net/bugs-generating-backtrace-win32.php) in the php manual.
