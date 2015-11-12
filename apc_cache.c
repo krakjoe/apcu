@@ -1799,9 +1799,16 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 	entry = apc_cache_find_internal(
 		cache, Z_STR_P(key), ttl);
 	if (!entry) {
+		int result = 0;
+
 		fci->retval = return_value;
 		zend_fcall_info_argn(fci, 1, key);
-		if (zend_call_function(fci, fcc) == SUCCESS) {
+
+		zend_try {
+			result = zend_call_function(fci, fcc);
+		} zend_end_try ();
+
+		if (result == SUCCESS) {
 			zend_fcall_info_args_clear(fci, 1);
 			
 			if (!EG(exception)) {
