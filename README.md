@@ -10,7 +10,7 @@ Shiny Things
 /**
 * Atomically fetch or generate a cache entry
 **/
-function apcu_entry(string key, callable generator, int ttl) : mixed;
+function apcu_entry(string key, callable generator, int ttl = 0) : mixed;
 ```
 
   * Address inadequacy of stampede protection. 
