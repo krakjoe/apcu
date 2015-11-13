@@ -685,71 +685,43 @@ PHP_FUNCTION(apcu_fetch) {
 	if (Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
 	    convert_to_string(key);
 	}
-	
-	/* check for a string, or array of strings */
+
 	if (Z_TYPE_P(key) == IS_ARRAY || (Z_TYPE_P(key) == IS_STRING && Z_STRLEN_P(key) > 0)) {
-		
-		/* initialize a context */
-		if (apc_cache_make_context(apc_user_cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0)) {
-			if (Z_TYPE_P(key) == IS_STRING) {
-				/* do find using string as key */
-				if ((entry = apc_cache_find(apc_user_cache, Z_STR_P(key), t))) {
-				    /* deep-copy returned shm zval to return_value on stack */
-				    apc_cache_fetch_zval(&ctxt, return_value, &entry->val);
-					/* decrement refcount of entry */
-				    apc_cache_release(apc_user_cache, entry);
-					/* set success */
-					if (success) {
-						ZVAL_TRUE(success);
-					}
-				} else { ZVAL_BOOL(return_value, 0); }
-
-			} else if (Z_TYPE_P(key) == IS_ARRAY) {
-
-				/* do find using key as array of strings */
-				HashPosition hpos;
-				zval *hentry;
-				zval result;
-                
-				array_init(&result);
-				
-				zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(key), &hpos);
-				while((hentry = zend_hash_get_current_data_ex(Z_ARRVAL_P(key), &hpos))) {
-
-				    if (Z_TYPE_P(hentry) == IS_STRING) {
-
-				        /* perform find using this index as key */
-						if ((entry = apc_cache_find(apc_user_cache, Z_STR_P(hentry), t))) {
-						    zval result_entry;
-
-						    /* deep-copy returned shm zval to emalloc'ed return_value */
-						    apc_cache_fetch_zval(
-								&ctxt, &result_entry, &entry->val);
-							/* decrement refcount of entry */
-						    apc_cache_release(
-								apc_user_cache, entry);
-							/* add the emalloced value to return array */
-						    add_assoc_zval(&result, Z_STRVAL_P(hentry), &result_entry);
-						}
-				    } else {
-
-						/* we do not break loop, we just skip the key */
-						apc_warning(
-							"apc_fetch() expects a string or array of strings.");
-					}
-
-					/* don't set values we didn't find */
-				    zend_hash_move_forward_ex(Z_ARRVAL_P(key), &hpos);
-				}
-
-				RETVAL_ZVAL(&result, 0, 1);
-
-				if (success) {
+		if (Z_TYPE_P(key) == IS_STRING) {
+			if (apc_cache_fetch(apc_user_cache, Z_STR_P(key), t, &return_value)) {
+			    if (success) {
 					ZVAL_TRUE(success);
 				}
+			} else { ZVAL_BOOL(return_value, 0); }
+		} else if (Z_TYPE_P(key) == IS_ARRAY) {
+			HashPosition hpos;
+			zval *hentry;
+			zval result;
+            
+			array_init(&result);
+
+			zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(key), &hpos);
+			while((hentry = zend_hash_get_current_data_ex(Z_ARRVAL_P(key), &hpos))) {
+			    if (Z_TYPE_P(hentry) == IS_STRING) {
+					zval result_entry,
+						*iresult = &result_entry;
+					ZVAL_UNDEF(iresult);
+
+					if (apc_cache_fetch(apc_user_cache, Z_STR_P(hentry), t, &iresult)) {
+					    add_assoc_zval(&result, Z_STRVAL_P(hentry), &result_entry);
+					}
+			    } else {
+					apc_warning("apc_fetch() expects a string or array of strings.");
+				}
+
+			    zend_hash_move_forward_ex(Z_ARRVAL_P(key), &hpos);
 			}
 
-			apc_cache_destroy_context(&ctxt );	
+			RETVAL_ZVAL(&result, 0, 1);
+
+			if (success) {
+				ZVAL_TRUE(success);
+			}
 		}
 	} else { 
 		apc_warning("apc_fetch() expects a string or array of strings.");
