@@ -21,7 +21,8 @@ function apcu_entry(string key, callable generator, int ttl) : mixed;
 
 If the entry identified by ```key``` *exists* and *has not timed out*, it's value shall be returned.
 
-If the entry *does not exist* or *has timed out*, ```generator(key)``` shall be called and the return value cached with the optionally specified ```ttl```.
+If the entry identified by ```key``` *does not exist* or *has timed out*, ```generator(key)``` shall 
+be called and the return value cached (identified by ```key```) with the optionally specified ```ttl```.
 
 ```apcu_entry``` shall then release the exclusive lock on the cache.
 
