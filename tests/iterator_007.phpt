@@ -7,7 +7,7 @@ apc.enabled=1
 apc.enable_cli=1
 --FILE--
 <?php
-class foobar extends APCIterator {
+class foobar extends APCuIterator {
 	public function __construct() {}
 }
 $obj = new foobar;

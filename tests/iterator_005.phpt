@@ -9,12 +9,12 @@ apc.enable_cli=1
 <?php
 $vals = array();
 $vals2 = array();
-$it = new APCIterator('/key[0-9]0/');
+$it = new APCuIterator('/key[0-9]0/');
 for($i = 0; $i < 41; $i++) {
   apcu_store("key$i", "value$i");
 }
 apcu_delete($it);
-$it2 = new APCIterator();
+$it2 = new APCuIterator();
 foreach($it as $key=>$value) {
   $vals[$key] = $value['key'];
 }

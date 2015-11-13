@@ -7,7 +7,7 @@ apc.enabled=1
 apc.enable_cli=1
 --FILE--
 <?php
-$it = new APCIterator();
+$it = new APCuIterator();
 
 for($i = 0; $i < 41; $i++) {
   apcu_store("key$i", "value$i");

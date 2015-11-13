@@ -89,7 +89,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
 
 /* {{{ apc_iterator_clone */
 static zend_object* apc_iterator_clone(zval *zobject) {
-    apc_error("APCIterator object cannot be cloned.");
+    apc_error(APC_ITERATOR_NAME " object cannot be cloned");
     return NULL;
 }
 /* }}} */
@@ -279,7 +279,7 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 }
 /* }}} */
 
-/* {{{ proto object APCIterator::__costruct([ mixed search [, long format [, long chunk_size [, long list ]]]]) */
+/* {{{ proto object APCuIterator::__construct([ mixed search [, long format [, long chunk_size [, long list ]]]]) */
 PHP_METHOD(apc_iterator, __construct) {
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
     zend_long format = APC_ITER_ALL;
@@ -292,16 +292,16 @@ PHP_METHOD(apc_iterator, __construct) {
     }
 
     if (!APCG(enabled)) {
-        apc_error("APC must be enabled to use APCIterator.");
+        apc_error("APC must be enabled to use " APC_ITERATOR_NAME);
     }
 
     if (chunk_size < 0) {
-        apc_error("APCIterator chunk size must be 0 or greater.");
+        apc_error(APC_ITERATOR_NAME " chunk size must be 0 or greater");
         return;
     }
 
     if (format > APC_ITER_ALL) {
-        apc_error("APCIterator format is invalid.");
+        apc_error(APC_ITERATOR_NAME " format is invalid");
         return;
     }
 
@@ -310,7 +310,7 @@ PHP_METHOD(apc_iterator, __construct) {
     } else if (list == APC_LIST_DELETED) {
         iterator->fetch = apc_iterator_fetch_deleted;
     } else {
-        apc_warning("APCIterator invalid list type.");
+        apc_warning(APC_ITERATOR_NAME " invalid list type");
         return;
     }
 	
@@ -336,7 +336,7 @@ PHP_METHOD(apc_iterator, __construct) {
 			zend_string_release(iterator->regex);
         }
 #else
-        apc_error("Regular expressions support is not enabled, please enable PCRE for APCIterator regex support");
+        apc_error("Regular expressions support is not enabled, please enable PCRE for " APC_ITERATOR_NAME " regex support.");
 #endif
     } else if (search && Z_TYPE_P(search) == IS_ARRAY) {
         Z_ADDREF_P(search);
@@ -346,7 +346,7 @@ PHP_METHOD(apc_iterator, __construct) {
 }
 /* }}} */
 
-/* {{{ proto APCIterator::rewind() */
+/* {{{ proto APCuIterator::rewind() */
 PHP_METHOD(apc_iterator, rewind) {
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 	
@@ -365,7 +365,7 @@ PHP_METHOD(apc_iterator, rewind) {
 }
 /* }}} */
 
-/* {{{ proto boolean APCIterator::valid() */
+/* {{{ proto boolean APCuIterator::valid() */
 PHP_METHOD(apc_iterator, valid) {
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
@@ -385,7 +385,7 @@ PHP_METHOD(apc_iterator, valid) {
 }
 /* }}} */
 
-/* {{{ proto mixed APCIterator::current() */
+/* {{{ proto mixed APCuIterator::current() */
 PHP_METHOD(apc_iterator, current) {
     apc_iterator_item_t *item;
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
@@ -410,7 +410,7 @@ PHP_METHOD(apc_iterator, current) {
 }
 /* }}} */
 
-/* {{{ proto string APCIterator::key() */
+/* {{{ proto string APCuIterator::key() */
 PHP_METHOD(apc_iterator, key) {
     apc_iterator_item_t *item;
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
@@ -439,7 +439,7 @@ PHP_METHOD(apc_iterator, key) {
 }
 /* }}} */
 
-/* {{{ proto APCIterator::next() */
+/* {{{ proto APCuIterator::next() */
 PHP_METHOD(apc_iterator, next) {
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
@@ -458,7 +458,7 @@ PHP_METHOD(apc_iterator, next) {
 }
 /* }}} */
 
-/* {{{ proto long APCIterator::getTotalHits() */
+/* {{{ proto long APCuIterator::getTotalHits() */
 PHP_METHOD(apc_iterator, getTotalHits) {
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
@@ -478,7 +478,7 @@ PHP_METHOD(apc_iterator, getTotalHits) {
 }
 /* }}} */
 
-/* {{{ proto long APCIterator::getTotalSize() */
+/* {{{ proto long APCuIterator::getTotalSize() */
 PHP_METHOD(apc_iterator, getTotalSize) {
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
@@ -498,7 +498,7 @@ PHP_METHOD(apc_iterator, getTotalSize) {
 }
 /* }}} */
 
-/* {{{ proto long APCIterator::getTotalCount() */
+/* {{{ proto long APCuIterator::getTotalCount() */
 PHP_METHOD(apc_iterator, getTotalCount) {
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
@@ -595,7 +595,7 @@ int apc_iterator_delete(zval *zobj) {
     apc_iterator_item_t *item;
 
     if (!ce || !instanceof_function(ce, apc_iterator_ce)) {
-        apc_error("apc_delete object argument must be instance of APCIterator");
+        apc_error("apc_delete object argument must be instance of " APC_ITERATOR_NAME ".");
         return 0;
     }
     iterator = apc_iterator_fetch(zobj);
