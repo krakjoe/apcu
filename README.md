@@ -1,7 +1,25 @@
 PHP7
 ===
 
-PHP7 is coming and APCu is coming with us ... WIP
+PHP7 is coming and APCu is coming with us ... 
+
+Shiny Things
+===========
+
+```function apcu_entry(string key, callable generator, int ttl) : mixed;```
+
+  * Address inadequacy of stampede protection. 
+  * Introduce a way to atomically warm a cache.
+  * Provide a simpler interface to the cache.
+
+Internal Changes
+--------------
+
+APC(u) breaks some basic rules, it's always done this and for the most part it works: It acquires a read lock and performs writes.
+
+There was a frustrating number of people who experience problems with caching that we are not able to investigate.
+
+APCu >= 5.1.0 introduces internal changes that should avoid races, it might also change the performance characteristics of the cache.
 
 APCu
 ====
