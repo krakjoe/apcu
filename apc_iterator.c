@@ -281,7 +281,6 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 
 /* {{{ proto object APCIterator::__costruct([ mixed search [, long format [, long chunk_size [, long list ]]]]) */
 PHP_METHOD(apc_iterator, __construct) {
-    zval *object = getThis();
     apc_iterator_t *iterator = apc_iterator_fetch(getThis());
     zend_long format = APC_ITER_ALL;
     zend_long chunk_size=0;
@@ -527,7 +526,7 @@ PHP_METHOD(apc_iterator, getTotalCount) {
 #endif
 
 PHP_APC_ARGINFO
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator___construct, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, search)
 	ZEND_ARG_INFO(0, format)
 	ZEND_ARG_INFO(0, chunk_size)

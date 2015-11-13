@@ -83,7 +83,6 @@
    <file name="apc_mmap.h" role="src" />
    <file name="apc.php" role="src" />
    <file name="apc_php.h" role="src" />
-   <file name="apc_php_pcre.h" role="src" />
    <file name="apc_pool_api.h" role="src" />
    <file name="apc_pool.c" role="src" />
    <file name="apc_pool.h" role="src" />

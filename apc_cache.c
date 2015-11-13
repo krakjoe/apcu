@@ -233,7 +233,7 @@ PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS)
     php_var_serialize(&strbuf, (zval*) value, &var_hash);
     PHP_VAR_SERIALIZE_DESTROY(var_hash);
     if(strbuf.s->val) {
-        *buf = estrndup(ZSTR_VAL(strbuf.s), ZSTR_LEN(strbuf.s));
+        *buf = (unsigned char *)estrndup(ZSTR_VAL(strbuf.s), ZSTR_LEN(strbuf.s));
         *buf_len = ZSTR_LEN(strbuf.s);
 		smart_str_free(&strbuf);
         return 1;
@@ -428,6 +428,7 @@ static inline zend_bool apc_cache_store_internal(apc_cache_t *cache, zend_string
             apc_cache_destroy_context(&ctxt);
         }
     }
+    return ret;
 }
 
 static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zend_string *key, time_t t) {
@@ -1199,7 +1200,7 @@ static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ct
         config = (ctxt->serializer->config != NULL) ? ctxt->serializer->config : ctxt;
     }
 
-    if(unserialize(dst, Z_STRVAL_P(src), Z_STRLEN_P(src), config)) {
+    if(unserialize(dst, (unsigned char *)Z_STRVAL_P(src), Z_STRLEN_P(src), config)) {
         return dst;
     } else {
         zval_dtor(dst);
