@@ -25,8 +25,8 @@
  <date>2014-10-11</date>
  <time>18:00:00</time>
  <version>
-  <release>5.0.0dev</release>
-  <api>5.0.0</api>
+  <release>5.1.0dev</release>
+  <api>5.1.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -35,6 +35,11 @@
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
 - PHP 7 compatibility
+- provide APC compatibility in "apc" optional extension
+- move APCIterator to APC compatibility extension
+- add APCuIterator without cache argument
+- drop apcu_bin_* functions
+- add apcu_entry(key, callback, ttl) function
  </notes>
  <contents>
   <dir name="/">
