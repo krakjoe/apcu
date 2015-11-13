@@ -1,11 +1,8 @@
 --TEST--
-APC: apcu_store/fetch with objects (php 5.3)
+APC: apcu_store/fetch with objects
 --SKIPIF--
 <?php
     require_once(dirname(__FILE__) . '/skipif.inc'); 
-    if(version_compare(zend_version(), '2.3.0') < 0) {
-		echo "skip\n";
-	}
 ?>
 --INI--
 apc.enabled=1
