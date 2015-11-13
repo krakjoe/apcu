@@ -948,14 +948,14 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *
 /* {{{ apc_cache_fetch */
 PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval **dst) 
 {
-	apc_cache_entry_t *entry;
+	apc_cache_entry_t *entry = NULL;
 	zend_bool ret = 0;
-		
-	/* find the entry */
-	if ((entry = apc_cache_find(cache, key, t))) {
-        ret = apc_cache_fetch_internal(
-			cache, key, entry, t, dst);
+
+	APC_LOCK(cache->header);
+	if ((entry = apc_cache_find_internal(cache, key, t))) {
+        ret = apc_cache_fetch_internal(cache, key, entry, t, dst);
 	}
+	APC_UNLOCK(cache->header);
 	
 	return ret;
 } /* }}} */
