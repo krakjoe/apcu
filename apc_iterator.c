@@ -132,7 +132,7 @@ static void apc_iterator_free(zend_object *object) {
 /* }}} */
 
 /* {{{ apc_iterator_create */
-static zend_object* apc_iterator_create(zend_class_entry *ce) {
+zend_object* apc_iterator_create(zend_class_entry *ce) {
     apc_iterator_t *iterator = 
 		(apc_iterator_t*) emalloc(sizeof(apc_iterator_t) + zend_object_properties_size(ce));
 
@@ -279,18 +279,8 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 }
 /* }}} */
 
-/* {{{ proto object APCuIterator::__construct([ mixed search [, long format [, long chunk_size [, long list ]]]]) */
-PHP_METHOD(apc_iterator, __construct) {
-    apc_iterator_t *iterator = apc_iterator_fetch(getThis());
-    zend_long format = APC_ITER_ALL;
-    zend_long chunk_size=0;
-    zval *search = NULL;
-    zend_long list = APC_LIST_ACTIVE;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zlll", &search, &format, &chunk_size, &list) == FAILURE) {
-        return;
-    }
-
+void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long format, zend_long chunk_size, zend_long list)
+{
     if (!APCG(enabled)) {
         apc_error("APC must be enabled to use " APC_ITERATOR_NAME);
     }
@@ -313,7 +303,7 @@ PHP_METHOD(apc_iterator, __construct) {
         apc_warning(APC_ITERATOR_NAME " invalid list type");
         return;
     }
-	
+
     iterator->slot_idx = 0;
     iterator->stack_idx = 0;
     iterator->key_idx = 0;
@@ -343,6 +333,21 @@ PHP_METHOD(apc_iterator, __construct) {
         iterator->search_hash = apc_flip_hash(Z_ARRVAL_P(search));
     }
     iterator->initialized = 1;
+}
+
+/* {{{ proto object APCuIterator::__construct([ mixed search [, long format [, long chunk_size [, long list ]]]]) */
+PHP_METHOD(apc_iterator, __construct) {
+    apc_iterator_t *iterator = apc_iterator_fetch(getThis());
+    zend_long format = APC_ITER_ALL;
+    zend_long chunk_size=0;
+    zval *search = NULL;
+    zend_long list = APC_LIST_ACTIVE;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zlll", &search, &format, &chunk_size, &list) == FAILURE) {
+        return;
+    }
+
+	apc_iterator_obj_init(iterator, search, format, chunk_size, list);
 }
 /* }}} */
 
@@ -519,13 +524,6 @@ PHP_METHOD(apc_iterator, getTotalCount) {
 /* }}} */
 
 /* {{{ arginfo */
-#if (PHP_MAJOR_VERSION >= 6 || (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION >= 3))
-# define PHP_APC_ARGINFO
-#else
-# define PHP_APC_ARGINFO static
-#endif
-
-PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, search)
 	ZEND_ARG_INFO(0, format)
@@ -533,7 +531,6 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator___construct, 0, 0, 0)
 	ZEND_ARG_INFO(0, list)
 ZEND_END_ARG_INFO()
 
-PHP_APC_ARGINFO
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator_void, 0, 0, 0)
 ZEND_END_ARG_INFO()
 /* }}} */
@@ -549,7 +546,7 @@ static zend_function_entry apc_iterator_functions[] = {
     PHP_ME(apc_iterator, getTotalHits, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
     PHP_ME(apc_iterator, getTotalSize, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
     PHP_ME(apc_iterator, getTotalCount, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-    {NULL, NULL, NULL}
+    PHP_FE_END
 };
 /* }}} */
 

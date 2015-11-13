@@ -26,15 +26,19 @@
 #include "zend_compile.h"
 #include "zend_hash.h"
 #include "zend_extensions.h"
+#include "zend_interfaces.h"
 
 #include "php_apc.h"
 #include "../php_apc.h"
 #include "ext/standard/info.h"
 #include "../apc_arginfo.h"
+#include "../apc_iterator.h"
 
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
+
+zend_class_entry *apc_bc_iterator_ce;
 
 /* {{{ PHP_FUNCTION declarations */
 PHP_FUNCTION(apc_cache_info);
@@ -45,8 +49,8 @@ PHP_FUNCTION(apc_clear_cache);
 static PHP_MINFO_FUNCTION(apc)
 {
     php_info_print_table_start();
-    php_info_print_table_header(2, "APC Compatibility:", "Enabled");
-    php_info_print_table_row(2, "Revision", "$Revision: 328290 $");
+    php_info_print_table_header(2, "APC Compatibility:", apc_is_enabled() ? "Enabled" : "Disabled");
+    php_info_print_table_row(2, "Version", PHP_APC_VERSION);
     php_info_print_table_row(2, "Build Date", __DATE__ " " __TIME__);
     php_info_print_table_end();
 }
@@ -114,12 +118,82 @@ zend_function_entry apc_functions[] = {
 };
 /* }}} */
 
+/* {{{ arginfo */
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator___construct, 0, 0, 1)
+	ZEND_ARG_INFO(0, ignored)
+	ZEND_ARG_INFO(0, search)
+	ZEND_ARG_INFO(0, format)
+	ZEND_ARG_INFO(0, chunk_size)
+	ZEND_ARG_INFO(0, list)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator_void, 0, 0, 0)
+ZEND_END_ARG_INFO()
+/* }}} */
+
+/* {{{ proto object APCIterator::__construct(cache, [ mixed search [, long format [, long chunk_size [, long list ]]]]) */
+PHP_METHOD(apc_bc_iterator, __construct) {
+	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
+	zend_long format = APC_ITER_ALL;
+	zend_long chunk_size=0;
+	zval *search = NULL;
+	zend_long list = APC_LIST_ACTIVE;
+	zend_string *cache;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|zlll", &cache, &search, &format, &chunk_size, &list) == FAILURE) {
+		return;
+	}
+
+	apc_iterator_obj_init(iterator, search, format, chunk_size, list);
+}
+/* }}} */
+
+#define APC_BC_ITERATOR_NAME "APCIterator"
+
+/* {{{ apc_iterator_functions */
+static zend_function_entry apc_iterator_functions[] = {
+    PHP_ME(apc_bc_iterator,  __construct, arginfo_apc_iterator___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+    PHP_ME(apc_iterator, rewind, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
+    PHP_ME(apc_iterator, current, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
+    PHP_ME(apc_iterator, key, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
+    PHP_ME(apc_iterator, next, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
+    PHP_ME(apc_iterator, valid, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
+    PHP_ME(apc_iterator, getTotalHits, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
+    PHP_ME(apc_iterator, getTotalSize, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
+    PHP_ME(apc_iterator, getTotalCount, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
+    PHP_FE_END
+};
+/* }}} */
+
+/* {{{ apc_iterator_init */
+static int apc_bc_iterator_init(int module_number) {
+    zend_class_entry ce;
+
+    INIT_CLASS_ENTRY(ce, APC_BC_ITERATOR_NAME, apc_iterator_functions);
+    apc_bc_iterator_ce = zend_register_internal_class(&ce);
+    apc_bc_iterator_ce->create_object = apc_iterator_create;
+    zend_class_implements(apc_bc_iterator_ce, 1, zend_ce_iterator);
+
+    return SUCCESS;
+}
+/* }}} */
+
+/* {{{ PHP_MINIT_FUNCTION(apc) */
+static PHP_MINIT_FUNCTION(apc)
+{
+	if (apc_is_enabled()) {
+		apc_bc_iterator_init(module_number);
+	}
+
+	return SUCCESS;
+}
+
 /* {{{ module definition structure */
 zend_module_entry apc_module_entry = {
     STANDARD_MODULE_HEADER,
     PHP_APC_EXTNAME,
     apc_functions,
-    NULL,
+    PHP_MINIT(apc),
     NULL,
     PHP_RINIT(apc),
     NULL,

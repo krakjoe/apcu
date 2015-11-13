@@ -61,6 +61,7 @@
     <file name="iterator_005.phpt" role="test" />
     <file name="iterator_006.phpt" role="test" />
     <file name="iterator_007.phpt" role="test" />
+    <file name="iterator_008_bc.phpt" role="test" />
     <file name="php_5_3_ns.inc" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />

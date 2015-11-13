@@ -153,6 +153,11 @@ PHP_INI_END()
 
 /* }}} */
 
+zend_bool apc_is_enabled(void)
+{
+	return APCG(enabled);
+}
+
 /* {{{ PHP_MINFO_FUNCTION(apcu) */
 static PHP_MINFO_FUNCTION(apcu)
 {
@@ -196,7 +201,6 @@ static PHP_MINFO_FUNCTION(apcu)
         php_info_print_table_row(2, "Serialization Support", "Disabled");
     }
 
-    php_info_print_table_row(2, "Revision", "$Revision: 328290 $");
     php_info_print_table_row(2, "Build Date", __DATE__ " " __TIME__);
     php_info_print_table_end();
     DISPLAY_INI_ENTRIES();

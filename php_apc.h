@@ -50,6 +50,8 @@ PHP_FUNCTION(apcu_enabled);
 PHP_FUNCTION(apcu_sma_info);
 PHP_FUNCTION(apcu_entry);
 
+extern zend_bool apc_is_enabled(void);
+
 extern zend_module_entry apcu_module_entry;
 #define apcu_module_ptr &apcu_module_entry
 
