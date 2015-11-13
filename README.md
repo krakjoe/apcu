@@ -6,18 +6,31 @@ PHP7 is coming and APCu is coming with us ...
 Shiny Things
 ===========
 
-```function apcu_entry(string key, callable generator, int ttl) : mixed;```
+```php
+/**
+* Atomically fetch or generate a cache entry
+**/
+function apcu_entry(string key, callable generator, int ttl) : mixed;
+```
 
   * Address inadequacy of stampede protection. 
   * Introduce a way to atomically warm a cache.
   * Provide a simpler interface to the cache.
 
+```apcu_entry``` shall first acquire an exclusive lock on the cache.
+
+If the entry identified by ```key``` *exists* and *has not timed out*, it's value shall be returned.
+
+If the entry *does not exist* or *has timed out*, ```generator(key)``` shall be called and the return value cached with the optionally specified ```ttl```.
+
+```apcu_entry``` shall then release the exclusive lock on the cache.
+
 Internal Changes
 --------------
 
-APC(u) breaks some basic rules, it's always done this and for the most part it works: It acquires a read lock and performs writes.
+APC(u) did break a basic rule, it's always done this and for the most part it works: It acquires a read lock and performs writes.
 
-There was a frustrating number of people who experience problems with caching that we are not able to investigate.
+There was a frustrating number of people who experience problems with caching that we are not able to investigate, this is a tell-tell sign that you have concurrency bugs ...
 
 APCu >= 5.1.0 introduces internal changes that should avoid races, it might also change the performance characteristics of the cache.
 
