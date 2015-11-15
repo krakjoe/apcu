@@ -58,6 +58,7 @@
     <file name="apc_011.phpt" role="test" />
     <file name="apc_012.phpt" role="test" />
     <file name="apc_013_exists.phpt" role="test" />
+    <file name="apc_014_store_ref.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
     <file name="apc54_018.phpt" role="test" />
     <file name="bug63224.phpt" role="test" />
