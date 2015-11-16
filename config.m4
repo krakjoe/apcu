@@ -236,11 +236,11 @@ if test "$PHP_APCU" != "no"; then
                  apc_iterator.c "
 							   
   PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
+  PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
 	if test $PHP_APCU_BC != "no"; then
 		PHP_ADD_BUILD_DIR($ext_builddir/bc, 1)
 		PHP_NEW_EXTENSION(apc, "bc/php_apc.c", $ext_shared,, \\$(APCU_CFLAGS))
 	fi
-  PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
   PHP_SUBST(APCU_SHARED_LIBADD)
   PHP_SUBST(APCU_CFLAGS)
   PHP_SUBST(PHP_LDFLAGS)

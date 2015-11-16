@@ -16,11 +16,17 @@
   <email>ab@php.net</email>
   <active>yes</active>
  </developer>
+ <developer>
+  <name>Remi Collet</name>
+  <user>remi</user>
+  <email>remi@php.net</email>
+  <active>yes</active>
+ </developer>
  <date>2014-10-11</date>
  <time>18:00:00</time>
  <version>
-  <release>5.0.0dev</release>
-  <api>5.0.0</api>
+  <release>5.1.0dev</release>
+  <api>5.1.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -29,6 +35,11 @@
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
 - PHP 7 compatibility
+- provide APC compatibility in "apc" optional extension
+- move APCIterator to APC compatibility extension
+- add APCuIterator without cache argument
+- drop apcu_bin_* functions
+- add apcu_entry(key, callback, ttl) function
  </notes>
  <contents>
   <dir name="/">
@@ -37,7 +48,6 @@
     <file name="024.phpt" role="test" />
     <file name="apc_001.phpt" role="test" />
     <file name="apc_002.phpt" role="test" />
-    <file name="apc_003.phpt" role="test" />
     <file name="apc_003b.phpt" role="test" />
     <file name="apc_004.phpt" role="test" />
     <file name="apc_005.phpt" role="test" />
@@ -48,6 +58,7 @@
     <file name="apc_011.phpt" role="test" />
     <file name="apc_012.phpt" role="test" />
     <file name="apc_013_exists.phpt" role="test" />
+    <file name="apc_014_store_ref.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
     <file name="apc54_018.phpt" role="test" />
     <file name="bug63224.phpt" role="test" />
@@ -61,6 +72,7 @@
     <file name="iterator_005.phpt" role="test" />
     <file name="iterator_006.phpt" role="test" />
     <file name="iterator_007.phpt" role="test" />
+    <file name="iterator_008_bc.phpt" role="test" />
     <file name="php_5_3_ns.inc" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />

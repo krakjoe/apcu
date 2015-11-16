@@ -3,9 +3,7 @@ APC: Bug #59938 APCIterator fails with large user cache
 --SKIPIF--
 <?php
     require_once(dirname(__FILE__) . '/skipif.inc'); 
-    if (PHP_MAJOR_VERSION < 5 || (PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION < 4)) {
-		die('skip PHP 5.4+ only');
-	}
+?>
 --FILE--
 <?php
 include "server_test.inc";
@@ -18,7 +16,7 @@ for(\$i=0;\$i<50000;\$i++) {
 }
 
 //then later (usually after a few minutes) this won't work correctly:
-\$it = new ApcIterator('#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
+\$it = new APCuIterator('#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
 var_dump(\$it->getTotalCount()); //returns 50000
 var_dump(\$it->current()); //returns false on error
 FL;

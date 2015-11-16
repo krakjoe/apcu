@@ -32,7 +32,7 @@
 #endif
 
 
-#define APC_ITERATOR_NAME "APCIterator"
+#define APC_ITERATOR_NAME "APCuIterator"
 
 #define APC_DEFAULT_CHUNK_SIZE 100
 
@@ -94,6 +94,18 @@ typedef struct _apc_iterator_item_t {
 
 extern int apc_iterator_init(int module_number);
 extern int apc_iterator_delete(zval *zobj);
+extern zend_object* apc_iterator_create(zend_class_entry *ce);
+extern void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long format, zend_long chunk_size, zend_long list);
+
+extern PHP_METHOD(apc_iterator, __construct);
+extern PHP_METHOD(apc_iterator, rewind);
+extern PHP_METHOD(apc_iterator, valid);
+extern PHP_METHOD(apc_iterator, current);
+extern PHP_METHOD(apc_iterator, key);
+extern PHP_METHOD(apc_iterator, next);
+extern PHP_METHOD(apc_iterator, getTotalHits);
+extern PHP_METHOD(apc_iterator, getTotalSize);
+extern PHP_METHOD(apc_iterator, getTotalCount);
 
 #endif
 

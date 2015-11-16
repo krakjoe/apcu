@@ -1,13 +1,15 @@
 --TEST--
-APC: APCIterator general
+APC compat: APCIterator general
 --SKIPIF--
-<?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
+<?php
+if (!extension_loaded("apc")) die("skip APC compatibility extension not loaded");
+?>
 --INI--
 apc.enabled=1
 apc.enable_cli=1
 --FILE--
 <?php
-$it = new APCuIterator();
+$it = new APCIterator('user');
 
 for($i = 0; $i < 41; $i++) {
   apcu_store("key$i", "value$i");

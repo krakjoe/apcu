@@ -73,7 +73,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_entry, 0, 0, 2)
     ZEND_ARG_INFO(0, key)
 	ZEND_ARG_TYPE_INFO(0, generator, IS_CALLABLE, 0)
-	ZEND_ARG_TYPE_INFO(0, generator, IS_LONG, 0)
+	ZEND_ARG_TYPE_INFO(0, ttl, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 
 /* for bc */
