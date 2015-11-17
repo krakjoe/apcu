@@ -106,6 +106,7 @@ static void apc_iterator_free(zend_object *object) {
     apc_iterator_t *iterator = apc_iterator_fetch_from(object);
 
     if (iterator->initialized == 0) {
+		zend_object_std_dtor(object);
         return;
     }
 

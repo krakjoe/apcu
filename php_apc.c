@@ -259,11 +259,11 @@ static PHP_MINIT_FUNCTION(apcu)
 				apc_cache_preload(
 					apc_user_cache, APCG(preload_path));
 			}
-
-			/* initialize iterator object */
-            apc_iterator_init(module_number);
         }
     }
+
+	/* initialize iterator object */
+    apc_iterator_init(module_number);
 
     return SUCCESS;
 }

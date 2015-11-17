@@ -39,6 +39,7 @@
 #endif
 
 zend_class_entry *apc_bc_iterator_ce;
+zend_object_handlers apc_bc_iterator_handlers;
 
 /* {{{ PHP_FUNCTION declarations */
 PHP_FUNCTION(apc_cache_info);
@@ -144,7 +145,9 @@ PHP_METHOD(apc_bc_iterator, __construct) {
 		return;
 	}
 
-	apc_iterator_obj_init(iterator, search, format, chunk_size, list);
+	if (apc_is_enabled()) {
+		apc_iterator_obj_init(iterator, search, format, chunk_size, list);
+	}
 }
 /* }}} */
 
@@ -165,7 +168,7 @@ static zend_function_entry apc_iterator_functions[] = {
 };
 /* }}} */
 
-/* {{{ apc_iterator_init */
+/* {{{ apc_bc_iterator_init */
 static int apc_bc_iterator_init(int module_number) {
     zend_class_entry ce;
 
