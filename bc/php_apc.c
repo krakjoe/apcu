@@ -181,9 +181,7 @@ static int apc_bc_iterator_init(int module_number) {
 /* {{{ PHP_MINIT_FUNCTION(apc) */
 static PHP_MINIT_FUNCTION(apc)
 {
-	if (apc_is_enabled()) {
-		apc_bc_iterator_init(module_number);
-	}
+	apc_bc_iterator_init(module_number);
 
 	return SUCCESS;
 }

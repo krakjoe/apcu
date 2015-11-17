@@ -5,7 +5,6 @@ APC: apcu_store/fetch reference test
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 apc.serializer=default
 report_memleaks=0
 --FILE--

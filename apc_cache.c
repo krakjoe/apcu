@@ -1417,6 +1417,14 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 	zend_reference *dst;
 
 	assert(src != NULL);
+	
+	if (zend_hash_num_elements(&ctxt->copied)) {
+		zend_reference *rc = zend_hash_index_find_ptr(&ctxt->copied, (uintptr_t) src);
+		if (rc) {
+			GC_REFCOUNT(rc)++;
+			return rc;
+		}
+	}
 
     if (ctxt->copy == APC_COPY_IN) {
         dst = pool->palloc(pool, sizeof(zend_reference));
@@ -1426,8 +1434,9 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 
     GC_REFCOUNT(dst) = 1;
     GC_TYPE_INFO(dst) = IS_REFERENCE;
-    zend_hash_index_update_ptr(&ctxt->copied, (uintptr_t) src, dst);
-
+	zend_hash_index_update_ptr(
+		&ctxt->copied, (uintptr_t) src, dst);
+	
     my_copy_zval(&dst->val, &src->val, ctxt);
 
     return dst;
@@ -1454,12 +1463,6 @@ static APC_HOTSPOT void my_copy_zval(zval* dst, const zval* src, apc_context_t* 
             }
 		}
 	}
-    
-    if(ctxt->copy == APC_COPY_OUT || ctxt->copy == APC_COPY_IN) {
-        /* deep copies are refcount(1), but moved up for recursive 
-         * arrays,  which end up being add_ref'd during its copy. */
-        
-    }
 
     switch (Z_TYPE_P(src)) {
     case IS_RESOURCE:

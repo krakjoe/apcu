@@ -292,10 +292,6 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 #endif
     }
 
-#ifdef ZTS
-    ts_free_id(apcu_globals_id);
-#endif
-
     UNREGISTER_INI_ENTRIES();
     return SUCCESS;
 } /* }}} */
@@ -304,7 +300,7 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 static PHP_RINIT_FUNCTION(apcu)
 {
 #if defined(ZTS) && defined(COMPILE_DL_APCU)
-        ZEND_TSRMLS_CACHE_UPDATE();
+	ZEND_TSRMLS_CACHE_UPDATE();
 #endif
 
     if (APCG(enabled)) {
