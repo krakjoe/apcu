@@ -56,7 +56,6 @@
 
 typedef void* (*apc_iterator_item_cb_t)(apc_cache_slot_t **slot);
 
-
 /* {{{ apc_iterator_t */
 typedef struct _apc_iterator_t {
     short int initialized;   /* sanity check in case __construct failed */
@@ -99,20 +98,7 @@ extern void apc_iterator_obj_init(
 	zend_long list);
 extern zend_class_entry* apc_iterator_ce;
 
-extern int apc_iterator_init(int module_number);
-extern int apc_iterator_delete(zval *zobj);
-extern zend_object* apc_iterator_create(zend_class_entry *ce);
-
-extern PHP_METHOD(apc_iterator, __construct);
-extern PHP_METHOD(apc_iterator, rewind);
-extern PHP_METHOD(apc_iterator, valid);
-extern PHP_METHOD(apc_iterator, current);
-extern PHP_METHOD(apc_iterator, key);
-extern PHP_METHOD(apc_iterator, next);
-extern PHP_METHOD(apc_iterator, getTotalHits);
-extern PHP_METHOD(apc_iterator, getTotalSize);
-extern PHP_METHOD(apc_iterator, getTotalCount);
-
+int apc_iterator_init(int module_number);
 #endif
 
 /*
