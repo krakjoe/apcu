@@ -66,10 +66,6 @@ static PHP_RINIT_FUNCTION(apc)
         ZEND_TSRMLS_CACHE_UPDATE();
 #endif
 
-	if (apc_iterator_ce) {
-		apc_bc_iterator_init(module_number);
-	}
-
     return SUCCESS;
 }
 /* }}} */
@@ -179,12 +175,22 @@ static int apc_bc_iterator_init(int module_number) {
 /* {{{ PHP_MINIT_FUNCTION(apc) */
 static PHP_MINIT_FUNCTION(apc)
 {
+	if (apc_iterator_ce) {
+		apc_bc_iterator_init(module_number);
+	}
 	return SUCCESS;
 }
 
+static const zend_module_dep apc_deps[] = {
+	ZEND_MOD_REQUIRED("apcu")
+	ZEND_MOD_END
+};
+
 /* {{{ module definition structure */
 zend_module_entry apc_module_entry = {
-    STANDARD_MODULE_HEADER,
+	STANDARD_MODULE_HEADER_EX,
+	NULL,
+	apc_deps,
     PHP_APC_EXTNAME,
     apc_functions,
     PHP_MINIT(apc),
