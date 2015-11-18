@@ -66,7 +66,9 @@ static PHP_RINIT_FUNCTION(apc)
         ZEND_TSRMLS_CACHE_UPDATE();
 #endif
 
-	apc_bc_iterator_init(module_number);
+	if (apc_iterator_ce) {
+		apc_bc_iterator_init(module_number);
+	}
 
     return SUCCESS;
 }
