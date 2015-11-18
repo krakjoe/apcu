@@ -77,6 +77,7 @@
     <file name="php_5_3_ns.inc" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />
+    <file name="bc_skipif.inc" role="test" />
     <file name="data/abc.data" role="test" />
    </dir>
    <file name="apc_api.h" role="src" />
