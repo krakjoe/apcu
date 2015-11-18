@@ -240,6 +240,7 @@ if test "$PHP_APCU" != "no"; then
 	if test $PHP_APCU_BC != "no"; then
 		PHP_ADD_BUILD_DIR($ext_builddir/bc, 1)
 		PHP_NEW_EXTENSION(apc, "bc/php_apc.c", $ext_shared,, \\$(APCU_CFLAGS))
+		PHP_ADD_EXTENSION_DEP(apc, apcu)
 	fi
   PHP_SUBST(APCU_SHARED_LIBADD)
   PHP_SUBST(APCU_CFLAGS)

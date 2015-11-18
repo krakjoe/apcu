@@ -2,6 +2,11 @@
 APC compat: APCIterator delete
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
+<?php
+if (!extension_loaded("apc")) {
+	die("skip: bc module not present");
+}
+?>
 --INI--
 apc.enabled=1
 apc.enable_cli=1
