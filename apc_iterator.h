@@ -91,11 +91,17 @@ typedef struct _apc_iterator_item_t {
 } apc_iterator_item_t;
 /* }}} */
 
+extern void apc_iterator_obj_init(
+	apc_iterator_t *iterator, 
+	zval *search, 
+	zend_long format, 
+	zend_long chunk_size, 
+	zend_long list);
+extern zend_class_entry* apc_iterator_ce;
 
 extern int apc_iterator_init(int module_number);
 extern int apc_iterator_delete(zval *zobj);
 extern zend_object* apc_iterator_create(zend_class_entry *ce);
-extern void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long format, zend_long chunk_size, zend_long list);
 
 extern PHP_METHOD(apc_iterator, __construct);
 extern PHP_METHOD(apc_iterator, rewind);

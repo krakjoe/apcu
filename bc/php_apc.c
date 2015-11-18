@@ -57,12 +57,17 @@ static PHP_MINFO_FUNCTION(apc)
 }
 /* }}} */
 
+static int apc_bc_iterator_init(int module_number);
+
 /* {{{ PHP_RINIT_FUNCTION(apc) */
 static PHP_RINIT_FUNCTION(apc)
 {
 #if defined(ZTS) && defined(COMPILE_DL_APC)
         ZEND_TSRMLS_CACHE_UPDATE();
 #endif
+
+	apc_bc_iterator_init(module_number);
+
     return SUCCESS;
 }
 /* }}} */
@@ -151,19 +156,9 @@ PHP_METHOD(apc_bc_iterator, __construct) {
 }
 /* }}} */
 
-#define APC_BC_ITERATOR_NAME "APCIterator"
-
 /* {{{ apc_iterator_functions */
 static zend_function_entry apc_iterator_functions[] = {
     PHP_ME(apc_bc_iterator,  __construct, arginfo_apc_iterator___construct, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-    PHP_ME(apc_iterator, rewind, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-    PHP_ME(apc_iterator, current, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-    PHP_ME(apc_iterator, key, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-    PHP_ME(apc_iterator, next, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-    PHP_ME(apc_iterator, valid, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-    PHP_ME(apc_iterator, getTotalHits, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-    PHP_ME(apc_iterator, getTotalSize, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-    PHP_ME(apc_iterator, getTotalCount, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
 /* }}} */
@@ -172,10 +167,8 @@ static zend_function_entry apc_iterator_functions[] = {
 static int apc_bc_iterator_init(int module_number) {
     zend_class_entry ce;
 
-    INIT_CLASS_ENTRY(ce, APC_BC_ITERATOR_NAME, apc_iterator_functions);
-    apc_bc_iterator_ce = zend_register_internal_class(&ce);
-    apc_bc_iterator_ce->create_object = apc_iterator_create;
-    zend_class_implements(apc_bc_iterator_ce, 1, zend_ce_iterator);
+    INIT_CLASS_ENTRY(ce, "APCIterator", apc_iterator_functions);
+    apc_bc_iterator_ce = zend_register_internal_class_ex(&ce, apc_iterator_ce);
 
     return SUCCESS;
 }
@@ -184,8 +177,6 @@ static int apc_bc_iterator_init(int module_number) {
 /* {{{ PHP_MINIT_FUNCTION(apc) */
 static PHP_MINIT_FUNCTION(apc)
 {
-	apc_bc_iterator_init(module_number);
-
 	return SUCCESS;
 }
 
