@@ -5,7 +5,7 @@ APC: apcu_store/fetch reference test
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.serializer=default
+apc.serializer=php
 report_memleaks=0
 --FILE--
 <?php

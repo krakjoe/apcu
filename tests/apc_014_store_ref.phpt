@@ -5,6 +5,7 @@ APC: store array of references
 --INI--
 apc.enabled=1
 apc.enable_cli=1
+apc.serializer=php
 --FILE--
 <?php
 $_items = [

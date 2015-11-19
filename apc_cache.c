@@ -1417,8 +1417,8 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 	zend_reference *dst;
 
 	assert(src != NULL);
-	
-	if (zend_hash_num_elements(&ctxt->copied)) {
+
+	if (ctxt->copied.nTableSize) {
 		zend_reference *rc = zend_hash_index_find_ptr(&ctxt->copied, (uintptr_t) src);
 		if (rc) {
 			GC_REFCOUNT(rc)++;
@@ -1434,17 +1434,19 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 
     GC_REFCOUNT(dst) = 1;
     GC_TYPE_INFO(dst) = IS_REFERENCE;
-	zend_hash_index_update_ptr(
-		&ctxt->copied, (uintptr_t) src, dst);
 	
     my_copy_zval(&dst->val, &src->val, ctxt);
+
+	if (ctxt->copied.nTableSize) {
+		zend_hash_index_update_ptr(&ctxt->copied, (uintptr_t) src, dst);
+	}
 
     return dst;
 }
 
 /* {{{ my_copy_zval */
 static APC_HOTSPOT void my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt)
-{   
+{
     apc_pool* pool = ctxt->pool;
 
     assert(dst != NULL);
@@ -1454,11 +1456,10 @@ static APC_HOTSPOT void my_copy_zval(zval* dst, const zval* src, apc_context_t* 
 	
 	if (Z_REFCOUNTED_P(src)) {
 		if (zend_hash_num_elements(&ctxt->copied)) {
-            zend_refcounted *rc = zend_hash_index_find_ptr(
+            zval *rc = zend_hash_index_find(
                     &ctxt->copied, (uintptr_t) Z_COUNTED_P(src));
             if (rc) {
-                GC_REFCOUNT(rc)++;
-                Z_COUNTED_P(dst) = rc;
+				ZVAL_COPY(dst, rc);
 				return;
             }
 		}
@@ -1513,6 +1514,10 @@ static APC_HOTSPOT void my_copy_zval(zval* dst, const zval* src, apc_context_t* 
     default:
         assert(0);
     }
+
+	if (Z_REFCOUNTED_P(dst) && ctxt->copied.nTableSize) {
+		zend_hash_index_update(&ctxt->copied, (uintptr_t) Z_COUNTED_P(src), dst);
+	}
 }
 /* }}} */
 
@@ -1529,7 +1534,7 @@ PHP_APCU_API zval* apc_cache_store_zval(zval* dst, const zval* src, apc_context_
 {
     if (Z_TYPE_P(src) == IS_ARRAY) {
         /* Maintain a list of zvals we've copied to properly handle recursive structures */
-        zend_hash_init(&ctxt->copied, 0, NULL, NULL, 0);
+        zend_hash_init(&ctxt->copied, 16, NULL, NULL, 0);
         dst = apc_copy_zval(dst, src, ctxt);
         zend_hash_destroy(&ctxt->copied);
         ctxt->copied.nTableSize=0;
@@ -1547,7 +1552,7 @@ PHP_APCU_API zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zv
 {
     if (Z_TYPE_P(src) == IS_ARRAY) {
         /* Maintain a list of zvals we've copied to properly handle recursive structures */
-        zend_hash_init(&ctxt->copied, 0, NULL, NULL, 0);
+        zend_hash_init(&ctxt->copied, 16, NULL, NULL, 0);
         dst = apc_copy_zval(dst, src, ctxt);
         zend_hash_destroy(&ctxt->copied);
         ctxt->copied.nTableSize=0;
@@ -1734,8 +1739,11 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* ke
 {
 	zend_bool result = 0;
 
-	/* in ZTS mode, we use the current TSRM context to determine the owner */
-#define FROM_DIFFERENT_THREAD(k) ((key->owner = getpid()) != (k)->owner) 
+#ifdef ZTS
+#	define FROM_DIFFERENT_THREAD(k) ((key->owner = TSRMLS_CACHE) != (k)->owner) 
+#else
+#	define FROM_DIFFERENT_THREAD(k) ((key->owner = getpid()) != (k)->owner) 
+#endif
 
 	/* only continue if slam defense is enabled */
 	if (cache->defend) {
@@ -1749,10 +1757,8 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* ke
 		
 		/* check the hash and length match */
 		if(ZSTR_HASH(last->str) == ZSTR_HASH(key->str) && ZSTR_LEN(last->str) == ZSTR_LEN(key->str)) {
-			/* TODO: implement defense */
 			/* check the time ( last second considered slam ) and context */
-			if(0) {
-
+			if(last->mtime == key->mtime && FROM_DIFFERENT_THREAD(last)) {
 				/* potential cache slam */
 				apc_debug(
 					"Potential cache slam averted for key '%s'", key->str);
@@ -1763,7 +1769,11 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* ke
 				last->mtime = apc_time();
 
 				/* required to tell contexts apart */
-				last->owner = getpid();			
+#ifdef ZTS
+				last->owner = TSRMLS_CACHE;	
+#else
+				last->owner = getpid();		
+#endif	
 			}
 		}
 	}
