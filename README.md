@@ -5,7 +5,7 @@ APCu is userland caching: APC stripped of opcode caching.
 
 APCu only supports userland caching of variables, and can provide a drop in replacement for APC.
 
-[![Build Status](https://travis-ci.org/krakjoe/apcu.svg?branch=seven)](https://travis-ci.org/krakjoe/apcu)
+[![Build Status](https://travis-ci.org/krakjoe/apcu.svg?branch=master)](https://travis-ci.org/krakjoe/apcu)
 
 Documentation
 ============
