@@ -1,9 +1,7 @@
 --TEST--
 APC compat: APCIterator general
 --SKIPIF--
-<?php
-if (!extension_loaded("apc")) die("skip APC compatibility extension not loaded");
-?>
+<?php require_once(dirname(__FILE__) . '/bc_skipif.inc'); ?>
 --INI--
 apc.enabled=1
 apc.enable_cli=1
