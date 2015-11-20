@@ -95,5 +95,19 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC); /* }}} */
 #define APC_RLOCK(o)          RLOCK(&(o)->lock)
 #define APC_RUNLOCK(o)        RUNLOCK(&(o)->lock) /* }}} */
 
+/* atomic operations */
+#if HAVE_ATOMIC_OPERATIONS
+# ifdef PHP_WIN32
+#  define ATOMIC_INC(a) InterlockedIncrement(&a)
+#  define ATOMIC_DEC(a) InterlockedDecrement(&a)
+# else
+#  define ATOMIC_INC(a) __sync_add_and_fetch(&a, 1)
+#  define ATOMIC_DEC(a) __sync_sub_and_fetch(&a, 1)
+# endif
+#else
+#  define ATOMIC_INC(a)	(a)++
+#  define ATOMIC_DEC(a) (a)--
+#endif
+
 #endif
 
