@@ -28,8 +28,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-  - fix inconsistent member names for entries in userland
-  - fix race on ref_count
+
  </notes>
  <contents>
   <dir name="/">
