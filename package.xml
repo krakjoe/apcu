@@ -23,7 +23,7 @@
   <active>yes</active>
  </developer>
  <date>2015-11-20</date>
- <time>11:00:00</time>
+ <time>12:00:00</time>
  <version>
   <release>5.1.0</release>
   <api>5.1.0</api>
@@ -34,7 +34,13 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-
+- PHP 7 compatibility
+- provide APC compatibility in "apc" optional extension
+- move APCIterator to APC compatibility extension
+- add APCuIterator without cache argument
+- drop apcu_bin_* functions
+- add apcu_entry(key, callback, ttl) function
+- fix race on refcount of entry when using rwlocks (or on windows)
  </notes>
  <contents>
   <dir name="/">
@@ -111,6 +117,8 @@
    <file name="pgsql_s_lock.h" role="src" />
    <file name="pgsql_s_lock.c" role="src" />
    <file name="apc_serializer.h" role="src" />
+   <file name="bc/php_apc.h" role="src" />
+   <file name="bc/php_apc.c" role="src" />
    <file name="config.m4" role="src" />
    <file name="config.w32" role="src" />
    <file name="INSTALL" role="doc" />
