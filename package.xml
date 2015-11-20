@@ -62,6 +62,8 @@
     <file name="apc_014_store_ref.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
     <file name="apc54_018.phpt" role="test" />
+    <file name="apc_entry_001.phpt" role="test" />
+    <file name="apc_entry_002.phpt" role="test" />
     <file name="bug63224.phpt" role="test" />
     <file name="get_included_files_inc1.inc" role="test" />
     <file name="get_included_files_inc2.inc" role="test" />
