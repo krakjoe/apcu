@@ -458,7 +458,7 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 
 			/* Otherwise we are fine, increase counters and return the cache entry */
 			(*slot)->nhits++;
-			(*slot)->value->ref_count++;
+			ATOMIC_INC((*slot)->value->ref_count);
 			(*slot)->atime = t;
 		
 			/* set cache num hits */
@@ -662,7 +662,7 @@ PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path)
 /* {{{ apc_cache_release */
 PHP_APCU_API void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry)
 {
-    entry->ref_count--;
+    ATOMIC_DEC(entry->ref_count);
 }
 /* }}} */
 
@@ -952,11 +952,18 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 	apc_cache_entry_t *entry = NULL;
 	zend_bool ret = 0;
 
-	APC_LOCK(cache->header);
-	if ((entry = apc_cache_find_internal(cache, key, t))) {
-        ret = apc_cache_fetch_internal(cache, key, entry, t, dst);
+	/* check we are able to deal with the request */
+    if(!cache || apc_cache_busy(cache)) {
+        return entry;
+    }
+
+	APC_RLOCK(cache->header);
+	entry = apc_cache_find_internal(cache, key, t);
+	APC_RUNLOCK(cache->header);
+
+	if (entry) {
+		ret = apc_cache_fetch_internal(cache, key, entry, t, dst);
 	}
-	APC_UNLOCK(cache->header);
 	
 	return ret;
 } /* }}} */
