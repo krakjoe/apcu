@@ -35,7 +35,7 @@
 #include "apc_php.h"
 #include "apc_globals.h"
 
-#define PHP_APCU_VERSION "5.1.0-dev"
+#define PHP_APCU_VERSION "5.1.0"
 #define PHP_APCU_EXTNAME "apcu"
 
 PHP_FUNCTION(apcu_add);
