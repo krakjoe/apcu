@@ -22,7 +22,10 @@
 /*
  APCu works most efficiently where there is access to native read/write locks
  If the current system has native rwlocks present they will be used, if they are
-	not present, APCu will use standard mutex.
+	not present, APCu will emulate their behavior with standard mutex.
+ While APCu is emulating read/write locks, reads and writes are exclusive,
+	additionally the write lock prefers readers, as is the default behaviour of
+	the majority of Posix rwlock implementations
 */
 
 #ifndef PHP_WIN32
@@ -32,13 +35,16 @@
 # include "pthread.h"
 # ifndef APC_SPIN_LOCK
 #   ifndef APC_FCNTL_LOCK
-#       ifdef APC_NATIVE_RWLOCK
+#       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS)
         typedef pthread_rwlock_t apc_lock_t;
+#		define APC_LOCK_SHARED
 #       else
         typedef pthread_mutex_t apc_lock_t;
+#		define APC_LOCK_RECURSIVE
 #       endif
 #   else
         typedef int apc_lock_t;
+#		define APC_LOCK_FILE
 #   endif
 # else
 # define APC_LOCK_NICE 1
@@ -55,6 +61,7 @@ PHP_APCU_API int apc_lock_release(apc_lock_t* lock);
 /* XXX kernel lock mode only for now, compatible through all the wins, add more ifdefs for others */
 # include "apc_windows_srwlock_kernel.h"
 typedef apc_windows_cs_rwlock_t apc_lock_t;
+# define APC_LOCK_SHARED
 #endif
 
 /* {{{ functions */
@@ -64,25 +71,25 @@ typedef apc_windows_cs_rwlock_t apc_lock_t;
 	apc_lock_cleanup destroys those attributes
   This saves us from having to create and destroy attributes for
   every lock we use at runtime */
-PHP_APCU_API zend_bool apc_lock_init(TSRMLS_D);
-PHP_APCU_API void      apc_lock_cleanup(TSRMLS_D);
+PHP_APCU_API zend_bool apc_lock_init();
+PHP_APCU_API void      apc_lock_cleanup();
 /*
   The following functions should be self explanitory:
 */
-PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock TSRMLS_DC);
-PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock TSRMLS_DC);
-PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock TSRMLS_DC);
-PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock TSRMLS_DC);
-PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock TSRMLS_DC);
-PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC); /* }}} */
+PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock);
+PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock);
+PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock);
+PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock);
+PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock);
+PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 
 /* {{{ generic locking macros */
-#define CREATE_LOCK(lock)     apc_lock_create(lock TSRMLS_CC)
-#define DESTROY_LOCK(lock)    apc_lock_destroy(lock TSRMLS_CC)
-#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock TSRMLS_CC); }
-#define WUNLOCK(lock)         { apc_lock_wunlock(lock TSRMLS_CC); HANDLE_UNBLOCK_INTERRUPTIONS(); }
-#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock TSRMLS_CC); }
-#define RUNLOCK(lock)         { apc_lock_runlock(lock TSRMLS_CC); HANDLE_UNBLOCK_INTERRUPTIONS(); }
+#define CREATE_LOCK(lock)     apc_lock_create(lock)
+#define DESTROY_LOCK(lock)    apc_lock_destroy(lock)
+#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock); }
+#define WUNLOCK(lock)         { apc_lock_wunlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
+#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock); }
+#define RUNLOCK(lock)         { apc_lock_runlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
 #define LOCK                  WLOCK
 #define UNLOCK                WUNLOCK
 /* }}} */
@@ -96,7 +103,7 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC); /* }}} */
 #define APC_RUNLOCK(o)        RUNLOCK(&(o)->lock) /* }}} */
 
 /* atomic operations */
-#if HAVE_ATOMIC_OPERATIONS
+#if defined(APC_LOCK_SHARED)
 # ifdef PHP_WIN32
 #  define ATOMIC_INC(c, a) InterlockedIncrement(&a)
 #  define ATOMIC_DEC(c, a) InterlockedDecrement(&a)
@@ -104,20 +111,22 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock TSRMLS_DC); /* }}} */
 #  define ATOMIC_INC(c, a) __sync_add_and_fetch(&a, 1)
 #  define ATOMIC_DEC(c, a) __sync_sub_and_fetch(&a, 1)
 # endif
-#else
-#  define ATOMIC_INC(c, a) do { \
-	if (apc_lock_wlock((c)->header->lock)) { \
+#elif defined(APC_LOCK_RECURSIVE)
+# define ATOMIC_INC(c, a) do { \
+	if (apc_lock_wlock(&(c)->header->lock)) { \
 		(a)++; \
-		apc_lock_wunlock((c)->header->lock); \
+		apc_lock_wunlock(&(c)->header->lock); \
 	} \
 } while(0)
-#  define ATOMIC_DEC(c, a) do { \
-	if (apc_lock_wlock((c)->header->lock)) { \
+# define ATOMIC_DEC(c, a) do { \
+	if (apc_lock_wlock(&(c)->header->lock)) { \
 		(a)--; \
-		apc_lock_wunlock((c)->header->lock); \
+		apc_lock_wunlock(&(c)->header->lock); \
 	} \
 } while(0)
+#else
+# define ATOMIC_INC(c, a) (a)++
+# define ATOMIC_DEC(c, a) (a)--
 #endif
 
 #endif
-
