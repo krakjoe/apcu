@@ -964,7 +964,7 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 
 	/* check we are able to deal with the request */
     if(!cache || apc_cache_busy(cache)) {
-        return entry;
+        return 0;
     }
 
 	entry = apc_cache_find_internal(cache, key, t, 1);
