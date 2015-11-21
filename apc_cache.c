@@ -854,16 +854,11 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey,
 					/* increment misses on cache */
 					cache->header->nmisses++;
 
-					/* unlock header */			
+					/* unlock header */	
 					APC_RUNLOCK(cache->header);
 		            
 		            return NULL;
 		        }
-
-		        /* Otherwise we are fine, increase counters and return the cache entry */
-		        ATOMIC_INC(cache, (*slot)->nhits);
-		        ATOMIC_INC(cache, (*slot)->value->ref_count);
-		        (*slot)->atime = t;
 
 				/* set cache num hits */
 				cache->header->nhits++;
@@ -871,8 +866,13 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey,
 				/* grab value */
 		        value = (*slot)->value;
 
-				/* unlock header */			
+				/* unlock header */
 				APC_RUNLOCK(cache->header);
+
+		        /* Otherwise we are fine, increase counters and return the cache entry */
+		        ATOMIC_INC(cache, (*slot)->nhits);
+		        ATOMIC_INC(cache, (*slot)->value->ref_count);
+		        (*slot)->atime = t;
 			
 		        return (apc_cache_entry_t*)value;
 		    }
@@ -967,7 +967,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strke
 
 		        /* Return the cache entry ptr */
 		        value = (*slot)->value;
-			
+
 				/* unlock header */
 				APC_RUNLOCK(cache->header);
 					
