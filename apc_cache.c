@@ -477,7 +477,7 @@ PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path TS
 /* {{{ apc_cache_release */
 PHP_APCU_API void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry TSRMLS_DC)
 {
-    ATOMIC_DEC(entry->ref_count);
+    ATOMIC_DEC(cache, entry->ref_count);
 }
 /* }}} */
 
@@ -861,8 +861,8 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey,
 		        }
 
 		        /* Otherwise we are fine, increase counters and return the cache entry */
-		        (*slot)->nhits++;
-		        ATOMIC_INC((*slot)->value->ref_count);
+		        ATOMIC_INC(cache, (*slot)->nhits);
+		        ATOMIC_INC(cache, (*slot)->value->ref_count);
 		        (*slot)->atime = t;
 
 				/* set cache num hits */
@@ -880,12 +880,12 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey,
 			/* next */
 		    slot = &(*slot)->next;		
 		}
-	 	
-		/* not found, so increment misses */
-		cache->header->nmisses++;
 
 		/* unlock header */
 		APC_RUNLOCK(cache->header);
+
+		/* not found, so increment misses */
+		ATOMIC_INC(cache, cache->header->nmisses);
     }
 
     return NULL;
