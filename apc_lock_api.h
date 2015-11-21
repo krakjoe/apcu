@@ -35,14 +35,16 @@
 # include "pthread.h"
 # ifndef APC_SPIN_LOCK
 #   ifndef APC_FCNTL_LOCK
-#       ifdef APC_NATIVE_RWLOCK
+#       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS)
         typedef pthread_rwlock_t apc_lock_t;
+#		define APC_LOCK_SHARED
 #       else
         typedef pthread_mutex_t apc_lock_t;
 #		define APC_LOCK_RECURSIVE
 #       endif
 #   else
         typedef int apc_lock_t;
+#		define APC_LOCK_FILE
 #   endif
 # else
 # define APC_LOCK_NICE 1
@@ -59,6 +61,7 @@ PHP_APCU_API int apc_lock_release(apc_lock_t* lock);
 /* XXX kernel lock mode only for now, compatible through all the wins, add more ifdefs for others */
 # include "apc_windows_srwlock_kernel.h"
 typedef apc_windows_cs_rwlock_t apc_lock_t;
+# define APC_LOCK_SHARED
 #endif
 
 /* {{{ functions */
@@ -100,7 +103,7 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 #define APC_RUNLOCK(o)        RUNLOCK(&(o)->lock) /* }}} */
 
 /* atomic operations */
-#if HAVE_ATOMIC_OPERATIONS
+#if defined(APC_LOCK_SHARED)
 # ifdef PHP_WIN32
 #  define ATOMIC_INC(c, a) InterlockedIncrement(&a)
 #  define ATOMIC_DEC(c, a) InterlockedDecrement(&a)
@@ -108,20 +111,22 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 #  define ATOMIC_INC(c, a) __sync_add_and_fetch(&a, 1)
 #  define ATOMIC_DEC(c, a) __sync_sub_and_fetch(&a, 1)
 # endif
-#else
-#  define ATOMIC_INC(c, a) do { \
-	if (apc_lock_wlock((c)->header->lock)) { \
+#elif defined(APC_LOCK_RECURSIVE)
+# define ATOMIC_INC(c, a) do { \
+	if (apc_lock_wlock(&(c)->header->lock)) { \
 		(a)++; \
-		apc_lock_wunlock((c)->header->lock); \
+		apc_lock_wunlock(&(c)->header->lock); \
 	} \
 } while(0)
-#  define ATOMIC_DEC(c, a) do { \
-	if (apc_lock_wlock((c)->header->lock)) { \
+# define ATOMIC_DEC(c, a) do { \
+	if (apc_lock_wlock(&(c)->header->lock)) { \
 		(a)--; \
-		apc_lock_wunlock((c)->header->lock); \
+		apc_lock_wunlock(&(c)->header->lock); \
 	} \
 } while(0)
+#else
+# define ATOMIC_INC(c, a) (a)++
+# define ATOMIC_DEC(c, a) (a)--
 #endif
 
 #endif
-

@@ -32,7 +32,7 @@
 #ifndef PHP_WIN32
 # ifndef APC_SPIN_LOCK
 #   ifndef APC_FCNTL_LOCK
-#       ifndef APC_NATIVE_RWLOCK
+#       ifdef APC_LOCK_RECURSIVE
 	        static pthread_mutexattr_t apc_lock_attr;
 #       else
 	        static pthread_rwlockattr_t apc_lock_attr;
@@ -119,7 +119,7 @@ PHP_APCU_API zend_bool apc_lock_init() {
 
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
-#   ifndef APC_NATIVE_RWLOCK
+#   ifdef APC_LOCK_RECURSIVE
 	    if (pthread_mutexattr_init(&apc_lock_attr) == SUCCESS) {
 		    if (pthread_mutexattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
 			    pthread_mutexattr_settype(&apc_lock_attr, PTHREAD_MUTEX_RECURSIVE);
@@ -152,7 +152,7 @@ PHP_APCU_API void apc_lock_cleanup() {
 
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
-#   ifndef APC_NATIVE_RWLOCK
+#   ifdef APC_LOCK_RECURSIVE
 	    pthread_mutexattr_destroy(&apc_lock_attr);
 #   else
 	    pthread_rwlockattr_destroy(&apc_lock_attr);
@@ -166,7 +166,7 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 #ifndef PHP_WIN32
 # ifndef APC_SPIN_LOCK
 #   ifndef APC_FCNTL_LOCK
-#       ifndef APC_NATIVE_RWLOCK
+#       ifdef APC_LOCK_RECURSIVE
 	        {
 		        pthread_mutex_init(lock, &apc_lock_attr);
 		        return 1;
@@ -212,7 +212,7 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
 #ifndef PHP_WIN32
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
-#   ifndef APC_NATIVE_RWLOCK
+#   ifdef APC_LOCK_RECURSIVE
 	    pthread_mutex_lock(lock);
 #   else
 	    pthread_rwlock_rdlock(lock);
@@ -239,7 +239,7 @@ PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
 #ifndef PHP_WIN32
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
-#   ifndef APC_NATIVE_RWLOCK
+#   ifdef APC_LOCK_RECURSIVE
 	    pthread_mutex_lock(lock);
 #   else	
 	    pthread_rwlock_wrlock(lock);
@@ -266,7 +266,7 @@ PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock) {
 #ifndef PHP_WIN32
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
-#   ifndef APC_NATIVE_RWLOCK
+#   ifdef APC_LOCK_RECURSIVE
 	    pthread_mutex_unlock(lock);
 #   else
 	    pthread_rwlock_unlock(lock);
@@ -293,7 +293,7 @@ PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock) {
 #ifndef PHP_WIN32
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
-#   ifndef APC_NATIVE_RWLOCK
+#   ifdef APC_LOCK_RECURSIVE
 	    pthread_mutex_unlock(lock);
 #   else
 	    pthread_rwlock_unlock(lock);
@@ -320,7 +320,7 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock) {
 #ifndef PHP_WIN32
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
-#   ifndef APC_NATIVE_RWLOCK
+#   ifdef APC_LOCK_RECURSIVE
 	    /* nothing */
 #   else
         /* nothing */
