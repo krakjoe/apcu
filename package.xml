@@ -22,11 +22,11 @@
   <email>remi@php.net</email>
   <active>yes</active>
  </developer>
- <date>2015-11-20</date>
+ <date>2015-11-21</date>
  <time>12:00:00</time>
  <version>
-  <release>5.1.0</release>
-  <api>5.1.0</api>
+  <release>5.1.1</release>
+  <api>5.1.1</api>
  </version>
  <stability>
   <release>beta</release>
@@ -34,13 +34,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- PHP 7 compatibility
-- provide APC compatibility in "apc" optional extension
-- move APCIterator to APC compatibility extension
-- add APCuIterator without cache argument
-- drop apcu_bin_* functions
-- add apcu_entry(key, callback, ttl) function
-- fix race on refcount of entry when using rwlocks (or on windows)
+- be consistent with APC in use of atomics, avoid surprises
  </notes>
  <contents>
   <dir name="/">
