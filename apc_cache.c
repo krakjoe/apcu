@@ -454,7 +454,7 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 			/* Check to make sure this entry isn't expired by a hard TTL */
 			if((*slot)->value->ttl && (time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
 				/* increment misses on cache */
-				cache->header->nmisses++;
+				ATOMIC_INC(cache, cache->header->nmisses);
 
 				if (lock)
 					APC_RUNLOCK(cache->header);
@@ -462,19 +462,19 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 			}
 			
 			/* set cache num hits */
-			cache->header->nhits++;
-			
+			ATOMIC_INC(cache, cache->header->nhits);
+
 			/* grab value */
 			value = (*slot)->value;
 
 			(*slot)->atime = t;
 
-			if (lock)
-				APC_RUNLOCK(cache->header);
-
 			/* Otherwise we are fine, increase counters and return the cache entry */
 			ATOMIC_INC(cache, (*slot)->nhits);
 			ATOMIC_INC(cache, (*slot)->value->ref_count);
+
+			if (lock)
+				APC_RUNLOCK(cache->header);
 
 			return (apc_cache_entry_t*)value;
 		}
@@ -483,11 +483,11 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 		slot = &(*slot)->next;		
 	}
 
-	if (lock)
-		APC_RUNLOCK(cache->header);
-
 	/* not found, so increment misses */
 	ATOMIC_INC(cache, cache->header->nmisses);
+
+	if (lock)
+		APC_RUNLOCK(cache->header);
 
 	return NULL;
 }
@@ -1009,7 +1009,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, zend_string
 				/* Check to make sure this entry isn't expired by a hard TTL */
 				if((*slot)->value->ttl && (time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
                     /* marked as a miss */
-                    cache->header->nmisses++;
+                    ATOMIC_INC(cache, cache->header->nmisses);
 
 					/* unlock header */
 					APC_RUNLOCK(cache->header);
