@@ -457,8 +457,8 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 			}
 
 			/* Otherwise we are fine, increase counters and return the cache entry */
-			(*slot)->nhits++;
-			ATOMIC_INC((*slot)->value->ref_count);
+			ATOMIC_INC(cache, (*slot)->nhits);
+			ATOMIC_INC(cache, (*slot)->value->ref_count);
 			(*slot)->atime = t;
 		
 			/* set cache num hits */
@@ -475,7 +475,7 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 	}
 	
 	/* not found, so increment misses */
-	cache->header->nmisses++;
+	ATOMIC_INC(cache, cache->header->nmisses);
 
 	return NULL;
 }
@@ -662,7 +662,7 @@ PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path)
 /* {{{ apc_cache_release */
 PHP_APCU_API void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry)
 {
-    ATOMIC_DEC(entry->ref_count);
+    ATOMIC_DEC(cache, entry->ref_count);
 }
 /* }}} */
 
