@@ -852,7 +852,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey,
 		        /* Check to make sure this entry isn't expired by a hard TTL */
 		        if((*slot)->value->ttl && (time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
 					/* increment misses on cache */
-					cache->header->nmisses++;
+					ATOMIC_INC(cache, cache->header->nmisses);
 
 					/* unlock header */	
 					APC_RUNLOCK(cache->header);
@@ -861,19 +861,19 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, char *strkey,
 		        }
 
 				/* set cache num hits */
-				cache->header->nhits++;
+				ATOMIC_INC(cache, cache->header->nhits);
 		        
 				/* grab value */
 		        value = (*slot)->value;
 
-				/* unlock header */
-				APC_RUNLOCK(cache->header);
-
-		        /* Otherwise we are fine, increase counters and return the cache entry */
+				/* Otherwise we are fine, increase counters and return the cache entry */
 		        ATOMIC_INC(cache, (*slot)->nhits);
 		        ATOMIC_INC(cache, (*slot)->value->ref_count);
 		        (*slot)->atime = t;
-			
+
+				/* unlock header */
+				APC_RUNLOCK(cache->header);
+
 		        return (apc_cache_entry_t*)value;
 		    }
 
@@ -957,7 +957,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, char *strke
 		        /* Check to make sure this entry isn't expired by a hard TTL */
 		        if((*slot)->value->ttl && (time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
                     /* marked as a miss */
-                    cache->header->nmisses++;
+                    ATOMIC_INC(cache, cache->header->nmisses);
 
 					/* unlock header */
 					APC_RUNLOCK(cache->header);
