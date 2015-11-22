@@ -51,14 +51,14 @@ struct apc_windows_cs_rwlock_t {
     DWORD reader_races_lost;
 };
 
-apc_windows_cs_rwlock_t *apc_windows_cs_create(apc_windows_cs_rwlock_t *lock TSRMLS_DC);
+apc_windows_cs_rwlock_t *apc_windows_cs_create(apc_windows_cs_rwlock_t *lock);
 void apc_windows_cs_destroy(apc_windows_cs_rwlock_t *lock);
-void apc_windows_cs_lock(apc_windows_cs_rwlock_t *lock TSRMLS_DC);
-void apc_windows_cs_rdlock(apc_windows_cs_rwlock_t *lock TSRMLS_DC);
-void apc_windows_cs_unlock_rd(apc_windows_cs_rwlock_t *lock TSRMLS_DC);
-void apc_windows_cs_unlock_wr(apc_windows_cs_rwlock_t *lock TSRMLS_DC);
+void apc_windows_cs_lock(apc_windows_cs_rwlock_t *lock);
+void apc_windows_cs_rdlock(apc_windows_cs_rwlock_t *lock);
+void apc_windows_cs_unlock_rd(apc_windows_cs_rwlock_t *lock);
+void apc_windows_cs_unlock_wr(apc_windows_cs_rwlock_t *lock);
 # if NONBLOCKING_LOCK_AVAILABLE==1 /* Only in win7/2008 */
-zend_bool apc_pthreadrwlock_nonblocking_lock(apc_windows_cs_rwlock_t *lock TSRMLS_DC);
+zend_bool apc_pthreadrwlock_nonblocking_lock(apc_windows_cs_rwlock_t *lock);
 # endif
 #endif
 
