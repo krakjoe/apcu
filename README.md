@@ -12,15 +12,6 @@ Documentation
 
 APCu documentation can be found on [php.net](http://php.net/apcu).
 
-PHP7
-====
-
-APC(u) did break a basic rule, it's always done this and for the most part it works: It acquires a read lock and performs writes.
-
-There was a frustrating number of people who experience problems with caching that we are not able to investigate, this is a tell-tell sign that you have concurrency bugs ...
-
-APCu >= 5.1.0 (PHP 7+) introduces internal changes that should avoid races, it might also change the performance characteristics of the cache.
-
 Reporting Bugs
 =============
 
