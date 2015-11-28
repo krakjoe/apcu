@@ -3,7 +3,7 @@
 
 ARG_ENABLE('apcu', 'Whether to enable APCu support', 'no');
 ARG_ENABLE('apcu-debug', 'Whether to enable APCu debugging', 'no');
-ARG_ENABLE('apc-bc', 'Whether APCu should provide APC full compatibility support', 'yes');
+ARG_ENABLE('apcu-bc', 'Whether APCu should provide APC compatibility module', 'yes');
 
 if(PHP_APCU != 'no')
 {
@@ -20,6 +20,15 @@ if(PHP_APCU != 'no')
 	if(PHP_APCU_DEBUG != 'no')
 	{
 		ADD_FLAG('CFLAGS_APC', '/D APC_DEBUG=1');
+	}
+
+	if (PHP_APCU_BC != 'no') 
+	{
+		EXTENSION(apc, "bc/php_apc.c", PHP_APCU_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
+		ADD_SOURCES(
+			"ext/apcu/bc", 
+			"ext/apcu/bc/php_apc.c", 
+			"apcu");
 	}
 	
 	/* XXX srwlock kernel as most BC compatible for now */
