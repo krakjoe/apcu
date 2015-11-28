@@ -24,27 +24,20 @@ if(PHP_APCU != 'no')
 
 	if (PHP_APCU_BC != 'no') 
 	{
+		MESSAGE("APCu: full APC compatibility is enabled");
 		EXTENSION(apc, "bc/php_apc.c", PHP_APCU_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
 		ADD_SOURCES(
 			"ext/apcu/bc", 
 			"ext/apcu/bc/php_apc.c", 
 			"apcu");
+	} else {
+		WARNING("APCu: full APC compatibility is NOT enabled");
 	}
 	
 	/* XXX srwlock kernel as most BC compatible for now */
 	AC_DEFINE('APC_SRWLOCK_KERNEL', 1);
-	ADD_FLAG('CFLAGS_APC', '/D WIN32_ONLY_COMPILER=1');
-
 	AC_DEFINE('HAVE_APCU', 1);
-
-    if (PHP_APC_BC != 'no')
-	{
-	    AC_DEFINE('APC_FULL_BC', 1);
-	    MESSAGE("APCu: full APC compatibility is enabled");
-	} else {
-	    WARNING("APCu: full APC compatibility is NOT enabled");
-	}
-
+	ADD_FLAG('CFLAGS_APC', '/D WIN32_ONLY_COMPILER=1');
 	PHP_INSTALL_HEADERS("ext/apcu", "apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_serializer.h");
 
 	EXTENSION('apcu', apc_sources, PHP_APCU_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
