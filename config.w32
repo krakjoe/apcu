@@ -25,10 +25,11 @@ if(PHP_APCU != 'no')
 	if (PHP_APCU_BC != 'no') 
 	{
 		MESSAGE("APCu: full APC compatibility is enabled");
-		EXTENSION(apc, "bc/php_apc.c", PHP_APCU_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
+		EXTENSION("apc", configure_module_dirname + "/bc/php_apc.c", PHP_APCU_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
+		ADD_EXTENSION_DEP("apc", "apcu", true);
 		ADD_SOURCES(
-			"ext/apcu/bc", 
-			"ext/apcu/bc/php_apc.c", 
+			configure_module_dirname + "/bc", 
+			"php_apc.c", 
 			"apcu");
 	} else {
 		WARNING("APCu: full APC compatibility is NOT enabled");
@@ -42,3 +43,4 @@ if(PHP_APCU != 'no')
 
 	EXTENSION('apcu', apc_sources, PHP_APCU_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
 }
+

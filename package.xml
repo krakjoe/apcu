@@ -22,19 +22,19 @@
   <email>remi@php.net</email>
   <active>yes</active>
  </developer>
- <date>2015-11-21</date>
+ <date>2015-12-02</date>
  <time>12:00:00</time>
  <version>
-  <release>5.1.1</release>
-  <api>5.1.1</api>
+  <release>5.1.2</release>
+  <api>5.1.2</api>
  </version>
  <stability>
-  <release>beta</release>
-  <api>beta</api>
+  <release>stable</release>
+  <api>stable</api>
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- be consistent with APC in use of atomics, avoid surprises
+- be wholly consistent with APC in use of atomics
  </notes>
  <contents>
   <dir name="/">
