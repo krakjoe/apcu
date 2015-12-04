@@ -1,3 +1,6 @@
 [submodule "tests"]
 	path = tests
 	url = https://github.com/krakjoe/apcu-tests
+[submodule "bc"]
+	path = bc
+	url = https://github.com/krakjoe/apcu-bc
