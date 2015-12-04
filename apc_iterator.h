@@ -90,15 +90,15 @@ typedef struct _apc_iterator_item_t {
 } apc_iterator_item_t;
 /* }}} */
 
-extern void apc_iterator_obj_init(
+PHP_APCU_API void apc_iterator_obj_init(
 	apc_iterator_t *iterator, 
 	zval *search, 
 	zend_long format, 
 	zend_long chunk_size, 
 	zend_long list);
-extern zend_class_entry* apc_iterator_ce;
+PHP_APCU_API zend_class_entry* apc_iterator_ce;
 
-int apc_iterator_init(int module_number);
+PHP_APCU_API int apc_iterator_init(int module_number);
 #endif
 
 /*
