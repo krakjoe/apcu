@@ -3,7 +3,6 @@
 
 ARG_ENABLE('apcu', 'Whether to enable APCu support', 'no');
 ARG_ENABLE('apcu-debug', 'Whether to enable APCu debugging', 'no');
-ARG_ENABLE('apcu-bc', 'Whether APCu should provide APC compatibility module', 'yes');
 
 if(PHP_APCU != 'no')
 {
@@ -22,19 +21,6 @@ if(PHP_APCU != 'no')
 		ADD_FLAG('CFLAGS_APC', '/D APC_DEBUG=1');
 	}
 
-	if (PHP_APCU_BC != 'no') 
-	{
-		MESSAGE("APCu: full APC compatibility is enabled");
-		EXTENSION("apc", configure_module_dirname + "/bc/php_apc.c", PHP_APCU_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
-		ADD_EXTENSION_DEP("apc", "apcu", true);
-		ADD_SOURCES(
-			configure_module_dirname + "/bc", 
-			"php_apc.c", 
-			"apcu");
-	} else {
-		WARNING("APCu: full APC compatibility is NOT enabled");
-	}
-	
 	/* XXX srwlock kernel as most BC compatible for now */
 	AC_DEFINE('APC_SRWLOCK_KERNEL', 1);
 	AC_DEFINE('HAVE_APCU', 1);

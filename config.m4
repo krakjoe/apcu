@@ -3,8 +3,6 @@ dnl $Id: config.m4 327593 2012-09-10 11:50:58Z pajoye $
 dnl
 PHP_ARG_ENABLE(apcu, whether to enable APCu support,
 [  --enable-apcu           Enable APCu support])
-PHP_ARG_ENABLE(apcu-bc, whether to enable APC backward compatibility module,
-[	--enable-apcu-bc				 Enable APC backward compatibility support], no, no)
 
 AC_MSG_CHECKING(if APCu should be allowed to use rwlocks)
 AC_ARG_ENABLE(apcu-rwlocks,
@@ -64,9 +62,6 @@ AC_ARG_ENABLE(apcu-spinlocks,
 AC_MSG_RESULT($PHP_APCU_SPINLOCK)
 
 if test "$PHP_APCU" != "no"; then
-	if test "$PHP_APC_BC" != "no"; then
-		AC_DEFINE(APC_FULL_BC, 1, [APC full compatibility support])
-	fi
 	if test "$PHP_APCU_DEBUG" != "no"; then
 		AC_DEFINE(APC_DEBUG, 1, [ ])
 	fi
@@ -261,15 +256,10 @@ if test "$PHP_APCU" != "no"; then
 							   
   PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
   PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
-	if test $PHP_APCU_BC != "no"; then
-		PHP_ADD_BUILD_DIR($ext_builddir/bc, 1)
-		PHP_NEW_EXTENSION(apc, "bc/php_apc.c", $ext_shared,, \\$(APCU_CFLAGS))
-		PHP_ADD_EXTENSION_DEP(apc, apcu)
-	fi
   PHP_SUBST(APCU_SHARED_LIBADD)
   PHP_SUBST(APCU_CFLAGS)
   PHP_SUBST(PHP_LDFLAGS)
-  PHP_INSTALL_HEADERS(ext/apcu, [apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_serializer.h])
+  PHP_INSTALL_HEADERS(ext/apcu, [php_apc.h apc.h apc_api.h apc_arginfo.h apc_cache.h apc_cache_api.h apc_globals.h apc_iterator.h apc_lock.h apc_lock_api.h apc_pool.h apc_pool_api.h apc_sma.h apc_sma_api.h apc_serializer.h apc_stack.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
 fi
 

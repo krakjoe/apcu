@@ -32,7 +32,6 @@
 #ifndef PHP_APCU_H
 #define PHP_APCU_H
 
-#include "apc_php.h"
 #include "apc_globals.h"
 
 #define PHP_APCU_VERSION "5.1.2dev"

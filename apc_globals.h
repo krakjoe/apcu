@@ -37,7 +37,6 @@
 #include "apc.h"
 #include "apc_cache.h"
 #include "apc_stack.h"
-#include "apc_php.h"
 
 ZEND_BEGIN_MODULE_GLOBALS(apcu)
     /* configuration parameters */
