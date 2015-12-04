@@ -32,24 +32,25 @@
 #ifndef PHP_APCU_H
 #define PHP_APCU_H
 
+#include "apc.h"
 #include "apc_globals.h"
 
 #define PHP_APCU_VERSION "5.1.2dev"
 #define PHP_APCU_EXTNAME "apcu"
 
-PHP_FUNCTION(apcu_add);
-PHP_FUNCTION(apcu_delete);
-PHP_FUNCTION(apcu_exists);
-PHP_FUNCTION(apcu_fetch);
-PHP_FUNCTION(apcu_store);
-PHP_FUNCTION(apcu_inc);
-PHP_FUNCTION(apcu_dec);
-PHP_FUNCTION(apcu_cas);
-PHP_FUNCTION(apcu_enabled);
-PHP_FUNCTION(apcu_sma_info);
-PHP_FUNCTION(apcu_entry);
+PHP_APCU_API PHP_FUNCTION(apcu_add);
+PHP_APCU_API PHP_FUNCTION(apcu_delete);
+PHP_APCU_API PHP_FUNCTION(apcu_exists);
+PHP_APCU_API PHP_FUNCTION(apcu_fetch);
+PHP_APCU_API PHP_FUNCTION(apcu_store);
+PHP_APCU_API PHP_FUNCTION(apcu_inc);
+PHP_APCU_API PHP_FUNCTION(apcu_dec);
+PHP_APCU_API PHP_FUNCTION(apcu_cas);
+PHP_APCU_API PHP_FUNCTION(apcu_enabled);
+PHP_APCU_API PHP_FUNCTION(apcu_sma_info);
+PHP_APCU_API PHP_FUNCTION(apcu_entry);
 
-extern zend_bool apc_is_enabled(void);
+PHP_APCU_API zend_bool apc_is_enabled(void);
 
 extern zend_module_entry apcu_module_entry;
 #define apcu_module_ptr &apcu_module_entry
