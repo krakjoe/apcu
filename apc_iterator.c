@@ -27,8 +27,12 @@
 #include "SAPI.h"
 #include "zend_interfaces.h"
 
-zend_class_entry *apc_iterator_ce;
+static zend_class_entry *apc_iterator_ce;
 zend_object_handlers apc_iterator_object_handlers;
+
+zend_class_entry* apc_iterator_get_ce(void) {
+	return apc_iterator_ce;
+}
 
 /* {{{ apc_iterator_item */
 static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc_cache_slot_t **slot_pp) {
