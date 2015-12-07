@@ -108,8 +108,6 @@
    <file name="pgsql_s_lock.h" role="src" />
    <file name="pgsql_s_lock.c" role="src" />
    <file name="apc_serializer.h" role="src" />
-   <file name="bc/php_apc.h" role="src" />
-   <file name="bc/php_apc.c" role="src" />
    <file name="config.m4" role="src" />
    <file name="config.w32" role="src" />
    <file name="INSTALL" role="doc" />
