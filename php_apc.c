@@ -662,9 +662,7 @@ PHP_FUNCTION(apcu_cas) {
 PHP_FUNCTION(apcu_fetch) {
     zval *key;
     zval *success = NULL;
-    apc_cache_entry_t* entry;
     time_t t;
-    apc_context_t ctxt = {0,};
 
     if (!APCG(enabled)) {
 		RETURN_FALSE;
