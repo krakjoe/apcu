@@ -133,7 +133,6 @@
  </dependencies>
  <providesextension>apcu</providesextension>
  <extsrcrelease>
-  <configureoption name="enable-apc-bc" default="yes" prompt="Enable full APC compatibility" />
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
