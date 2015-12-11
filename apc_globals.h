@@ -41,12 +41,12 @@
 ZEND_BEGIN_MODULE_GLOBALS(apcu)
     /* configuration parameters */
     zend_bool enabled;      /* if true, apc is enabled (defaults to true) */
-    long shm_segments;      /* number of shared memory segments to use */
-    long shm_size;          /* size of each shared memory segment (in MB) */
-    long entries_hint;      /* hint at the number of entries expected */
-    long gc_ttl;            /* parameter to apc_cache_create */
-    long ttl;               /* parameter to apc_cache_create */
-	long smart;             /* smart value */
+    zend_long shm_segments;      /* number of shared memory segments to use */
+    zend_long shm_size;          /* size of each shared memory segment (in MB) */
+    zend_long entries_hint;      /* hint at the number of entries expected */
+    zend_long gc_ttl;            /* parameter to apc_cache_create */
+    zend_long ttl;               /* parameter to apc_cache_create */
+	zend_long smart;             /* smart value */
 
 #if APC_MMAP
     char *mmap_file_mask;   /* mktemp-style file-mask to pass to mmap */
