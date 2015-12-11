@@ -27,7 +27,7 @@
 /* stollen from 7.0 Opcache */
 #define APCU_BUILD_ID PHP_APCU_VERSION ZEND_TOSTR(ZEND_EXTENSION_API_NO) ZEND_BUILD_TS ZEND_BUILD_DEBUG ZEND_BUILD_SYSTEM ZEND_BUILD_EXTRA 
 #define APCU_BIN_ID "BIN_" ZEND_TOSTR(SIZEOF_CHAR) ZEND_TOSTR(SIZEOF_INT) ZEND_TOSTR(SIZEOF_LONG) ZEND_TOSTR(SIZEOF_SIZE_T) ZEND_TOSTR(SIZEOF_ZEND_LONG) ZEND_TOSTR(ZEND_MM_ALIGNMENT)
-static char *accel_gen_system_id(void)
+static char *apc_gen_system_id(void)
 {
         PHP_MD5_CTX context;
         unsigned char digest[16], c;
@@ -67,7 +67,7 @@ static char *accel_gen_system_id(void)
 
 apc_windows_global_mutex_t *apc_windows_global_mutex_create(apc_windows_global_mutex_t *obj)
 {
-    obj->mutex = CreateMutex(NULL, FALSE, accel_gen_system_id());
+    obj->mutex = CreateMutex(NULL, FALSE, apc_gen_system_id());
 
     return obj;
 }
