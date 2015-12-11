@@ -6,7 +6,7 @@ ARG_ENABLE('apcu-debug', 'Whether to enable APCu debugging', 'no');
 
 if(PHP_APCU != 'no')
 {
-	var apc_sources = 	'apc.c apc_lock.c apc_windows_srwlock_kernel.c php_apc.c ' +
+	var apc_sources = 	'apc.c apc_lock.c apc_windows_global_mutex.c php_apc.c ' +
 						'apc_cache.c ' +
 						'apc_mmap.c ' +
 						'apc_shm.c ' +
@@ -22,7 +22,7 @@ if(PHP_APCU != 'no')
 	}
 
 	/* XXX srwlock kernel as most BC compatible for now */
-	AC_DEFINE('APC_SRWLOCK_KERNEL', 1);
+	AC_DEFINE('APC_WINDOWS_GLOBAL_MUTEX', 1);
 	AC_DEFINE('HAVE_APCU', 1);
 	ADD_FLAG('CFLAGS_APC', '/D WIN32_ONLY_COMPILER=1');
 	PHP_INSTALL_HEADERS("ext/apcu", "apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_serializer.h");

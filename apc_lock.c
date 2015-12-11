@@ -202,7 +202,7 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
     
 #endif
 #else
-	lock = (apc_lock_t *)apc_windows_cs_create((apc_windows_cs_rwlock_t *)lock);
+	lock = (apc_lock_t *)apc_windows_global_mutex_create((apc_windows_global_mutex_t *)lock);
 
 	return (NULL != lock);
 #endif
@@ -230,7 +230,7 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
     }
 #endif
 #else
-	apc_windows_cs_rdlock((apc_windows_cs_rwlock_t *)lock);
+	return apc_windows_global_mutex_lock((apc_windows_global_mutex_t *)lock);
 #endif
 	return 1;
 }
@@ -257,7 +257,7 @@ PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
     }
 #endif
 #else
-	apc_windows_cs_lock((apc_windows_cs_rwlock_t *)lock);
+	return apc_windows_global_mutex_lock((apc_windows_global_mutex_t *)lock);
 #endif
 	return 1;
 }
@@ -284,7 +284,7 @@ PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock) {
     }
 #endif
 #else
-	apc_windows_cs_unlock_wr((apc_windows_cs_rwlock_t *)lock);
+	return apc_windows_global_mutex_unlock((apc_windows_global_mutex_t *)lock);
 #endif
 	return 1;
 }
@@ -311,7 +311,7 @@ PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock) {
     }
 #endif
 #else
-	apc_windows_cs_unlock_rd((apc_windows_cs_rwlock_t *)lock);
+	return apc_windows_global_mutex_unlock((apc_windows_global_mutex_t *)lock);
 #endif
 	return 1;
 }
@@ -333,7 +333,7 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock) {
 # endif
 #endif
 #else
-	apc_windows_cs_destroy((apc_windows_cs_rwlock_t *)lock);
+	/* global mutex pass */
 #endif
 } 
 #endif

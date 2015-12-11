@@ -59,8 +59,8 @@ PHP_APCU_API int apc_lock_release(apc_lock_t* lock);
 # endif
 #else
 /* XXX kernel lock mode only for now, compatible through all the wins, add more ifdefs for others */
-# include "apc_windows_srwlock_kernel.h"
-typedef apc_windows_cs_rwlock_t apc_lock_t;
+# include "apc_windows_global_mutex.h"
+typedef apc_windows_global_mutex_t apc_lock_t;
 # define APC_LOCK_SHARED
 #endif
 
