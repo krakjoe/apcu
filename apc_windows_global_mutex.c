@@ -26,6 +26,8 @@
 
 #define APCu_MUTEX_NAME "APCuMutex"
 
+ZEND_TLS uint32_t mutex_counter = 0;
+
 /* stollen the system_id function from 7.0 Opcache */
 #define APCU_BUILD_ID PHP_APCU_VERSION ZEND_TOSTR(ZEND_EXTENSION_API_NO) ZEND_BUILD_TS ZEND_BUILD_DEBUG ZEND_BUILD_SYSTEM ZEND_BUILD_EXTRA 
 #define APCU_BIN_ID "BIN_" ZEND_TOSTR(SIZEOF_CHAR) ZEND_TOSTR(SIZEOF_INT) ZEND_TOSTR(SIZEOF_LONG) ZEND_TOSTR(SIZEOF_SIZE_T) ZEND_TOSTR(SIZEOF_ZEND_LONG) ZEND_TOSTR(ZEND_MM_ALIGNMENT)
@@ -69,7 +71,9 @@ static char *apc_gen_system_id(void)
 
 static char *apc_windows_create_identifyer(char *base, size_t base_len, char *out, size_t out_len)
 {
-    snprintf(out, out_len, "%s.%s", base, apc_gen_system_id());
+    snprintf(out, out_len, "%s.%u.%s", base, mutex_counter, apc_gen_system_id());
+
+    mutex_counter++;
 
     return out;
 }
