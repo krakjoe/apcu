@@ -109,15 +109,11 @@ zend_bool apc_windows_global_mutex_lock(apc_windows_global_mutex_t *obj)
 
     res = WaitForSingleObject(obj->mutex, INFINITE);
 
-    switch (res)
-    {
-        case WAIT_OBJECT_0:
-            return 1;
-
-        /* XXX handle abandoned wait */
+    if (WAIT_FAILED == res) {
+        return 0;
     }
 
-    return 0;
+    return 1;
 }
 
 zend_bool apc_windows_global_mutex_unlock(apc_windows_global_mutex_t *obj)
