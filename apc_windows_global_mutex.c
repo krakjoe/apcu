@@ -88,16 +88,6 @@ apc_windows_global_mutex_t *apc_windows_global_mutex_create(apc_windows_global_m
         return NULL;
     }
 
-    /*if (GetLastError() == ERROR_ALREADY_EXISTS) {
-        DWORD res;
-        res = WaitForSingleObject(obj->mutex, INFINITE);
-
-        if (WAIT_FAILED == res) {
-            CloseHandle(obj->mutex);
-            return NULL;
-        }
-    }*/
-
     ReleaseMutex(obj->mutex);
 
     return obj;
