@@ -28,6 +28,7 @@
 
 typedef struct _apc_windows_global_mutex_t {
     HANDLE mutex;
+    char   mutex_name[64];
 } apc_windows_global_mutex_t;
 
 apc_windows_global_mutex_t *apc_windows_global_mutex_create(apc_windows_global_mutex_t *obj);

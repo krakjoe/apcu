@@ -24,7 +24,9 @@
 #include "php_apc.h"
 #include "apc_windows_global_mutex.h"
 
-/* stollen from 7.0 Opcache */
+#define APCu_MUTEX_NAME "APCuMutex"
+
+/* stollen the system_id function from 7.0 Opcache */
 #define APCU_BUILD_ID PHP_APCU_VERSION ZEND_TOSTR(ZEND_EXTENSION_API_NO) ZEND_BUILD_TS ZEND_BUILD_DEBUG ZEND_BUILD_SYSTEM ZEND_BUILD_EXTRA 
 #define APCU_BIN_ID "BIN_" ZEND_TOSTR(SIZEOF_CHAR) ZEND_TOSTR(SIZEOF_INT) ZEND_TOSTR(SIZEOF_LONG) ZEND_TOSTR(SIZEOF_SIZE_T) ZEND_TOSTR(SIZEOF_ZEND_LONG) ZEND_TOSTR(ZEND_MM_ALIGNMENT)
 static char *apc_gen_system_id(void)
@@ -32,7 +34,7 @@ static char *apc_gen_system_id(void)
         PHP_MD5_CTX context;
         unsigned char digest[16], c;
         int i;
-        static char md5str[32];
+        static char md5str[33];
         static zend_bool done = 0;
 
         if (done) {
@@ -58,16 +60,41 @@ static char *apc_gen_system_id(void)
                 md5str[(i * 2) + 1] = c;
         }
 
+        md5str[32] = '\0';
         done = 1;
 
         return md5str;
 }
 
 
+static char *apc_windows_create_identifyer(char *base, size_t base_len, char *out, size_t out_len)
+{
+    snprintf(out, out_len, "%s.%s", base, apc_gen_system_id());
+
+    return out;
+}
 
 apc_windows_global_mutex_t *apc_windows_global_mutex_create(apc_windows_global_mutex_t *obj)
 {
-    obj->mutex = CreateMutex(NULL, FALSE, apc_gen_system_id());
+
+    apc_windows_create_identifyer(APCu_MUTEX_NAME, sizeof(APCu_MUTEX_NAME), obj->mutex_name, sizeof(obj->mutex_name));
+    obj->mutex = CreateMutex(NULL, FALSE, obj->mutex_name);
+
+    if (!obj->mutex) {
+        return NULL;
+    }
+
+    /*if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        DWORD res;
+        res = WaitForSingleObject(obj->mutex, INFINITE);
+
+        if (WAIT_FAILED == res) {
+            CloseHandle(obj->mutex);
+            return NULL;
+        }
+    }*/
+
+    ReleaseMutex(obj->mutex);
 
     return obj;
 }
