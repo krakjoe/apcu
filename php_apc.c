@@ -118,11 +118,11 @@ static PHP_INI_MH(OnUpdateShmSize) /* {{{ */
         return FAILURE;
     }
 
-    if (s < 1048576L) {
+    if (s < Z_L(1048576)) {
         /* if it's less than 1Mb, they are probably using the old syntax */
         php_error_docref(	
 			NULL, E_WARNING, "apc.shm_size now uses M/G suffixes, please update your ini files");
-        s = s * 1048576L;
+        s = s * Z_L(1048576);
     }
 
     APCG(shm_size) = s;

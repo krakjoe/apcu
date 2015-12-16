@@ -105,8 +105,13 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 /* atomic operations */
 #if defined(APC_LOCK_SHARED)
 # ifdef PHP_WIN32
-#  define ATOMIC_INC(c, a) InterlockedIncrement(&a)
-#  define ATOMIC_DEC(c, a) InterlockedDecrement(&a)
+#  ifdef _WIN64
+#   define ATOMIC_INC(c, a) InterlockedIncrement64(&a)
+#   define ATOMIC_DEC(c, a) InterlockedDecrement64(&a)
+#  else
+#   define ATOMIC_INC(c, a) InterlockedIncrement(&a)
+#   define ATOMIC_DEC(c, a) InterlockedDecrement(&a)
+#  endif
 # else
 #  define ATOMIC_INC(c, a) __sync_add_and_fetch(&a, 1)
 #  define ATOMIC_DEC(c, a) __sync_sub_and_fetch(&a, 1)
