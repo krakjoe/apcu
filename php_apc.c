@@ -559,7 +559,7 @@ static zend_bool php_dec_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
 }
 /* }}} */
 
-#define php_apc_select_updater(a) ((a)->step < 0 ? php_dec_updater : php_inc_updater)
+#define php_apc_select_updater(a, f) ((a)->step < 0 ? php_dec_updater : f)
 #define php_apc_normalize_step(a) do { \
 	if ((a)->step < 0) { \
 		(a)->step = 0 - (a)->step; \
@@ -579,7 +579,7 @@ PHP_FUNCTION(apcu_inc) {
     }
 
 	updater = 
-		php_apc_select_updater(&args);
+		php_apc_select_updater(&args, php_inc_updater);
 
 	php_apc_normalize_step(&args);
 
@@ -616,7 +616,7 @@ PHP_FUNCTION(apcu_dec) {
     }
 
 	updater = 
-		php_apc_select_updater(&args);
+		php_apc_select_updater(&args, php_dec_updater);
 	
 	php_apc_normalize_step(&args);    
 
