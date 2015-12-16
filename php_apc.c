@@ -559,23 +559,36 @@ static zend_bool php_dec_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
 }
 /* }}} */
 
+#define php_apc_select_updater(a) ((a)->step < 0 ? php_dec_updater : php_inc_updater)
+#define php_apc_normalize_step(a) do { \
+	if ((a)->step < 0) { \
+		(a)->step = 0 - (a)->step; \
+	} \
+} while(0)
+
 /* {{{ proto long apc_inc(string key [, long step [, bool& success]])
  */
 PHP_FUNCTION(apcu_inc) {
     zend_string *key;
     struct php_inc_updater_args args = {1L, -1};
     zval *success = NULL;
+	apc_cache_updater_t updater;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|lz", &key, &(args.step), &success) == FAILURE) {
         return;
     }
-    
+
+	updater = 
+		php_apc_select_updater(&args);
+
+	php_apc_normalize_step(&args);
+
 	if (success) {
 		ZVAL_DEREF(success);
 		zval_ptr_dtor(success);
 	}
 
-    if (php_apc_update(key, php_inc_updater, &args)) {
+    if (php_apc_update(key, updater, &args)) {
         if (success) {
 			ZVAL_TRUE(success);
 		}
@@ -596,17 +609,23 @@ PHP_FUNCTION(apcu_dec) {
     zend_string *key;
     struct php_inc_updater_args args = {1L, -1};
     zval *success = NULL;
+	apc_cache_updater_t updater;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|lz", &key, &(args.step), &success) == FAILURE) {
         return;
     }
-    
+
+	updater = 
+		php_apc_select_updater(&args);
+	
+	php_apc_normalize_step(&args);    
+
 	if (success) {
 		ZVAL_DEREF(success);
 		zval_ptr_dtor(success);
 	}
 
-    if (php_apc_update(key, php_dec_updater, &args)) {
+    if (php_apc_update(key, updater, &args)) {
         if (success) {
 			ZVAL_TRUE(success);
 		}
