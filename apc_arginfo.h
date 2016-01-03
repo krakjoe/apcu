@@ -75,16 +75,6 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_entry, 0, 0, 2)
 	ZEND_ARG_TYPE_INFO(0, generator, IS_CALLABLE, 0)
 	ZEND_ARG_TYPE_INFO(0, ttl, IS_LONG, 0)
 ZEND_END_ARG_INFO()
-
-/* for bc */
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_cache_info, 0, 0, 1)
-    ZEND_ARG_INFO(0, ignored)
-    ZEND_ARG_INFO(0, limited)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_clear_cache, 0, 0, 1)
-    ZEND_ARG_INFO(0, ignored)
-ZEND_END_ARG_INFO()
 /* }}} */
 
 #endif
