@@ -16,16 +16,16 @@
   <email>ab@php.net</email>
   <active>yes</active>
  </developer>
- <developer>
+ <lead>
   <name>Remi Collet</name>
   <user>remi</user>
   <email>remi@php.net</email>
   <active>yes</active>
- </developer>
+ </lead>
  <date>2015-12-07</date>
  <time>09:00:00</time>
  <version>
-  <release>5.1.2</release>
+  <release>5.1.3dev</release>
   <api>5.1.2</api>
  </version>
  <stability>
@@ -34,7 +34,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- be really consistent with APC in use of atomics
+- fixed macro using interlocked increment in Windows
+- fix gh#158 apc_inc() with negative step value hangs the process
+- fix gh#164 apc_inc() can take minutes with huge step value
  </notes>
  <contents>
   <dir name="/">
@@ -58,6 +60,7 @@
     <file name="apc54_018.phpt" role="test" />
     <file name="apc_entry_001.phpt" role="test" />
     <file name="apc_entry_002.phpt" role="test" />
+    <file name="apc_inc_perf.phpt" role="test" />
     <file name="bug63224.phpt" role="test" />
     <file name="get_included_files_inc1.inc" role="test" />
     <file name="get_included_files_inc2.inc" role="test" />
