@@ -534,9 +534,9 @@ static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
     struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
 
     if (Z_TYPE(entry->val) == IS_LONG) {
-        while (args->step--) {
-			fast_long_increment_function(&entry->val);
-		}
+        static zval inc;
+        ZVAL_LONG(&inc, args->step);
+        fast_long_add_function(&entry->val, &entry->val, &inc);
         args->lval = Z_LVAL(entry->val);
         return 1;
     }
@@ -548,9 +548,9 @@ static zend_bool php_dec_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
     struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
 
     if (Z_TYPE(entry->val) == IS_LONG) {
-        while (args->step--) {
-			fast_long_decrement_function(&entry->val);
-		}
+        static zval inc;
+        ZVAL_LONG(&inc, args->step);
+        fast_long_sub_function(&entry->val, &entry->val, &inc);
         args->lval = Z_LVAL(entry->val);
         return 1;
     }
