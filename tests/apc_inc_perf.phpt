@@ -12,6 +12,8 @@ apcu_store('foobar', 1);
 $t = microtime(true);
 var_dump(apcu_inc('foobar', 0x76543210));
 var_dump(apcu_dec('foobar', 0x76543210));
+var_dump(apcu_dec('foobar', -999999999));
+var_dump(apcu_inc('foobar', -999999999));
 $t = microtime(true) - $t;
 var_dump($t < 0.1 ? true : $t);
 ?>
@@ -19,6 +21,8 @@ var_dump($t < 0.1 ? true : $t);
 <?php exit(0); ?>
 --EXPECTF--
 int(1985229329)
+int(1)
+int(1000000000)
 int(1)
 bool(true)
 ===DONE===

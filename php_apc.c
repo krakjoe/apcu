@@ -535,6 +535,7 @@ static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
 
     if (Z_TYPE(entry->val) == IS_LONG) {
         static zval inc;
+
         ZVAL_LONG(&inc, args->step);
         fast_long_add_function(&entry->val, &entry->val, &inc);
         args->lval = Z_LVAL(entry->val);
@@ -549,6 +550,7 @@ static zend_bool php_dec_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
 
     if (Z_TYPE(entry->val) == IS_LONG) {
         static zval inc;
+
         ZVAL_LONG(&inc, args->step);
         fast_long_sub_function(&entry->val, &entry->val, &inc);
         args->lval = Z_LVAL(entry->val);
@@ -559,7 +561,7 @@ static zend_bool php_dec_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
 }
 /* }}} */
 
-#define php_apc_select_updater(a, f) ((a)->step < 0 ? php_dec_updater : f)
+#define php_apc_select_updater(a, _f_pos, _f_neg) ((a)->step < 0 ? _f_neg : _f_pos)
 #define php_apc_normalize_step(a) do { \
 	if ((a)->step < 0) { \
 		(a)->step = 0 - (a)->step; \
@@ -579,7 +581,7 @@ PHP_FUNCTION(apcu_inc) {
     }
 
 	updater = 
-		php_apc_select_updater(&args, php_inc_updater);
+		php_apc_select_updater(&args, php_inc_updater, php_dec_updater);
 
 	php_apc_normalize_step(&args);
 
@@ -616,7 +618,7 @@ PHP_FUNCTION(apcu_dec) {
     }
 
 	updater = 
-		php_apc_select_updater(&args, php_dec_updater);
+		php_apc_select_updater(&args, php_dec_updater, php_inc_updater);
 	
 	php_apc_normalize_step(&args);    
 
