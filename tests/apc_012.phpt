@@ -10,25 +10,28 @@ apc.enable_cli=1
 $key="testkey";
 $i=PHP_INT_MAX;
 apcu_store($key, $i);
-$j=apcu_fetch($key);
+var_dump($j=apcu_fetch($key));
 var_dump($i==$j);
 
 apcu_inc($key, 1);
 $i++;
-$j=apcu_fetch($key);
+var_dump($j=apcu_fetch($key));
 var_dump($i==$j);
 
 $i=PHP_INT_MIN;
 apcu_store($key, $i);
 apcu_dec($key, 1);
 $i--;
-$j=apcu_fetch($key);
+var_dump($j=apcu_fetch($key));
 var_dump($i==$j);
 ?>
 ===DONE===
 <?php exit(0); ?>
---EXPECT--
+--EXPECTF--
+int(%d)
 bool(true)
+float(%s)
 bool(true)
+float(%s)
 bool(true)
 ===DONE===
