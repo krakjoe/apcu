@@ -534,7 +534,7 @@ static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
     struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
 
     if (Z_TYPE(entry->val) == IS_LONG) {
-        static zval inc;
+        static zval inc; /* static to prevent optimization to register variable */
 
         ZVAL_LONG(&inc, args->step);
         fast_long_add_function(&entry->val, &entry->val, &inc);
@@ -549,7 +549,7 @@ static zend_bool php_dec_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
     struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
 
     if (Z_TYPE(entry->val) == IS_LONG) {
-        static zval inc;
+        static zval inc; /* static to prevent optimization to register variable */
 
         ZVAL_LONG(&inc, args->step);
         fast_long_sub_function(&entry->val, &entry->val, &inc);
