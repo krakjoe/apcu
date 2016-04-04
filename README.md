@@ -1,12 +1,12 @@
 APCu
 ====
 
-APCu is userland caching: APC stripped of opcode caching.
+APCu is an in-memory key-value store for PHP. Keys are of type string and values can be any PHP variables.
 
-APCu only supports userland caching of variables
+APCu only supports userland caching of variables.
 
+APCu is APC stripped of opcode caching.
 See [APCu Backwards Compatibility Module](https://github.com/krakjoe/apcu-bc) which provides a drop in replacement for APC.
-
 
 [![Build Status](https://travis-ci.org/krakjoe/apcu.svg?branch=master)](https://travis-ci.org/krakjoe/apcu)
 
