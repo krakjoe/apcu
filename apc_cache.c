@@ -391,7 +391,7 @@ static zval* data_unserialize(const char *filename TSRMLS_DC)
         return NULL;
     }
 
-    MAKE_STD_ZVAL(retval);
+    ALLOC_INIT_ZVAL(retval);
 
     PHP_VAR_UNSERIALIZE_INIT(var_hash);
     
