@@ -591,7 +591,6 @@ static zval data_unserialize(const char *filename)
     /* I wish I could use json */
     if(!php_var_unserialize(&retval, (const unsigned char**)&tmp, (const unsigned char*)(contents+len), &var_hash)) {
         fclose(fp);
-        zval_dtor(&retval);
         return EG(uninitialized_zval);
     }
 
