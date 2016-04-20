@@ -391,14 +391,14 @@ static zval* data_unserialize(const char *filename TSRMLS_DC)
         return NULL;
     }
 
-    ALLOC_INIT_ZVAL(retval);
+    MAKE_STD_ZVAL(retval);
 
     PHP_VAR_UNSERIALIZE_INIT(var_hash);
     
     /* I wish I could use json */
     if(!php_var_unserialize(&retval, (const unsigned char**)&tmp, (const unsigned char*)(contents+len), &var_hash TSRMLS_CC)) {
         fclose(fp);
-        zval_ptr_dtor(&retval);
+        FREE_ZVAL(retval);
         return NULL;
     }
 
