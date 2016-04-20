@@ -16,10 +16,16 @@
   <email>ab@php.net</email>
   <active>yes</active>
  </developer>
- <date>2015-12-07</date>
- <time>09:00:00</time>
+ <lead>
+  <name>Remi Collet</name>
+  <user>remi</user>
+  <email>remi@php.net</email>
+  <active>yes</active>
+ </lead>
+ <date>2016-04-20</date>
+ <time>13:00:00</time>
  <version>
-  <release>4.0.11dev</release>
+  <release>4.0.11</release>
   <api>4.0.10</api>
  </version>
  <stability>
