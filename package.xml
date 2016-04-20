@@ -19,7 +19,7 @@
  <date>2015-12-07</date>
  <time>09:00:00</time>
  <version>
-  <release>4.0.10</release>
+  <release>4.0.11dev</release>
   <api>4.0.10</api>
  </version>
  <stability>
@@ -28,7 +28,8 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-  - be really consistent with APC in use of atomics, avoid surprises
+  - fix #176 segfault when apc.preload_path contains bad data
+  - fix bad data used in test suite
  </notes>
  <contents>
   <dir name="/">
@@ -138,6 +139,22 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2015-12-07</date>
+   <time>09:00:00</time>
+   <version>
+    <release>4.0.10</release>
+    <api>4.0.10</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+  - be really consistent with APC in use of atomics, avoid surprises
+   </notes>
+  </release>
   <release>
 	<date>2014-01-27</date>
  	<time>09:00:00</time>
