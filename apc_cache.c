@@ -398,6 +398,7 @@ static zval* data_unserialize(const char *filename TSRMLS_DC)
     /* I wish I could use json */
     if(!php_var_unserialize(&retval, (const unsigned char**)&tmp, (const unsigned char*)(contents+len), &var_hash TSRMLS_CC)) {
         fclose(fp);
+        free(contents);
         FREE_ZVAL(retval);
         return NULL;
     }
