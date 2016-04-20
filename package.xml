@@ -56,6 +56,7 @@
    <file name="tests/get_included_files_inc1.inc" role="test" />
    <file name="tests/get_included_files_inc2.inc" role="test" />
    <file name="tests/get_included_files_inc3.inc" role="test" />
+   <file name="tests/ghbug176.phpt" role="test" />
    <file name="tests/iterator_001.phpt" role="test" />
    <file name="tests/iterator_002.phpt" role="test" />
    <file name="tests/iterator_003.phpt" role="test" />
@@ -68,6 +69,7 @@
    <file name="tests/server_test.inc" role="test" />
    <file name="tests/skipif.inc" role="test" />
    <file name="tests/data/abc.data" role="test" />
+   <file name="tests/bad/abc.data" role="test" />
    <file name="apc_api.h" role="src" />
    <file name="apc_bin_api.h" role="src" />
    <file name="apc_bin.c" role="src" />
