@@ -1499,16 +1499,16 @@ static APC_HOTSPOT void my_copy_zval(zval* dst, const zval* src, apc_context_t* 
     case IS_CONSTANT:
     case IS_STRING:	
 		if (ctxt->copy == APC_COPY_OUT) {
-			ZVAL_COPY(dst, src);
+			ZVAL_DUP(dst, src);
 		} else {
-			Z_TYPE_INFO_P(dst) = IS_STRING;
+			Z_TYPE_INFO_P(dst) = IS_STRING_EX;
 			Z_STR_P(dst) = apc_pstrcpy(Z_STR_P(src), pool);
 		}
         break;
 
     case IS_ARRAY:
         if(ctxt->serializer == NULL) {
-            Z_ARRVAL_P(dst) = my_copy_hashtable(Z_ARRVAL_P(src), ctxt);
+			Z_ARRVAL_P(dst) = my_copy_hashtable(Z_ARRVAL_P(src), ctxt);
             break;
         }
 
