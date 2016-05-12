@@ -36,7 +36,7 @@
  <notes>
 - fix possible memory leak
 - fix gh#168 drop trying to return strings from shm
-- do not create entries when serialization fails
+- fix gh#170 do not create entries when serialization fails
  </notes>
  <contents>
   <dir name="/">
