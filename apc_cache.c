@@ -1558,7 +1558,6 @@ PHP_APCU_API zval* apc_cache_store_zval(zval* dst, const zval* src, apc_context_
     }
 
 	if (EG(exception)) {
-		zval_ptr_dtor(dst);
 		return NULL;
 	}
 
