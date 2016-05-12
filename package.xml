@@ -22,10 +22,10 @@
   <email>remi@php.net</email>
   <active>yes</active>
  </lead>
- <date>2016-01-15</date>
- <time>14:00:00</time>
+ <date>2016-05-12</date>
+ <time>12:00:00</time>
  <version>
-  <release>5.1.3</release>
+  <release>5.1.4</release>
   <api>5.1.2</api>
  </version>
  <stability>
@@ -34,9 +34,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- fixed macro using interlocked increment in Windows
-- fix gh#158 apc_inc() with negative step value hangs the process
-- fix gh#164 apc_inc() can take minutes with huge step value
+- fix possible memory leak
+- fix gh#168 drop trying to return strings from shm
+- do not create entries when serialization fails
  </notes>
  <contents>
   <dir name="/">
@@ -56,6 +56,7 @@
     <file name="apc_012.phpt" role="test" />
     <file name="apc_013_exists.phpt" role="test" />
     <file name="apc_014_store_ref.phpt" role="test" />
+    <file name="apc_015.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
     <file name="apc54_018.phpt" role="test" />
     <file name="apc_entry_001.phpt" role="test" />
@@ -66,6 +67,7 @@
     <file name="get_included_files_inc2.inc" role="test" />
     <file name="get_included_files_inc3.inc" role="test" />
     <file name="ghbug176.phpt" role="test" />
+    <file name="ghbug168.phpt" role="test" />
     <file name="iterator_001.phpt" role="test" />
     <file name="iterator_002.phpt" role="test" />
     <file name="iterator_003.phpt" role="test" />
@@ -132,7 +134,7 @@
     <min>7.0.0-dev</min>
    </php>
    <pearinstaller>
-    <min>1.4.0b1</min>
+    <min>1.10</min>
    </pearinstaller>
   </required>
  </dependencies>
@@ -141,6 +143,59 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2016-01-15</date>
+   <version>
+    <release>5.1.3</release>
+    <api>5.1.2</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- fixed macro using interlocked increment in Windows
+- fix gh#158 apc_inc() with negative step value hangs the process
+- fix gh#164 apc_inc() can take minutes with huge step value
+   </notes>
+  </release>
+  <release>
+   <date>2015-12-02</date>
+   <version>
+    <release>5.1.2</release>
+    <api>5.1.2</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- be wholly consistent with APC in use of atomics
+   </notes>
+  </release>
+  <release>
+   <date>2015-11-20</date>
+   <version>
+    <release>5.1.0</release>
+    <api>5.1.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- PHP 7 compatibility
+- provide APC compatibility in "apc" optional extension
+- move APCIterator to APC compatibility extension
+- add APCuIterator without cache argument
+- drop apcu_bin_* functions
+- add apcu_entry(key, callback, ttl) function
+- fix race on refcount of entry when using rwlocks (or on windows)
+   </notes>
+  </release>
   <release>
    <date>2014-10-11</date>
    <time>17:02:21</time>
