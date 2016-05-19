@@ -1093,7 +1093,7 @@ EOB;
 	if (!$rss) {
 		echo '<tr class="td-last center"><td>Unable to fetch version information.</td></tr>';
 	} else {
-		$apcversion = phpversion('apc');
+		$apcversion = phpversion('apcu');
 
 		preg_match('!<title>APCu ([0-9.]+)</title>!', $rss, $match);
 		echo '<tr class="tr-0 center"><td>';
