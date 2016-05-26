@@ -1,5 +1,8 @@
 --TEST--
 gh bug #168
+--INI--
+apc.enabled=1
+apc.enable_cli=1
 --FILE--
 <?php
 apcu_store('prop', 'A');
