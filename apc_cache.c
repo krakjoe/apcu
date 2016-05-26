@@ -1184,6 +1184,7 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
     apc_pool* pool = ctxt->pool;
     apc_serialize_t serialize = APC_SERIALIZER_NAME(php);
     void *config = NULL;
+	zend_string *serial = NULL;
 
     if(ctxt->serializer) {
         serialize = ctxt->serializer->serialize;
@@ -1195,7 +1196,13 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 	ZVAL_NULL(dst);
 
     if(serialize((unsigned char**)&buf, &buf_len, src, config)) {
-		ZVAL_STR(dst, apc_pstrnew(buf, buf_len, pool));
+		if (!(serial = apc_pstrnew(buf, buf_len, pool))) {	
+			efree(buf);
+
+			return dst;
+		}
+
+		ZVAL_STR(dst, serial);
 		Z_TYPE_INFO_P(dst) = IS_OBJECT;
 		efree(buf);
     }
