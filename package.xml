@@ -25,7 +25,7 @@
  <date>2016-06-07</date>
  <time>12:00:00</time>
  <version>
-  <release>5.1.5</release>
+  <release>5.1.6dev</release>
   <api>5.1.2</api>
  </version>
  <stability>
@@ -34,8 +34,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- fix version check in control panel page (gh#182, lennartwesdijk)
-- do not create null strings, palloc may fail
+-
  </notes>
  <contents>
   <dir name="/">
@@ -142,6 +141,22 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2016-06-07</date>
+   <version>
+    <release>5.1.5</release>
+    <api>5.1.2</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- fix version check in control panel page (gh#182, lennartwesdijk)
+- do not create null strings, palloc may fail
+   </notes>
+  </release>
   <release>
    <date>2016-05-12</date>
    <version>
