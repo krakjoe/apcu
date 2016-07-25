@@ -34,7 +34,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+-fixes gh#188: Fix Segfault in ZTS build when locking (Tyson Andre)
  </notes>
  <contents>
   <dir name="/">
