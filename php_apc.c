@@ -210,6 +210,9 @@ static PHP_MINFO_FUNCTION(apcu)
 /* {{{ PHP_MINIT_FUNCTION(apcu) */
 static PHP_MINIT_FUNCTION(apcu)
 {
+#if defined(ZTS) && defined(COMPILE_DL_APCU)
+    ZEND_TSRMLS_CACHE_UPDATE();
+#endif
     ZEND_INIT_MODULE_GLOBALS(apcu, php_apc_init_globals, NULL);
 
     REGISTER_INI_ENTRIES();
