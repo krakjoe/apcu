@@ -227,15 +227,15 @@ if test "$PHP_APCU" != "no"; then
   fi
 
   AC_ARG_ENABLE(valgrind-checks,
-  [  --disable-valgrind-checks
-                          Disable valgrind based memory checks],
-  [
-    PHP_APCU_VALGRIND=no
-  ], [
-    PHP_APCU_VALGRIND=yes
-    AC_CHECK_HEADER(valgrind/memcheck.h, 
+	AS_HELP_STRING([--disable-valgrind-checks],  [Disable valgrind based memory checks]))
+  AS_IF([test "x$enable_valgrind_checks" != "xno"],
+	[
+	  PHP_APCU_VALGRIND=yes
+	  AC_CHECK_HEADER(valgrind/memcheck.h,
   		[AC_DEFINE([HAVE_VALGRIND_MEMCHECK_H],1, [enable valgrind memchecks])])
-  ])
+	],
+	[ PHP_APCU_VALGRIND=no ]
+  )
 
   apc_sources="apc.c apc_lock.c php_apc.c \
                  apc_cache.c \
