@@ -22,8 +22,8 @@ class MyApc
         $rex = '/^' . preg_quote($name) . '\./';
         $counters = array();
 
-        foreach (new \APCUIterator($rex, APC_ITER_KEY|APC_ITER_VALUE) as $counter) {
-            $counters[$counter['key']] = $counter['value'];
+        foreach (new \APCUIterator($rex, APC_ITER_KEY) as $counter) {
+            $counters[$counter['key']] = 'value';
         }
 
         return $counters;
@@ -44,20 +44,13 @@ class MyApc
 
 $myapc = new MyApc();
 
-$counterName = uniqid();
+$counterName = 'myid';
 $myapc->setCounterName($counterName);
 $myapc->add($counterName.'.test', 1);
 $results = $myapc->getCounters($counterName);
 var_export($results);
 ?>
---EXPECTF--
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-
+--EXPECT--
+array (
+  'myid.test' => 'value',
+)

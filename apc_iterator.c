@@ -50,7 +50,9 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
 	}
 
 	if (APC_ITER_KEY & iterator->format) {
-		add_assoc_str(&item->value, "key", item->key);
+		/* item->key is allocated in shared memory. Return something which is emalloc()ed instead. */
+		zend_string *key_dup = zend_string_init(ZSTR_VAL(item->key), ZSTR_LEN(item->key), 0);
+		add_assoc_str(&item->value, "key", key_dup);
 	}
 
     if (APC_ITER_VALUE & iterator->format) {
@@ -442,7 +444,7 @@ PHP_METHOD(apc_iterator, key) {
     item = apc_stack_get(iterator->stack, iterator->stack_idx);
 
     if (item->key) {
-        RETURN_STR(item->key);
+        RETURN_STR(zend_string_init(ZSTR_VAL(item->key), ZSTR_LEN(item->key), 0));
     } else {
         RETURN_LONG(iterator->key_idx);
     }
