@@ -26,7 +26,7 @@
 # ifndef APC_SPIN_LOCK
 #   ifndef APC_FCNTL_LOCK
 #       ifdef APC_LOCK_RECURSIVE
-#           define APC_LOCK_ROBUST 1
+#           define APC_LOCK_ROBUST APC_ROBUST_LOCK_AVAILABLE
 #       endif
 #   endif
 # endif
