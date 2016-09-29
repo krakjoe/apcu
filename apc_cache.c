@@ -993,7 +993,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, zend_u
 {
     apc_cache_slot_t** slot;
 	
-    zend_bool retval = 0;
+    zend_bool retval = 0, bailout = 0;
     zend_ulong h, s;
 
     if(apc_cache_busy(cache TSRMLS_CC))
@@ -1049,10 +1049,16 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, zend_u
 			/* set next slot */
 		    slot = &(*slot)->next;
 		}
+	} zend_catch {
+		bailout = 1;
 	} zend_end_try();
 
 	/* unlock header */
 	APC_UNLOCK(cache->header);
+
+	if (bailout) {
+		zend_bailout();
+	}
 
     return 0;
 }
@@ -1532,6 +1538,7 @@ PHP_APCU_API zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_D
     zval *slots = NULL;
     apc_cache_slot_t* p;
     zend_ulong i, j;
+	zend_bool bailout = 0;
 
     if (!cache) {
         return NULL;
@@ -1599,10 +1606,16 @@ PHP_APCU_API zval* apc_cache_info(apc_cache_t* cache, zend_bool limited TSRMLS_D
 		    add_assoc_zval(info, "deleted_list", gc);
 		    add_assoc_zval(info, "slot_distribution", slots);
 		}
+	} zend_catch {
+		bailout = 1;
 	} zend_end_try();
 
 	/* unlock header */
 	APC_RUNLOCK(cache->header);
+
+	if (bailout) {
+		zend_bailout();
+	}
 
     return info;
 }
@@ -1617,7 +1630,8 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
     zval *stat;
     apc_cache_slot_t** slot;
 	zend_ulong h, s;
-    
+    zend_bool bailout = 0;
+
 	/* calculate hash and slot */
 	apc_cache_hash_slot(cache, strkey, keylen, &h, &s);
 	
@@ -1650,10 +1664,16 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
 			/* next */
 			slot = &(*slot)->next;		
 		}
+	} zend_catch {
+		bailout = 1;
 	} zend_end_try();
 
     APC_RUNLOCK(cache->header);
     
+	if (bailout) {
+		zend_bailout();
+	}
+
     return stat;
 }
 

@@ -227,6 +227,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
     apc_cache_slot_t **slot;
     apc_iterator_item_t *item;
     time_t t;
+	zend_bool bailout = 0;
 
     t = apc_time();
 
@@ -253,11 +254,18 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator TSRMLS_DC) {
 		    }
 		    iterator->slot_idx++;
 		}
+	} zend_catch {
+		bailout = 1;
 	} zend_end_try();
 
 	APC_RUNLOCK(apc_user_cache->header);
 
     iterator->stack_idx = 0;
+
+	if (bailout) {
+		zend_bailout();
+	}
+
     return count;
 }
 /* }}} */
@@ -267,6 +275,7 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
     int count=0;
     apc_cache_slot_t **slot;
     apc_iterator_item_t *item;
+	zend_bool bailout = 0;
 
 	APC_RLOCK(apc_user_cache->header);
     
@@ -287,11 +296,17 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
 		    }
 		    slot = &(*slot)->next;
 		}
+	} zend_catch {
+		bailout = 1;
 	} zend_end_try();
 
     iterator->slot_idx += count;
     iterator->stack_idx = 0;
 	APC_RUNLOCK(apc_user_cache->header);
+
+	if (bailout) {
+		zend_bailout();
+	}
 
     return count;
 }
@@ -301,7 +316,8 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
 static void apc_iterator_totals(apc_iterator_t *iterator TSRMLS_DC) {
     apc_cache_slot_t **slot;
     int i;
-	
+	zend_bool bailout = 0;
+
 	APC_RLOCK(apc_user_cache->header);
 
     zend_try {
@@ -316,11 +332,17 @@ static void apc_iterator_totals(apc_iterator_t *iterator TSRMLS_DC) {
 		        slot = &(*slot)->next;
 		    }
 		}
+	} zend_catch {
+		bailout = 1;	
 	} zend_end_try();
 
 	APC_RUNLOCK(apc_user_cache->header);
 
     iterator->totals_flag = 1;
+
+	if (bailout) {
+		zend_bailout();
+	}
 }
 /* }}} */
 
