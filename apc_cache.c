@@ -747,7 +747,9 @@ PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache,
 
 	/* lock header */
 	APC_LOCK(cache->header);
-	
+
+	/* @TODO(krakjoe) this code using goto means we can't use zend_try here */
+
 	/* process deleted list  */
     apc_cache_gc(cache TSRMLS_CC);
 
@@ -1006,47 +1008,49 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, char *strkey, zend_u
 	/* lock header */
 	APC_LOCK(cache->header);
 
-	/* find head */
-    slot = &cache->slots[s];
+	zend_try {
+		/* find head */
+		slot = &cache->slots[s];
 
-    while (*slot) {
-		/* check for a match by hash and identifier */
-        if ((h == (*slot)->key.h) &&
-            !memcmp((*slot)->key.str, strkey, keylen)) {
-			/* attempt to perform update */
-            switch(Z_TYPE_P((*slot)->value->val) & ~IS_CONSTANT_TYPE_MASK) {
-                case IS_ARRAY:
-                case IS_OBJECT:
-                {
-                    if(cache->serializer) {
-                        retval = 0;
-                        break;
-                    } else {
-                        /* fall through */
-                    }
-                }
-                /* fall through */
-                default:
-                {
-					/* executing update */
-                    retval = updater(
-						cache, (*slot)->value, data);
+		while (*slot) {
+			/* check for a match by hash and identifier */
+		    if ((h == (*slot)->key.h) &&
+		        !memcmp((*slot)->key.str, strkey, keylen)) {
+				/* attempt to perform update */
+		        switch(Z_TYPE_P((*slot)->value->val) & ~IS_CONSTANT_TYPE_MASK) {
+		            case IS_ARRAY:
+		            case IS_OBJECT:
+		            {
+		                if(cache->serializer) {
+		                    retval = 0;
+		                    break;
+		                } else {
+		                    /* fall through */
+		                }
+		            }
+		            /* fall through */
+		            default:
+		            {
+						/* executing update */
+		                retval = updater(
+							cache, (*slot)->value, data);
 
-					/* set modified time */
-                    (*slot)->key.mtime = apc_time();
-                }
-                break;
-            }
-			/* unlock header */
-			APC_UNLOCK(cache->header);
+						/* set modified time */
+		                (*slot)->key.mtime = apc_time();
+		            }
+		            break;
+		        }
+				/* unlock header */
+				APC_UNLOCK(cache->header);
 
-            return retval;
-        }
+		        return retval;
+		    }
 
-		/* set next slot */
-        slot = &(*slot)->next;
-	}
-	
+			/* set next slot */
+		    slot = &(*slot)->next;
+		}
+	} zend_end_try();
+
 	/* unlock header */
 	APC_UNLOCK(cache->header);
 
@@ -1623,29 +1627,31 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache,
     /* read lock header */
 	APC_RLOCK(cache->header);
 
-	/* find head */
-	slot = &cache->slots[s];
+	zend_try {
+		/* find head */
+		slot = &cache->slots[s];
 
-	while (*slot) {
-		/* check for a matching key by has and identifier */
-	    if ((h == (*slot)->key.h) && !memcmp((*slot)->key.str, strkey, keylen)) {
-            array_init(stat);
-            
-            add_assoc_long(stat, "hits",  (*slot)->nhits);
-            add_assoc_long(stat, "access_time", (*slot)->atime);
-            add_assoc_long(stat, "mtime", (*slot)->key.mtime);
-            add_assoc_long(stat, "creation_time", (*slot)->ctime);
-            add_assoc_long(stat, "deletion_time", (*slot)->dtime);
-	        add_assoc_long(stat, "ttl",   (*slot)->value->ttl);
-	        add_assoc_long(stat, "refs",  (*slot)->value->ref_count);
-	        
-	        break;
-	    }
+		while (*slot) {
+			/* check for a matching key by has and identifier */
+			if ((h == (*slot)->key.h) && !memcmp((*slot)->key.str, strkey, keylen)) {
+		        array_init(stat);
+		        
+		        add_assoc_long(stat, "hits",  (*slot)->nhits);
+		        add_assoc_long(stat, "access_time", (*slot)->atime);
+		        add_assoc_long(stat, "mtime", (*slot)->key.mtime);
+		        add_assoc_long(stat, "creation_time", (*slot)->ctime);
+		        add_assoc_long(stat, "deletion_time", (*slot)->dtime);
+			    add_assoc_long(stat, "ttl",   (*slot)->value->ttl);
+			    add_assoc_long(stat, "refs",  (*slot)->value->ref_count);
+			    
+			    break;
+			}
 
-		/* next */
-	    slot = &(*slot)->next;		
-	}
-    
+			/* next */
+			slot = &(*slot)->next;		
+		}
+	} zend_end_try();
+
     APC_RUNLOCK(cache->header);
     
     return stat;
