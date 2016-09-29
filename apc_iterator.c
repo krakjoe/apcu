@@ -50,7 +50,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
 	}
 
 	if (APC_ITER_KEY & iterator->format) {
-		add_assoc_str(&item->value, "key", item->key);
+		add_assoc_str(&item->value, "key", zend_string_copy(item->key));
 	}
 
     if (APC_ITER_VALUE & iterator->format) {
@@ -442,7 +442,7 @@ PHP_METHOD(apc_iterator, key) {
     item = apc_stack_get(iterator->stack, iterator->stack_idx);
 
     if (item->key) {
-        RETURN_STR(item->key);
+        RETURN_STR_COPY(item->key);
     } else {
         RETURN_LONG(iterator->key_idx);
     }
