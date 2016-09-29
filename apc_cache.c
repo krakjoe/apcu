@@ -1613,11 +1613,6 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
             return NULL;
         break;
 
-    case IS_CALLABLE:
-        /* XXX implement this */
-        assert(0);
-        break;
-
     default:
         assert(0);
     }
