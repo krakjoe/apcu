@@ -66,6 +66,7 @@
     <file name="get_included_files_inc3.inc" role="test" />
     <file name="ghbug176.phpt" role="test" />
     <file name="ghbug168.phpt" role="test" />
+    <file name="ghbug185.phpt" role="test" />
     <file name="iterator_001.phpt" role="test" />
     <file name="iterator_002.phpt" role="test" />
     <file name="iterator_003.phpt" role="test" />
