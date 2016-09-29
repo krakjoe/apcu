@@ -1555,6 +1555,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 		}
 	}
 
+    /* Handle copying types types listed in https://wiki.php.net/phpng-int */
     switch (Z_TYPE_P(src)) {
     case IS_RESOURCE:
     case IS_TRUE:
@@ -1604,13 +1605,10 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
             return NULL;
         break;
 
-    case IS_CALLABLE:
-        /* XXX implement this */
-        assert(0);
-        break;
-
     default:
-        assert(0);
+        /* This should never happen, unless we are passed corrupt data or new types are added */
+        zend_error(E_WARNING, "APCU: my_copy_zval (ctx->copy = %d): encountered unrecognized zval type %d", (int) ctxt->copy, (int) Z_TYPE_P(src));
+        ZVAL_NULL(dst);
     }
 
 	if (Z_REFCOUNTED_P(dst) && ctxt->copied.nTableSize) {
