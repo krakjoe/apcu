@@ -1234,7 +1234,10 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 		}
 
 		ZVAL_STR(dst, serial);
-		Z_TYPE_INFO_P(dst) = IS_OBJECT;
+		/* Give this the type of an object/array, and the same type flags as a string. */
+		/* The only necessary one is probably IS_TYPE_REFCOUNTED - (We check Z_REFCOUNTED_P when de-duplicating serialized values. */
+		/* Probably safe - When copying strings into shared memory, the code gives it type IS_STRING_EX, */
+		Z_TYPE_INFO_P(dst) = Z_TYPE_P(src) | ((IS_TYPE_REFCOUNTED | IS_TYPE_COPYABLE) << Z_TYPE_FLAGS_SHIFT);
 		efree(buf);
     }
 
@@ -1534,6 +1537,7 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 }
 
 /* {{{ my_copy_zval */
+/* This function initializes *dst (temporary zval with request lifetime) with the (possibly serialized) contents of the serialized value in *src */
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt)
 {
     apc_pool* pool = ctxt->pool;
@@ -1541,8 +1545,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
     assert(dst != NULL);
     assert(src != NULL);
 
-	memcpy(dst, src, sizeof(zval));
-	
+	/* If src was already unserialized, then make dst a copy of the unserialization of src */
 	if (Z_REFCOUNTED_P(src)) {
 		if (zend_hash_num_elements(&ctxt->copied)) {
             zval *rc = zend_hash_index_find(
@@ -1555,6 +1558,9 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 		}
 	}
 
+	/* Copy the raw bytes of the type, value, and type flags */
+	memcpy(dst, src, sizeof(zval));
+
     switch (Z_TYPE_P(src)) {
     case IS_RESOURCE:
     case IS_TRUE:
@@ -1562,6 +1568,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
     case IS_LONG:
     case IS_DOUBLE:
     case IS_NULL:
+        /* No additional work for scalars, they aren't ref counted */
         break;
 
 	case IS_REFERENCE:
@@ -1597,6 +1604,8 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 
     case IS_OBJECT:
         if (ctxt->copy == APC_COPY_IN) {
+            /* For objects and arrays, their pointer points to a serialized string instead of a zend_array or zend_object. */
+            /* Unserialize that, and on success, give dst the default type flags for an object/array (We check Z_REFCOUNTED_P below). */
             dst = my_serialize_object(dst, src, ctxt);
         } else
             dst = my_unserialize_object(dst, src, ctxt);
