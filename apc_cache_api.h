@@ -387,7 +387,7 @@ PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** s
 *
 * @see https://github.com/krakjoe/apcu/issues/142
 */
-PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zval *return_value);
+PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value);
 
 #endif
 

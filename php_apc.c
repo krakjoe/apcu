@@ -834,12 +834,13 @@ PHP_FUNCTION(apcu_entry) {
 	zend_fcall_info fci = empty_fcall_info;
 	zend_fcall_info_cache fcc = empty_fcall_info_cache;
 	zend_long ttl = 0L;
+	zend_long now = apc_time();
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "zf|l", &key, &fci, &fcc, &ttl) != SUCCESS) {
 		return;
 	}
 	
-	apc_cache_entry(apc_user_cache, key, &fci, &fcc, ttl, return_value);	
+	apc_cache_entry(apc_user_cache, key, &fci, &fcc, ttl, now, return_value);	
 }
 /* }}} */
 

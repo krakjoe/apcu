@@ -1815,7 +1815,7 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name) {
 } /* }}} */
 
 
-PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zval *return_value) {
+PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value) {
 	apc_cache_entry_t *entry = NULL;
 	
 	if(!cache || apc_cache_busy(cache)) {
@@ -1835,8 +1835,7 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 	APC_LOCK(cache->header);
 #endif
 
-	entry = apc_cache_find_internal(
-		cache, Z_STR_P(key), ttl, 0);
+	entry = apc_cache_find_internal(cache, Z_STR_P(key), now, 0);
 	if (!entry) {
 		int result = 0;
 
@@ -1855,7 +1854,7 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 					cache, Z_STR_P(key), return_value, (uint32_t) ttl, 1);
 			}
 		}
-	} else apc_cache_fetch_internal(cache, Z_STR_P(key), entry, ttl, &return_value);
+	} else apc_cache_fetch_internal(cache, Z_STR_P(key), entry, now, &return_value);
 
 #ifndef APC_LOCK_RECURSIVE
 	if (--APCG(recursion) == 0) {
