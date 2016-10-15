@@ -942,22 +942,15 @@ PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache,
                                         zend_bool exclusive)
 {
 	zend_bool result = 0;
-	zend_bool bailout = 0;
-
+	
     APC_LOCK(cache->header);
 
 	zend_try {
 		result = apc_cache_insert_internal(
 			cache, key, value, ctxt, t, exclusive);
-	} zend_catch {
-		bailout = 1;
 	} zend_end_try();
 
 	APC_UNLOCK(cache->header);
-
-	if (bailout) {
-		zend_bailout();
-	}
 
 	return result;	
 }
@@ -1066,7 +1059,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
     apc_cache_slot_t** slot;
     apc_cache_entry_t tmp_entry;
 	
-    zend_bool retval = 0, bailout = 0;
+    zend_bool retval = 0;
     zend_ulong h, s;
 
     if(apc_cache_busy(cache))
@@ -1120,16 +1113,10 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 			/* set next slot */
 		    slot = &(*slot)->next;
 		}
-	} zend_catch {
-		bailout = 1;
 	} zend_end_try();
 
 	/* unlock header */
 	APC_UNLOCK(cache->header);
-
-	if (bailout) {
-		zend_bailout();
-	}
 
 	/* failed to find matching entry, create it */
 	ZVAL_LONG(&tmp_entry.val, 0);
@@ -1730,7 +1717,6 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
     zval slots;
     apc_cache_slot_t* p;
     zend_ulong i, j;
-	zend_bool bailout = 0;
 
     if (!cache) {
 		ZVAL_NULL(&info);
@@ -1754,11 +1740,11 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
 		add_assoc_long(&info, "start_time", cache->header->stime);
 		add_assoc_double(&info, "mem_size", (double)cache->header->mem_size);
 
-#if APC_MMAP
+	#if APC_MMAP
 		add_assoc_stringl(&info, "memory_type", "mmap", sizeof("mmap")-1);
-#else
+	#else
 		add_assoc_stringl(&info, "memory_type", "IPC shared", sizeof("IPC shared")-1);
-#endif
+	#endif
 
 		if (!limited) {
 		    /* For each hashtable slot */
@@ -1791,16 +1777,10 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
 		    add_assoc_zval(&info, "slot_distribution", &slots);
 		}
 
-	} zend_catch {
-		bailout = 1;
 	} zend_end_try();
 
 	/* unlock header */
 	APC_RUNLOCK(cache->header);
-
-	if (bailout) {
-		zend_bailout();
-	}
 
     return info;
 }
@@ -1812,8 +1792,7 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
 PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *stat) {
     apc_cache_slot_t** slot;
 	zend_ulong h, s;
-    zend_bool bailout = 0;
-
+    
 	/* calculate hash and slot */
 	apc_cache_hash_slot(cache, key, &h, &s);
 
@@ -1844,16 +1823,10 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *st
 			/* next */
 			slot = &(*slot)->next;		
 		}
-	} zend_catch {
-		bailout = 1;
 	} zend_end_try();
 
     APC_RUNLOCK(cache->header);
-
-	if (bailout) {
-		zend_bailout();
-	}
-
+    
     return stat;
 }
 
@@ -1922,8 +1895,7 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name) {
 
 PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value) {
 	apc_cache_entry_t *entry = NULL;
-	zend_bool bailout = 0;
-
+	
 	if(!cache || apc_cache_busy(cache)) {
         return;
     }
@@ -1962,8 +1934,6 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 				}
 			}
 		} else apc_cache_fetch_internal(cache, Z_STR_P(key), entry, now, &return_value);
-	} zend_catch {
-		bailout = 1;
 	} zend_end_try();
 
 #ifndef APC_LOCK_RECURSIVE
@@ -1973,10 +1943,6 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 #else
 	APC_UNLOCK(cache->header);
 #endif
-
-	if (bailout) {
-		zend_bailout();
-	}
 }
 
 /*
