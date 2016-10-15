@@ -1721,58 +1721,54 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
     /* read lock header */
     APC_RLOCK(cache->header);
 
-	zend_try {
+    array_init(&info);
+    add_assoc_long(&info, "num_slots", cache->nslots);
+    add_assoc_long(&info, "ttl", cache->ttl);
+    add_assoc_double(&info, "num_hits", (double)cache->header->nhits);
+    add_assoc_double(&info, "num_misses", (double)cache->header->nmisses);
+    add_assoc_double(&info, "num_inserts", (double)cache->header->ninserts);
+    add_assoc_long(&info,   "num_entries", cache->header->nentries);
+    add_assoc_double(&info, "expunges", (double)cache->header->nexpunges);
+    add_assoc_long(&info, "start_time", cache->header->stime);
+    add_assoc_double(&info, "mem_size", (double)cache->header->mem_size);
 
-		array_init(&info);
-		add_assoc_long(&info, "num_slots", cache->nslots);
-		add_assoc_long(&info, "ttl", cache->ttl);
-		add_assoc_double(&info, "num_hits", (double)cache->header->nhits);
-		add_assoc_double(&info, "num_misses", (double)cache->header->nmisses);
-		add_assoc_double(&info, "num_inserts", (double)cache->header->ninserts);
-		add_assoc_long(&info,   "num_entries", cache->header->nentries);
-		add_assoc_double(&info, "expunges", (double)cache->header->nexpunges);
-		add_assoc_long(&info, "start_time", cache->header->stime);
-		add_assoc_double(&info, "mem_size", (double)cache->header->mem_size);
+#if APC_MMAP
+    add_assoc_stringl(&info, "memory_type", "mmap", sizeof("mmap")-1);
+#else
+    add_assoc_stringl(&info, "memory_type", "IPC shared", sizeof("IPC shared")-1);
+#endif
 
-	#if APC_MMAP
-		add_assoc_stringl(&info, "memory_type", "mmap", sizeof("mmap")-1);
-	#else
-		add_assoc_stringl(&info, "memory_type", "IPC shared", sizeof("IPC shared")-1);
-	#endif
+    if (!limited) {
+        /* For each hashtable slot */
+        array_init(&list);
+        array_init(&slots);
 
-		if (!limited) {
-		    /* For each hashtable slot */
-		    array_init(&list);
-		    array_init(&slots);
+        for (i = 0; i < cache->nslots; i++) {
+            p = cache->slots[i];
+            j = 0;
+            for (; p != NULL; p = p->next) {
+                zval link = apc_cache_link_info(cache, p);
+                add_next_index_zval(&list, &link);
+                j++;
+            }
+            if(j != 0) {
+                add_index_long(&slots, (ulong)i, j);
+            }
+        }
 
-		    for (i = 0; i < cache->nslots; i++) {
-		        p = cache->slots[i];
-		        j = 0;
-		        for (; p != NULL; p = p->next) {
-		            zval link = apc_cache_link_info(cache, p);
-		            add_next_index_zval(&list, &link);
-		            j++;
-		        }
-		        if(j != 0) {
-		            add_index_long(&slots, (ulong)i, j);
-		        }
-		    }
+        /* For each slot pending deletion */
+        array_init(&gc);
 
-		    /* For each slot pending deletion */
-		    array_init(&gc);
-
-		    for (p = cache->header->gc; p != NULL; p = p->next) {
-		        zval link = apc_cache_link_info(cache, p);
-		        add_next_index_zval(&gc, &link);
-		    }
-		    
-		    add_assoc_zval(&info, "cache_list", &list);
-		    add_assoc_zval(&info, "deleted_list", &gc);
-		    add_assoc_zval(&info, "slot_distribution", &slots);
-		}
-
-	} zend_end_try();
-
+        for (p = cache->header->gc; p != NULL; p = p->next) {
+            zval link = apc_cache_link_info(cache, p);
+            add_next_index_zval(&gc, &link);
+        }
+        
+        add_assoc_zval(&info, "cache_list", &list);
+        add_assoc_zval(&info, "deleted_list", &gc);
+        add_assoc_zval(&info, "slot_distribution", &slots);
+    }
+	
 	/* unlock header */
 	APC_RUNLOCK(cache->header);
 
