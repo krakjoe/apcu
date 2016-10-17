@@ -59,6 +59,11 @@
 	EG(bailout) = zb;                      \
 }
 
+#define php_apc_try_end(early) {           \
+	EG(bailout) = zb;                      \
+	early                                  \
+}
+
 typedef void* (*ht_copy_fun_t)(void*, void*, apc_context_t*);
 typedef int (*ht_check_copy_fun_t)(Bucket*, va_list);
 
@@ -1116,10 +1121,11 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 		            }
 		            break;
 		        }
-				/* unlock header */
-				APC_UNLOCK(cache->header);
 
-		        return retval;
+				php_apc_try_end({
+					APC_UNLOCK(cache->header);
+					return retval;
+				});
 		    }
 
 			/* set next slot */
