@@ -41,29 +41,6 @@
 #include "ext/standard/php_var.h"
 #include "zend_smart_str.h"
 
-#define php_apc_try(begin, block, end) {   \
-	JMP_BUF *zb = EG(bailout);             \
-	JMP_BUF ab;                            \
-	                                       \
-	EG(bailout) = &ab;                     \
-	                                       \
-	begin;                                 \
-	if (SETJMP(ab) == SUCCESS) {           \
-		block                              \
-	} else {                               \
-		end;                               \
-		EG(bailout) = zb;                  \
-		zend_bailout();                    \
-	}                                      \
-	end;                                   \
-	EG(bailout) = zb;                      \
-}
-
-#define php_apc_try_end(early) {           \
-	EG(bailout) = zb;                      \
-	early                                  \
-}
-
 typedef void* (*ht_copy_fun_t)(void*, void*, apc_context_t*);
 typedef int (*ht_check_copy_fun_t)(Bucket*, va_list);
 
