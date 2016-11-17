@@ -22,10 +22,10 @@
   <email>remi@php.net</email>
   <active>yes</active>
  </lead>
- <date>2016-10-06</date>
- <time>07:00:00</time>
+ <date>2016-10-21</date>
+ <time>14:00:00</time>
  <version>
-  <release>5.1.6</release>
+  <release>5.1.7</release>
   <api>5.1.2</api>
  </version>
  <stability>
@@ -34,12 +34,8 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- fixes gh#19:  Hung apaches on pthread wrlocks
-- fixes gh#188: Fix Segfault in ZTS build when locking (Tyson Andre)
-- fixes gh#194: apcu_entry ttl not working
-- fixes gh#189: SegFault in apc_copy_zval
-- fixes gh#185: zend_mm_heap corrupted
-- fixes gh#190: memory leak/failed check for duplicates
+- fixes gh#19: hung apaches on pthread wrlocks
+- fixes gh#203: segfaults in bailout / longjmp
  </notes>
  <contents>
   <dir name="/">
@@ -149,6 +145,26 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2016-10-06</date>
+   <version>
+    <release>5.1.6</release>
+    <api>5.1.2</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- fixes gh#19:  Hung apaches on pthread wrlocks
+- fixes gh#188: Fix Segfault in ZTS build when locking (Tyson Andre)
+- fixes gh#194: apcu_entry ttl not working
+- fixes gh#189: SegFault in apc_copy_zval
+- fixes gh#185: zend_mm_heap corrupted
+- fixes gh#190: memory leak/failed check for duplicates
+   </notes>
+  </release>
   <release>
    <date>2016-06-07</date>
    <version>

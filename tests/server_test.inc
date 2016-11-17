@@ -1,7 +1,7 @@
 <?php
 /* based on sapi/cli/tests/php_cli_server.inc */
 define ("PHP_CLI_SERVER_HOSTNAME", "127.0.0.1");
-define ("PHP_CLI_SERVER_PORT", 8000+PHP_INT_SIZE);
+define ("PHP_CLI_SERVER_PORT", 8000 + PHP_INT_SIZE*100 + PHP_MAJOR_VERSION*10 + PHP_MINOR_VERSION);
 define ("PHP_CLI_SERVER_ADDRESS", PHP_CLI_SERVER_HOSTNAME.":".PHP_CLI_SERVER_PORT);
 
 /* XXX incapsulate all this globals into a class when have a favourable minute */
