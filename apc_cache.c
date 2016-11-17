@@ -1685,7 +1685,7 @@ static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_slot_t* p)
 
     array_init(&link);
 
-    add_assoc_str(&link, "info", p->key.str);
+    add_assoc_str(&link, "info", zend_string_copy(p->key.str));
     add_assoc_long(&link, "ttl", p->value->ttl);
 
     add_assoc_double(&link, "num_hits", (double)p->nhits);
