@@ -222,7 +222,11 @@ static PHP_MINIT_FUNCTION(apcu)
 	
     /* Disable APC in cli mode unless overridden by apc.enable_cli */
     if (!APCG(enable_cli) && !strcmp(sapi_module.name, "cli")) {
-        APCG(enabled) = 0;
+		/* disable cache gracefully using INI */
+		zend_string *ini = zend_string_init(
+			"apc.enabled", sizeof("apc.enabled")-1, 0);
+		zend_alter_ini_entry_chars(ini, "0", sizeof("0")-1, PHP_INI_SYSTEM, PHP_INI_STAGE_STARTUP);
+		zend_string_release(ini);
     }
 
 	/* only run initialization if APC is enabled */
