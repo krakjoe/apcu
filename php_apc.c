@@ -224,8 +224,8 @@ static PHP_MINIT_FUNCTION(apcu)
     if (!APCG(enable_cli) && !strcmp(sapi_module.name, "cli")) {
 		/* disable cache gracefully using INI */
 		zend_string *ini = zend_string_init(
-			"apc.enabled", sizeof("apc.enabled")-1, 0);
-		zend_alter_ini_entry_chars(ini, "0", sizeof("0")-1, PHP_INI_SYSTEM, PHP_INI_STAGE_RUNTIME);
+			"apc.enabled", sizeof("apc.enabled")-1, 1);
+		zend_alter_ini_entry_chars(ini, "0", sizeof("0")-1, PHP_INI_SYSTEM, PHP_INI_STAGE_STARTUP);
 		zend_string_release(ini);
     }
 
