@@ -39,6 +39,8 @@ build_script:
     mkdir C:\projects\apcu\bin\modules.d
 
     echo extension=php_apcu.dll > C:\projects\apcu\bin\modules.d\apcu.ini
+
+    C:\projects\apcu\bin\php.exe -m
 test_script:
 - cmd: C:\projects\apcu\bin\php.exe -doutput_buffering=0 run-tests.php ext\apcu -p C:\projects\apcu\bin\php.exe -q --show-diff
 artifacts:
