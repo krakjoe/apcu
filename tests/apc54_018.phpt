@@ -3,6 +3,7 @@ APC: Bug #59938 APCIterator fails with large user cache
 --SKIPIF--
 <?php
     require_once(dirname(__FILE__) . '/skipif.inc'); 
+	if (PHP_OS == "WINNT") die("skip: not on windows");
 ?>
 --FILE--
 <?php
