@@ -14,7 +14,7 @@ build_script:
 
     C:\projects\php-sdk\bin\phpsdk_setvars.bat
 
-    git clone https://github.com/php/php-src C:\projects\php-src
+    git clone --depth=1 https://github.com/php/php-src C:\projects\php-src
 
     mkdir C:\projects\php-src\ext\apcu
 

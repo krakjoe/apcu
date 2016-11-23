@@ -9,6 +9,7 @@ APCu is APC stripped of opcode caching.
 See [APCu Backwards Compatibility Module](https://github.com/krakjoe/apcu-bc) which provides a drop in replacement for APC.
 
 [![Build Status](https://travis-ci.org/krakjoe/apcu.svg?branch=master)](https://travis-ci.org/krakjoe/apcu)
+[![Build status](https://ci.appveyor.com/api/projects/status/om63glh4g24gi1p9/branch/master?svg=true)](https://ci.appveyor.com/project/krakjoe/apcu/branch/master)
 
 Documentation
 ============
