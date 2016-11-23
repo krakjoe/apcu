@@ -20,15 +20,15 @@ build_script:
 
     xcopy C:\projects\apcu C:\projects\php-src\ext\apcu /s /e /y
 
-    wget http://windows.php.net/downloads/php-sdk/deps-7.0-vc14-x86.7z
+    wget http://windows.php.net/downloads/php-sdk/deps-7.1-vc14-x86.7z
 
-    7z x -y deps-7.0-vc14-x86.7z -oC:\projects\php-src
+    7z x -y deps-7.1-vc14-x86.7z -oC:\projects\php-src
 
     cd C:\projects\php-src
 
     buildconf.bat
 
-    configure.bat --enable-snapshot-build --enable-debug-pack --disable-zts  --enable-com-dotnet=shared --with-mcrypt=static --without-analyzer --enable-apcu=shared--with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-prefix=C:\projects\apcu\bin --with-php-build=deps
+    configure.bat --enable-snapshot-build --enable-debug-pack --disable-zts --enable-com-dotnet=shared --with-mcrypt=static --without-analyzer --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-prefix=C:\projects\apcu\bin --with-php-build=deps
 
     nmake
 
