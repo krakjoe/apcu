@@ -32,6 +32,8 @@ build_script:
 
     nmake snap
 
+    copy php.ini-development php.ini
+
     cd C:\projects\php-src\Release\php-*
 
     copy php.ini-development php.ini
@@ -57,7 +59,7 @@ build_script:
     php.exe -m
 
     cd C:\projects\php-src\Release\php-*
-	
+
     for %%a in (php.exe) do set fp=%%~dpa
 
     echo %fp%
