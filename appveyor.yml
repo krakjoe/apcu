@@ -76,7 +76,7 @@ build_script:
 
     cd C:\projects\php-src
 test_script:
-- cmd: %fp%php.exe -doutput_buffering=0 run-tests.php ext\apcu -p C:\projects\apcu\bin\php.exe -q --show-diff
+- cmd: %fp%php.exe -doutput_buffering=0 run-tests.php ext\apcu -p %fp%php.exe -q --show-diff
 artifacts:
   - path: bin
     name: master
