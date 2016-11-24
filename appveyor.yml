@@ -46,23 +46,9 @@ build_script:
 
     if not exist C:\projects\apcu\bin\modules.d mkdir C:\projects\apcu\bin\modules.d
 
-    cd C:\projects\php-src\Release
-
-    for %%a in (php.exe) do set fp=%%~dpa
-
-    echo extension_dir = '%fp%' > C:\projects\apcu\bin\modules.d\apcu.ini
-
-    echo extension=php_sysvshm.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
-
-    echo extension=php_apcu.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
-
-    php.exe -m
-
     cd C:\projects\php-src\Release\php-*
 
     for %%a in (php.exe) do set fp=%%~dpa
-
-    echo %fp%
 
     echo extension_dir = '%fp%ext' > C:\projects\apcu\bin\modules.d\apcu.ini
 
@@ -73,6 +59,8 @@ build_script:
     type C:\projects\apcu\bin\modules.d\apcu.ini
 
     php.exe -m
+
+    echo %fp%
 
     set TEST_PHP_EXECUTABLE=%fp%php.exe
 test_script:
