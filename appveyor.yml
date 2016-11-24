@@ -30,9 +30,9 @@ build_script:
 
     configure.bat --enable-snapshot-build --enable-debug-pack --disable-zts --enable-com-dotnet=shared --with-mcrypt=static --without-analyzer --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-prefix=C:\projects\apcu\bin --with-php-build=deps
 
-    nmake
+    nmake snap
 
-    nmake install
+    dir C:\projects\apcu\bin
 
     copy php.ini-development C:\projects\apcu\bin\php.ini
 
