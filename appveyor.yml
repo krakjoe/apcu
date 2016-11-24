@@ -28,21 +28,36 @@ build_script:
 
     buildconf.bat
 
-    configure.bat --enable-snapshot-build --enable-debug-pack --disable-zts --enable-com-dotnet=shared --with-mcrypt=static --without-analyzer --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-prefix=C:\projects\apcu\bin --with-php-build=deps
+    configure.bat --enable-snapshot-build --enable-debug-pack --disable-zts --enable-com-dotnet=shared --with-mcrypt=static --without-analyzer --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-php-build=deps
 
     nmake snap
 
-    dir C:\projects\apcu\bin
+    cd C:\projects\php-src\Release\php-*
 
-    copy php.ini-development C:\projects\apcu\bin\php.ini
+    copy php.ini-development php.ini
+
+    copy php.ini-development ..\php.ini
+
+    cd C:\projects\php-src\Release
 
     mkdir C:\projects\apcu\bin\modules.d
 
     echo extension=php_apcu.dll > C:\projects\apcu\bin\modules.d\apcu.ini
 
-    C:\projects\apcu\bin\php.exe -m
+    php.exe -m
+
+    cd C:\projects\php-src\Release\php-*
+
+    echo extension_dir = 'ext' > C:\projects\apcu\bin\modules.d\apcu.ini
+
+    echo extension=php_sysvshm.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
+
+    echo extension=php_apcu.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
+
+    php.exe -m
+
 test_script:
-- cmd: C:\projects\apcu\bin\php.exe -doutput_buffering=0 run-tests.php ext\apcu -p C:\projects\apcu\bin\php.exe -q --show-diff
+- cmd: php.exe -doutput_buffering=0 run-tests.php ext\apcu -p C:\projects\apcu\bin\php.exe -q --show-diff
 artifacts:
   - path: bin
     name: master
