@@ -38,17 +38,17 @@ build_script:
 
     copy php.ini-development ..\php.ini
 
+    if not exist C:\projects\apcu mkdir C:\projects\apcu
+
+    if not exist C:\projects\apcu\bin mkdir C:\projects\apcu\bin
+
+    if not exist C:\projects\apcu\bin\modules.d mkdir C:\projects\apcu\bin\modules.d
+
     cd C:\projects\php-src\Release
 
-    mkdir C:\projects\apcu\bin\modules.d
+    for %%a in (php.exe) do set fp=%%~dpa
 
-    echo extension=php_apcu.dll > C:\projects\apcu\bin\modules.d\apcu.ini
-
-    php.exe -m
-
-    cd C:\projects\php-src\Release\php-*
-
-    echo extension_dir = 'ext' > C:\projects\apcu\bin\modules.d\apcu.ini
+    echo extension_dir = '%fp%' > C:\projects\apcu\bin\modules.d\apcu.ini
 
     echo extension=php_sysvshm.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
 
@@ -56,8 +56,25 @@ build_script:
 
     php.exe -m
 
+    cd C:\projects\php-src\Release\php-*
+	
+    for %%a in (php.exe) do set fp=%%~dpa
+
+    echo %fp%
+
+    echo extension_dir = '%fp%ext' > C:\projects\apcu\bin\modules.d\apcu.ini
+
+    echo extension=php_sysvshm.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
+
+    echo extension=php_apcu.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
+
+    type C:\projects\apcu\bin\modules.d\apcu.ini
+
+    php.exe -m
+
+    cd C:\projects\php-src
 test_script:
-- cmd: php.exe -doutput_buffering=0 run-tests.php ext\apcu -p C:\projects\apcu\bin\php.exe -q --show-diff
+- cmd: %fp%php.exe -doutput_buffering=0 run-tests.php ext\apcu -p C:\projects\apcu\bin\php.exe -q --show-diff
 artifacts:
   - path: bin
     name: master
