@@ -20,29 +20,51 @@ build_script:
 
     xcopy C:\projects\apcu C:\projects\php-src\ext\apcu /s /e /y
 
-    wget http://windows.php.net/downloads/php-sdk/deps-7.0-vc14-x86.7z
+    wget http://windows.php.net/downloads/php-sdk/deps-7.1-vc14-x86.7z
 
-    7z x -y deps-7.0-vc14-x86.7z -oC:\projects\php-src
+    7z x -y deps-7.1-vc14-x86.7z -oC:\projects\php-src
 
     cd C:\projects\php-src
 
     buildconf.bat
 
-    configure.bat --disable-all --enable-cli --enable-zts --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-prefix=C:\projects\apcu\bin --with-php-build=deps
+    configure.bat --enable-snapshot-build --enable-debug-pack --disable-zts --enable-com-dotnet=shared --with-mcrypt=static --without-analyzer --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-php-build=deps
 
-    nmake
+    nmake snap
 
-    nmake install
+    copy php.ini-development php.ini
 
-    copy php.ini-development C:\projects\apcu\bin\php.ini
+    cd C:\projects\php-src\Release\php-*
 
-    mkdir C:\projects\apcu\bin\modules.d
+    copy php.ini-development php.ini
 
-    echo extension=php_apcu.dll > C:\projects\apcu\bin\modules.d\apcu.ini
+    copy php.ini-development ..\php.ini
 
-    C:\projects\apcu\bin\php.exe -m
+    if not exist C:\projects\apcu mkdir C:\projects\apcu
+
+    if not exist C:\projects\apcu\bin mkdir C:\projects\apcu\bin
+
+    if not exist C:\projects\apcu\bin\modules.d mkdir C:\projects\apcu\bin\modules.d
+
+    cd C:\projects\php-src\Release\php-*
+
+    for %%a in (php.exe) do set fp=%%~dpa
+
+    echo extension_dir = '%fp%ext' > C:\projects\apcu\bin\modules.d\apcu.ini
+
+    echo extension=php_sysvshm.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
+
+    echo extension=php_apcu.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
+
+    type C:\projects\apcu\bin\modules.d\apcu.ini
+
+    php.exe -m
+
+    echo %fp%
+
+    set TEST_PHP_EXECUTABLE=%fp%php.exe
 test_script:
-- cmd: C:\projects\apcu\bin\php.exe -doutput_buffering=0 run-tests.php ext\apcu -p C:\projects\apcu\bin\php.exe -q --show-diff
+- cmd: php.exe -doutput_buffering=0 C:\projects\php-src\run-tests.php /projects/php-src/ext/apcu/tests/*.phpt -q --show-diff
 artifacts:
   - path: bin
     name: master
