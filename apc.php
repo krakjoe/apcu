@@ -1111,18 +1111,19 @@ EOB;
 		echo '<tr class="tr-0"><td><h3>Change Log:</h3><br/>';
 
 		preg_match_all('!<(title|description)>([^<]+)</\\1>!', $rss, $match);
-		next($match[2]); next($match[2]);
+		$changelog = $match[2];
 
-		while (list(,$v) = each($match[2])) {
-			list(,$ver) = explode(' ', $v, 2);
+		for ($j = 2; $j + 1 < count($changelog); $j += 2) {
+			$v = $changelog[$j];
 			if ($i < 0 && version_compare($apcversion, $ver, '>=')) {
 				break;
 			} else if (!$i--) {
 				break;
 			}
+			list($unused, $ver) = $v;
+			$changes = $changelog[$j + 1];
 			echo "<b><a href=\"http://pecl.php.net/package/APCu/$ver\">".htmlspecialchars($v, ENT_QUOTES, 'UTF-8')."</a></b><br><blockquote>";
-			echo nl2br(htmlspecialchars(current($match[2]), ENT_QUOTES, 'UTF-8'))."</blockquote>";
-			next($match[2]);
+			echo nl2br(htmlspecialchars($changes, ENT_QUOTES, 'UTF-8'))."</blockquote>";
 		}
 		echo '</td></tr>';
 	}
