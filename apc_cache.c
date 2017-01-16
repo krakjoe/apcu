@@ -565,6 +565,7 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, zend_string *strkey, 
     return ret;
 } /* }}} */
 
+#ifndef ZTS
 /* {{{ data_unserialize */
 static zval data_unserialize(const char *filename)
 {
@@ -646,6 +647,7 @@ static int apc_load_data(apc_cache_t* cache, const char *data_file)
 
     return 0;
 }
+#endif
 
 /* {{{ apc_cache_preload shall load the prepared data files in path into the specified cache */
 PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path)
@@ -1505,8 +1507,9 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
     GC_REFCOUNT(dst) = 1;
     GC_TYPE_INFO(dst) = IS_REFERENCE;
 
-    if (my_copy_zval(&dst->val, &src->val, ctxt) == NULL)
+    if (my_copy_zval(&dst->val, &src->val, ctxt) == NULL) {
         return NULL;
+    }
 
 	if (ctxt->copied.nTableSize) {
 		zend_hash_index_update_ptr(&ctxt->copied, (uintptr_t) src, dst);
