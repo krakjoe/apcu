@@ -6,59 +6,52 @@ PHP_ARG_ENABLE(apcu, whether to enable APCu support,
 
 AC_MSG_CHECKING(if APCu should be allowed to use rwlocks)
 AC_ARG_ENABLE(apcu-rwlocks,
-[  --disable-apcu-rwlocks  Disable rwlocks in APCu],
-[
-  PHP_APCU_RWLOCKS=no
-  AC_MSG_RESULT(no)
-],
-[
-  PHP_APCU_RWLOCKS=yes
-  AC_MSG_RESULT(yes)
-])
+	AS_HELP_STRING([--disable-apcu-rwlocks],  [Disable rwlocks in APCu]))
+AS_IF([test "x$enable_apcu_rwlocks" != "xno"],
+	[ PHP_APCU_RWLOCKS=yes ],
+	[ PHP_APCU_RWLOCKS=no ])
+AC_MSG_RESULT($PHP_APCU_RWLOCKS)
 
 AC_MSG_CHECKING(if APCu should be built in debug mode)
 AC_ARG_ENABLE(apcu-debug,
-[  --enable-apcu-debug     Enable APCu debugging],
-[
-  PHP_APCU_DEBUG=$enableval
-], 
-[
-  PHP_APCU_DEBUG=no
-])
+	AS_HELP_STRING([--enable-apcu-debug],  [Enable APCu debugging]))
+AS_IF([test "x$enable_apcu_debug" = "xyes"],
+	[ PHP_APCU_DEBUG=yes ],
+	[ PHP_APCU_DEBUG=no ])
 AC_MSG_RESULT($PHP_APCU_DEBUG)
 
 AC_MSG_CHECKING(if APCu should clear on SIGUSR1)
 AC_ARG_ENABLE(apcu-clear-signal,
-[  --enable-apcu-clear-signal  Enable SIGUSR1 clearing handler],
-[
-  AC_DEFINE(APC_CLEAR_SIGNAL, 1, [ ])
-  AC_MSG_RESULT(yes)
-],
-[
-  AC_MSG_RESULT(no)
-])
+	AS_HELP_STRING([--enable-apcu-clear-signal],  [Enable SIGUSR1 clearing handler]))
+AS_IF([test "x$enable_apcu_clear_signal" = "xyes"],
+	[
+	  AC_DEFINE(APC_CLEAR_SIGNAL, 1, [ ])
+	  AC_MSG_RESULT(yes)
+	],
+	[ AC_MSG_RESULT(no) ]
+)
 
 AC_MSG_CHECKING(if APCu will use mmap or shm)
 AC_ARG_ENABLE(apcu-mmap,
-[  --disable-apcu-mmap     Disable mmap, falls back on shm],
-[
-  PHP_APCU_MMAP=no
-  AC_MSG_RESULT(shm)
-], [
-  PHP_APCU_MMAP=yes
-  AC_MSG_RESULT(mmap)
-])
+	AS_HELP_STRING([--disable-apcu-mmap],  [Disable mmap, falls back on shm]))
+AS_IF([test "x$enable_apcu_mmap" != "xno"],
+	[
+	  PHP_APCU_MMAP=yes
+	  AC_MSG_RESULT(mmap)
+	],
+	[
+	  PHP_APCU_MMAP=no
+	  AC_MSG_RESULT(shm)
+	]
+)
 
 PHP_APCU_SPINLOCK=no
 AC_MSG_CHECKING(if APCu should utilize spinlocks before flocks)
 AC_ARG_ENABLE(apcu-spinlocks,
-[  --enable-apcu-spinlocks        Use spinlocks before flocks],
-[ if test "x$enableval" = "xno"; then
-    PHP_APCU_SPINLOCK=no
-  else
-    PHP_APCU_SPINLOCK=yes
-  fi
-])
+	AS_HELP_STRING([--enable-apcu-spinlocks],  [Use spinlocks before flocks]))
+AS_IF([test "x$enable_apcu_spinlocks" = "xyes"],
+	[ PHP_APCU_SPINLOCK=yes ],
+	[ PHP_APCU_SPINLOCK=no ])
 AC_MSG_RESULT($PHP_APCU_SPINLOCK)
 
 if test "$PHP_APCU" != "no"; then
@@ -234,15 +227,15 @@ if test "$PHP_APCU" != "no"; then
   fi
 
   AC_ARG_ENABLE(valgrind-checks,
-  [  --disable-valgrind-checks
-                          Disable valgrind based memory checks],
-  [
-    PHP_APCU_VALGRIND=no
-  ], [
-    PHP_APCU_VALGRIND=yes
-    AC_CHECK_HEADER(valgrind/memcheck.h, 
+	AS_HELP_STRING([--disable-valgrind-checks],  [Disable valgrind based memory checks]))
+  AS_IF([test "x$enable_valgrind_checks" != "xno"],
+	[
+	  PHP_APCU_VALGRIND=yes
+	  AC_CHECK_HEADER(valgrind/memcheck.h,
   		[AC_DEFINE([HAVE_VALGRIND_MEMCHECK_H],1, [enable valgrind memchecks])])
-  ])
+	],
+	[ PHP_APCU_VALGRIND=no ]
+  )
 
   apc_sources="apc.c apc_lock.c php_apc.c \
                  apc_cache.c \
