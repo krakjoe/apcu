@@ -42,11 +42,13 @@ AC_MSG_CHECKING(if APCu will use mmap or shm)
 AC_ARG_ENABLE(apcu-mmap,
 [  --disable-apcu-mmap     Disable mmap, falls back on shm],
 [
-  PHP_APCU_MMAP=no
-  AC_MSG_RESULT(shm)
-], [
-  PHP_APCU_MMAP=yes
-  AC_MSG_RESULT(mmap)
+  if test "x$enableval" = "xno"; then
+    PHP_APCU_MMAP=no
+    AC_MSG_RESULT(shm)
+  else
+    PHP_APCU_MMAP=yes
+    AC_MSG_RESULT(mmap)
+  fi
 ])
 
 PHP_APCU_SPINLOCK=no
