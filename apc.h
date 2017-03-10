@@ -38,11 +38,11 @@
  * This module defines utilities and helper functions used elsewhere in APC.
  */
 #ifdef PHP_WIN32
-# define PHP_APCU_API __declspec(dllexport)
+#define PHP_APCU_API __declspec(dllexport)
 #elif defined(__GNUC__) && __GNUC__ >= 4
-# define PHP_APCU_API __attribute__ ((visibility("default")))
+#define PHP_APCU_API __attribute__((visibility("default")))
 #else
-# define PHP_APCU_API
+#define PHP_APCU_API
 #endif
 
 /* Commonly needed C library headers. */
@@ -71,23 +71,23 @@
 
 /* typedefs for extensible memory allocators */
 typedef void* (*apc_malloc_t)(size_t);
-typedef void  (*apc_free_t)  (void *);
+typedef void (*apc_free_t)(void*);
 
 /* wrappers for memory allocation routines */
 PHP_APCU_API void* apc_emalloc(size_t n);
 PHP_APCU_API void* apc_erealloc(void* p, size_t n);
 PHP_APCU_API void* apc_php_malloc(size_t n);
-PHP_APCU_API void  apc_php_free(void* p);
-PHP_APCU_API void  apc_efree(void* p);
+PHP_APCU_API void apc_php_free(void* p);
+PHP_APCU_API void apc_efree(void* p);
 PHP_APCU_API char* apc_estrdup(const char* s);
 PHP_APCU_API void* apc_xstrdup(const char* s, apc_malloc_t f);
 PHP_APCU_API void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f);
 
 /* console display functions */
-PHP_APCU_API void apc_error(const char *format, ...);
-PHP_APCU_API void apc_warning(const char *format, ...);
-PHP_APCU_API void apc_notice(const char *format, ...);
-PHP_APCU_API void apc_debug(const char *format, ...);
+PHP_APCU_API void apc_error(const char* format, ...);
+PHP_APCU_API void apc_warning(const char* format, ...);
+PHP_APCU_API void apc_notice(const char* format, ...);
+PHP_APCU_API void apc_debug(const char* format, ...);
 
 /* string and text manipulation */
 PHP_APCU_API char* apc_append(const char* s, const char* t);
@@ -98,28 +98,27 @@ PHP_APCU_API char** apc_tokenize(const char* s, char delim);
 PHP_APCU_API unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
 
 /* apc_flip_hash flips keys and values for faster searching */
-PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
+PHP_APCU_API HashTable* apc_flip_hash(HashTable* hash);
 
 #define APC_NEGATIVE_MATCH 1
 #define APC_POSITIVE_MATCH 2
 
-#define apc_time() \
-    (APCG(use_request_time) ? (time_t) sapi_get_request_time() : time(0))
+#define apc_time() (APCG(use_request_time) ? (time_t) sapi_get_request_time() : time(0))
 
 #if defined(__GNUC__)
-# define APC_UNUSED __attribute__((unused))
-# define APC_USED __attribute__((used))
-# define APC_ALLOC __attribute__((malloc))
-# if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__  > 2)
-#  define APC_HOTSPOT __attribute__((hot))
-# else 
-#  define APC_HOTSPOT
-# endif
-#else 
-# define APC_UNUSED
-# define APC_USED
-# define APC_ALLOC 
-# define APC_HOTSPOT 
+#define APC_UNUSED __attribute__((unused))
+#define APC_USED __attribute__((used))
+#define APC_ALLOC __attribute__((malloc))
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 2)
+#define APC_HOTSPOT __attribute__((hot))
+#else
+#define APC_HOTSPOT
+#endif
+#else
+#define APC_UNUSED
+#define APC_USED
+#define APC_ALLOC
+#define APC_HOTSPOT
 #endif
 
 /*
@@ -139,21 +138,21 @@ typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);
 
 /* {{{ struct definition: apc_serializer_t */
 typedef struct apc_serializer_t {
-    const char*        name;
-    apc_serialize_t    serialize;
-    apc_unserialize_t  unserialize;
-    void*              config;
+    const char* name;
+    apc_serialize_t serialize;
+    apc_unserialize_t unserialize;
+    void* config;
 } apc_serializer_t;
 /* }}} */
 
 /* {{{ _apc_register_serializer
  registers the serializer using the given name and paramters */
 PHP_APCU_API int _apc_register_serializer(const char* name,
-                                               apc_serialize_t serialize,
-                                               apc_unserialize_t unserialize,
-                                               void *config); /* }}} */
+                                          apc_serialize_t serialize,
+                                          apc_unserialize_t unserialize,
+                                          void* config); /* }}} */
 
-/* {{{ apc_get_serializers 
+/* {{{ apc_get_serializers
  fetches the list of serializers */
 PHP_APCU_API apc_serializer_t* apc_get_serializers(); /* }}} */
 
@@ -162,35 +161,37 @@ PHP_APCU_API apc_serializer_t* apc_get_serializers(); /* }}} */
 PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name); /* }}} */
 
 /* {{{ default serializers */
-PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS);
-PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS); /* }}} */
+PHP_APCU_API int APC_SERIALIZER_NAME(php)(APC_SERIALIZER_ARGS);
+PHP_APCU_API int APC_UNSERIALIZER_NAME(php)(APC_UNSERIALIZER_ARGS); /* }}} */
 
 /* {{{ eval serializers */
-PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS);
-PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS); /* }}} */
+PHP_APCU_API int APC_SERIALIZER_NAME(eval)(APC_SERIALIZER_ARGS);
+PHP_APCU_API int APC_UNSERIALIZER_NAME(eval)(APC_UNSERIALIZER_ARGS); /* }}} */
 
-#define php_apc_try(begin, block, end) {   \
-	JMP_BUF *zb = EG(bailout);             \
-	JMP_BUF ab;                            \
-	                                       \
-	EG(bailout) = &ab;                     \
-	                                       \
-	begin;                                 \
-	if (SETJMP(ab) == SUCCESS) {           \
-		block                              \
-	} else {                               \
-		end;                               \
-		EG(bailout) = zb;                  \
-		zend_bailout();                    \
-	}                                      \
-	end;                                   \
-	EG(bailout) = zb;                      \
-}
+#define php_apc_try(begin, block, end)                                                                                 \
+    {                                                                                                                  \
+        JMP_BUF* zb = EG(bailout);                                                                                     \
+        JMP_BUF ab;                                                                                                    \
+                                                                                                                       \
+        EG(bailout) = &ab;                                                                                             \
+                                                                                                                       \
+        begin;                                                                                                         \
+        if (SETJMP(ab) == SUCCESS) {                                                                                   \
+            block                                                                                                      \
+        } else {                                                                                                       \
+            end;                                                                                                       \
+            EG(bailout) = zb;                                                                                          \
+            zend_bailout();                                                                                            \
+        }                                                                                                              \
+        end;                                                                                                           \
+        EG(bailout) = zb;                                                                                              \
+    }
 
-#define php_apc_try_end(early) {           \
-	EG(bailout) = zb;                      \
-	early                                  \
-}
+#define php_apc_try_end(early)                                                                                         \
+    {                                                                                                                  \
+        EG(bailout) = zb;                                                                                              \
+        early                                                                                                          \
+    }
 
 #endif
 

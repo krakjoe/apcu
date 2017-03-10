@@ -60,18 +60,17 @@
 /* #include "storage/s_lock.h" -- Removed for APC */
 #include "pgsql_s_lock.h"
 
-static int	spins_per_delay = DEFAULT_SPINS_PER_DELAY;
-
+static int spins_per_delay = DEFAULT_SPINS_PER_DELAY;
 
 /* -- APC specific additions ------------------------------*/
-/* The following dependencies have been copied from 
- * other pgsql source files.  The original locations 
+/* The following dependencies have been copied from
+ * other pgsql source files.  The original locations
  * have been noted.
  */
 
 /* -- from include/c.h -- */
 #ifndef TRUE
-#define TRUE  1
+#define TRUE 1
 #endif
 
 #ifndef FALSE
@@ -79,21 +78,20 @@ static int	spins_per_delay = DEFAULT_SPINS_PER_DELAY;
 #endif
 
 /* -- from include/pg_config_manual.h -- */
-#define MAX_RANDOM_VALUE (0x7FFFFFFF) 
+#define MAX_RANDOM_VALUE (0x7FFFFFFF)
 
 /*
  * Max
  *    Return the maximum of two numbers.
  */
-#define Max(x, y)   ((x) > (y) ? (x) : (y))
+#define Max(x, y) ((x) > (y) ? (x) : (y))
 
 /* -- from include/c.h -- */
 /*
  * Min
  *    Return the minimum of two numbers.
  */
-#define Min(x, y)   ((x) < (y) ? (x) : (y))
-
+#define Min(x, y) ((x) < (y) ? (x) : (y))
 
 /* -- from backend/port/win32/signal.c -- */
 /*
@@ -108,160 +106,148 @@ static int	spins_per_delay = DEFAULT_SPINS_PER_DELAY;
 void
 pg_usleep(long microsec)
 {
-	if (microsec > 0)
-	{
+    if (microsec > 0) {
 #ifndef WIN32
-		struct timeval delay;
+        struct timeval delay;
 
-		delay.tv_sec = microsec / 1000000L;
-		delay.tv_usec = microsec % 1000000L;
-		(void) select(0, NULL, NULL, NULL, &delay);
+        delay.tv_sec  = microsec / 1000000L;
+        delay.tv_usec = microsec % 1000000L;
+        (void) select(0, NULL, NULL, NULL, &delay);
 #else
-		SleepEx((microsec < 500 ? 1 : (microsec + 500) / 1000), FALSE);
+        SleepEx((microsec < 500 ? 1 : (microsec + 500) / 1000), FALSE);
 #endif
-	}
+    }
 }
 
 /* -- End APC specific additions ------------------------------*/
-
 
 /*
  * s_lock_stuck() - complain about a stuck spinlock
  */
 static void
-s_lock_stuck(volatile slock_t *lock, const char *file, int line)
+s_lock_stuck(volatile slock_t* lock, const char* file, int line)
 {
 #if defined(S_LOCK_TEST)
-	fprintf(stderr,
-			"\nStuck spinlock (%p) detected at %s:%d.\n",
-			lock, file, line);
-	exit(1);
+    fprintf(stderr, "\nStuck spinlock (%p) detected at %s:%d.\n", lock, file, line);
+    exit(1);
 #else
-  /* -- Removed for APC
-	elog(PANIC, "stuck spinlock (%p) detected at %s:%d",
-		 lock, file, line);
-  */
-  apc_error("Stuck spinlock (%p) detected", lock);
+    /* -- Removed for APC
+      elog(PANIC, "stuck spinlock (%p) detected at %s:%d",
+           lock, file, line);
+    */
+    apc_error("Stuck spinlock (%p) detected", lock);
 #endif
 }
-
 
 /*
  * s_lock(lock) - platform-independent portion of waiting for a spinlock.
  */
 void
-s_lock(volatile slock_t *lock, const char *file, int line)
+s_lock(volatile slock_t* lock, const char* file, int line)
 {
-	/*
-	 * We loop tightly for awhile, then delay using pg_usleep() and try again.
-	 * Preferably, "awhile" should be a small multiple of the maximum time we
-	 * expect a spinlock to be held.  100 iterations seems about right as an
-	 * initial guess.  However, on a uniprocessor the loop is a waste of
-	 * cycles, while in a multi-CPU scenario it's usually better to spin a bit
-	 * longer than to call the kernel, so we try to adapt the spin loop count
-	 * depending on whether we seem to be in a uniprocessor or multiprocessor.
-	 *
-	 * Note: you might think MIN_SPINS_PER_DELAY should be just 1, but you'd
-	 * be wrong; there are platforms where that can result in a "stuck
-	 * spinlock" failure.  This has been seen particularly on Alphas; it seems
-	 * that the first TAS after returning from kernel space will always fail
-	 * on that hardware.
-	 *
-	 * Once we do decide to block, we use randomly increasing pg_usleep()
-	 * delays. The first delay is 1 msec, then the delay randomly increases to
-	 * about one second, after which we reset to 1 msec and start again.  The
-	 * idea here is that in the presence of heavy contention we need to
-	 * increase the delay, else the spinlock holder may never get to run and
-	 * release the lock.  (Consider situation where spinlock holder has been
-	 * nice'd down in priority by the scheduler --- it will not get scheduled
-	 * until all would-be acquirers are sleeping, so if we always use a 1-msec
-	 * sleep, there is a real possibility of starvation.)  But we can't just
-	 * clamp the delay to an upper bound, else it would take a long time to
-	 * make a reasonable number of tries.
-	 *
-	 * We time out and declare error after NUM_DELAYS delays (thus, exactly
-	 * that many tries).  With the given settings, this will usually take 2 or
-	 * so minutes.	It seems better to fix the total number of tries (and thus
-	 * the probability of unintended failure) than to fix the total time
-	 * spent.
-	 *
-	 * The pg_usleep() delays are measured in milliseconds because 1 msec is a
-	 * common resolution limit at the OS level for newer platforms. On older
-	 * platforms the resolution limit is usually 10 msec, in which case the
-	 * total delay before timeout will be a bit more.
-	 */
+/*
+ * We loop tightly for awhile, then delay using pg_usleep() and try again.
+ * Preferably, "awhile" should be a small multiple of the maximum time we
+ * expect a spinlock to be held.  100 iterations seems about right as an
+ * initial guess.  However, on a uniprocessor the loop is a waste of
+ * cycles, while in a multi-CPU scenario it's usually better to spin a bit
+ * longer than to call the kernel, so we try to adapt the spin loop count
+ * depending on whether we seem to be in a uniprocessor or multiprocessor.
+ *
+ * Note: you might think MIN_SPINS_PER_DELAY should be just 1, but you'd
+ * be wrong; there are platforms where that can result in a "stuck
+ * spinlock" failure.  This has been seen particularly on Alphas; it seems
+ * that the first TAS after returning from kernel space will always fail
+ * on that hardware.
+ *
+ * Once we do decide to block, we use randomly increasing pg_usleep()
+ * delays. The first delay is 1 msec, then the delay randomly increases to
+ * about one second, after which we reset to 1 msec and start again.  The
+ * idea here is that in the presence of heavy contention we need to
+ * increase the delay, else the spinlock holder may never get to run and
+ * release the lock.  (Consider situation where spinlock holder has been
+ * nice'd down in priority by the scheduler --- it will not get scheduled
+ * until all would-be acquirers are sleeping, so if we always use a 1-msec
+ * sleep, there is a real possibility of starvation.)  But we can't just
+ * clamp the delay to an upper bound, else it would take a long time to
+ * make a reasonable number of tries.
+ *
+ * We time out and declare error after NUM_DELAYS delays (thus, exactly
+ * that many tries).  With the given settings, this will usually take 2 or
+ * so minutes.	It seems better to fix the total number of tries (and thus
+ * the probability of unintended failure) than to fix the total time
+ * spent.
+ *
+ * The pg_usleep() delays are measured in milliseconds because 1 msec is a
+ * common resolution limit at the OS level for newer platforms. On older
+ * platforms the resolution limit is usually 10 msec, in which case the
+ * total delay before timeout will be a bit more.
+ */
 #define MIN_SPINS_PER_DELAY 10
 #define MAX_SPINS_PER_DELAY 1000
-#define NUM_DELAYS			1000
-#define MIN_DELAY_MSEC		1
-#define MAX_DELAY_MSEC		1000
+#define NUM_DELAYS 1000
+#define MIN_DELAY_MSEC 1
+#define MAX_DELAY_MSEC 1000
 
-	int			spins = 0;
-	int			delays = 0;
-	int			cur_delay = 0;
-  
-	while (TAS(lock))
-	{
-		/* CPU-specific delay each time through the loop */
-		SPIN_DELAY();
+    int spins     = 0;
+    int delays    = 0;
+    int cur_delay = 0;
 
-		/* Block the process every spins_per_delay tries */
-		if (++spins >= spins_per_delay)
-		{
-			if (++delays > NUM_DELAYS)
-				s_lock_stuck(lock, file, line);
+    while (TAS(lock)) {
+        /* CPU-specific delay each time through the loop */
+        SPIN_DELAY();
 
-			if (cur_delay == 0) /* first time to delay? */
-				cur_delay = MIN_DELAY_MSEC;
+        /* Block the process every spins_per_delay tries */
+        if (++spins >= spins_per_delay) {
+            if (++delays > NUM_DELAYS)
+                s_lock_stuck(lock, file, line);
 
-			pg_usleep(cur_delay * 1000L);
+            if (cur_delay == 0) /* first time to delay? */
+                cur_delay = MIN_DELAY_MSEC;
+
+            pg_usleep(cur_delay * 1000L);
 
 #if defined(S_LOCK_TEST)
-			fprintf(stdout, "*");
-			fflush(stdout);
+            fprintf(stdout, "*");
+            fflush(stdout);
 #endif
 
-			/* increase delay by a random fraction between 1X and 2X */
-			cur_delay += (int) (cur_delay *
-					  ((double) rand() / (double) MAX_RANDOM_VALUE) + 0.5);
-			/* wrap back to minimum delay when max is exceeded */
-			if (cur_delay > MAX_DELAY_MSEC)
-				cur_delay = MIN_DELAY_MSEC;
+            /* increase delay by a random fraction between 1X and 2X */
+            cur_delay += (int) (cur_delay * ((double) rand() / (double) MAX_RANDOM_VALUE) + 0.5);
+            /* wrap back to minimum delay when max is exceeded */
+            if (cur_delay > MAX_DELAY_MSEC)
+                cur_delay = MIN_DELAY_MSEC;
 
-			spins = 0;
-		}
-	}
+            spins = 0;
+        }
+    }
 
-	/*
-	 * If we were able to acquire the lock without delaying, it's a good
-	 * indication we are in a multiprocessor.  If we had to delay, it's a sign
-	 * (but not a sure thing) that we are in a uniprocessor. Hence, we
-	 * decrement spins_per_delay slowly when we had to delay, and increase it
-	 * rapidly when we didn't.  It's expected that spins_per_delay will
-	 * converge to the minimum value on a uniprocessor and to the maximum
-	 * value on a multiprocessor.
-	 *
-	 * Note: spins_per_delay is local within our current process. We want to
-	 * average these observations across multiple backends, since it's
-	 * relatively rare for this function to even get entered, and so a single
-	 * backend might not live long enough to converge on a good value.	That
-	 * is handled by the two routines below.
-	 */
-	if (cur_delay == 0)
-	{
-		/* we never had to delay */
-		if (spins_per_delay < MAX_SPINS_PER_DELAY)
-			spins_per_delay = Min(spins_per_delay + 100, MAX_SPINS_PER_DELAY);
-	}
-	else
-	{
-		if (spins_per_delay > MIN_SPINS_PER_DELAY)
-			spins_per_delay = Max(spins_per_delay - 1, MIN_SPINS_PER_DELAY);
-	}
+    /*
+     * If we were able to acquire the lock without delaying, it's a good
+     * indication we are in a multiprocessor.  If we had to delay, it's a sign
+     * (but not a sure thing) that we are in a uniprocessor. Hence, we
+     * decrement spins_per_delay slowly when we had to delay, and increase it
+     * rapidly when we didn't.  It's expected that spins_per_delay will
+     * converge to the minimum value on a uniprocessor and to the maximum
+     * value on a multiprocessor.
+     *
+     * Note: spins_per_delay is local within our current process. We want to
+     * average these observations across multiple backends, since it's
+     * relatively rare for this function to even get entered, and so a single
+     * backend might not live long enough to converge on a good value.	That
+     * is handled by the two routines below.
+     */
+    if (cur_delay == 0) {
+        /* we never had to delay */
+        if (spins_per_delay < MAX_SPINS_PER_DELAY)
+            spins_per_delay = Min(spins_per_delay + 100, MAX_SPINS_PER_DELAY);
+    } else {
+        if (spins_per_delay > MIN_SPINS_PER_DELAY)
+            spins_per_delay = Max(spins_per_delay - 1, MIN_SPINS_PER_DELAY);
+    }
 }
 
-
-#if 0  /* -- APC doesn't use the set_spins_per_delay or update_spins_per_delay -- */
+#if 0 /* -- APC doesn't use the set_spins_per_delay or update_spins_per_delay -- */
 /*
  * Set local copy of spins_per_delay during backend startup.
  *
@@ -304,16 +290,13 @@ update_spins_per_delay(int shared_spins_per_delay)
  * because the definitions for these are split between this file and s_lock.h.
  */
 
-
-#ifdef HAVE_SPINLOCKS			/* skip spinlocks if requested */
-
+#ifdef HAVE_SPINLOCKS /* skip spinlocks if requested */
 
 #if defined(__GNUC__)
 
 /*
  * All the gcc flavors that are not inlined
  */
-
 
 /*
  * Note: all the if-tests here probably ought to be testing gcc version
@@ -325,10 +308,10 @@ update_spins_per_delay(int shared_spins_per_delay)
 static void
 tas_dummy()
 {
-	__asm__		__volatile__(
+    __asm__ __volatile__(
 #if defined(__NetBSD__) && defined(__ELF__)
-/* no underscore for label and % for registers */
-										 "\
+      /* no underscore for label and % for registers */
+      "\
 .global		tas 				\n\
 tas:							\n\
 			movel	%sp@(0x4),%a0	\n\
@@ -340,7 +323,7 @@ _success:						\n\
 			moveq	#0,%d0		\n\
 			rts 				\n"
 #else
-										 "\
+      "\
 .global		_tas				\n\
 _tas:							\n\
 			movel	sp@(0x4),a0	\n\
@@ -351,41 +334,39 @@ _tas:							\n\
 _success:						\n\
 			moveq 	#0,d0		\n\
 			rts					\n"
-#endif   /* __NetBSD__ && __ELF__ */
-	);
+#endif /* __NetBSD__ && __ELF__ */
+      );
 }
-#endif   /* __m68k__ && !__linux__ */
-#else							/* not __GNUC__ */
+#endif /* __m68k__ && !__linux__ */
+#else  /* not __GNUC__ */
 
 /*
  * All non gcc
  */
 
-
 #if defined(sun3)
-static void
-tas_dummy()						/* really means: extern int tas(slock_t
-								 * *lock); */
+static void tas_dummy() /* really means: extern int tas(slock_t
+                         * *lock); */
 {
-	asm("LLA0:");
-	asm("   .data");
-	asm("   .text");
-	asm("|#PROC# 04");
-	asm("   .globl  _tas");
-	asm("_tas:");
-	asm("|#PROLOGUE# 1");
-	asm("   movel   sp@(0x4),a0");
-	asm("   tas a0@");
-	asm("   beq LLA1");
-	asm("   moveq   #-128,d0");
-	asm("   rts");
-	asm("LLA1:");
-	asm("   moveq   #0,d0");
-	asm("   rts");
-	asm("   .data");
+    asm("LLA0:");
+    asm("   .data");
+    asm("   .text");
+    asm("|#PROC# 04");
+    asm("   .globl  _tas");
+    asm("_tas:");
+    asm("|#PROLOGUE# 1");
+    asm("   movel   sp@(0x4),a0");
+    asm("   tas a0@");
+    asm("   beq LLA1");
+    asm("   moveq   #-128,d0");
+    asm("   rts");
+    asm("LLA1:");
+    asm("   moveq   #0,d0");
+    asm("   rts");
+    asm("   .data");
 }
-#endif   /* sun3 */
-#endif   /* not __GNUC__ */
-#endif   /* HAVE_SPINLOCKS */
+#endif /* sun3 */
+#endif /* not __GNUC__ */
+#endif /* HAVE_SPINLOCKS */
 
 #endif /* APC_SPIN_LOCKS */

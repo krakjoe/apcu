@@ -20,13 +20,13 @@
 #define APC_LOCK_H
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #include "apc.h"
 
 #ifndef APC_LOCK_API_H
-# include "apc_lock_api.h"
+#include "apc_lock_api.h"
 #endif
 
 #endif
