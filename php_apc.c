@@ -849,21 +849,23 @@ PHP_FUNCTION(apcu_entry) {
 
 /* {{{ apcu_functions[] */
 zend_function_entry apcu_functions[] = {
-    PHP_FE(apcu_cache_info,         arginfo_apcu_cache_info)
-    PHP_FE(apcu_clear_cache,        arginfo_apcu_clear_cache)
-    PHP_FE(apcu_sma_info,           arginfo_apcu_sma_info)
-    PHP_FE(apcu_key_info,           arginfo_apcu_key_info)
-    PHP_FE(apcu_enabled,            arginfo_apcu_enabled)
-    PHP_FE(apcu_store,              arginfo_apcu_store)
-    PHP_FE(apcu_fetch,              arginfo_apcu_fetch)
-    PHP_FE(apcu_delete,             arginfo_apcu_delete)
-    PHP_FE(apcu_add,                arginfo_apcu_store)
-    PHP_FE(apcu_inc,                arginfo_apcu_inc)
-    PHP_FE(apcu_dec,                arginfo_apcu_inc)
-    PHP_FE(apcu_cas,                arginfo_apcu_cas)
-    PHP_FE(apcu_exists,             arginfo_apcu_exists)
-	PHP_FE(apcu_entry,				arginfo_apcu_entry)
+/* clang-format off */
+    PHP_FE(apcu_cache_info, arginfo_apcu_cache_info)
+    PHP_FE(apcu_clear_cache, arginfo_apcu_clear_cache)
+    PHP_FE(apcu_sma_info, arginfo_apcu_sma_info)
+    PHP_FE(apcu_key_info, arginfo_apcu_key_info)
+    PHP_FE(apcu_enabled, arginfo_apcu_enabled)
+    PHP_FE(apcu_store, arginfo_apcu_store)
+    PHP_FE(apcu_fetch, arginfo_apcu_fetch)
+    PHP_FE(apcu_delete, arginfo_apcu_delete)
+    PHP_FE(apcu_add, arginfo_apcu_store)
+    PHP_FE(apcu_inc, arginfo_apcu_inc)
+    PHP_FE(apcu_dec, arginfo_apcu_inc)
+    PHP_FE(apcu_cas, arginfo_apcu_cas)
+    PHP_FE(apcu_exists, arginfo_apcu_exists)
+    PHP_FE(apcu_entry, arginfo_apcu_entry)
     PHP_FE_END
+/* clang-format on */
 };
 /* }}} */
 
