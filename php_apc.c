@@ -691,6 +691,7 @@ PHP_FUNCTION(apcu_fetch) {
 			array_init(&result);
 			zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(key), &hpos);
 			while((hentry = zend_hash_get_current_data_ex(Z_ARRVAL_P(key), &hpos))) {
+			    ZVAL_DEREF(hentry);
 			    if (Z_TYPE_P(hentry) == IS_STRING) {
 					zval result_entry,
 						*iresult = &result_entry;
