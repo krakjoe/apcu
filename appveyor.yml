@@ -48,9 +48,9 @@ build_script:
 
     cd C:\projects\apcu\bin
 
-    php.exe -m
+    C:\projects\apcu\bin\php.exe -m
 
-    php-cgi.exe -m
+    C:\projects\apcu\bin\php-cgi.exe -m
 test_script:
 - cmd: C:\projects\apcu\bin\php.exe -doutput_buffering=0 run-tests.php ext\apcu -p C:\projects\apcu\bin\php.exe -q --show-diff
 artifacts:
