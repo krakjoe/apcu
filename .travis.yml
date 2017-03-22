@@ -9,10 +9,10 @@ script:
     - phpize
     - ./configure
     - make
-    - php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable=1 -d apc.enable_cli=1 -p `phpenv which php` --show-diff --set-timeout 120
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable=1 -d apc.enable_cli=1 -p `phpenv which php` --show-diff --set-timeout 120
     - phpize --clean
     - phpize
     - ./configure --disable-apcu-rwlocks
     - make
-    - php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable=1 -d apc.enable_cli=1 -p `phpenv which php` --show-diff --set-timeout 120
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable=1 -d apc.enable_cli=1 -p `phpenv which php` --show-diff --set-timeout 120
 
