@@ -2,11 +2,13 @@ version: '{branch}.{build}'
 branches:
   only:
   - master
+environment:
+  REPORT_EXIT_STATUS: 1
 install:
 - cmd: cinst wget
 build_script:
 - cmd: >-
-    "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\vcvars32.bat"
+    "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
 
     wget http://windows.php.net/downloads/php-sdk/php-sdk-binary-tools-20110915.zip
 
@@ -20,27 +22,35 @@ build_script:
 
     xcopy C:\projects\apcu C:\projects\php-src\ext\apcu /s /e /y
 
-    wget http://windows.php.net/downloads/php-sdk/deps-7.0-vc14-x86.7z
+    wget http://windows.php.net/downloads/php-sdk/deps-7.0-vc14-x64.7z
 
-    7z x -y deps-7.0-vc14-x86.7z -oC:\projects\php-src
+    7z x -y deps-7.0-vc14-x64.7z -oC:\projects\php-src
 
     cd C:\projects\php-src
 
     buildconf.bat
 
-    configure.bat --disable-all --enable-cli --enable-zts --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-prefix=C:\projects\apcu\bin --with-php-build=deps
+    configure.bat --disable-all --enable-cli --enable-cgi --enable-zts --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-prefix=C:\projects\apcu\bin --with-php-build=deps
 
     nmake
 
     nmake install
 
+    dir C:\projects\php*.dll /s
+
     copy php.ini-development C:\projects\apcu\bin\php.ini
 
     mkdir C:\projects\apcu\bin\modules.d
 
-    echo extension=php_apcu.dll > C:\projects\apcu\bin\modules.d\apcu.ini
+    echo extension_dir=/projects/apcu/bin/ext > C:\projects\apcu\bin\modules.d\apcu.ini
+
+    echo extension=php_apcu.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
+
+    type C:\projects\apcu\bin\modules.d\apcu.ini
 
     C:\projects\apcu\bin\php.exe -m
+
+    C:\projects\apcu\bin\php-cgi.exe -m
 test_script:
 - cmd: C:\projects\apcu\bin\php.exe -doutput_buffering=0 run-tests.php ext\apcu -p C:\projects\apcu\bin\php.exe -q --show-diff
 artifacts:
