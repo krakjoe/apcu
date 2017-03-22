@@ -2,6 +2,8 @@ version: '{branch}.{build}'
 branches:
   only:
   - master
+environment:
+  REPORT_EXIT_STATUS: 1
 install:
 - cmd: cinst wget
 build_script:
