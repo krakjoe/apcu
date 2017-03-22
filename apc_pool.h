@@ -33,7 +33,7 @@
 #include "apc_sma.h"
 
 #ifndef APC_POOL_API_H
-# include "apc_pool_api.h"
+#include "apc_pool_api.h"
 #endif
 
 /*
@@ -41,4 +41,3 @@
 */
 extern PHP_APCU_API void apc_pool_init();
 #endif
-

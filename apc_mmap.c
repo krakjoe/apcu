@@ -50,40 +50,43 @@
 
 /* support for systems where MAP_ANONYMOUS is defined but not MAP_ANON, ie: HP-UX bug #14615 */
 #if !defined(MAP_ANON) && defined(MAP_ANONYMOUS)
-# define MAP_ANON MAP_ANONYMOUS
+#define MAP_ANON MAP_ANONYMOUS
 #endif
 
-apc_segment_t apc_mmap(char *file_mask, size_t size)
+apc_segment_t
+apc_mmap(char* file_mask, size_t size)
 {
-    apc_segment_t segment; 
+    apc_segment_t segment;
 
-    int fd = -1;
+    int fd    = -1;
     int flags = MAP_SHARED | MAP_NOSYNC;
 #ifdef APC_MEMPROTECT
     int remap = 1;
 #endif
 
     /* If no filename was provided, do an anonymous mmap */
-    if(!file_mask || (file_mask && !strlen(file_mask))) {
+    if (!file_mask || (file_mask && !strlen(file_mask))) {
 #if !defined(MAP_ANON)
-        apc_error("Anonymous mmap does not apear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the apc.mmap_file_mask INI option.");
+        apc_error(
+          "Anonymous mmap does not apear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the "
+          "apc.mmap_file_mask INI option.");
 #else
-        fd = -1;
+        fd    = -1;
         flags = MAP_SHARED | MAP_ANON;
 #ifdef APC_MEMPROTECT
         remap = 0;
 #endif
 #endif
-    } else if(!strcmp(file_mask,"/dev/zero")) { 
+    } else if (!strcmp(file_mask, "/dev/zero")) {
         fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
-        if(fd == -1) {
+        if (fd == -1) {
             apc_error("apc_mmap: open on /dev/zero failed:");
             goto error;
         }
 #ifdef APC_MEMPROTECT
         remap = 0; /* cannot remap */
 #endif
-    } else if(strstr(file_mask,".shm")) {
+    } else if (strstr(file_mask, ".shm")) {
         /*
          * If the filemask contains .shm we try to do a POSIX-compliant shared memory
          * backed mmap which should avoid synchs on some platforms.  At least on
@@ -94,12 +97,12 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
          * On FreeBSD these are mapped onto the regular filesystem so you can put whatever
          * path you want here.
          */
-        if(!mktemp(file_mask)) {
+        if (!mktemp(file_mask)) {
             apc_error("apc_mmap: mktemp on %s failed:", file_mask);
             goto error;
         }
-        fd = shm_open(file_mask, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
-        if(fd == -1) {
+        fd = shm_open(file_mask, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+        if (fd == -1) {
             apc_error("apc_mmap: shm_open on %s failed:", file_mask);
             goto error;
         }
@@ -115,7 +118,7 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
          * Otherwise we do a normal filesystem mmap
          */
         fd = mkstemp(file_mask);
-        if(fd == -1) {
+        if (fd == -1) {
             apc_error("apc_mmap: mkstemp on %s failed:", file_mask);
             goto error;
         }
@@ -128,36 +131,38 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
         unlink(file_mask);
     }
 
-    segment.shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
-    segment.size = size;
+    segment.shmaddr = (void*) mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
+    segment.size    = size;
 
 #ifdef APC_MEMPROTECT
-    if(remap) {
-        segment.roaddr = (void *)mmap(NULL, size, PROT_READ, flags, fd, 0);
+    if (remap) {
+        segment.roaddr = (void*) mmap(NULL, size, PROT_READ, flags, fd, 0);
     } else {
         segment.roaddr = NULL;
     }
 #endif
 
-    if((long)segment.shmaddr == -1) {
+    if ((long) segment.shmaddr == -1) {
         apc_error("apc_mmap: mmap failed:");
     }
 
-    if(fd != -1) close(fd);
-    
+    if (fd != -1)
+        close(fd);
+
     return segment;
 
 error:
 
-    segment.shmaddr = (void*)-1;
-    segment.size = 0;
+    segment.shmaddr = (void*) -1;
+    segment.size    = 0;
 #ifdef APC_MEMPROTECT
     segment.roaddr = NULL;
 #endif
     return segment;
 }
 
-void apc_unmap(apc_segment_t *segment)
+void
+apc_unmap(apc_segment_t* segment)
 {
     if (munmap(segment->shmaddr, segment->size) < 0) {
         apc_warning("apc_unmap: munmap failed:");
@@ -168,7 +173,6 @@ void apc_unmap(apc_segment_t *segment)
         apc_warning("apc_unmap: munmap failed:");
     }
 #endif
-
 }
 
 #endif
