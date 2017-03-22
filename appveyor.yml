@@ -34,15 +34,13 @@ build_script:
 
     nmake install
 
-    cd C:\projects\apcu\bin
-
-    dir php*.dll /s
+    dir C:\projects\php*.dll /s
 
     copy php.ini-development C:\projects\apcu\bin\php.ini
 
     mkdir C:\projects\apcu\bin\modules.d
 
-    echo extension_dir=/projects/apcu/bin > C:\projects\apcu\bin\modules.d\apcu.ini
+    echo extension_dir=/projects/apcu/bin/ext > C:\projects\apcu\bin\modules.d\apcu.ini
 
     echo extension=php_apcu.dll >> C:\projects\apcu\bin\modules.d\apcu.ini
 
