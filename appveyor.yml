@@ -1,7 +1,7 @@
 version: '{branch}.{build}'
 
 os: 
-  - Windows Server 2008
+  - Windows Server 2012
 
 environment:
   REPORT_EXIT_STATUS: 1
