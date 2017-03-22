@@ -1,12 +1,12 @@
 version: '{branch}.{build}'
 
 os: 
-  - Windows Server 2012 
+  - Windows Server 2008 R2
 
 environment:
   REPORT_EXIT_STATUS: 1
   matrix:
-    - BUILD_ENV: x86
+    # - BUILD_ENV: x86
     - BUILD_ENV: x64
 
 branches:
@@ -49,6 +49,8 @@ build_script:
     nmake install
 
     copy php.ini-development C:\projects\apcu\bin\php.ini
+
+    ver
 
     C:\projects\apcu\bin\php.exe -d extension_dir=C:\projects\apcu\bin\ext\ -d extension=php_apcu.dll -m
 
