@@ -6,7 +6,7 @@ install:
 - cmd: cinst wget
 build_script:
 - cmd: >-
-    "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\vcvars32.bat"
+    "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
 
     wget http://windows.php.net/downloads/php-sdk/php-sdk-binary-tools-20110915.zip
 
@@ -20,9 +20,9 @@ build_script:
 
     xcopy C:\projects\apcu C:\projects\php-src\ext\apcu /s /e /y
 
-    wget http://windows.php.net/downloads/php-sdk/deps-7.0-vc14-x86.7z
+    wget http://windows.php.net/downloads/php-sdk/deps-7.0-vc14-x64.7z
 
-    7z x -y deps-7.0-vc14-x86.7z -oC:\projects\php-src
+    7z x -y deps-7.0-vc14-x64.7z -oC:\projects\php-src
 
     cd C:\projects\php-src
 
