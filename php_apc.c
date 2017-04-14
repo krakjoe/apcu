@@ -242,9 +242,8 @@ static PHP_MINIT_FUNCTION(apcu)
 				/* do not display anything */
 			} else {
 				char *log_buffer;
-				int syslog_type_int = LOG_WARNING;
 				spprintf(&log_buffer, 0, "%s", "apcu.shm_segments will be initialized");
-				php_log_err_with_severity(log_buffer, syslog_type_int);
+				php_log_err(log_buffer);
 				efree(log_buffer);
 				/* php_error_docref(NULL, E_WARNING, "apcu.shm_segments will be initialized"); */
 			}
