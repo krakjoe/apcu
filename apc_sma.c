@@ -312,6 +312,7 @@ PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_
         {
             int j = apc_shm_create(i, sma->size);
 #if PHP_WIN32
+            /* TODO remove the line below after 7.1 EOL. */
             SetLastError(0);
 #endif
             sma->segs[i] = apc_shm_attach(j, sma->size);
