@@ -1,9 +1,12 @@
 version: '{branch}.{build}'
 
+os: 
+  - Windows Server 2012
+
 environment:
   REPORT_EXIT_STATUS: 1
   matrix:
-    - BUILD_ENV: x86
+    # - BUILD_ENV: x86
     - BUILD_ENV: x64
 
 branches:
@@ -15,6 +18,8 @@ install:
 
 build_script:
 - cmd: >-
+    ver
+
     "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %BUILD_ENV%
 
     wget http://windows.php.net/downloads/php-sdk/php-sdk-binary-tools-20110915.zip
@@ -23,7 +28,7 @@ build_script:
 
     C:\projects\php-sdk\bin\phpsdk_setvars.bat
 
-    git clone --depth=1 https://github.com/php/php-src C:\projects\php-src
+    git clone https://github.com/php/php-src C:\projects\php-src
 
     mkdir C:\projects\php-src\ext\apcu
 
@@ -35,9 +40,11 @@ build_script:
 
     cd C:\projects\php-src
 
+    git checkout 9f1492b
+
     buildconf.bat
 
-    configure.bat --disable-all --enable-cli --enable-zts --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-prefix=C:\projects\apcu\bin --with-php-build=deps
+    configure.bat --disable-all --enable-cli --enable-cgi --enable-zts --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-prefix=C:\projects\apcu\bin --with-php-build=deps
 
     nmake
 
@@ -46,6 +53,8 @@ build_script:
     copy php.ini-development C:\projects\apcu\bin\php.ini
 
     C:\projects\apcu\bin\php.exe -d extension_dir=C:\projects\apcu\bin\ext\ -d extension=php_apcu.dll -m
+
+    C:\projects\apcu\bin\php-cgi.exe -d extension_dir=C:\projects\apcu\bin\ext\ -d extension=php_apcu.dll -m
 
 test_script:
   - cmd: C:\projects\apcu\bin\php.exe -n run-tests.php ext\apcu -n -d extension_dir=C:\projects\apcu\bin\ext\ -d extension=php_apcu.dll -d apc.enable=1 -d apc.enable_cli=1 -p C:\projects\apcu\bin\php.exe --show-diff --set-timeout 120
