@@ -211,10 +211,6 @@ static int apc_iterator_check_expiry(apc_cache_t* cache, apc_cache_slot_t **slot
         if((time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
             return 0;
         }
-    } else if(cache->ttl) {
-        if((*slot)->ctime + cache->ttl < t) {
-            return 0;
-        }
     }
 
     return 1;
