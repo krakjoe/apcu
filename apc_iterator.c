@@ -312,7 +312,10 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator TSRMLS_DC) {
 static void apc_iterator_totals(apc_iterator_t *iterator TSRMLS_DC) {
     apc_cache_slot_t **slot;
     int i;
+    time_t t;
 	zend_bool bailout = 0;
+
+    t = apc_time();
 
 	APC_RLOCK(apc_user_cache->header);
 
@@ -320,11 +323,13 @@ static void apc_iterator_totals(apc_iterator_t *iterator TSRMLS_DC) {
 		for (i=0; i < apc_user_cache->nslots; i++) {
 		    slot = &apc_user_cache->slots[i];
 		    while((*slot)) {
-		        if (apc_iterator_search_match(iterator, slot)) {
-		            iterator->size += (*slot)->value->mem_size;
-		            iterator->hits += (*slot)->nhits;
-		            iterator->count++;
-		        }
+		        if (apc_iterator_check_expiry(apc_user_cache, slot, t)) {
+		            if (apc_iterator_search_match(iterator, slot)) {
+		                iterator->size += (*slot)->value->mem_size;
+		                iterator->hits += (*slot)->nhits;
+		                iterator->count++;
+		            }
+                        }
 		        slot = &(*slot)->next;
 		    }
 		}
