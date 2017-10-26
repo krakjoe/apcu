@@ -16,6 +16,17 @@ AC_ARG_ENABLE(apcu-rwlocks,
   AC_MSG_RESULT(yes)
 ])
 
+AC_MSG_CHECKING(if APCu should use robust locking)
+AC_ARG_ENABLE(apcu-robust,
+[  --enable-apcu-robust     Enable APCu robust locking],
+[
+  PHP_APCU_ROBUST=$enableval
+], 
+[
+  PHP_APCU_ROBUST=no
+])
+AC_MSG_RESULT($PHP_APCU_ROBUST)
+
 AC_MSG_CHECKING(if APCu should be built in debug mode)
 AC_ARG_ENABLE(apcu-debug,
 [  --enable-apcu-debug     Enable APCu debugging],
@@ -202,6 +213,11 @@ if test "$PHP_APCU" != "no"; then
 			  ]
 	  )
 	  LIBS="$orig_LIBS"
+  fi
+  
+  if test "$PHP_APCU_ROBUST" != "no"; then
+   AC_DEFINE(APC_LOCK_ROBUST, 1, [ ])
+   AC_MSG_WARN([APCu robust locking enabled])
   fi
   
   if test "$PHP_APCU_RWLOCKS" == "no"; then
