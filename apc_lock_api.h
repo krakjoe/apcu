@@ -89,7 +89,7 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 
 #ifdef APC_LOCK_ROBUST
 #define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); if(apc_lock_wlock(lock)==EOWNERDEAD){apc_error("inconsistent memory");} }
-#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); if(apc_lock_rlock(lock)==EOWNERDEAD){apc_error("inconsistent memory");)} }
+#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); if(apc_lock_rlock(lock)==EOWNERDEAD){apc_error("inconsistent memory");} }
 #else
 #define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock); }
 #define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock); }
