@@ -37,6 +37,7 @@
 #   ifndef APC_FCNTL_LOCK
 #       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS)
         typedef pthread_rwlock_t apc_lock_t;
+#		define APC_LOCK_RECURSIVE
 #		define APC_LOCK_SHARED
 #       else
         typedef pthread_mutex_t apc_lock_t;
@@ -88,8 +89,8 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 #define DESTROY_LOCK(lock)    apc_lock_destroy(lock)
 
 #ifdef APC_LOCK_ROBUST
-#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); if(apc_lock_wlock(lock)==EOWNERDEAD){apc_error("inconsistent memory");} }
-#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); if(apc_lock_rlock(lock)==EOWNERDEAD){apc_error("inconsistent memory");)} }
+#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); if(!apc_lock_wlock(lock)){apc_error("inconsistent memory");} }
+#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); if(!apc_lock_rlock(lock)){apc_error("inconsistent memory");} }
 #else
 #define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock); }
 #define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock); }
