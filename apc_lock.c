@@ -119,17 +119,26 @@ PHP_APCU_API zend_bool apc_lock_init() {
 
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
-    if (pthread_rwlockattr_init(&apc_lock_attr) == SUCCESS) {
-        if (pthread_rwlockattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
-            #   ifdef APC_LOCK_RECURSIVE
-		pthread_mutexattr_settype(&apc_lock_attr, PTHREAD_MUTEX_RECURSIVE);
-            #   endif
-            #   ifdef APC_LOCK_ROBUST
-            	pthread_mutexattr_setrobust(&apc_lock_attr, PTHREAD_MUTEX_ROBUST);
-            #   endif
-            return 1;
-        }
-    }
+#   ifdef APC_LOCK_RECURSIVE
+           if (pthread_mutexattr_init(&apc_lock_attr) == SUCCESS) {
+                   if (pthread_mutexattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
+                           pthread_mutexattr_settype(&apc_lock_attr, PTHREAD_MUTEX_RECURSIVE);
+            		   #ifdef APC_LOCK_ROBUST
+        	               pthread_mutexattr_setrobust(&apc_lock_attr, PTHREAD_MUTEX_ROBUST);
+	            	   #endif
+                           return 1;
+                   }
+           }
+#   else
+           if (pthread_rwlockattr_init(&apc_lock_attr) == SUCCESS) {
+                   if (pthread_rwlockattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
+                           #ifdef APC_LOCK_ROBUST
+                               pthread_mutexattr_setrobust(&apc_lock_attr, PTHREAD_MUTEX_ROBUST);
+                           #endif
+                           return 1;
+                   }
+           }
+#   endif
 # endif
 #endif
 	return 0;

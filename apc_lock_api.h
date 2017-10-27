@@ -35,9 +35,8 @@
 # include "pthread.h"
 # ifndef APC_SPIN_LOCK
 #   ifndef APC_FCNTL_LOCK
-#       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS)
+#       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS) && !defined(APC_LOCK_ROBUST)
         typedef pthread_rwlock_t apc_lock_t;
-#		define APC_LOCK_RECURSIVE
 #		define APC_LOCK_SHARED
 #       else
         typedef pthread_mutex_t apc_lock_t;
