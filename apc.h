@@ -173,9 +173,8 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS); /* }}} */
 	JMP_BUF *zb = EG(bailout);             \
 	JMP_BUF ab;                            \
 	                                       \
-	EG(bailout) = &ab;                     \
-	                                       \
 	begin;                                 \
+	EG(bailout) = &ab;                     \
 	if (SETJMP(ab) == SUCCESS) {           \
 		block                              \
 	} else {                               \
