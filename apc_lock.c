@@ -119,7 +119,6 @@ PHP_APCU_API zend_bool apc_lock_init() {
 
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
-    zend_bool ret;
     if (pthread_rwlockattr_init(&apc_lock_attr) == SUCCESS) {
         if (pthread_rwlockattr_setpshared(&apc_lock_attr, PTHREAD_PROCESS_SHARED) == SUCCESS) {
             #   ifdef APC_LOCK_RECURSIVE
