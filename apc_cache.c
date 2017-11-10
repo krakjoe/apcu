@@ -1363,7 +1363,11 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
     if (target == NULL)
         goto bad;
 
+#if PHP_VERSION_ID >= 70300
+	GC_SET_REFCOUNT(target, 1);
+#else
 	GC_REFCOUNT(target) = 1;
+#endif
 	GC_TYPE_INFO(target) = IS_ARRAY;
     zend_hash_index_update_ptr(&ctxt->copied, (uintptr_t) source, target);
 
@@ -1371,7 +1375,11 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 	target->pDestructor = source->pDestructor;
 
 	if (source->nNumUsed == 0) {
+#if PHP_VERSION_ID >= 70300
+		target->u.flags = (source->u.flags & ~(HASH_FLAG_INITIALIZED|HASH_FLAG_PACKED)) | HASH_FLAG_STATIC_KEYS;
+#else
 		target->u.flags = (source->u.flags & ~(HASH_FLAG_INITIALIZED|HASH_FLAG_PACKED|HASH_FLAG_PERSISTENT)) | HASH_FLAG_APPLY_PROTECTION | HASH_FLAG_STATIC_KEYS;
+#endif
 		target->nTableMask = HT_MIN_MASK;
 		target->nNumUsed = 0;
 		target->nNumOfElements = 0;
@@ -1379,7 +1387,9 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		target->nInternalPointer = HT_INVALID_IDX;
 		HT_SET_DATA_ADDR(target, &uninitialized_bucket);
 	} else if (GC_FLAGS(source) & IS_ARRAY_IMMUTABLE) {
+#if PHP_VERSION_ID < 70300
 		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
+#endif
 		target->nTableMask = source->nTableMask;
 		target->nNumUsed = source->nNumUsed;
 		target->nNumOfElements = source->nNumOfElements;
@@ -1403,7 +1413,9 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 			target->nInternalPointer = idx;
 		}
 	} else if (source->u.flags & HASH_FLAG_PACKED) {
+#if PHP_VERSION_ID < 70300
 		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
+#endif
 		target->nTableMask = source->nTableMask;
 		target->nNumUsed = source->nNumUsed;
 		target->nNumOfElements = source->nNumOfElements;
@@ -1433,7 +1445,9 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 			target->nInternalPointer = idx;
 		}
 	} else {
+#if PHP_VERSION_ID < 70300
 		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
+#endif
 		target->nTableMask = source->nTableMask;
 		target->nNextFreeElement = source->nNextFreeElement;
 		target->nInternalPointer = HT_INVALID_IDX;
@@ -1490,7 +1504,11 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 	if (ctxt->copied.nTableSize) {
 		zend_reference *rc = zend_hash_index_find_ptr(&ctxt->copied, (uintptr_t) src);
 		if (rc) {
+#if PHP_VERSION_ID >= 70300
+			GC_ADDREF(rc);
+#else
 			GC_REFCOUNT(rc)++;
+#endif
 			return rc;
 		}
 	}
@@ -1504,7 +1522,11 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
     if (dst == NULL)
         return NULL;
 
+#if PHP_VERSION_ID >= 70300
+    GC_SET_REFCOUNT(dst, 1);
+#else
     GC_REFCOUNT(dst) = 1;
+#endif
     GC_TYPE_INFO(dst) = IS_REFERENCE;
 
     if (my_copy_zval(&dst->val, &src->val, ctxt) == NULL) {
@@ -1563,7 +1585,9 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
             return NULL;
 	    break;
 
+#ifdef IS_CONSTANT
     case IS_CONSTANT:
+#endif
     case IS_STRING:	
 		if (ctxt->copy == APC_COPY_OUT) {
 			ZVAL_DUP(dst, src);

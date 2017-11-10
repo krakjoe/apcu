@@ -518,7 +518,11 @@ PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool) {
 
 	memset(p, 0, sizeof(zend_string));
 
+#if PHP_VERSION_ID >= 70300
+	GC_SET_REFCOUNT(p, 1);
+#else
 	GC_REFCOUNT(p) = 1;
+#endif
 	/* shouldn't be important, except for debugging */
 	GC_TYPE_INFO(p) = IS_STRING;
 
@@ -541,7 +545,11 @@ PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_po
 
 	memset(p, 0, sizeof(zend_string));
 
+#if PHP_VERSION_ID >= 70300
+	GC_SET_REFCOUNT(p, 1);
+#else
 	GC_REFCOUNT(p) = 1;
+#endif
 	/* shouldn't be important, except for debugging */
 	GC_TYPE_INFO(p) = IS_STRING;
 
