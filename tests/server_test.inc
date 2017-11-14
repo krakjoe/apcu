@@ -141,7 +141,7 @@ function run_test_simple($request_uri = NULL)
 
 function run_test($host, $port, $send)
 {
-	$fp = fsockopen($host, $port, $errno, $errstr, 3);
+	$fp = fsockopen($host, $port, $errno, $errstr, 10);
 	if (!$fp) {
 	  die(sprintf("connect failed errno=%d errstr='%s'", $errno, $errstr));
 	}
