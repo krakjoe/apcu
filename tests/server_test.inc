@@ -109,7 +109,7 @@ function connection_test($host, $port)
 {
 	$port = intval($port)?:80;
 
-	$fp = @fsockopen($host, $port, $errno, $errstr, 2);
+	$fp = @fsockopen($host, $port, $errno, $errstr, 10);
 	if (!$fp) {
 		return false;
 	}
