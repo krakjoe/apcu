@@ -50,7 +50,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
 	}
 
 	if (APC_ITER_KEY & iterator->format) {
-		add_assoc_str(&item->value, "key", zend_string_copy(item->key));
+		add_assoc_str(&item->value, "key", zend_string_dup(item->key, 0));
 	}
 
     if (APC_ITER_VALUE & iterator->format) {
@@ -123,6 +123,9 @@ static void apc_iterator_free(zend_object *object) {
 #ifdef ITERATOR_PCRE
     if (iterator->regex) {
         zend_string_release(iterator->regex);
+# if PHP_VERSION_ID >= 70300
+        pcre2_match_data_free(iterator->re_match_data);
+# endif
     }
 #endif
 
@@ -162,7 +165,11 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, apc_cache_slot_t 
 
 #ifdef ITERATOR_PCRE
     if (iterator->regex) {
+# if PHP_VERSION_ID >= 70300
+        rval = (pcre2_match(iterator->re, (PCRE2_SPTR) ZSTR_VAL((*slot)->key.str), ZSTR_LEN((*slot)->key.str), 0, 0, iterator->re_match_data, php_pcre_mctx()) >= 0);
+# else
         rval = (pcre_exec(iterator->re, NULL, ZSTR_VAL((*slot)->key.str), ZSTR_LEN((*slot)->key.str), 0, 0, NULL, 0) >= 0);
+# endif
     }
 #endif
 
@@ -329,10 +336,15 @@ void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long for
         iterator->regex = zend_string_copy(Z_STR_P(search));
         iterator->re = pcre_get_compiled_regex(iterator->regex, NULL, NULL);
 
-        if(!iterator->re) {
+        if (!iterator->re) {
             apc_error("Could not compile regular expression: %s", Z_STRVAL_P(search));
 			zend_string_release(iterator->regex);
+			iterator->regex = NULL;
         }
+
+# if PHP_VERSION_ID >= 70300
+        iterator->re_match_data = pcre2_match_data_create_from_pattern(iterator->re, php_pcre_gctx());
+# endif
 #else
         apc_error("Regular expressions support is not enabled, please enable PCRE for " APC_ITERATOR_NAME " regex support.");
 #endif
@@ -445,7 +457,7 @@ PHP_METHOD(apc_iterator, key) {
     item = apc_stack_get(iterator->stack, iterator->stack_idx);
 
     if (item->key) {
-        RETURN_STR_COPY(item->key);
+        RETURN_STR(zend_string_dup(item->key, 0));
     } else {
         RETURN_LONG(iterator->key_idx);
     }
