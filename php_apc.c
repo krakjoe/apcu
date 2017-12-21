@@ -162,7 +162,7 @@ zend_bool apc_is_enabled(void)
 static PHP_MINFO_FUNCTION(apcu)
 {
     php_info_print_table_start();
-    php_info_print_table_header(2, "APCu Support", APCG(enabled) ? "Enabled" : "Disabled");
+    php_info_print_table_row(2, "APCu Support", APCG(enabled) ? "Enabled" : "Disabled");
     php_info_print_table_row(2, "Version", PHP_APCU_VERSION);
 #ifdef APC_DEBUG
     php_info_print_table_row(2, "APCu Debugging", "Enabled");
