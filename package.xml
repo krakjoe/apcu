@@ -39,6 +39,8 @@
 - mitigate gh#223 Fatal error when starting php on windows
 - add support for PCRE2 in 7.3
 - use row formatting for information in phpinfo() tables
+- set IS_STR_PERSISTENT so refcounting failures are reported by -DRC_DEBUG=1
+- fix gh#266 refcounting errors in APCIterator
  </notes>
  <contents>
   <dir name="/">
