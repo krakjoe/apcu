@@ -38,18 +38,18 @@ AC_ARG_ENABLE(apcu-clear-signal,
   AC_MSG_RESULT(no)
 ])
 
-AC_MSG_CHECKING(if APCu will use mmap or shm)
+PHP_APCU_MMAP=yes
+AC_MSG_CHECKING([if APCu will use mmap (or shm)])
 AC_ARG_ENABLE(apcu-mmap,
 [  --disable-apcu-mmap     Disable mmap, falls back on shm],
 [
   if test "x$enableval" = "xno"; then
     PHP_APCU_MMAP=no
-    AC_MSG_RESULT(shm)
   else
     PHP_APCU_MMAP=yes
-    AC_MSG_RESULT(mmap)
   fi
 ])
+AC_MSG_RESULT($PHP_APCU_MMAP)
 
 PHP_APCU_SPINLOCK=no
 AC_MSG_CHECKING(if APCu should utilize spinlocks before flocks)

@@ -34,7 +34,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+- fix gh#34 mmap disabled when configure is called with --enable-apcu-mmap
  </notes>
  <contents>
   <dir name="/">
