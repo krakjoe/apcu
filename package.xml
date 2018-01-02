@@ -22,10 +22,9 @@
   <email>remi@php.net</email>
   <active>yes</active>
  </lead>
- <date>2017-01-16</date>
- <time>08:00:00</time>
+ <date>2018-01-02</date>
  <version>
-  <release>5.1.9dev</release>
+  <release>5.1.9</release>
   <api>5.1.2</api>
  </version>
  <stability>
