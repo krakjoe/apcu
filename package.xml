@@ -34,7 +34,11 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- fix gh#34 mmap disabled when configure is called with --enable-apcu-mmap
+- fix gh#234 mmap disabled when configure is called with --enable-apcu-mmap
+- fix gh#226 Warning: apcu_fetch(): apc_fetch() expects a string or array of strings.
+- mitigate gh#223 Fatal error when starting php on windows
+- add support for PCRE2 in 7.3
+- use row formatting for information in phpinfo() tables
  </notes>
  <contents>
   <dir name="/">
@@ -57,6 +61,7 @@
     <file name="apc_013_exists.phpt" role="test" />
     <file name="apc_014_store_ref.phpt" role="test" />
     <file name="apc_015.phpt" role="test" />
+    <file name="apc_016.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
     <file name="apc54_018.phpt" role="test" />
     <file name="apc_entry_001.phpt" role="test" />
