@@ -698,7 +698,7 @@ PHP_FUNCTION(apcu_fetch) {
 					ZVAL_UNDEF(iresult);
 
 					if (apc_cache_fetch(apc_user_cache, Z_STR_P(hentry), t, &iresult)) {
-					    add_assoc_zval(&result, Z_STRVAL_P(hentry), &result_entry);
+					    zend_symtable_update(Z_ARRVAL(result), Z_STR_P(hentry), &result_entry);
 					}
 			    } else {
 					apc_warning("apc_fetch() expects a string or array of strings.");
