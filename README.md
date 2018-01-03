@@ -11,6 +11,30 @@ See [APCu Backwards Compatibility Module](https://github.com/krakjoe/apcu-bc) wh
 [![Build Status](https://travis-ci.org/krakjoe/apcu.svg?branch=master)](https://travis-ci.org/krakjoe/apcu)
 [![Build status](https://ci.appveyor.com/api/projects/status/om63glh4g24gi1p9/branch/master?svg=true)](https://ci.appveyor.com/project/krakjoe/apcu/branch/master)
 
+
+Installation
+============
+
+#### While compiling PHP from source :-
+
+compile php with the `--enable-apcu` option
+
+#### Install APCu with pecl :-
+```
+$ pecl install apcu
+```
+
+#### Manually install APCu :-
+```
+$ git clone https://github.com/krakjoe/apcu.git
+$ cd apcu
+$ git submodule sync && git submodule update --init
+$ phpize
+$ ./configure
+$ make
+$ sudo make install
+```
+
 Documentation
 ============
 

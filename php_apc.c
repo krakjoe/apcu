@@ -43,6 +43,7 @@
 #include "ext/standard/flock_compat.h"
 #include "ext/standard/md5.h"
 #include "ext/standard/php_var.h"
+#include "ext/standard/php_string.h"
 #include "apc_arginfo.h"
 
 #ifdef HAVE_SYS_FILE_H
@@ -698,7 +699,7 @@ PHP_FUNCTION(apcu_fetch) {
 					ZVAL_UNDEF(iresult);
 
 					if (apc_cache_fetch(apc_user_cache, Z_STR_P(hentry), t, &iresult)) {
-					    add_assoc_zval(&result, Z_STRVAL_P(hentry), &result_entry);
+					    add_assoc_zval(&result, ZSTR_VAL(php_addslashes(Z_STR_P(hentry), 0)), &result_entry);
 					}
 			    } else {
 					apc_warning("apc_fetch() expects a string or array of strings.");
