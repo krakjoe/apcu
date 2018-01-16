@@ -35,7 +35,7 @@
 # include "pthread.h"
 # ifndef APC_SPIN_LOCK
 #   ifndef APC_FCNTL_LOCK
-#       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS)
+#       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS) && !defined(APC_LOCK_ROBUST)
         typedef pthread_rwlock_t apc_lock_t;
 #		define APC_LOCK_SHARED
 #       else
@@ -86,9 +86,15 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 /* {{{ generic locking macros */
 #define CREATE_LOCK(lock)     apc_lock_create(lock)
 #define DESTROY_LOCK(lock)    apc_lock_destroy(lock)
+
+#ifdef APC_LOCK_ROBUST
+#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); if(!apc_lock_wlock(lock)){apc_error("inconsistent memory");} }
+#define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); if(!apc_lock_rlock(lock)){apc_error("inconsistent memory");} }
+#else
 #define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock); }
-#define WUNLOCK(lock)         { apc_lock_wunlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
 #define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock); }
+#endif
+#define WUNLOCK(lock)         { apc_lock_wunlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
 #define RUNLOCK(lock)         { apc_lock_runlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
 #define LOCK                  WLOCK
 #define UNLOCK                WUNLOCK
