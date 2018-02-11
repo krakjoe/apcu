@@ -332,6 +332,7 @@ HashTable* apc_flip_hash(HashTable *hash) {
     zend_hash_init(new_hash, zend_hash_num_elements(hash), NULL, ZVAL_PTR_DTOR, 0);
 
     ZEND_HASH_FOREACH_VAL(hash, entry) {
+        ZVAL_DEREF(entry);
         if (Z_TYPE_P(entry) == IS_STRING) {
             zend_hash_update(new_hash, Z_STR_P(entry), &data);
         } else {
