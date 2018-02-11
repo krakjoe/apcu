@@ -1385,7 +1385,9 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		target->nInternalPointer = HT_INVALID_IDX;
 		HT_SET_DATA_ADDR(target, &uninitialized_bucket);
 	} else if (GC_FLAGS(source) & IS_ARRAY_IMMUTABLE) {
-#if PHP_VERSION_ID < 70300
+#if PHP_VERSION_ID >= 70300
+		target->u.flags = source->u.flags;
+#else
 		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
 #endif
 		target->nTableMask = source->nTableMask;
@@ -1411,7 +1413,9 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 			target->nInternalPointer = idx;
 		}
 	} else if (source->u.flags & HASH_FLAG_PACKED) {
-#if PHP_VERSION_ID < 70300
+#if PHP_VERSION_ID >= 70300
+		target->u.flags = source->u.flags;
+#else
 		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
 #endif
 		target->nTableMask = source->nTableMask;
@@ -1443,7 +1447,9 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 			target->nInternalPointer = idx;
 		}
 	} else {
-#if PHP_VERSION_ID < 70300
+#if PHP_VERSION_ID >= 70300
+		target->u.flags = source->u.flags;
+#else
 		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
 #endif
 		target->nTableMask = source->nTableMask;
