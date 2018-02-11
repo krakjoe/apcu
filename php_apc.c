@@ -232,6 +232,23 @@ static PHP_MINIT_FUNCTION(apcu)
 			/* ensure this runs only once */
 			APCG(initialized) = 1;
 			
+#if defined(PHP_WIN32)
+			/* Issue 223: write something to the error log */
+			/* Borrowed from main/maim.c */
+			/* Write CLI/CGI errors to stderr if display_errors = "stderr" */
+			if ((!strcmp(sapi_module.name, "cli") || !strcmp(sapi_module.name, "cgi")) &&
+				PG(display_errors) == PHP_DISPLAY_ERRORS_STDERR
+			) {
+				/* do not display anything */
+			} else {
+				char *log_buffer;
+				spprintf(&log_buffer, 0, "%s", "apcu.shm_segments will be initialized");
+				php_log_err(log_buffer);
+				efree(log_buffer);
+				/* php_error_docref(NULL, E_WARNING, "apcu.shm_segments will be initialized"); */
+			}
+#endif
+			
 			/* initialize shared memory allocator */
 #if APC_MMAP
 			apc_sma.init(APCG(shm_segments), APCG(shm_size), APCG(mmap_file_mask));
