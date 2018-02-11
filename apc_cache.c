@@ -1247,7 +1247,7 @@ static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ct
 
 static const uint32_t uninitialized_bucket[-HT_MIN_MASK] = {HT_INVALID_IDX, HT_INVALID_IDX};
 
-static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTable *source, HashTable *target, uint32_t idx, Bucket *p, Bucket *q, int packed, int static_keys, int with_holes)
+static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTable *source, HashTable *target, uint32_t idx, Bucket *p, Bucket *q, int packed, int with_holes)
 {
 	zval *data = &p->val;
 
@@ -1291,7 +1291,7 @@ static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTab
 		uint32_t nIndex;
 
 		q->key = p->key;
-		if (!static_keys && q->key) {
+		if (q->key) {
 			if (ctxt->copy == APC_COPY_IN) {
 				q->key = apc_pstrcpy(q->key, ctxt->pool);
 			} else {
@@ -1313,7 +1313,7 @@ static zend_always_inline void apc_array_dup_packed_elements(apc_context_t *ctxt
 	Bucket *end = p + source->nNumUsed;
 
 	do {
-		if (!apc_array_dup_element(ctxt, source, target, 0, p, q, 1, 1, with_holes)) {
+		if (!apc_array_dup_element(ctxt, source, target, 0, p, q, 1, with_holes)) {
 			if (with_holes) {
 				ZVAL_UNDEF(&q->val);
 			}
@@ -1322,7 +1322,7 @@ static zend_always_inline void apc_array_dup_packed_elements(apc_context_t *ctxt
 	} while (p != end);
 }
 
-static zend_always_inline uint32_t apc_array_dup_elements(apc_context_t *ctxt, HashTable *source, HashTable *target, int static_keys, int with_holes)
+static zend_always_inline uint32_t apc_array_dup_elements(apc_context_t *ctxt, HashTable *source, HashTable *target, int with_holes)
 {
     uint32_t idx = 0;
 	Bucket *p = source->arData;
@@ -1330,12 +1330,12 @@ static zend_always_inline uint32_t apc_array_dup_elements(apc_context_t *ctxt, H
 	Bucket *end = p + source->nNumUsed;
 
 	do {
-		if (!apc_array_dup_element(ctxt, source, target, idx, p, q, 0, static_keys, with_holes)) {
+		if (!apc_array_dup_element(ctxt, source, target, idx, p, q, 0, with_holes)) {
 			uint32_t target_idx = idx;
 
 			idx++; p++;
 			while (p != end) {
-				if (apc_array_dup_element(ctxt, source, target, target_idx, p, q, 0, static_keys, with_holes)) {
+				if (apc_array_dup_element(ctxt, source, target, target_idx, p, q, 0, with_holes)) {
 					if (source->nInternalPointer == idx) {
 						target->nInternalPointer = target_idx;
 					}
@@ -1467,18 +1467,10 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 
 		HT_HASH_RESET(target);
 
-		if (target->u.flags & HASH_FLAG_STATIC_KEYS) {
-			if (source->nNumUsed == source->nNumOfElements) {
-				idx = apc_array_dup_elements(ctxt, source, target, 1, 0);
-			} else {
-				idx = apc_array_dup_elements(ctxt, source, target, 1, 1);
-			}
+		if (source->nNumUsed == source->nNumOfElements) {
+			idx = apc_array_dup_elements(ctxt, source, target, 0);
 		} else {
-			if (source->nNumUsed == source->nNumOfElements) {
-				idx = apc_array_dup_elements(ctxt, source, target, 0, 0);
-			} else {
-				idx = apc_array_dup_elements(ctxt, source, target, 0, 1);
-			}
+			idx = apc_array_dup_elements(ctxt, source, target, 1);
 		}
 		target->nNumUsed = idx;
 		target->nNumOfElements = idx;
