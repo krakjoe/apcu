@@ -1247,7 +1247,7 @@ static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ct
 
 static const uint32_t uninitialized_bucket[-HT_MIN_MASK] = {HT_INVALID_IDX, HT_INVALID_IDX};
 
-static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTable *source, HashTable *target, uint32_t idx, Bucket *p, Bucket *q, int packed, int static_keys, int with_holes)
+static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTable *source, HashTable *target, uint32_t idx, Bucket *p, Bucket *q, int packed, int with_holes)
 {
 	zval *data = &p->val;
 
@@ -1291,10 +1291,12 @@ static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTab
 		uint32_t nIndex;
 
 		q->key = p->key;
-		if (!static_keys && q->key) {
+		if (q->key) {
 			if (ctxt->copy == APC_COPY_IN) {
 				q->key = apc_pstrcpy(q->key, ctxt->pool);
-			} else q->key = p->key;
+			} else {
+				q->key = zend_string_dup(p->key, 0);
+			}
 		}
 
 		nIndex = q->h | target->nTableMask;
@@ -1311,7 +1313,7 @@ static zend_always_inline void apc_array_dup_packed_elements(apc_context_t *ctxt
 	Bucket *end = p + source->nNumUsed;
 
 	do {
-		if (!apc_array_dup_element(ctxt, source, target, 0, p, q, 1, 1, with_holes)) {
+		if (!apc_array_dup_element(ctxt, source, target, 0, p, q, 1, with_holes)) {
 			if (with_holes) {
 				ZVAL_UNDEF(&q->val);
 			}
@@ -1320,7 +1322,7 @@ static zend_always_inline void apc_array_dup_packed_elements(apc_context_t *ctxt
 	} while (p != end);
 }
 
-static zend_always_inline uint32_t apc_array_dup_elements(apc_context_t *ctxt, HashTable *source, HashTable *target, int static_keys, int with_holes)
+static zend_always_inline uint32_t apc_array_dup_elements(apc_context_t *ctxt, HashTable *source, HashTable *target, int with_holes)
 {
     uint32_t idx = 0;
 	Bucket *p = source->arData;
@@ -1328,12 +1330,12 @@ static zend_always_inline uint32_t apc_array_dup_elements(apc_context_t *ctxt, H
 	Bucket *end = p + source->nNumUsed;
 
 	do {
-		if (!apc_array_dup_element(ctxt, source, target, idx, p, q, 0, static_keys, with_holes)) {
+		if (!apc_array_dup_element(ctxt, source, target, idx, p, q, 0, with_holes)) {
 			uint32_t target_idx = idx;
 
 			idx++; p++;
 			while (p != end) {
-				if (apc_array_dup_element(ctxt, source, target, target_idx, p, q, 0, static_keys, with_holes)) {
+				if (apc_array_dup_element(ctxt, source, target, target_idx, p, q, 0, with_holes)) {
 					if (source->nInternalPointer == idx) {
 						target->nInternalPointer = target_idx;
 					}
@@ -1384,34 +1386,10 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		target->nNextFreeElement = 0;
 		target->nInternalPointer = HT_INVALID_IDX;
 		HT_SET_DATA_ADDR(target, &uninitialized_bucket);
-	} else if (GC_FLAGS(source) & IS_ARRAY_IMMUTABLE) {
-#if PHP_VERSION_ID < 70300
-		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
-#endif
-		target->nTableMask = source->nTableMask;
-		target->nNumUsed = source->nNumUsed;
-		target->nNumOfElements = source->nNumOfElements;
-		target->nNextFreeElement = source->nNextFreeElement;
-		if (ctxt->copy == APC_COPY_IN) {
-			HT_SET_DATA_ADDR(target, pool->palloc(pool, HT_SIZE(target)));
-		} else
-            HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
-
-        if (HT_GET_DATA_ADDR(target) == NULL)
-            goto bad;
-
-		target->nInternalPointer = source->nInternalPointer;
-		memcpy(HT_GET_DATA_ADDR(target), HT_GET_DATA_ADDR(source), HT_USED_SIZE(source));
-		if (target->nNumOfElements > 0 &&
-			target->nInternalPointer == HT_INVALID_IDX) {
-			idx = 0;
-			while (Z_TYPE(target->arData[idx].val) == IS_UNDEF) {
-				idx++;
-			}
-			target->nInternalPointer = idx;
-		}
 	} else if (source->u.flags & HASH_FLAG_PACKED) {
-#if PHP_VERSION_ID < 70300
+#if PHP_VERSION_ID >= 70300
+		target->u.flags = source->u.flags;
+#else
 		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
 #endif
 		target->nTableMask = source->nTableMask;
@@ -1443,8 +1421,10 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 			target->nInternalPointer = idx;
 		}
 	} else {
-#if PHP_VERSION_ID < 70300
-		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
+#if PHP_VERSION_ID >= 70300
+		target->u.flags = (source->u.flags & ~HASH_FLAG_STATIC_KEYS);
+#else
+		target->u.flags = (source->u.flags & ~(HASH_FLAG_PERSISTENT|HASH_FLAG_STATIC_KEYS)) | HASH_FLAG_APPLY_PROTECTION;
 #endif
 		target->nTableMask = source->nTableMask;
 		target->nNextFreeElement = source->nNextFreeElement;
@@ -1459,18 +1439,10 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 
 		HT_HASH_RESET(target);
 
-		if (target->u.flags & HASH_FLAG_STATIC_KEYS) {
-			if (source->nNumUsed == source->nNumOfElements) {
-				idx = apc_array_dup_elements(ctxt, source, target, 1, 0);
-			} else {
-				idx = apc_array_dup_elements(ctxt, source, target, 1, 1);
-			}
+		if (source->nNumUsed == source->nNumOfElements) {
+			idx = apc_array_dup_elements(ctxt, source, target, 0);
 		} else {
-			if (source->nNumUsed == source->nNumOfElements) {
-				idx = apc_array_dup_elements(ctxt, source, target, 0, 0);
-			} else {
-				idx = apc_array_dup_elements(ctxt, source, target, 0, 1);
-			}
+			idx = apc_array_dup_elements(ctxt, source, target, 1);
 		}
 		target->nNumUsed = idx;
 		target->nNumOfElements = idx;
@@ -1599,8 +1571,11 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 
     case IS_ARRAY:
         if(ctxt->serializer == NULL) {
-			if ((Z_ARRVAL_P(dst) = my_copy_hashtable(Z_ARRVAL_P(src), ctxt)) == NULL)
-                return NULL;
+			HashTable *ht = my_copy_hashtable(Z_ARRVAL_P(src), ctxt);
+			if (!ht) {
+				return NULL;
+			}
+			ZVAL_ARR(dst, ht);
             break;
         }
 
