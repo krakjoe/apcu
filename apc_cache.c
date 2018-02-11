@@ -1294,7 +1294,9 @@ static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTab
 		if (!static_keys && q->key) {
 			if (ctxt->copy == APC_COPY_IN) {
 				q->key = apc_pstrcpy(q->key, ctxt->pool);
-			} else q->key = p->key;
+			} else {
+				q->key = zend_string_dup(p->key, 0);
+			}
 		}
 
 		nIndex = q->h | target->nTableMask;
