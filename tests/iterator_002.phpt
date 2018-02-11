@@ -5,7 +5,6 @@ APC: APCIterator regex
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 $it = new APCuIterator('/key[0-9]0/');

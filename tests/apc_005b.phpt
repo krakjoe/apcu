@@ -5,7 +5,6 @@ APC: apcu_store/fetch with arrays with duplicate object
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 

@@ -5,7 +5,6 @@ APC: apcu_cas test
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 apcu_store('foobar',2);

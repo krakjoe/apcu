@@ -5,7 +5,6 @@ APC: apcu_store/fetch/add with array of key/value pairs.
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 
