@@ -5,7 +5,6 @@ APC: apcu_fetch resets array pointers
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 $items = array('bar', 'baz');
@@ -19,7 +18,6 @@ var_dump(current($back));
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 string(3) "bar"
 string(3) "bar"

@@ -5,7 +5,6 @@ APC: apcu_store/fetch with bools
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 
@@ -26,7 +25,6 @@ var_dump($success); /* false */
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 bool(false)
 bool(false)

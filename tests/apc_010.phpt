@@ -5,7 +5,6 @@ APC: apcu_store/fetch/add with array of key/value pairs.
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 
@@ -29,7 +28,6 @@ var_dump($cached_values);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 array(0) {
 }

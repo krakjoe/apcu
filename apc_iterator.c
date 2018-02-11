@@ -43,14 +43,14 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
 
     array_init(&item->value);
 
-	item->key = slot->key.str;
+	item->key = zend_string_dup(slot->key.str, 0);
 
     if (APC_ITER_TYPE & iterator->format) {
 		add_assoc_string_ex(&item->value, "type", sizeof("type")-1, "user");
 	}
 
 	if (APC_ITER_KEY & iterator->format) {
-		add_assoc_str(&item->value, "key", zend_string_dup(item->key, 0));
+		add_assoc_str(&item->value, "key", zend_string_copy(item->key));
 	}
 
     if (APC_ITER_VALUE & iterator->format) {
@@ -100,6 +100,7 @@ static zend_object* apc_iterator_clone(zval *zobject) {
 
 /* {{{ apc_iterator_item_dtor */
 static void apc_iterator_item_dtor(apc_iterator_item_t *item) {
+    zend_string_release(item->key);
     zval_ptr_dtor(&item->value);
     efree(item);
 }
@@ -456,7 +457,7 @@ PHP_METHOD(apc_iterator, key) {
     item = apc_stack_get(iterator->stack, iterator->stack_idx);
 
     if (item->key) {
-        RETURN_STR(zend_string_dup(item->key, 0));
+        RETURN_STR_COPY(item->key);
     } else {
         RETURN_LONG(iterator->key_idx);
     }

@@ -5,7 +5,6 @@ APC: APCIterator regex & chunk size & list
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 $it = new APCuIterator('/key[0-9]0/', APC_ITER_ALL, 1, APC_LIST_ACTIVE);
@@ -20,7 +19,6 @@ var_dump($vals);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECT--
 array(4) {
   ["key10"]=>

@@ -5,7 +5,6 @@ APC: apcu_inc/apcu_dec test
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 apcu_store('foobar',2);
@@ -30,7 +29,6 @@ echo "pass by ref success ". $success . "\n";
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 $foobar = 2 
 $foobar += 1 = 3

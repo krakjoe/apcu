@@ -5,7 +5,6 @@ APC: apcu_store/fetch with arrays with two object references
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 
@@ -24,7 +23,6 @@ $bar[0] = 'roh';
 var_dump($bar);
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 array(2) {
   [0]=>

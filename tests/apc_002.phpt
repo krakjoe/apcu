@@ -5,7 +5,6 @@ APC: apcu_store/fetch with objects
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 
@@ -21,7 +20,6 @@ var_dump($bar);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 object(foo)#%d (0) {
 }

@@ -5,7 +5,6 @@ APC: apcu_inc/apcu_dec performance test (gh#164)
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 apcu_store('foobar', 1);
@@ -18,7 +17,6 @@ $t = microtime(true) - $t;
 var_dump($t < 0.1 ? true : $t);
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 int(1985229329)
 int(1)

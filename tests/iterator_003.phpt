@@ -5,7 +5,6 @@ APC: APCIterator chunk size
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.file_update_protection=0
 --FILE--
 <?php
 $it = new APCuIterator(NULL, APC_ITER_ALL, 10);
@@ -21,7 +20,6 @@ var_dump($vals);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECT--
 array(41) {
   ["key0"]=>

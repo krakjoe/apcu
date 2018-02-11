@@ -19,7 +19,6 @@ foreach($_items as $k => $v) {
 var_dump(apcu_store($items));
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECT--
 array(0) {
 }
