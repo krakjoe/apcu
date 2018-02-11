@@ -817,7 +817,7 @@ PHP_FUNCTION(apcu_delete) {
                 Z_TRY_ADDREF_P(hentry);
             } else if (apc_cache_delete(apc_user_cache, Z_STR_P(hentry)) != 1) {
                 add_next_index_zval(return_value, hentry);
-                Z_ADDREF_P(hentry);
+                Z_TRY_ADDREF_P(hentry);
             }
             zend_hash_move_forward_ex(Z_ARRVAL_P(keys), &hpos);
         }
