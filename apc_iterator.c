@@ -349,7 +349,6 @@ void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long for
         apc_error("Regular expressions support is not enabled, please enable PCRE for " APC_ITERATOR_NAME " regex support.");
 #endif
     } else if (search && Z_TYPE_P(search) == IS_ARRAY) {
-        Z_ADDREF_P(search);
         iterator->search_hash = apc_flip_hash(Z_ARRVAL_P(search));
     }
     iterator->initialized = 1;

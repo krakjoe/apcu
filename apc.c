@@ -323,7 +323,6 @@ unsigned int apc_crc32(const unsigned char* buf, unsigned int len)
 HashTable* apc_flip_hash(HashTable *hash) {
     zval data, *entry;
     HashTable *new_hash;
-    HashPosition pos;
 
     if(hash == NULL) return hash;
 
@@ -332,17 +331,14 @@ HashTable* apc_flip_hash(HashTable *hash) {
     ALLOC_HASHTABLE(new_hash);
     zend_hash_init(new_hash, zend_hash_num_elements(hash), NULL, ZVAL_PTR_DTOR, 0);
 
-    zend_hash_internal_pointer_reset_ex(hash, &pos);
-    while ((entry = zend_hash_get_current_data_ex(hash, &pos)) != NULL) {
-        if(Z_TYPE_P(entry) == IS_STRING) {
+    ZEND_HASH_FOREACH_VAL(hash, entry) {
+        ZVAL_DEREF(entry);
+        if (Z_TYPE_P(entry) == IS_STRING) {
             zend_hash_update(new_hash, Z_STR_P(entry), &data);
         } else {
             zend_hash_index_update(new_hash, Z_LVAL_P(entry), &data);
         }
-        Z_TRY_ADDREF(data);
-        zend_hash_move_forward_ex(hash, &pos);
-    }
-    zval_ptr_dtor(&data);
+    } ZEND_HASH_FOREACH_END();
 
     return new_hash;
 }
