@@ -63,6 +63,20 @@ AC_ARG_ENABLE(apcu-spinlocks,
 ])
 AC_MSG_RESULT($PHP_APCU_SPINLOCK)
 
+PHP_APCU_ROBUST_LOCK=no
+AC_MSG_CHECKING(if APCu should utilize robust locks)
+AC_ARG_ENABLE(apcu-robust-lock,
+[  --enable-apcu-robust-lock        Use robust locks],
+[ if test "x$enableval" = "xno"; then
+    PHP_APCU_ROBUST_LOCK=no
+  else
+    PHP_APCU_ROBUST_LOCK=yes
+    AC_DEFINE(APC_ROBUST_LOCK_AVAILABLE, 1, [ ])
+  fi
+])
+AC_MSG_RESULT($PHP_APCU_ROBUST_LOCK)
+
+
 if test "$PHP_APCU" != "no"; then
 	if test "$PHP_APCU_DEBUG" != "no"; then
 		AC_DEFINE(APC_DEBUG, 1, [ ])
@@ -81,7 +95,12 @@ if test "$PHP_APCU" != "no"; then
 			    #include <pthread.h>
           main() {
 			      pthread_rwlock_t rwlock;
-			      pthread_rwlockattr_t attr;	
+			      pthread_rwlockattr_t attr;
+			      
+			      #ifdef __APPLE__
+			      puts("Disabling rwlocks on __APPLE__");
+			      return 1;
+			      #endif	
 
 			      if(pthread_rwlockattr_init(&attr)) { 
 				      puts("Unable to initialize pthread attributes (pthread_rwlockattr_init).");

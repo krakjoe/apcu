@@ -35,7 +35,8 @@
 # include "pthread.h"
 # ifndef APC_SPIN_LOCK
 #   ifndef APC_FCNTL_LOCK
-#       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS)
+		/* Disable native rwlocks on Mac. Implementation has issues */
+#       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS) && !defined(__APPLE__)
         typedef pthread_rwlock_t apc_lock_t;
 #		define APC_LOCK_SHARED
 #       else

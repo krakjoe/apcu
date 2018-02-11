@@ -22,6 +22,107 @@
 # include "apc_lock.h"
 #endif
 
+#ifndef PHP_WIN32
+# ifndef APC_SPIN_LOCK
+#   ifndef APC_FCNTL_LOCK
+#       ifdef APC_LOCK_RECURSIVE
+#           define APC_LOCK_ROBUST APC_ROBUST_LOCK_AVAILABLE
+#       endif
+#   endif
+# endif
+#endif
+
+
+
+#ifdef APC_LOCK_ROBUST
+
+#include "apc_stack.h"
+
+/*
+	rwlocks don't support robustness so we have to hack around it
+*/
+static
+	pthread_key_t lock_key;
+
+static
+void release_all_locks(apc_stack_t *locks) {
+	if (!locks) {
+		return;
+	}
+
+	if (apc_stack_size(locks) > 0) {
+		apc_lock_t *lock;
+
+		while ((lock = (apc_lock_t *) apc_stack_pop(locks)) != NULL) {
+			apc_lock_wunlock(lock);
+		}
+	}
+	apc_stack_destroy(locks);
+}
+
+static
+void release_all_locks_atexit() {
+	apc_stack_t *stack = (apc_stack_t *) pthread_getspecific(lock_key);
+
+	release_all_locks(stack);
+	pthread_setspecific(lock_key, NULL);
+}
+
+static
+void make_lock_key() {
+	(void) pthread_key_create(&lock_key, release_all_locks);
+}
+
+static
+void locked(apc_lock_t *lock) {
+	apc_stack_t *stack = pthread_getspecific(lock_key);
+
+	if (!stack) {
+		stack = apc_stack_create(10);
+		atexit(release_all_locks_atexit);
+	}
+	apc_stack_push(stack, lock);
+	pthread_setspecific(lock_key, stack);
+}
+
+static
+void unlocked(apc_lock_t *lock) {
+	apc_stack_t *stack = (apc_stack_t *) pthread_getspecific(lock_key);
+	apc_lock_t *stacked;
+
+	if (!stack || apc_stack_size(stack) == 0) {
+		return;
+	}
+
+	if (apc_stack_top(stack) == lock) {
+		apc_stack_pop(stack);
+		return;
+	}
+	else {
+		/* are there any unpaired lock/unlocks? that's costly here */
+		apc_stack_t *new_stack = apc_stack_create(10);
+		apc_lock_t *l;
+
+		while ((l = apc_stack_pop(stack)) != NULL) {
+			if (l != lock) {
+				apc_stack_push(new_stack, l);
+			}
+		}
+		apc_stack_destroy(stack);
+		stack = new_stack;
+	}
+
+	assert (stacked == lock);
+	pthread_setspecific(lock_key, stack);
+}
+
+static
+void lock_destroy(apc_lock_t *lock) {
+	unlocked(lock);
+}
+
+#endif
+
 /*
  APCu never checks the return value of a locking call, it assumes it should not fail
  and execution continues regardless, therefore it is pointless to check the return
@@ -117,6 +218,10 @@ PHP_APCU_API zend_bool apc_lock_init() {
 	/* once per process please */
 	apc_lock_ready = 1;
 
+#ifdef APC_LOCK_ROBUST
+	make_lock_key();
+#endif
+
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifdef APC_LOCK_RECURSIVE
@@ -147,9 +252,6 @@ PHP_APCU_API void apc_lock_cleanup() {
 	if (!apc_lock_ready)
 		return;
 
-	/* once per process please */
-	apc_lock_ready = 0;
-
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifdef APC_LOCK_RECURSIVE
@@ -157,9 +259,14 @@ PHP_APCU_API void apc_lock_cleanup() {
 #   else
 	    pthread_rwlockattr_destroy(&apc_lock_attr);
 #   endif
+#   ifdef APC_LOCK_ROBUST
+		pthread_key_delete(lock_key);
+#   endif
 # endif
 #endif
 #endif
+	/* once per process please */
+	apc_lock_ready = 0;
 } /* }}} */
 
 PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
@@ -216,7 +323,12 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
 	    pthread_mutex_lock(lock);
 #   else
 	    pthread_rwlock_rdlock(lock);
-#   endif    
+#   endif
+
+#   ifdef APC_LOCK_ROBUST
+	locked(lock);
+#   endif
+
 # else
     {
         /* FCNTL */
@@ -244,6 +356,11 @@ PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
 #   else	
 	    pthread_rwlock_wrlock(lock);
 #   endif
+
+#   ifdef APC_LOCK_ROBUST
+	locked(lock);
+#   endif
+
 # else
     {
         /* FCNTL */
@@ -271,6 +388,11 @@ PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock) {
 #   else
 	    pthread_rwlock_unlock(lock);
 #   endif
+
+#   ifdef APC_LOCK_ROBUST
+	unlocked(lock);
+#   endif
+
 # else
     {
         /* FCNTL */
@@ -298,6 +420,12 @@ PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock) {
 #   else
 	    pthread_rwlock_unlock(lock);
 #   endif
+
+#   ifdef APC_LOCK_ROBUST
+	unlocked(lock);
+#   endif
+
+
 # else
     {
         /* FCNTL */
@@ -325,6 +453,11 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock) {
 #   else
         /* nothing */
 #   endif
+
+#   ifdef APC_LOCK_ROBUST
+	lock_destroy(lock);
+#   endif
+
 # else
     {
         /* FCNTL */
