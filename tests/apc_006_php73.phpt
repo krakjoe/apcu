@@ -3,7 +3,7 @@ APC: apcu_store/fetch reference test
 --SKIPIF--
 <?php
 require_once(dirname(__FILE__) . '/skipif.inc');
-if (PHP_VERSION_ID >= 70300) die('skip Only for PHP < 7.3');
+if (PHP_VERSION_ID < 70300) die('skip Only for PHP >= 7.3');
 ?>
 --INI--
 apc.enabled=1
@@ -64,12 +64,7 @@ array(9) refcount(2){
     [0]=>
     string(1) "f" refcount(1)
     [1]=>
-    &array(2) refcount(1){
-      [0]=>
-      string(1) "f" refcount(1)
-      [1]=>
-      *RECURSION*
-    }
+    *RECURSION*
   }
 }
 ===DONE===
