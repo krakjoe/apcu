@@ -1386,34 +1386,6 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		target->nNextFreeElement = 0;
 		target->nInternalPointer = HT_INVALID_IDX;
 		HT_SET_DATA_ADDR(target, &uninitialized_bucket);
-	} else if (GC_FLAGS(source) & IS_ARRAY_IMMUTABLE) {
-#if PHP_VERSION_ID >= 70300
-		target->u.flags = source->u.flags;
-#else
-		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
-#endif
-		target->nTableMask = source->nTableMask;
-		target->nNumUsed = source->nNumUsed;
-		target->nNumOfElements = source->nNumOfElements;
-		target->nNextFreeElement = source->nNextFreeElement;
-		if (ctxt->copy == APC_COPY_IN) {
-			HT_SET_DATA_ADDR(target, pool->palloc(pool, HT_SIZE(target)));
-		} else
-            HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
-
-        if (HT_GET_DATA_ADDR(target) == NULL)
-            goto bad;
-
-		target->nInternalPointer = source->nInternalPointer;
-		memcpy(HT_GET_DATA_ADDR(target), HT_GET_DATA_ADDR(source), HT_USED_SIZE(source));
-		if (target->nNumOfElements > 0 &&
-			target->nInternalPointer == HT_INVALID_IDX) {
-			idx = 0;
-			while (Z_TYPE(target->arData[idx].val) == IS_UNDEF) {
-				idx++;
-			}
-			target->nInternalPointer = idx;
-		}
 	} else if (source->u.flags & HASH_FLAG_PACKED) {
 #if PHP_VERSION_ID >= 70300
 		target->u.flags = source->u.flags;
@@ -1450,9 +1422,9 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		}
 	} else {
 #if PHP_VERSION_ID >= 70300
-		target->u.flags = source->u.flags;
+		target->u.flags = (source->u.flags & ~HASH_FLAG_STATIC_KEYS);
 #else
-		target->u.flags = (source->u.flags & ~HASH_FLAG_PERSISTENT) | HASH_FLAG_APPLY_PROTECTION;
+		target->u.flags = (source->u.flags & ~(HASH_FLAG_PERSISTENT|HASH_FLAG_STATIC_KEYS)) | HASH_FLAG_APPLY_PROTECTION;
 #endif
 		target->nTableMask = source->nTableMask;
 		target->nNextFreeElement = source->nNextFreeElement;
