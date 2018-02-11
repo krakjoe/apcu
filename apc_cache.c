@@ -1215,10 +1215,8 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 		}
 
 		ZVAL_STR(dst, serial);
-		/* Give this the type of an object/array, and the same type flags as a string. */
-		/* The only necessary one is probably IS_TYPE_REFCOUNTED - (We check Z_REFCOUNTED_P when de-duplicating serialized values. */
-		/* Probably safe - When copying strings into shared memory, the code gives it type IS_STRING_EX, */
-		Z_TYPE_INFO_P(dst) = Z_TYPE_P(src) | ((IS_TYPE_REFCOUNTED | IS_TYPE_COPYABLE) << Z_TYPE_FLAGS_SHIFT);
+		/* Give this the type of a refcounted object/array. */
+		Z_TYPE_INFO_P(dst) = Z_TYPE_P(src) | (IS_TYPE_REFCOUNTED << Z_TYPE_FLAGS_SHIFT);
 		efree(buf);
     }
 
@@ -1590,7 +1588,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 #endif
     case IS_STRING:	
 		if (ctxt->copy == APC_COPY_OUT) {
-			ZVAL_DUP(dst, src);
+			ZVAL_STR(dst, zend_string_dup(Z_STR_P(src), 0));
 		} else {
 			Z_TYPE_INFO_P(dst) = IS_STRING_EX;
 			Z_STR_P(dst) = apc_pstrcpy(Z_STR_P(src), pool);
