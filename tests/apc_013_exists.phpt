@@ -15,7 +15,6 @@ var_dump(apcu_exists($kno));
 var_dump(apcu_exists([$kyes, $kno]));
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECT--
 bool(true)
 bool(false)

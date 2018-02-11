@@ -20,7 +20,6 @@ var_dump($value, apcu_entry("test", function($key){
 }));
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECT--
 string(11) "Hello World"
 string(11) "Hello World"

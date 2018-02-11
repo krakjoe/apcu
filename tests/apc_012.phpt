@@ -26,7 +26,6 @@ var_dump($j=apcu_fetch($key));
 var_dump($i==$j);
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 int(%d)
 bool(true)

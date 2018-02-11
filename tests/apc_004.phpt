@@ -26,7 +26,6 @@ var_dump($success); /* false */
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 bool(false)
 bool(false)

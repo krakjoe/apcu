@@ -21,7 +21,6 @@ var_dump($bar);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 object(foo)#%d (0) {
 }

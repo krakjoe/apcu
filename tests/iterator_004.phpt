@@ -20,7 +20,6 @@ var_dump($vals);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECT--
 array(4) {
   ["key10"]=>

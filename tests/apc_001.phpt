@@ -22,7 +22,6 @@ var_dump($bar);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 string(11) "hello world"
 string(11) "hello world"

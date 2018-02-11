@@ -30,7 +30,6 @@ echo "pass by ref success ". $success . "\n";
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 $foobar = 2 
 $foobar += 1 = 3

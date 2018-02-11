@@ -19,7 +19,6 @@ var_dump(current($back));
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 string(3) "bar"
 string(3) "bar"

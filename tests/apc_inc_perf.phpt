@@ -18,7 +18,6 @@ $t = microtime(true) - $t;
 var_dump($t < 0.1 ? true : $t);
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 int(1985229329)
 int(1)

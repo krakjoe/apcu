@@ -34,7 +34,6 @@ debug_zval_dump($x);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 array(9) refcount(2){
   [0]=>

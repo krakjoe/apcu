@@ -59,7 +59,6 @@ var_dump(apcu_fetch('baz'));
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 object(foo)#%d (0) {
 }

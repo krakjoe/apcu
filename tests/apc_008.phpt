@@ -22,7 +22,6 @@ echo "\$perfection == 2 ? 1 : 2 = ".(apcu_cas('perfection', 2, 1)?"ok":"epic fai
 echo "\$foobar = ".apcu_fetch("foobar")."\n";
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 $foobar = 2
 $foobar == 1 ? 2 : 1 = fail

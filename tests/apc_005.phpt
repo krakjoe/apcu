@@ -21,7 +21,6 @@ var_dump($bar);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 array(2) {
   [0]=>

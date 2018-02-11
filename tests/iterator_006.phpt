@@ -51,7 +51,6 @@ function print_it($it, $idx) {
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 IT #0
 ============================

@@ -20,7 +20,6 @@ ksort($keys);
 var_dump($keys);
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECT--
 array(41) {
   ["key0"]=>

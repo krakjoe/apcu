@@ -27,7 +27,6 @@ var_dump($vals2);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECT--
 array(0) {
 }

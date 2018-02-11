@@ -29,7 +29,6 @@ var_dump($cached_values);
 
 ?>
 ===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 array(0) {
 }
