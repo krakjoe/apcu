@@ -190,7 +190,7 @@ static PHP_MINFO_FUNCTION(apcu)
             smart_str_appends(&names, serializer->name);
         }
     
-        if (names.s->val) {
+        if (names.s) {
             smart_str_0(&names);
             php_info_print_table_row(2, "Serialization Support", names.s->val);
             smart_str_free(&names);
@@ -467,23 +467,19 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
             zval *hentry;
             zend_string *hkey;
             zend_ulong hkey_idx;
-
-            HashPosition hpos;
             HashTable* hash = Z_ARRVAL_P(key);
 
             /* note: only indicative of error */
 		    array_init(return_value);
-		    zend_hash_internal_pointer_reset_ex(hash, &hpos);
-		    while((hentry = zend_hash_get_current_data_ex(hash, &hpos))) {
-		        if (zend_hash_get_current_key_ex(hash, &hkey, &hkey_idx, &hpos) == HASH_KEY_IS_STRING) {
-		            if(!apc_cache_store(apc_user_cache, hkey, hentry, (uint32_t) ttl, exclusive)) {
+            ZEND_HASH_FOREACH_KEY_VAL(hash, hkey_idx, hkey, hentry) {
+                if (hkey) {
+		            if (!apc_cache_store(apc_user_cache, hkey, hentry, (uint32_t) ttl, exclusive)) {
 		                add_assoc_long_ex(return_value, hkey->val, hkey->len, -1);  /* -1: insertion error */
 		            }
 		        } else {
 		            add_index_long(return_value, hkey_idx, -1);  /* -1: insertion error */
 		        }
-		        zend_hash_move_forward_ex(hash, &hpos);
-		    }
+            } ZEND_HASH_FOREACH_END();
 			return;
 		} else {
             if (Z_TYPE_P(key) == IS_STRING) {
@@ -682,15 +678,13 @@ PHP_FUNCTION(apcu_fetch) {
 			    if (success) {
 					ZVAL_TRUE(success);
 				}
-			} else { ZVAL_BOOL(return_value, 0); }
+			} else { RETVAL_FALSE; }
 		} else if (Z_TYPE_P(key) == IS_ARRAY) {
-			HashPosition hpos;
 			zval *hentry;
 			zval result;
             
 			array_init(&result);
-			zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(key), &hpos);
-			while((hentry = zend_hash_get_current_data_ex(Z_ARRVAL_P(key), &hpos))) {
+            ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(key), hentry) {
 			    ZVAL_DEREF(hentry);
 			    if (Z_TYPE_P(hentry) == IS_STRING) {
 					zval result_entry,
@@ -703,9 +697,7 @@ PHP_FUNCTION(apcu_fetch) {
 			    } else {
 					apc_warning("apc_fetch() expects a string or array of strings.");
 				}
-
-			    zend_hash_move_forward_ex(Z_ARRVAL_P(key), &hpos);
-			}
+			} ZEND_HASH_FOREACH_END();
 
 			RETVAL_ZVAL(&result, 0, 1);
 
@@ -750,25 +742,20 @@ PHP_FUNCTION(apcu_exists) {
 			}
 		}
     } else if (Z_TYPE_P(key) == IS_ARRAY) {
-    	HashPosition hpos;
 		zval *hentry;
 
         array_init(return_value); 
-
-        zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(key), &hpos);
-        while ((hentry = zend_hash_get_current_data_ex(Z_ARRVAL_P(key), &hpos))) {
+        ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(key), hentry) {
+            ZVAL_DEREF(hentry);
             if (Z_TYPE_P(hentry) == IS_STRING) {
-               if (apc_cache_exists(apc_user_cache, Z_STR_P(hentry), t)) {
-	  			add_assoc_bool(return_value, Z_STRVAL_P(hentry), 1);
+                if (apc_cache_exists(apc_user_cache, Z_STR_P(hentry), t)) {
+	  		    	add_assoc_bool(return_value, Z_STRVAL_P(hentry), 1);
 	       		}
             } else {
 				apc_warning(
 					"apc_exists() expects a string or array of strings.");
 			}
-
-			/* don't set values we didn't find */
-            zend_hash_move_forward_ex(Z_ARRVAL_P(key), &hpos);
-        }
+        } ZEND_HASH_FOREACH_END();
 
 		return;
     } else {
@@ -804,13 +791,11 @@ PHP_FUNCTION(apcu_delete) {
         }
 
     } else if (Z_TYPE_P(keys) == IS_ARRAY) {
-        HashPosition hpos;
         zval *hentry;
 
         array_init(return_value);
-        zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(keys), &hpos);
-
-        while ((hentry = zend_hash_get_current_data_ex(Z_ARRVAL_P(keys), &hpos))) {
+        ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(keys), hentry) {
+            ZVAL_DEREF(hentry);
             if (Z_TYPE_P(hentry) != IS_STRING) {
                 apc_warning("apc_delete() expects a string, array of strings, or APCIterator instance.");
                 add_next_index_zval(return_value, hentry);
@@ -819,8 +804,7 @@ PHP_FUNCTION(apcu_delete) {
                 add_next_index_zval(return_value, hentry);
                 Z_TRY_ADDREF_P(hentry);
             }
-            zend_hash_move_forward_ex(Z_ARRVAL_P(keys), &hpos);
-        }
+        } ZEND_HASH_FOREACH_END();
     } else if (Z_TYPE_P(keys) == IS_OBJECT) {
 
         if (apc_iterator_delete(keys)) {
