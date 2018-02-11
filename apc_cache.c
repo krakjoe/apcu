@@ -1607,8 +1607,11 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 
     case IS_ARRAY:
         if(ctxt->serializer == NULL) {
-			if ((Z_ARRVAL_P(dst) = my_copy_hashtable(Z_ARRVAL_P(src), ctxt)) == NULL)
-                return NULL;
+			HashTable *ht = my_copy_hashtable(Z_ARRVAL_P(src), ctxt);
+			if (!ht) {
+				return NULL;
+			}
+			ZVAL_ARR(dst, ht);
             break;
         }
 
