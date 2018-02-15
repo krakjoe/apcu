@@ -33,7 +33,11 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+- fix gh#247 when a NUL char is used as key, apcu_fetch(array) truncates the key
+- fix crash when passing bad array to apcu_delete
+- fix gh#274 Fix crash when passing bad array to apcu_delete
+- improve fix gh#266 refcounting errors in APCIterator
+- fix for PHP 7.3 compatibility
  </notes>
  <contents>
   <dir name="/">
