@@ -48,6 +48,7 @@
     <file name="apc_005b.phpt" role="test" />
     <file name="apc_005c.phpt" role="test" />
     <file name="apc_006.phpt" role="test" />
+    <file name="apc_006_php73.phpt" role="test" />
     <file name="apc_007.phpt" role="test" />
     <file name="apc_008.phpt" role="test" />
     <file name="apc_010.phpt" role="test" />
@@ -57,6 +58,7 @@
     <file name="apc_014_store_ref.phpt" role="test" />
     <file name="apc_015.phpt" role="test" />
     <file name="apc_016.phpt" role="test" />
+    <file name="apc_099.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
     <file name="apc54_018.phpt" role="test" />
     <file name="apc_entry_001.phpt" role="test" />
@@ -69,6 +71,8 @@
     <file name="ghbug176.phpt" role="test" />
     <file name="ghbug168.phpt" role="test" />
     <file name="ghbug185.phpt" role="test" />
+    <file name="ghbug247.phpt" role="test" />
+    <file name="ghbug248.phpt" role="test" />
     <file name="iterator_001.phpt" role="test" />
     <file name="iterator_002.phpt" role="test" />
     <file name="iterator_003.phpt" role="test" />
@@ -76,7 +80,8 @@
     <file name="iterator_005.phpt" role="test" />
     <file name="iterator_006.phpt" role="test" />
     <file name="iterator_007.phpt" role="test" />
-    <file name="php_5_3_ns.inc" role="test" />
+    <file name="iterator_008.phpt" role="test" />
+    <file name="iterator_009.phpt" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />
     <file name="data/abc.data" role="test" />
