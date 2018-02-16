@@ -55,118 +55,118 @@
 
 apc_segment_t apc_mmap(char *file_mask, size_t size)
 {
-    apc_segment_t segment; 
+	apc_segment_t segment; 
 
-    int fd = -1;
-    int flags = MAP_SHARED | MAP_NOSYNC;
+	int fd = -1;
+	int flags = MAP_SHARED | MAP_NOSYNC;
 #ifdef APC_MEMPROTECT
-    int remap = 1;
+	int remap = 1;
 #endif
 
-    /* If no filename was provided, do an anonymous mmap */
-    if(!file_mask || (file_mask && !strlen(file_mask))) {
+	/* If no filename was provided, do an anonymous mmap */
+	if(!file_mask || (file_mask && !strlen(file_mask))) {
 #if !defined(MAP_ANON)
-        apc_error("Anonymous mmap does not apear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the apc.mmap_file_mask INI option.");
+		apc_error("Anonymous mmap does not apear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the apc.mmap_file_mask INI option.");
 #else
-        fd = -1;
-        flags = MAP_SHARED | MAP_ANON;
+		fd = -1;
+		flags = MAP_SHARED | MAP_ANON;
 #ifdef APC_MEMPROTECT
-        remap = 0;
+		remap = 0;
 #endif
 #endif
-    } else if(!strcmp(file_mask,"/dev/zero")) { 
-        fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
-        if(fd == -1) {
-            apc_error("apc_mmap: open on /dev/zero failed:");
-            goto error;
-        }
+	} else if(!strcmp(file_mask,"/dev/zero")) { 
+		fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
+		if(fd == -1) {
+			apc_error("apc_mmap: open on /dev/zero failed:");
+			goto error;
+		}
 #ifdef APC_MEMPROTECT
-        remap = 0; /* cannot remap */
+		remap = 0; /* cannot remap */
 #endif
-    } else if(strstr(file_mask,".shm")) {
-        /*
-         * If the filemask contains .shm we try to do a POSIX-compliant shared memory
-         * backed mmap which should avoid synchs on some platforms.  At least on
-         * FreeBSD this implies MAP_NOSYNC and on Linux it is equivalent of mmap'ing
-         * a file in a mounted shmfs.  For this to work on Linux you need to make sure
-         * you actually have shmfs mounted.  Also on Linux, make sure the file_mask you
-         * pass in has a leading / and no other /'s.  eg.  /apc.shm.XXXXXX
-         * On FreeBSD these are mapped onto the regular filesystem so you can put whatever
-         * path you want here.
-         */
-        if(!mktemp(file_mask)) {
-            apc_error("apc_mmap: mktemp on %s failed:", file_mask);
-            goto error;
-        }
-        fd = shm_open(file_mask, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
-        if(fd == -1) {
-            apc_error("apc_mmap: shm_open on %s failed:", file_mask);
-            goto error;
-        }
-        if (ftruncate(fd, size) < 0) {
-            close(fd);
-            shm_unlink(file_mask);
-            apc_error("apc_mmap: ftruncate failed:");
-            goto error;
-        }
-        shm_unlink(file_mask);
-    } else {
-        /*
-         * Otherwise we do a normal filesystem mmap
-         */
-        fd = mkstemp(file_mask);
-        if(fd == -1) {
-            apc_error("apc_mmap: mkstemp on %s failed:", file_mask);
-            goto error;
-        }
-        if (ftruncate(fd, size) < 0) {
-            close(fd);
-            unlink(file_mask);
-            apc_error("apc_mmap: ftruncate failed:");
-            goto error;
-        }
-        unlink(file_mask);
-    }
+	} else if(strstr(file_mask,".shm")) {
+		/*
+		 * If the filemask contains .shm we try to do a POSIX-compliant shared memory
+		 * backed mmap which should avoid synchs on some platforms.  At least on
+		 * FreeBSD this implies MAP_NOSYNC and on Linux it is equivalent of mmap'ing
+		 * a file in a mounted shmfs.  For this to work on Linux you need to make sure
+		 * you actually have shmfs mounted.  Also on Linux, make sure the file_mask you
+		 * pass in has a leading / and no other /'s.  eg.  /apc.shm.XXXXXX
+		 * On FreeBSD these are mapped onto the regular filesystem so you can put whatever
+		 * path you want here.
+		 */
+		if(!mktemp(file_mask)) {
+			apc_error("apc_mmap: mktemp on %s failed:", file_mask);
+			goto error;
+		}
+		fd = shm_open(file_mask, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
+		if(fd == -1) {
+			apc_error("apc_mmap: shm_open on %s failed:", file_mask);
+			goto error;
+		}
+		if (ftruncate(fd, size) < 0) {
+			close(fd);
+			shm_unlink(file_mask);
+			apc_error("apc_mmap: ftruncate failed:");
+			goto error;
+		}
+		shm_unlink(file_mask);
+	} else {
+		/*
+		 * Otherwise we do a normal filesystem mmap
+		 */
+		fd = mkstemp(file_mask);
+		if(fd == -1) {
+			apc_error("apc_mmap: mkstemp on %s failed:", file_mask);
+			goto error;
+		}
+		if (ftruncate(fd, size) < 0) {
+			close(fd);
+			unlink(file_mask);
+			apc_error("apc_mmap: ftruncate failed:");
+			goto error;
+		}
+		unlink(file_mask);
+	}
 
-    segment.shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
-    segment.size = size;
+	segment.shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
+	segment.size = size;
 
 #ifdef APC_MEMPROTECT
-    if(remap) {
-        segment.roaddr = (void *)mmap(NULL, size, PROT_READ, flags, fd, 0);
-    } else {
-        segment.roaddr = NULL;
-    }
+	if(remap) {
+		segment.roaddr = (void *)mmap(NULL, size, PROT_READ, flags, fd, 0);
+	} else {
+		segment.roaddr = NULL;
+	}
 #endif
 
-    if((long)segment.shmaddr == -1) {
-        apc_error("apc_mmap: mmap failed:");
-    }
+	if((long)segment.shmaddr == -1) {
+		apc_error("apc_mmap: mmap failed:");
+	}
 
-    if(fd != -1) close(fd);
-    
-    return segment;
+	if(fd != -1) close(fd);
+	
+	return segment;
 
 error:
 
-    segment.shmaddr = (void*)-1;
-    segment.size = 0;
+	segment.shmaddr = (void*)-1;
+	segment.size = 0;
 #ifdef APC_MEMPROTECT
-    segment.roaddr = NULL;
+	segment.roaddr = NULL;
 #endif
-    return segment;
+	return segment;
 }
 
 void apc_unmap(apc_segment_t *segment)
 {
-    if (munmap(segment->shmaddr, segment->size) < 0) {
-        apc_warning("apc_unmap: munmap failed:");
-    }
+	if (munmap(segment->shmaddr, segment->size) < 0) {
+		apc_warning("apc_unmap: munmap failed:");
+	}
 
 #ifdef APC_MEMPROTECT
-    if (segment->roaddr && munmap(segment->roaddr, segment->size) < 0) {
-        apc_warning("apc_unmap: munmap failed:");
-    }
+	if (segment->roaddr && munmap(segment->roaddr, segment->size) < 0) {
+		apc_warning("apc_unmap: munmap failed:");
+	}
 #endif
 
 }

@@ -26,14 +26,14 @@
 #include "apc_php.h"
 
 typedef struct apc_signal_entry_t {
-    int signo;          /* signal number */
-    int siginfo;        /* siginfo style handler calling */
-    void* handler;      /* signal handler */
+	int signo;          /* signal number */
+	int siginfo;        /* siginfo style handler calling */
+	void* handler;      /* signal handler */
 } apc_signal_entry_t;
 
 typedef struct apc_signal_info_t {
-    int installed;                  /* How many signals we've installed handles for */
-    apc_signal_entry_t **prev;      /* Previous signal handlers */
+	int installed;                  /* How many signals we've installed handles for */
+	apc_signal_entry_t **prev;      /* Previous signal handlers */
 } apc_signal_info_t;
 
 void apc_set_signals();

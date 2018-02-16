@@ -41,19 +41,19 @@ typedef pid_t apc_cache_owner_t;
 /* {{{ struct definition: apc_cache_key_t */
 typedef struct apc_cache_key_t apc_cache_key_t;
 struct apc_cache_key_t {
-    zend_string *str;			  /* the key for this cached entry */
-    time_t mtime;                 /* the mtime of this cached entry */
-    apc_cache_owner_t owner;      /* the context that created this key */
+	zend_string *str;			  /* the key for this cached entry */
+	time_t mtime;                 /* the mtime of this cached entry */
+	apc_cache_owner_t owner;      /* the context that created this key */
 }; /* }}} */
 
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
-    zval val;			/* the zval copied at store time */
-    zend_long ttl;		/* the ttl on this specific entry */
-    zend_long ref_count;/* the reference count of this entry */
-    zend_long mem_size;	/* memory used */
-    apc_pool *pool;		/* pool which allocated the value */
+	zval val;			/* the zval copied at store time */
+	zend_long ttl;		/* the ttl on this specific entry */
+	zend_long ref_count;/* the reference count of this entry */
+	zend_long mem_size;	/* memory used */
+	apc_pool *pool;		/* pool which allocated the value */
 };
 /* }}} */
 
@@ -61,13 +61,13 @@ struct apc_cache_entry_t {
 ition: apc_cache_slot_t */
 typedef struct apc_cache_slot_t apc_cache_slot_t;
 struct apc_cache_slot_t {
-    apc_cache_key_t key;        /* slot key */
-    apc_cache_entry_t* value;   /* slot value */
-    apc_cache_slot_t* next;     /* next slot in linked list */
-    zend_long nhits;            /* number of hits to this slot */
-    time_t ctime;               /* time slot was initialized */
-    time_t dtime;               /* time slot was removed from cache */
-    time_t atime;               /* time slot was last accessed */
+	apc_cache_key_t key;        /* slot key */
+	apc_cache_entry_t* value;   /* slot value */
+	apc_cache_slot_t* next;     /* next slot in linked list */
+	zend_long nhits;            /* number of hits to this slot */
+	time_t ctime;               /* time slot was initialized */
+	time_t dtime;               /* time slot was removed from cache */
+	time_t atime;               /* time slot was last accessed */
 };
 /* }}} */
 
@@ -78,31 +78,31 @@ struct apc_cache_slot_t {
 /* {{{ struct definition: apc_cache_header_t
    Any values that must be shared among processes should go in here. */
 typedef struct _apc_cache_header_t {
-    apc_lock_t lock;                 /* header lock */
-    zend_long nhits;                /* hit count */
-    zend_long nmisses;              /* miss count */
-    zend_long ninserts;             /* insert count */
-    zend_long nexpunges;            /* expunge count */
-    zend_long nentries;             /* entry count */
-    zend_long mem_size;             /* used */
-    time_t stime;                    /* start time */
-    unsigned short state;            /* cache state */
-    apc_cache_key_t lastkey;         /* last key inserted (not necessarily without error) */
-    apc_cache_slot_t* gc;            /* gc list */
+	apc_lock_t lock;                 /* header lock */
+	zend_long nhits;                /* hit count */
+	zend_long nmisses;              /* miss count */
+	zend_long ninserts;             /* insert count */
+	zend_long nexpunges;            /* expunge count */
+	zend_long nentries;             /* entry count */
+	zend_long mem_size;             /* used */
+	time_t stime;                    /* start time */
+	unsigned short state;            /* cache state */
+	apc_cache_key_t lastkey;         /* last key inserted (not necessarily without error) */
+	apc_cache_slot_t* gc;            /* gc list */
 } apc_cache_header_t; /* }}} */
 
 /* {{{ struct definition: apc_cache_t */
 typedef struct _apc_cache_t {
-    void* shmaddr;                /* process (local) address of shared cache */
-    apc_cache_header_t* header;   /* cache header (stored in SHM) */
-    apc_cache_slot_t** slots;     /* array of cache slots (stored in SHM) */
-    apc_sma_t* sma;               /* shared memory allocator */
-    apc_serializer_t* serializer; /* serializer */
-    zend_long nslots;            /* number of slots in cache */
-    zend_long gc_ttl;            /* maximum time on GC list for a slot */
-    zend_long ttl;               /* if slot is needed and entry's access time is older than this ttl, remove it */
-    zend_long smart;             /* smart parameter for gc */
-    zend_bool defend;             /* defense parameter for runtime */
+	void* shmaddr;                /* process (local) address of shared cache */
+	apc_cache_header_t* header;   /* cache header (stored in SHM) */
+	apc_cache_slot_t** slots;     /* array of cache slots (stored in SHM) */
+	apc_sma_t* sma;               /* shared memory allocator */
+	apc_serializer_t* serializer; /* serializer */
+	zend_long nslots;            /* number of slots in cache */
+	zend_long gc_ttl;            /* maximum time on GC list for a slot */
+	zend_long ttl;               /* if slot is needed and entry's access time is older than this ttl, remove it */
+	zend_long smart;             /* smart parameter for gc */
+	zend_bool defend;             /* defense parameter for runtime */
 } apc_cache_t; /* }}} */
 
 /* {{{ typedef: apc_cache_updater_t */
@@ -135,12 +135,12 @@ typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void*
  * defend enables/disables slam defense for this particular cache
  */
 PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma,
-                                           apc_serializer_t* serializer,
-                                           zend_long size_hint,
-                                           zend_long gc_ttl,
-                                           zend_long ttl,
-                                           zend_long smart,
-                                           zend_bool defend);
+										   apc_serializer_t* serializer,
+										   zend_long size_hint,
+										   zend_long gc_ttl,
+										   zend_long ttl,
+										   zend_long smart,
+										   zend_bool defend);
 /*
 * apc_cache_preload preloads the data at path into the specified cache
 */
@@ -167,24 +167,24 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache);
 * an insert should happen in a shared context, a fetch should happen in a nonshared context
 */
 PHP_APCU_API zend_bool apc_cache_make_context(apc_cache_t* cache,
-                                              apc_context_t* context, 
-                                              apc_context_type context_type, 
-                                              apc_pool_type pool_type,
-                                              apc_copy_type copy_type,
-                                              uint force_update);
+											  apc_context_t* context, 
+											  apc_context_type context_type, 
+											  apc_pool_type pool_type,
+											  apc_copy_type copy_type,
+											  uint force_update);
 
 /*
 * apc_cache_make_context_ex is an advanced/external version of make_context
 */
 PHP_APCU_API zend_bool apc_cache_make_context_ex(apc_context_t* context,
-                                                 apc_serializer_t* serializer,
-                                                 apc_malloc_t _malloc, 
-                                                 apc_free_t _free, 
-                                                 apc_protect_t _protect, 
-                                                 apc_unprotect_t _unprotect, 
-                                                 apc_pool_type pool_type, 
-                                                 apc_copy_type copy_type, 
-                                                 uint force_update);
+												 apc_serializer_t* serializer,
+												 apc_malloc_t _malloc, 
+												 apc_free_t _free, 
+												 apc_protect_t _protect, 
+												 apc_unprotect_t _unprotect, 
+												 apc_pool_type pool_type, 
+												 apc_copy_type copy_type, 
+												 uint force_update);
 /*
 * apc_context_destroy should be called when a context is finished being used 
 */
@@ -275,15 +275,15 @@ PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, zend_string *str
  * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
  */
 PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt,
-                                                     apc_cache_key_t* key,
-                                                     const zval *val,
-                                                     const int32_t ttl);
+													 apc_cache_key_t* key,
+													 const zval *val,
+													 const int32_t ttl);
 
 /*
  fetches information about the cache provided for userland status functions
 */
 PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited);
-                                  
+								  
 /*
  fetches information about the key provided
 */

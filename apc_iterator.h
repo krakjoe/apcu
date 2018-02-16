@@ -58,30 +58,30 @@ typedef void* (*apc_iterator_item_cb_t)(apc_cache_slot_t **slot);
 
 /* {{{ apc_iterator_t */
 typedef struct _apc_iterator_t {
-    short int initialized;   /* sanity check in case __construct failed */
-    zend_long format;             /* format bitmask of the return values ie: key, value, info */
-    int (*fetch)(struct _apc_iterator_t *iterator);
-                             /* fetch callback to fetch items from cache slots or lists */
-    zend_long slot_idx;           /* index to the slot array or linked list */
-    zend_long chunk_size;         /* number of entries to pull down per fetch */
-    apc_stack_t *stack;      /* stack of entries pulled from cache */
-    int stack_idx;           /* index into the current stack */
+	short int initialized;   /* sanity check in case __construct failed */
+	zend_long format;             /* format bitmask of the return values ie: key, value, info */
+	int (*fetch)(struct _apc_iterator_t *iterator);
+							 /* fetch callback to fetch items from cache slots or lists */
+	zend_long slot_idx;           /* index to the slot array or linked list */
+	zend_long chunk_size;         /* number of entries to pull down per fetch */
+	apc_stack_t *stack;      /* stack of entries pulled from cache */
+	int stack_idx;           /* index into the current stack */
 #ifdef ITERATOR_PCRE
 # if PHP_VERSION_ID >= 70300
-    pcre2_code *re;            /* regex filter on entry identifiers */
-    pcre2_match_data *re_match_data; /* match data for regex */
+	pcre2_code *re;            /* regex filter on entry identifiers */
+	pcre2_match_data *re_match_data; /* match data for regex */
 # else
-    pcre *re;                /* regex filter on entry identifiers */
+	pcre *re;                /* regex filter on entry identifiers */
 # endif
 #endif
-    zend_string *regex;
-    HashTable *search_hash;  /* hash of keys to iterate over */
-    zend_long key_idx;            /* incrementing index for numerical keys */
-    short int totals_flag;   /* flag if totals have been calculated */
-    zend_long hits;               /* hit total */
-    size_t size;             /* size total */
-    zend_long count;              /* count total */
-    zend_object obj;
+	zend_string *regex;
+	HashTable *search_hash;  /* hash of keys to iterate over */
+	zend_long key_idx;            /* incrementing index for numerical keys */
+	short int totals_flag;   /* flag if totals have been calculated */
+	zend_long hits;               /* hit total */
+	size_t size;             /* size total */
+	zend_long count;              /* count total */
+	zend_object obj;
 } apc_iterator_t;
 /* }}} */
 
@@ -90,8 +90,8 @@ typedef struct _apc_iterator_t {
 
 /* {{{ apc_iterator_item */
 typedef struct _apc_iterator_item_t {
-    zend_string *key;
-    zval value;
+	zend_string *key;
+	zval value;
 } apc_iterator_item_t;
 /* }}} */
 

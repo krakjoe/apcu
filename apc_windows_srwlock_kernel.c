@@ -24,35 +24,35 @@
 
 apc_windows_cs_rwlock_t *apc_windows_cs_create(apc_windows_cs_rwlock_t *lock) 
 {
-    InitializeSRWLock(lock);
+	InitializeSRWLock(lock);
 
-    return lock;
+	return lock;
 }
 
 void apc_windows_cs_destroy(apc_windows_cs_rwlock_t *lock)
 {
-    /* pass */
-    return;
+	/* pass */
+	return;
 }
 
 void apc_windows_cs_lock(apc_windows_cs_rwlock_t *lock)
 {
-    AcquireSRWLockExclusive(lock);
+	AcquireSRWLockExclusive(lock);
 }
 
 void apc_windows_cs_rdlock(apc_windows_cs_rwlock_t *lock)
 {
-    AcquireSRWLockShared(lock);
+	AcquireSRWLockShared(lock);
 }
 
 void apc_windows_cs_unlock_rd(apc_windows_cs_rwlock_t *lock)
 {
-    ReleaseSRWLockShared(lock);
+	ReleaseSRWLockShared(lock);
 }
 
 void apc_windows_cs_unlock_wr(apc_windows_cs_rwlock_t *lock)
 {
-    ReleaseSRWLockExclusive(lock);
+	ReleaseSRWLockExclusive(lock);
 }
 
 #endif

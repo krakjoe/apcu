@@ -104,7 +104,7 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 #define APC_POSITIVE_MATCH 2
 
 #define apc_time() \
-    (APCG(use_request_time) ? (time_t) sapi_get_request_time() : time(0))
+	(APCG(use_request_time) ? (time_t) sapi_get_request_time() : time(0))
 
 #if defined(__GNUC__)
 # define APC_UNUSED __attribute__((unused))
@@ -139,19 +139,19 @@ typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);
 
 /* {{{ struct definition: apc_serializer_t */
 typedef struct apc_serializer_t {
-    const char*        name;
-    apc_serialize_t    serialize;
-    apc_unserialize_t  unserialize;
-    void*              config;
+	const char*        name;
+	apc_serialize_t    serialize;
+	apc_unserialize_t  unserialize;
+	void*              config;
 } apc_serializer_t;
 /* }}} */
 
 /* {{{ _apc_register_serializer
  registers the serializer using the given name and paramters */
 PHP_APCU_API int _apc_register_serializer(const char* name,
-                                               apc_serialize_t serialize,
-                                               apc_unserialize_t unserialize,
-                                               void *config); /* }}} */
+											   apc_serialize_t serialize,
+											   apc_unserialize_t unserialize,
+											   void *config); /* }}} */
 
 /* {{{ apc_get_serializers 
  fetches the list of serializers */
@@ -172,9 +172,9 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS); /* }}} */
 #define php_apc_try(begin, block, end) {   \
 	JMP_BUF *zb = EG(bailout);             \
 	JMP_BUF ab;                            \
-	                                       \
+										   \
 	EG(bailout) = &ab;                     \
-	                                       \
+										   \
 	begin;                                 \
 	if (SETJMP(ab) == SUCCESS) {           \
 		block                              \
