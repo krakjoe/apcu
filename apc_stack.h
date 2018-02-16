@@ -26,8 +26,6 @@
 
  */
 
-/* $Id: apc_stack.h 307048 2011-01-03 23:53:17Z kalle $ */
-
 #ifndef APC_STACK_H
 #define APC_STACK_H
 

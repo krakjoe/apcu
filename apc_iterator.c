@@ -17,8 +17,6 @@
 
  */
 
-/* $Id: apc_iterator.c 327134 2012-08-15 14:21:28Z ab $ */
-
 #include "php_apc.h"
 #include "apc_iterator.h"
 #include "apc_cache.h"
@@ -639,6 +637,6 @@ int apc_iterator_delete(zval *zobj) {
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: nonoexpandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: nonoexpandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */

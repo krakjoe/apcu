@@ -29,8 +29,6 @@
 
  */
 
-/* $Id: apc_php.h 328674 2012-12-05 09:58:27Z ab $ */
-
 #ifndef APC_PHP_H
 #define APC_PHP_H
 

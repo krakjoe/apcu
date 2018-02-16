@@ -24,8 +24,6 @@
    All other licensing and usage conditions are those of the PHP Group.
  */
 
-/* $Id: apc_pool.h 307048 2011-01-03 23:53:17Z kalle $ */
-
 #ifndef APC_POOL_H
 #define APC_POOL_H
 

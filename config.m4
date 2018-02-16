@@ -1,6 +1,3 @@
-dnl
-dnl $Id: config.m4 327593 2012-09-10 11:50:58Z pajoye $
-dnl
 PHP_ARG_ENABLE(apcu, whether to enable APCu support,
 [  --enable-apcu           Enable APCu support])
 

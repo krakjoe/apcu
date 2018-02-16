@@ -29,8 +29,6 @@
 
  */
 
-/* $Id: apc.h 328292 2012-11-09 07:05:17Z laruence $ */
-
 #ifndef APC_H
 #define APC_H
 
@@ -79,29 +77,15 @@ PHP_APCU_API void* apc_erealloc(void* p, size_t n);
 PHP_APCU_API void* apc_php_malloc(size_t n);
 PHP_APCU_API void  apc_php_free(void* p);
 PHP_APCU_API void  apc_efree(void* p);
-PHP_APCU_API char* apc_estrdup(const char* s);
-PHP_APCU_API void* apc_xstrdup(const char* s, apc_malloc_t f);
-PHP_APCU_API void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f);
 
 /* console display functions */
-PHP_APCU_API void apc_error(const char *format, ...);
-PHP_APCU_API void apc_warning(const char *format, ...);
-PHP_APCU_API void apc_notice(const char *format, ...);
-PHP_APCU_API void apc_debug(const char *format, ...);
-
-/* string and text manipulation */
-PHP_APCU_API char* apc_append(const char* s, const char* t);
-PHP_APCU_API char* apc_substr(const char* s, int start, int length);
-PHP_APCU_API char** apc_tokenize(const char* s, char delim);
-
-/* apc_crc32: returns the CRC-32 checksum of the first len bytes in buf */
-PHP_APCU_API unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
+PHP_APCU_API void apc_error(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
+PHP_APCU_API void apc_warning(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
+PHP_APCU_API void apc_notice(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
+PHP_APCU_API void apc_debug(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
 
 /* apc_flip_hash flips keys and values for faster searching */
 PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
-
-#define APC_NEGATIVE_MATCH 1
-#define APC_POSITIVE_MATCH 2
 
 #define apc_time() \
 	(APCG(use_request_time) ? (time_t) sapi_get_request_time() : time(0))

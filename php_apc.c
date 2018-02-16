@@ -26,8 +26,6 @@
 
  */
 
-/* $Id: php_apc.c 328290 2012-11-09 03:30:09Z laruence $ */
-
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif

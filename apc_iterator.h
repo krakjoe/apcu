@@ -17,8 +17,6 @@
 
  */
 
-/* $Id: apc_iterator.h 307048 2011-01-03 23:53:17Z kalle $ */
-
 #ifndef APC_ITERATOR_H
 #define APC_ITERATOR_H
 

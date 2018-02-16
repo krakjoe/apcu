@@ -20,8 +20,6 @@
 * This is an example of using the APCu API in a third party extension
 */
 
-/* $Id$ */
-
 #ifndef PHP_APCUE_H
 #define PHP_APCUE_H
 

@@ -29,8 +29,6 @@
 
  */
 
-/* $Id: apc_globals.h 328290 2012-11-09 03:30:09Z laruence $ */
-
 #ifndef APC_GLOBALS_H
 #define APC_GLOBALS_H
 

@@ -25,8 +25,6 @@
 
  */
 
-/* $Id: apc_mmap.c 328964 2013-01-03 12:38:55Z remi $ */
-
 #include "apc.h"
 #include "apc_mmap.h"
 #include "apc_lock.h"

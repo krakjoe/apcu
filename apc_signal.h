@@ -17,8 +17,6 @@
 
  */
 
-/* $Id: apc_signal.h 307048 2011-01-03 23:53:17Z kalle $ */
-
 #ifndef APC_SIGNAL_H
 #define APC_SIGNAL_H
 

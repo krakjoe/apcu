@@ -27,8 +27,6 @@
 
  */
 
-/* $Id: php_apc.h 328953 2013-01-03 02:19:19Z rasmus $ */
-
 #ifndef PHP_APCU_H
 #define PHP_APCU_H
 

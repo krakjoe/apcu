@@ -17,8 +17,6 @@
 
  */
 
-/* $Id: $ */
-
 #ifndef APC_SERIALIZER_H
 #define APC_SERIALIZER_H
 

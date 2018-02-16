@@ -15,7 +15,6 @@
   | Authors: Pierre Joye <pierre@php.net>                                |
   +----------------------------------------------------------------------+
  */
-/* $Id$ */
 
 #ifndef APC_WINDOWS_CS_RWLOCK_H
 #define APC_WINDOWS_CS_RWLOCK_H
