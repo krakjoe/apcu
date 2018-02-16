@@ -327,7 +327,7 @@ HashTable* apc_flip_hash(HashTable *hash) {
 	if(hash == NULL) return hash;
 
 	ZVAL_LONG(&data, 1);
-   
+
 	ALLOC_HASHTABLE(new_hash);
 	zend_hash_init(new_hash, zend_hash_num_elements(hash), NULL, ZVAL_PTR_DTOR, 0);
 

@@ -45,8 +45,8 @@
 # define APC_SMA_CANARIES 1
 #endif
 
-enum { 
-	DEFAULT_NUMSEG=1, 
+enum {
+	DEFAULT_NUMSEG=1,
 	DEFAULT_SEGSIZE=30*1024*1024 };
 
 typedef struct sma_header_t sma_header_t;
@@ -100,7 +100,7 @@ struct block_t {
 	#define CHECK_CANARY(v) assert((v)->canary == 0x42424242)
 	#define RESET_CANARY(v) (v)->canary = -42
 #else
-	#define SET_CANARY(v) 
+	#define SET_CANARY(v)
 	#define CHECK_CANARY(v)
 	#define RESET_CANARY(v)
 #endif
@@ -232,7 +232,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 		BLOCKAT(prv->fprev)->fnext = prv->fnext;
 		/* cur and prv share an edge, combine them */
 		prv->size +=cur->size;
-	   
+
 		RESET_CANARY(cur);
 		cur = prv;
 	}
@@ -278,13 +278,13 @@ PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_
 	sma->initialized = 1;
 	sma->expunge = expunge;
 	sma->data = data;
-	
+
 #if APC_MMAP
 	/*
 	 * I don't think multiple anonymous mmaps makes any sense
 	 * so force sma_numseg to 1 in this case
 	 */
-	if(!mask || 
+	if(!mask ||
 	   (mask && !strlen(mask)) ||
 	   (mask && !strcmp(mask, "/dev/zero"))) {
 		sma->num = 1;
@@ -306,7 +306,7 @@ PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_
 
 #if APC_MMAP
 		sma->segs[i] = apc_mmap(mask, sma->size);
-		if(sma->num != 1) 
+		if(sma->num != 1)
 			memcpy(&mask[strlen(mask)-6], "XXXXXX", 6);
 #else
 		{
@@ -318,7 +318,7 @@ PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_
 			sma->segs[i] = apc_shm_attach(j, sma->size);
 		}
 #endif
-		
+
 		sma->segs[i].size = sma->size;
 
 		shmaddr = sma->segs[i].shmaddr;
@@ -405,7 +405,7 @@ restart:
 #endif
 		return p;
 	}
-	
+
 	WUNLOCK(&SMA_LCK(sma, sma->last));
 
 	for (i = 0; i < sma->num; i++) {
@@ -414,7 +414,7 @@ restart:
 		}
 		WLOCK(&SMA_LCK(sma, i));
 		off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
-		if(off == -1) { 
+		if(off == -1) {
 			/* retry failed allocation after we expunge */
 			WUNLOCK(&SMA_LCK(sma, i));
 			sma->expunge(
@@ -446,7 +446,7 @@ restart:
 	return NULL;
 }
 
-PHP_APCU_API void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong n) 
+PHP_APCU_API void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong n)
 {
 	zend_ulong allocated;
 	return apc_sma_api_malloc_ex(
@@ -597,7 +597,7 @@ PHP_APCU_API apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited)
 		/* For each block in this segment */
 		while (BLOCKAT(prv->fnext)->fnext != 0) {
 			block_t* cur = BLOCKAT(prv->fnext);
-			
+
 			CHECK_CANARY(cur);
 
 			*link = apc_emalloc(sizeof(apc_sma_link_t));
@@ -658,7 +658,7 @@ PHP_APCU_API void apc_sma_api_check_integrity(apc_sma_t* sma)
 }
 
 /* {{{ APC SMA */
-apc_sma_api_impl(apc_sma, &apc_user_cache, apc_cache_default_expunge); 
+apc_sma_api_impl(apc_sma, &apc_user_cache, apc_cache_default_expunge);
 /* }}} */
 
  /* }}} */

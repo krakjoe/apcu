@@ -55,7 +55,7 @@
 
 apc_segment_t apc_mmap(char *file_mask, size_t size)
 {
-	apc_segment_t segment; 
+	apc_segment_t segment;
 
 	int fd = -1;
 	int flags = MAP_SHARED | MAP_NOSYNC;
@@ -74,7 +74,7 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 		remap = 0;
 #endif
 #endif
-	} else if(!strcmp(file_mask,"/dev/zero")) { 
+	} else if(!strcmp(file_mask,"/dev/zero")) {
 		fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
 		if(fd == -1) {
 			apc_error("apc_mmap: open on /dev/zero failed:");
@@ -144,7 +144,7 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 	}
 
 	if(fd != -1) close(fd);
-	
+
 	return segment;
 
 error:

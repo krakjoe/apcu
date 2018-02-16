@@ -836,7 +836,7 @@ spin_delay(void)
 
 #endif
 
-  
+
 #endif	/* !defined(HAS_TEST_AND_SET) */
 
 
@@ -844,8 +844,8 @@ spin_delay(void)
 #ifndef HAS_TEST_AND_SET
 /* -- APC: We have better options in APC than this, that should be specified explicitly so just fail out and notify the user -- */
 #error Spin locking is not available on your platform, please select another locking method (see ./configure --help).
-/* #error PostgreSQL does not have native spinlock support on this platform.  To continue the compilation, rerun configure using --disable-spinlocks.  
-However, performance will be poor.  Please report this to pgsql-bugs@postgresql.org. */ 
+/* #error PostgreSQL does not have native spinlock support on this platform.  To continue the compilation, rerun configure using --disable-spinlocks.
+However, performance will be poor.  Please report this to pgsql-bugs@postgresql.org. */
 #endif
 
 

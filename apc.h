@@ -112,14 +112,14 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 # define APC_ALLOC __attribute__((malloc))
 # if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__  > 2)
 #  define APC_HOTSPOT __attribute__((hot))
-# else 
+# else
 #  define APC_HOTSPOT
 # endif
-#else 
+#else
 # define APC_UNUSED
 # define APC_USED
-# define APC_ALLOC 
-# define APC_HOTSPOT 
+# define APC_ALLOC
+# define APC_HOTSPOT
 #endif
 
 /*
@@ -152,7 +152,7 @@ PHP_APCU_API int _apc_register_serializer(
         const char* name, apc_serialize_t serialize, apc_unserialize_t unserialize, void *config);
 /* }}} */
 
-/* {{{ apc_get_serializers 
+/* {{{ apc_get_serializers
  fetches the list of serializers */
 PHP_APCU_API apc_serializer_t* apc_get_serializers(); /* }}} */
 

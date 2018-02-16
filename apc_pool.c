@@ -45,7 +45,7 @@ static apc_pool* apc_realpool_create(apc_pool_type type, apc_malloc_t, apc_free_
 /* {{{ apc_pool_create */
 PHP_APCU_API apc_pool* apc_pool_create(
         apc_pool_type pool_type, apc_malloc_t allocate, apc_free_t deallocate,
-        apc_protect_t protect, apc_unprotect_t unprotect) 
+        apc_protect_t protect, apc_unprotect_t unprotect)
 {
 	if(pool_type == APC_UNPOOL) {
 		return apc_unpool_create(pool_type, allocate, deallocate, protect, unprotect);
@@ -75,7 +75,7 @@ struct _apc_unpool {
 	/* apc_unpool is a lie! */
 };
 
-static void* apc_unpool_alloc(apc_pool* pool, size_t size) 
+static void* apc_unpool_alloc(apc_pool* pool, size_t size)
 {
 	apc_unpool *upool = (apc_unpool*)pool;
 
@@ -165,7 +165,7 @@ struct _apc_realpool
 	unsigned long count;
 
 	pool_block *head;
-	pool_block first; 
+	pool_block first;
 };
 
 /* }}} */
@@ -202,7 +202,7 @@ static const unsigned char decaff[] =  {
 } while(0)
 
 /* {{{ create_pool_block */
-static pool_block* create_pool_block(apc_realpool *rpool, 
+static pool_block* create_pool_block(apc_realpool *rpool,
 									 size_t size)
 {
 	apc_malloc_t allocate = rpool->parent.allocate;
@@ -216,7 +216,7 @@ static pool_block* create_pool_block(apc_realpool *rpool,
 	}
 
 	INIT_POOL_BLOCK(rpool, entry, size);
-	
+
 	rpool->parent.size += realsize;
 
 	rpool->count++;
@@ -237,7 +237,7 @@ static void* apc_realpool_alloc(apc_pool *pool, size_t size)
 	size_t *sizeinfo= NULL;
 	pool_block *entry = NULL;
 	unsigned long i;
-	
+
 	if(APC_POOL_HAS_REDZONES(pool)) {
 		redsize = REDZONE_SIZE(size); /* redsize might be re-using word size padding */
 		realsize = size + redsize;    /* recalculating realsize */
@@ -316,9 +316,9 @@ found:
  * is accessible from gdb, eventhough it is never
  * used in code in non-debug builds.
  */
-static APC_USED int apc_realpool_check_integrity(apc_realpool *rpool) 
+static APC_USED int apc_realpool_check_integrity(apc_realpool *rpool)
 {
-	apc_pool *pool = &(rpool->parent); 
+	apc_pool *pool = &(rpool->parent);
 	pool_block *entry;
 	size_t *sizeinfo = NULL;
 	unsigned char *start;
@@ -356,7 +356,7 @@ static APC_USED int apc_realpool_check_integrity(apc_realpool *rpool)
 			if(!CHECK_REDZONE(redzone, redsize))
 			{
 				/*
-				fprintf(stderr, "Redzone check failed for %p\n", 
+				fprintf(stderr, "Redzone check failed for %p\n",
 								start + ALIGNWORD(sizeof(size_t)));*/
 				return 0;
 			}
@@ -376,14 +376,14 @@ static APC_USED int apc_realpool_check_integrity(apc_realpool *rpool)
 /*
  * free does not do anything
  */
-static void apc_realpool_free(apc_pool *pool, 
+static void apc_realpool_free(apc_pool *pool,
 							  void *p)
 {
 }
 /* }}} */
 
 /* {{{ apc_realpool_cleanup */
-static void apc_realpool_cleanup(apc_pool *pool) 
+static void apc_realpool_cleanup(apc_pool *pool)
 {
 	pool_block *entry;
 	pool_block *tmp;
@@ -497,9 +497,9 @@ PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p, size_t n, apc_pool* pool
 
 /* {{{ apc_pstrcpy */
 PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool) {
-	zend_string* p = (zend_string*) pool->palloc(pool, 
+	zend_string* p = (zend_string*) pool->palloc(pool,
 		ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(ZSTR_LEN(str))));
-	
+
 	if (!p) {
 		return NULL;
 	}
@@ -517,7 +517,7 @@ PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool) {
 
 	memcpy(ZSTR_VAL(p), ZSTR_VAL(str), ZSTR_LEN(str));
 	p->len = ZSTR_LEN(str);
-	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';	
+	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';
 	zend_string_forget_hash_val(p);
 
 	return p;
@@ -525,9 +525,9 @@ PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool) {
 
 /* {{{ apc_pstrnew */
 PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_pool* pool) {
-	zend_string* p = (zend_string*) pool->palloc(pool, 
+	zend_string* p = (zend_string*) pool->palloc(pool,
 		ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(buf_len)));
-	
+
 	if (!p) {
 		return NULL;
 	}
@@ -545,7 +545,7 @@ PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_po
 
 	memcpy(ZSTR_VAL(p), buf, buf_len);
 	p->len = buf_len;
-	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';	
+	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';
 	zend_string_forget_hash_val(p);
 
 	return p;

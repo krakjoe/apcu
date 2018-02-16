@@ -120,7 +120,7 @@ static PHP_INI_MH(OnUpdateShmSize) /* {{{ */
 
 	if (s < Z_L(1048576)) {
 		/* if it's less than 1Mb, they are probably using the old syntax */
-		php_error_docref(	
+		php_error_docref(
 			NULL, E_WARNING, "apc.shm_size now uses M/G suffixes, please update your ini files");
 		s = s * Z_L(1048576);
 	}
@@ -180,16 +180,16 @@ static PHP_MINFO_FUNCTION(apcu)
 		apc_serializer_t *serializer = NULL;
 		smart_str names = {0,};
 		int i;
-	
-		for( i = 0, serializer = apc_get_serializers(); 
-					serializer->name != NULL; 
+
+		for( i = 0, serializer = apc_get_serializers();
+					serializer->name != NULL;
 					serializer++, i++) {
 			if (i != 0) {
 				smart_str_appends(&names, ", ");
 			}
 			smart_str_appends(&names, serializer->name);
 		}
-	
+
 		if (names.s) {
 			smart_str_0(&names);
 			php_info_print_table_row(2, "Serialization Support", names.s->val);
@@ -219,7 +219,7 @@ static PHP_MINIT_FUNCTION(apcu)
 
 	/* locks initialized regardless of settings */
 	apc_lock_init();
-	
+
 	/* Disable APC in cli mode unless overridden by apc.enable_cli */
 	if (!APCG(enable_cli) && !strcmp(sapi_module.name, "cli")) {
 		APCG(enabled) = 0;
@@ -231,7 +231,7 @@ static PHP_MINIT_FUNCTION(apcu)
 		if (!APCG(initialized)) {
 			/* ensure this runs only once */
 			APCG(initialized) = 1;
-			
+
 			/* initialize shared memory allocator */
 #if APC_MMAP
 			apc_sma.init(APCG(shm_segments), APCG(shm_size), APCG(mmap_file_mask));
@@ -253,10 +253,10 @@ static PHP_MINIT_FUNCTION(apcu)
 				&apc_sma,
 				apc_find_serializer(APCG(serializer_name)),
 				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(smart), APCG(slam_defense));
-			
+
 			/* initialize pooling */
 			apc_pool_init();
-			
+
 			/* preload data from path specified in configuration */
 			if (APCG(preload_path)) {
 				apc_cache_preload(
@@ -289,7 +289,7 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 
 			APCG(initialized) = 0;
 		}
-		
+
 #if HAVE_SIGACTION
 		apc_shutdown_signals();
 #endif
@@ -358,11 +358,11 @@ PHP_FUNCTION(apcu_cache_info)
 PHP_FUNCTION(apcu_key_info)
 {
 	zend_string *key;
-	
+
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S", &key) == FAILURE) {
 		return;
 	}
-	
+
 	apc_cache_stat(apc_user_cache, key, return_value);
 } /* }}} */
 
@@ -419,7 +419,7 @@ PHP_FUNCTION(apcu_sma_info)
 /* }}} */
 
 /* {{{ php_apc_update  */
-int php_apc_update(zend_string *key, apc_cache_updater_t updater, void* data) 
+int php_apc_update(zend_string *key, apc_cache_updater_t updater, void* data)
 {
 	if (!APCG(enabled)) {
 		return 0;
@@ -429,7 +429,7 @@ int php_apc_update(zend_string *key, apc_cache_updater_t updater, void* data)
 		/* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
 		apc_cache_serializer(apc_user_cache, APCG(serializer_name));
 	}
-	
+
 	if (!apc_cache_update(apc_user_cache, key, updater, data)) {
 		return 0;
 	}
@@ -445,7 +445,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 	zval *key = NULL;
 	zval *val = NULL;
 	zend_long ttl = 0L;
-	
+
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z|zl", &key, &val, &ttl) == FAILURE) {
 		return;
 	}
@@ -454,7 +454,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 		/* cannot work without key */
 		RETURN_FALSE;
 	}
-	
+
 	/* keep it tidy */
 	{
 		if (APCG(serializer_name)) {
@@ -463,7 +463,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 		}
 
 		if (Z_TYPE_P(key) == IS_ARRAY) {
-			
+
 			zval *hentry;
 			zend_string *hkey;
 			zend_ulong hkey_idx;
@@ -496,7 +496,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 			}
 		}
 	}
-	
+
 	/* default */
 	RETURN_FALSE;
 }
@@ -566,11 +566,11 @@ PHP_FUNCTION(apcu_inc) {
 		}
 		RETURN_ZVAL(&args.rval, 0, 0);
 	}
-	
+
 	if (success) {
 		ZVAL_FALSE(success);
 	}
-	
+
 	RETURN_FALSE;
 }
 /* }}} */
@@ -601,11 +601,11 @@ PHP_FUNCTION(apcu_dec) {
 
 		RETURN_ZVAL(&args.rval, 0, 0);
 	}
-	
+
 	if (success) {
 		ZVAL_FALSE(success);
 	}
-	
+
 	RETURN_FALSE;
 }
 /* }}} */
@@ -682,7 +682,7 @@ PHP_FUNCTION(apcu_fetch) {
 		} else if (Z_TYPE_P(key) == IS_ARRAY) {
 			zval *hentry;
 			zval result;
-			
+
 			array_init(&result);
 			ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(key), hentry) {
 				ZVAL_DEREF(hentry);
@@ -705,9 +705,9 @@ PHP_FUNCTION(apcu_fetch) {
 				ZVAL_TRUE(success);
 			}
 		}
-	} else { 
+	} else {
 		apc_warning("apc_fetch() expects a string or array of strings.");
-		RETURN_FALSE; 
+		RETURN_FALSE;
 	}
 	return;
 }
@@ -738,13 +738,13 @@ PHP_FUNCTION(apcu_exists) {
 			if (apc_cache_exists(apc_user_cache, Z_STR_P(key), t)) {
 				RETURN_TRUE;
 			} else {
-				RETURN_FALSE;			
+				RETURN_FALSE;
 			}
 		}
 	} else if (Z_TYPE_P(key) == IS_ARRAY) {
 		zval *hentry;
 
-		array_init(return_value); 
+		array_init(return_value);
 		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(key), hentry) {
 			ZVAL_DEREF(hentry);
 			if (Z_TYPE_P(hentry) == IS_STRING) {
@@ -827,8 +827,8 @@ PHP_FUNCTION(apcu_entry) {
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "zf|l", &key, &fci, &fcc, &ttl) != SUCCESS) {
 		return;
 	}
-	
-	apc_cache_entry(apc_user_cache, key, &fci, &fcc, ttl, now, return_value);	
+
+	apc_cache_entry(apc_user_cache, key, &fci, &fcc, ttl, now, return_value);
 }
 /* }}} */
 

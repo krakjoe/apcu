@@ -29,7 +29,7 @@
 /* Allows apc to install signal handlers and maintain signalling
  * to already registered handlers. Registers all signals that
  * coredump by default and unmaps the shared memory segment
- * before the coredump. Note: PHP module init is called before 
+ * before the coredump. Note: PHP module init is called before
  * signals are set by Apache and thus apc_set_signals should
  * be called in request init (RINIT)
  */
@@ -53,13 +53,13 @@ static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context);
 
 extern apc_cache_t* apc_user_cache;
 
-/* {{{ apc_core_unmap 
- *  Coredump signal handler, unmaps shm and calls previously installed handlers 
+/* {{{ apc_core_unmap
+ *  Coredump signal handler, unmaps shm and calls previously installed handlers
  */
-static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context) 
+static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 {
 	TSRMLS_FETCH();
-	
+
 	apc_sma_cleanup();
 	apc_rehandle_signal(signo, siginfo, context);
 
@@ -75,14 +75,14 @@ static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 /* {{{ apc_reload_cache */
 static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
 	TSRMLS_FETCH();
-	
-	if (apc_user_cache) {	
+
+	if (apc_user_cache) {
 		apc_cache_clear(
 			apc_user_cache);
 	}
-	
+
 	apc_rehandle_signal(signo, siginfo, context);
-	
+
 #if !defined(WIN32) && !defined(NETWARE)
 	kill(getpid(), signo);
 #else
@@ -113,8 +113,8 @@ static void apc_rehandle_signal(int signo, siginfo_t *siginfo, void *context)
 } /* }}} */
 
 /* {{{ apc_register_signal
- *  Set a handler for a previously installed signal and save so we can 
- *  callback when handled 
+ *  Set a handler for a previously installed signal and save so we can
+ *  callback when handled
  */
 static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*))
 {
@@ -158,7 +158,7 @@ static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*
 
 /* {{{ apc_set_signals
  *  Install our signal handlers */
-void apc_set_signals() 
+void apc_set_signals()
 {
 	if (apc_signal_info.installed == 0) {
 #if defined(SIGUSR1) && defined(APC_SIGNAL_CLEAR)
@@ -204,7 +204,7 @@ void apc_set_signals()
 
 /* {{{ apc_set_signals
  *  cleanup signals for shutdown */
-void apc_shutdown_signals() 
+void apc_shutdown_signals()
 {
 	int i=0;
 	if (apc_signal_info.installed > 0) {

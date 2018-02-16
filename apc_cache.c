@@ -88,7 +88,7 @@ static int const primes[] = {
 
 static int make_prime(int n)
 {
-	int *k = (int*)primes; 
+	int *k = (int*)primes;
 	while(*k) {
 		if((*k) > n) return *k;
 		k++;
@@ -101,10 +101,10 @@ static int make_prime(int n)
 apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* value, apc_cache_slot_t* next, time_t t)
 {
 	apc_cache_slot_t* p = NULL;
-	
+
 	/* allocate slot */
-	if ((p = value->pool->palloc(value->pool, sizeof(apc_cache_slot_t)))) {	
-		
+	if ((p = value->pool->palloc(value->pool, sizeof(apc_cache_slot_t)))) {
+
 		/* copy identifier */
 		zend_string *copiedKey = apc_pstrcpy(key->str, value->pool);
 
@@ -112,7 +112,7 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 			value->pool->pfree(value->pool, p);
 			return NULL;
 		}
-			
+
 		/* set slot data */
 		p->key = key[0];
 		p->key.str = copiedKey;
@@ -120,7 +120,7 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 
 		/* set slot relation */
 		p->next = next;
-			
+
 		/* set slot defaults */
 		p->nhits = 0;
 		p->ctime = t;
@@ -153,7 +153,7 @@ static void apc_cache_hash_slot(
 PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** slot)
 {
 	apc_cache_slot_t* dead = *slot;
-	
+
 	/* think here is safer */
 	*slot = (*slot)->next;
 
@@ -163,7 +163,7 @@ PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** s
 
 	if (cache->header->nentries)
 		cache->header->nentries--;
-	
+
 	/* remove if there are no references */
 	if (dead->value->ref_count <= 0) {
 		free_slot(dead);
@@ -180,8 +180,8 @@ PHP_APCU_API void apc_cache_remove_slot(apc_cache_t* cache, apc_cache_slot_t** s
 PHP_APCU_API void apc_cache_gc(apc_cache_t* cache)
 {
 	/* This function scans the list of removed cache entries and deletes any
-	 * entry whose reference count is zero  or that has been on the gc 
-	 * list for more than cache->gc_ttl seconds 
+	 * entry whose reference count is zero  or that has been on the gc
+	 * list for more than cache->gc_ttl seconds
 	 *   (we issue a warning in the latter case).
 	 */
 	if (!cache || !cache->header->gc) {
@@ -201,18 +201,18 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache)
 				/* good ol' whining */
 				if (dead->value->ref_count > 0) {
 					apc_debug(
-						"GC cache entry '%s' was on gc-list for %d seconds", 
+						"GC cache entry '%s' was on gc-list for %d seconds",
 						dead->key.str, gc_sec
 					);
 				}
 
 				/* set next slot */
 				*slot = dead->next;
-			
+
 				/* free slot */
 				free_slot(
 					dead);
-			
+
 				/* next */
 				continue;
 
@@ -225,7 +225,7 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache)
 /* }}} */
 
 /* {{{ php serializer */
-PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS) 
+PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS)
 {
 	smart_str strbuf = {0};
 	php_serialize_data_t var_hash;
@@ -246,7 +246,7 @@ PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS)
 } /* }}} */
 
 /* {{{ php unserializer */
-PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS) 
+PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 {
 	const unsigned char *tmp = buf;
 	php_unserialize_data_t var_hash;
@@ -277,7 +277,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 		apc_error("Unable to allocate memory for cache structures. (Perhaps your memory_limit isn't large enough?). ");
 		return NULL;
 	}
-	
+
 	/* calculate cache size for shm allocation */
 	cache_size = sizeof(apc_cache_header_t) + nslots*sizeof(apc_cache_slot_t*);
 
@@ -288,13 +288,13 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 		apc_error("Unable to allocate shared memory for cache structures.  (Perhaps your shared memory size isn't large enough?). ");
 		return NULL;
 	}
-	
+
 	/* zero shm */
 	memset(cache->shmaddr, 0, cache_size);
 
 	/* set default header */
 	cache->header = (apc_cache_header_t*) cache->shmaddr;
-	
+
 	cache->header->nhits = 0;
 	cache->header->nmisses = 0;
 	cache->header->nentries = 0;
@@ -302,7 +302,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache->header->gc = NULL;
 	cache->header->stime = time(NULL);
 	cache->header->state |= APC_CACHE_ST_NONE;
-	
+
 	/* set cache options */
 	cache->slots = (apc_cache_slot_t**) (((char*) cache->shmaddr) + sizeof(apc_cache_header_t));
 	cache->sma = sma;
@@ -312,7 +312,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache->ttl = ttl;
 	cache->smart = smart;
 	cache->defend = defend;
-	
+
 	/* header lock */
 	CREATE_LOCK(&cache->header->lock);
 
@@ -329,16 +329,16 @@ static inline zend_bool apc_cache_insert_internal(
 	if (!value) {
 		return 0;
 	}
-	
+
 	/* check we are able to deal with this request */
 	if (!cache || apc_cache_busy(cache)) {
 		return 0;
 	}
-	
+
 	/* process deleted list  */
 	apc_cache_gc(cache);
 
-	/* make the insertion */	
+	/* make the insertion */
 	{
 		apc_cache_slot_t** slot;
 
@@ -348,13 +348,13 @@ static inline zend_bool apc_cache_insert_internal(
 		slot = &cache->slots[ZSTR_HASH(key->str) % cache->nslots];
 
 		while (*slot) {
-			
+
 			/* check for a match by hash and string */
-			if ((ZSTR_HASH((*slot)->key.str) == ZSTR_HASH(key->str)) && 
+			if ((ZSTR_HASH((*slot)->key.str) == ZSTR_HASH(key->str)) &&
 				memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key->str), ZSTR_LEN(key->str)) == SUCCESS) {
 
-				/* 
-				 * At this point we have found the user cache entry.  If we are doing 
+				/*
+				 * At this point we have found the user cache entry.  If we are doing
 				 * an exclusive insert (apc_add) we are going to bail right away if
 				 * the user entry already exists and it has no ttl, or
 				 * there is a ttl and the entry has not timed out yet.
@@ -368,21 +368,21 @@ static inline zend_bool apc_cache_insert_internal(
 				break;
 			} else
 
-			/* 
+			/*
 			 * This is a bit nasty.  The idea here is to do runtime cleanup of the linked list of
 			 * slot entries so we don't always have to skip past a bunch of stale entries.  We check
 			 * for staleness here and get rid of them by first checking to see if the cache has a global
 			 * access ttl on it and removing entries that haven't been accessed for ttl seconds and secondly
 			 * we see if the entry has a hard ttl on it and remove it if it has been around longer than its ttl
 			 */
-			if((cache->ttl && (time_t)(*slot)->atime < (t - (time_t)cache->ttl)) || 
+			if((cache->ttl && (time_t)(*slot)->atime < (t - (time_t)cache->ttl)) ||
 			   ((*slot)->value->ttl && (time_t) ((*slot)->ctime + (*slot)->value->ttl) < t)) {
 				apc_cache_remove_slot(cache, slot);
 				continue;
 			}
-		
+
 			/* set next slot */
-			slot = &(*slot)->next;      
+			slot = &(*slot)->next;
 		}
 
 		if ((*slot = make_slot(cache, key, value, *slot, t)) != NULL) {
@@ -417,10 +417,10 @@ static inline zend_bool apc_cache_store_internal(apc_cache_t *cache, zend_string
 
 			/* run cache defense */
 			if (!apc_cache_defense(cache, &key)) {
-				
+
 				/* initialize the entry for insertion */
 				if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl))) {
-				
+
 					/* execute an insertion */
 					if (apc_cache_insert_internal(cache, &key, entry, &ctxt, t, exclusive)) {
 						ret = 1;
@@ -445,7 +445,7 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 
 	if (lock)
 		APC_RLOCK(cache->header);
-	
+
 	/* calculate hash and slot */
 	apc_cache_hash_slot(cache, key, &h, &s);
 
@@ -454,7 +454,7 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 
 	while (*slot) {
 		/* check for a matching key by has and identifier */
-		if ((h == ZSTR_HASH((*slot)->key.str)) && 
+		if ((h == ZSTR_HASH((*slot)->key.str)) &&
 			memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
 
 			/* Check to make sure this entry isn't expired by a hard TTL */
@@ -466,7 +466,7 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 					APC_RUNLOCK(cache->header);
 				return NULL;
 			}
-			
+
 			/* set cache num hits */
 			ATOMIC_INC(cache, cache->header->nhits);
 
@@ -486,7 +486,7 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 		}
 
 		/* next */
-		slot = &(*slot)->next;		
+		slot = &(*slot)->next;
 	}
 
 	/* not found, so increment misses */
@@ -539,10 +539,10 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, zend_string *strkey, 
 
 			/* run cache defense */
 			if (!apc_cache_defense(cache, &key)) {
-				
+
 				/* initialize the entry for insertion */
 				if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl))) {
-				
+
 					/* execute an insertion */
 					if (apc_cache_insert(cache, &key, entry, &ctxt, t, exclusive)) {
 						ret = 1;
@@ -586,7 +586,7 @@ static zval data_unserialize(const char *filename)
 		return EG(uninitialized_zval);
 	}
 
-	if(fread(contents, 1, len, fp) < 1) {	
+	if(fread(contents, 1, len, fp) < 1) {
 		fclose(fp);
 		free(contents);
 		return EG(uninitialized_zval);
@@ -595,7 +595,7 @@ static zval data_unserialize(const char *filename)
 	ZVAL_UNDEF(&retval);
 
 	PHP_VAR_UNSERIALIZE_INIT(var_hash);
-	
+
 	/* I wish I could use json */
 	if(!php_var_unserialize(&retval, (const unsigned char**)&tmp, (const unsigned char*)(contents+len), &var_hash)) {
 		fclose(fp);
@@ -647,7 +647,7 @@ static int apc_load_data(apc_cache_t* cache, const char *data_file)
 /* {{{ apc_cache_preload shall load the prepared data files in path into the specified cache */
 PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path)
 {
-#ifndef ZTS	
+#ifndef ZTS
 	zend_bool result = 0;
 	char file[MAXPATHLEN]={0,};
 	int ndir, i;
@@ -674,10 +674,10 @@ PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path)
 		free(namelist);
 	}
 	return result;
-#else 
+#else
 	apc_error("Cannot load data from apc.preload_path=%s in thread-safe mode", path);
 	return 0;
-#endif	
+#endif
 } /* }}} */
 
 /* {{{ apc_cache_release */
@@ -707,9 +707,9 @@ PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache)
 
 /* {{{ apc_cache_real_expunge */
 PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache) {
-	/* increment counter */	
+	/* increment counter */
 	cache->header->nexpunges++;
-	
+
 	/* expunge */
 	{
 		zend_ulong i;
@@ -722,7 +722,7 @@ PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache) {
 			cache->slots[i] = NULL;
 		}
 	}
-	
+
 	/* set new time so counters make sense */
 	cache->header->stime = apc_time();
 
@@ -731,7 +731,7 @@ PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache) {
 	cache->header->nentries = 0;
 	cache->header->nhits = 0;
 	cache->header->nmisses = 0;
-	
+
 	/* resets lastkey */
 	memset(&cache->header->lastkey, 0, sizeof(apc_cache_key_t));
 } /* }}} */
@@ -743,7 +743,7 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 	if(!cache || apc_cache_busy(cache)) {
 		return;
 	}
-	
+
 	/* lock header */
 	APC_LOCK(cache->header);
 
@@ -778,7 +778,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	if(!cache || apc_cache_busy(cache)) {
 		return;
 	}
-	
+
 	/* get the lock for header */
 	APC_LOCK(cache->header);
 
@@ -826,9 +826,9 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 							continue;
 						}
 					}
-				
+
 					/* grab next slot */
-					slot = &(*slot)->next;				
+					slot = &(*slot)->next;
 				}
 			}
 
@@ -867,7 +867,7 @@ PHP_APCU_API zend_bool apc_cache_make_context(
 				pool_type, copy_type, force_update
 			);
 		} break;
-		
+
 		case APC_CONTEXT_NOSHARE: {
 			return apc_cache_make_context_ex(
 				context,
@@ -935,7 +935,7 @@ PHP_APCU_API zend_bool apc_cache_insert(
 			cache, key, value, ctxt, t, exclusive);
 	}, APC_UNLOCK(cache->header));
 
-	return result;	
+	return result;
 }
 /* }}} */
 
@@ -956,7 +956,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *
 /* }}} */
 
 /* {{{ apc_cache_fetch */
-PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval **dst) 
+PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval **dst)
 {
 	apc_cache_entry_t *entry = NULL;
 	zend_bool ret = 0;
@@ -971,7 +971,7 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 	if (entry) {
 		ret = apc_cache_fetch_internal(cache, key, entry, t, dst);
 	}
-	
+
 	return ret;
 } /* }}} */
 
@@ -980,14 +980,14 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, zend_string
 {
 	if(apc_cache_busy(cache))
 	{
-		/* cache cleanup in progress */ 
+		/* cache cleanup in progress */
 		return NULL;
 	}
 
 	/* we only declare volatiles we need */
 	{
 		apc_cache_slot_t** slot;
-	
+
 		volatile apc_cache_entry_t* value = NULL;
 		zend_ulong h, s;
 
@@ -995,7 +995,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, zend_string
 		apc_cache_hash_slot(cache, key, &h, &s);
 
 		/* read lock header */
-		APC_RLOCK(cache->header);	
+		APC_RLOCK(cache->header);
 
 		/* find head */
 		slot = &cache->slots[s];
@@ -1018,14 +1018,14 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, zend_string
 
 				/* Return the cache entry ptr */
 				value = (*slot)->value;
-			
+
 				/* unlock header */
 				APC_RUNLOCK(cache->header);
-					
+
 				return (apc_cache_entry_t*)value;
 			}
 
-			slot = &(*slot)->next;  
+			slot = &(*slot)->next;
 		}
 
 		/* unlock header */
@@ -1041,19 +1041,19 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 {
 	apc_cache_slot_t** slot;
 	apc_cache_entry_t tmp_entry;
-	
+
 	zend_bool retval = 0;
 	zend_ulong h, s;
 
 	if(apc_cache_busy(cache))
 	{
-		/* cannot service request right now */ 
+		/* cannot service request right now */
 		return 0;
 	}
 
 	/* calculate hash */
 	apc_cache_hash_slot(cache, key, &h, &s);
-	
+
 	php_apc_try(APC_LOCK(cache->header), {
 
 		/* find head */
@@ -1113,7 +1113,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache, zend_string *key)
 {
 	apc_cache_slot_t** slot;
-	
+
 	zend_ulong h, s;
 
 	if (!cache) {
@@ -1125,27 +1125,27 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache, zend_string *key)
 
 	/* lock cache */
 	APC_LOCK(cache->header);
-	
+
 	/* find head */
 	slot = &cache->slots[s];
 
 	while (*slot) {
 		/* check for a match by hash and identifier */
-		if ((h == ZSTR_HASH((*slot)->key.str)) && 
+		if ((h == ZSTR_HASH((*slot)->key.str)) &&
 			memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
 			/* executing removal */
 			apc_cache_remove_slot(
 				cache, slot);
 			goto deleted;
 		}
-		
+
 		/* continue locking */
-		slot = &(*slot)->next;      
+		slot = &(*slot)->next;
 	}
-	
+
 	/* unlock header */
 	APC_UNLOCK(cache->header);
-	
+
 	return 0;
 
 deleted:
@@ -1164,7 +1164,7 @@ PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, zend_string *str
 	if (!str) {
 		return 0;
 	}
-	
+
 	key->str = str;
 	key->mtime = apc_time();
 
@@ -1177,7 +1177,7 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 {
 	unsigned char *buf = NULL;
 	size_t buf_len = 0;
-	
+
 	apc_pool* pool = ctxt->pool;
 	apc_serialize_t serialize = APC_SERIALIZER_NAME(php);
 	void *config = NULL;
@@ -1185,15 +1185,15 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 
 	if(ctxt->serializer) {
 		serialize = ctxt->serializer->serialize;
-		config = 
-			(ctxt->serializer->config != NULL) ? 
+		config =
+			(ctxt->serializer->config != NULL) ?
 			ctxt->serializer->config : ctxt;
 	}
 
 	ZVAL_NULL(dst);
 
 	if(serialize((unsigned char**)&buf, &buf_len, src, config)) {
-		if (!(serial = apc_pstrnew(buf, buf_len, pool))) {	
+		if (!(serial = apc_pstrnew(buf, buf_len, pool))) {
 			efree(buf);
 
 			return dst;
@@ -1544,7 +1544,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 #ifdef IS_CONSTANT
 	case IS_CONSTANT:
 #endif
-	case IS_STRING:	
+	case IS_STRING:
 		if (ctxt->copy == APC_COPY_OUT) {
 			ZVAL_STR(dst, zend_string_dup(Z_STR_P(src), 0));
 		} else {
@@ -1647,10 +1647,10 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt, apc_ca
 	if (!entry) {
 		return NULL;
 	}
-	
+
 	/* set key for serializer */
 	ctxt->key = key;
-	
+
 	if (!apc_cache_store_zval(&entry->val, val, ctxt)) {
 		pool->pfree(pool, entry);
 		return NULL;
@@ -1748,7 +1748,7 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
 				zval link = apc_cache_link_info(cache, p);
 				add_next_index_zval(&gc, &link);
 			}
-			
+
 			add_assoc_zval(&info, "cache_list", &list);
 			add_assoc_zval(&info, "deleted_list", &gc);
 			add_assoc_zval(&info, "slot_distribution", &slots);
@@ -1777,10 +1777,10 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *st
 
 		while (*slot) {
 			/* check for a matching key by has and identifier */
-			if ((h == ZSTR_HASH((*slot)->key.str)) && 
+			if ((h == ZSTR_HASH((*slot)->key.str)) &&
 				memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
 				array_init(stat);
-				
+
 				add_assoc_long(stat, "hits",  (*slot)->nhits);
 				add_assoc_long(stat, "access_time", (*slot)->atime);
 				add_assoc_long(stat, "mtime", (*slot)->key.mtime);
@@ -1788,12 +1788,12 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *st
 				add_assoc_long(stat, "deletion_time", (*slot)->dtime);
 				add_assoc_long(stat, "ttl",   (*slot)->value->ttl);
 				add_assoc_long(stat, "refs",  (*slot)->value->ref_count);
-			
+
 				break;
 			}
 
 			/* next */
-			slot = &(*slot)->next;		
+			slot = &(*slot)->next;
 		}
 	}, APC_RUNLOCK(cache->header));
 
@@ -1802,7 +1802,7 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *st
 
 /* {{{ apc_cache_busy */
 PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache)
-{	
+{
 	return (cache->header->state & APC_CACHE_ST_BUSY);
 }
 /* }}} */
@@ -1813,9 +1813,9 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* ke
 	zend_bool result = 0;
 
 #ifdef ZTS
-#	define FROM_DIFFERENT_THREAD(k) ((key->owner = TSRMLS_CACHE) != (k)->owner) 
+#	define FROM_DIFFERENT_THREAD(k) ((key->owner = TSRMLS_CACHE) != (k)->owner)
 #else
-#	define FROM_DIFFERENT_THREAD(k) ((key->owner = getpid()) != (k)->owner) 
+#	define FROM_DIFFERENT_THREAD(k) ((key->owner = getpid()) != (k)->owner)
 #endif
 
 	/* only continue if slam defense is enabled */
@@ -1827,7 +1827,7 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* ke
 		if (!last->str) {
 			return 0;
 		}
-		
+
 		/* check the hash and length match */
 		if(ZSTR_HASH(last->str) == ZSTR_HASH(key->str) && ZSTR_LEN(last->str) == ZSTR_LEN(key->str)) {
 			/* check the time ( last second considered slam ) and context */
@@ -1843,10 +1843,10 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* ke
 
 				/* required to tell contexts apart */
 #ifdef ZTS
-				last->owner = TSRMLS_CACHE;	
+				last->owner = TSRMLS_CACHE;
 #else
-				last->owner = getpid();		
-#endif	
+				last->owner = getpid();
+#endif
 			}
 		}
 	}
@@ -1905,7 +1905,7 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 
 			if (result == SUCCESS) {
 				zend_fcall_info_args_clear(fci, 1);
-			
+
 				if (!EG(exception)) {
 					apc_cache_store_internal(
 						cache, Z_STR_P(key), return_value, (uint32_t) ttl, 1);

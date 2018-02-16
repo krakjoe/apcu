@@ -142,7 +142,7 @@ static void apc_iterator_free(zend_object *object) {
 
 /* {{{ apc_iterator_create */
 zend_object* apc_iterator_create(zend_class_entry *ce) {
-	apc_iterator_t *iterator = 
+	apc_iterator_t *iterator =
 		(apc_iterator_t*) emalloc(sizeof(apc_iterator_t) + zend_object_properties_size(ce));
 
 	zend_object_std_init(&iterator->obj, ce);
@@ -230,7 +230,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator) {
 			iterator->slot_idx++;
 		}
 	}, {
-		iterator->stack_idx = 0; 
+		iterator->stack_idx = 0;
 		APC_RUNLOCK(apc_user_cache->header)
 	});
 
@@ -288,7 +288,7 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 				slot = &(*slot)->next;
 			}
 		}
-	}, {	
+	}, {
 		iterator->totals_flag = 1;
 		APC_RUNLOCK(apc_user_cache->header);
 	});
@@ -374,7 +374,7 @@ PHP_METHOD(apc_iterator, __construct) {
 /* {{{ proto APCuIterator::rewind() */
 PHP_METHOD(apc_iterator, rewind) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}

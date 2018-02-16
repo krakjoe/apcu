@@ -42,13 +42,13 @@
 #define APC_ITER_TYPE		(1 << 0)
 #define APC_ITER_KEY        (1 << 1)
 #define APC_ITER_VALUE      (1 << 2)
-#define APC_ITER_NUM_HITS   (1 << 3) 
-#define APC_ITER_MTIME      (1 << 4) 
-#define APC_ITER_CTIME      (1 << 5) 
-#define APC_ITER_DTIME      (1 << 6) 
-#define APC_ITER_ATIME      (1 << 7) 
-#define APC_ITER_REFCOUNT   (1 << 8) 
-#define APC_ITER_MEM_SIZE   (1 << 9) 
+#define APC_ITER_NUM_HITS   (1 << 3)
+#define APC_ITER_MTIME      (1 << 4)
+#define APC_ITER_CTIME      (1 << 5)
+#define APC_ITER_DTIME      (1 << 6)
+#define APC_ITER_ATIME      (1 << 7)
+#define APC_ITER_REFCOUNT   (1 << 8)
+#define APC_ITER_MEM_SIZE   (1 << 9)
 #define APC_ITER_TTL        (1 << 10)
 
 #define APC_ITER_NONE       0
@@ -96,10 +96,10 @@ typedef struct _apc_iterator_item_t {
 /* }}} */
 
 PHP_APCU_API void apc_iterator_obj_init(
-	apc_iterator_t *iterator, 
-	zval *search, 
-	zend_long format, 
-	zend_long chunk_size, 
+	apc_iterator_t *iterator,
+	zval *search,
+	zend_long format,
+	zend_long chunk_size,
 	zend_long list);
 PHP_APCU_API zend_class_entry* apc_iterator_get_ce(void);
 PHP_APCU_API int apc_iterator_init(int module_number);

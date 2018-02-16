@@ -63,11 +63,11 @@ typedef enum {
 #endif
 } apc_pool_type; /* }}} */
 
-/* {{{ structure definition: apc_pool */ 
+/* {{{ structure definition: apc_pool */
 struct _apc_pool {
 	/* denotes the size and debug flags for a pool */
 	apc_pool_type   type;
-	
+
 	/* handler functions */
 	apc_malloc_t    allocate;
 	apc_free_t      deallocate;
@@ -89,7 +89,7 @@ struct _apc_pool {
 }; /* }}} */
 
 /* {{{ enum definition: apc_copy_type */
-/* APC_COPY_IN should be used when copying into APC 
+/* APC_COPY_IN should be used when copying into APC
    APC_COPY_OUT should be used when copying out of APC */
 typedef enum _apc_copy_type {
 	APC_NO_COPY = 0,
@@ -98,8 +98,8 @@ typedef enum _apc_copy_type {
 	APC_COPY_OTHER
 } apc_copy_type; /* }}} */
 
-/* {{{ enum definition: apc_context_type 
-	APC_CONTEXT_SHARE should be used to create contexts using shared memory 
+/* {{{ enum definition: apc_context_type
+	APC_CONTEXT_SHARE should be used to create contexts using shared memory
 	APC_CONTEXT_NOSHARE should be used to create contexts using standard allocators */
 typedef enum _apc_context_type {
 	APC_CONTEXT_NONE = 0,

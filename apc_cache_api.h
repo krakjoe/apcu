@@ -109,27 +109,27 @@ typedef struct _apc_cache_t {
 typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void* data); /* }}} */
 
 /*
- * apc_cache_create creates the shared memory cache. 
+ * apc_cache_create creates the shared memory cache.
  *
  * This function should be called once per process per cache
- * 
+ *
  * serializer for APCu is set by globals on MINIT and ensured with apc_cache_serializer
  * during execution. Using apc_cache_serializer avoids race conditions between MINIT/RINIT of
  * APCU and the third party serializer. API users can choose to leave this null to use default
  * PHP serializers, or search the list of serializers for the preferred serializer
  *
- * size_hint is a "hint" at the total number entries that will be expected. 
+ * size_hint is a "hint" at the total number entries that will be expected.
  * It determines the physical size of the hash table. Passing 0 for
  * this argument will use a reasonable default value
- * 
+ *
  * gc_ttl is the maximum time a cache entry may speed on the garbage
  * collection list. This is basically a work around for the inherent
  * unreliability of our reference counting mechanism (see apc_cache_release).
  *
  * ttl is the maximum time a cache entry can idle in a slot in case the slot
- * is needed.  This helps in cleaning up the cache and ensuring that entries 
+ * is needed.  This helps in cleaning up the cache and ensuring that entries
  * hit frequently stay cached and ones not hit very often eventually disappear.
- * 
+ *
  * for an explanation of smart, see apc_cache_default_expunge
  *
  * defend enables/disables slam defense for this particular cache
@@ -175,13 +175,13 @@ PHP_APCU_API zend_bool apc_cache_make_context_ex(
         apc_protect_t _protect, apc_unprotect_t _unprotect,
         apc_pool_type pool_type, apc_copy_type copy_type, uint force_update);
 /*
-* apc_context_destroy should be called when a context is finished being used 
+* apc_context_destroy should be called when a context is finished being used
 */
 PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context);
 
 /*
  * apc_cache_insert adds an entry to the cache.
- * Returns true if the entry was successfully inserted, false otherwise. 
+ * Returns true if the entry was successfully inserted, false otherwise.
  * If false is returned, the caller must free the cache entry by calling
  * apc_cache_free_entry (see below).
  *
@@ -265,7 +265,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(
  fetches information about the cache provided for userland status functions
 */
 PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited);
-								  
+
 /*
  fetches information about the key provided
 */
@@ -303,7 +303,7 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name);
 
 /*
 * The remaining functions allow a third party to reimplement expunge
-* 
+*
 * Look at the source of apc_cache_default_expunge for what is expected of this function
 *
 * The default behaviour of expunge is explained below, should no combination of those options
@@ -311,7 +311,7 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name);
 * call to apc_sma_api_impl, this will replace the default functionality.
 * The functions below you can use during your own implementation of expunge to gain more
 * control over how the expunge process works ...
-* 
+*
 * Note: beware of locking (copy it exactly), setting states is also important
 */
 

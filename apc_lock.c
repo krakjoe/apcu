@@ -40,7 +40,7 @@
 #   else
 #       include <unistd.h>
 #       include <fcntl.h>
-	
+
 		static int apc_fcntl_call(int fd, int cmd, int type, off_t offset, int whence, off_t len) {
 			int ret;
 			struct flock lock;
@@ -51,10 +51,10 @@
 			lock.l_len = len;
 			lock.l_pid = 0;
 
-			do { 
-				ret = fcntl(fd, cmd, &lock) ; 
+			do {
+				ret = fcntl(fd, cmd, &lock) ;
 			} while(ret < 0 && errno == EINTR);
-			
+
 			return(ret);
 		}
 #   endif
@@ -67,21 +67,21 @@ PHP_APCU_API int apc_lock_init(apc_lock_t* lock)
 PHP_APCU_API int apc_lock_try(apc_lock_t* lock)
 {
 	int failed = 1;
-	
+
 	asm volatile
 	(
 		"xchgl %0, 0(%1)" :
-		"=r" (failed) : "r" (&lock->state), 
-		"0" (failed)    
+		"=r" (failed) : "r" (&lock->state),
+		"0" (failed)
 	);
-	
-	return failed;   
+
+	return failed;
 }
 
 PHP_APCU_API int apc_lock_get(apc_lock_t* lock)
 {
 	int failed = 1;
-	
+
 	do {
 		failed = apc_lock_try(
 			lock);
@@ -89,19 +89,19 @@ PHP_APCU_API int apc_lock_get(apc_lock_t* lock)
 		usleep(0);
 #endif
 	} while (failed);
-	
+
 	return failed;
 }
 
 PHP_APCU_API int apc_lock_release(apc_lock_t* lock)
 {
 	int released = 0;
-	
+
 	asm volatile (
 		"xchg %0, 0(%1)" : "=r" (released) : "r" (&lock->state),
 		"0" (released)
 	);
-	
+
 	return !released;
 }
 # endif
@@ -199,7 +199,7 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 		lock->state = 0;
 		return 1;
 	}
-	
+
 #endif
 #else
 	lock = (apc_lock_t *)apc_windows_cs_create((apc_windows_cs_rwlock_t *)lock);
@@ -216,7 +216,7 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
 		pthread_mutex_lock(lock);
 #   else
 		pthread_rwlock_rdlock(lock);
-#   endif    
+#   endif
 # else
 	{
 		/* FCNTL */
@@ -241,7 +241,7 @@ PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
 # ifndef APC_FCNTL_LOCK
 #   ifdef APC_LOCK_RECURSIVE
 		pthread_mutex_lock(lock);
-#   else	
+#   else
 		pthread_rwlock_wrlock(lock);
 #   endif
 # else
@@ -335,6 +335,6 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock) {
 #else
 	apc_windows_cs_destroy((apc_windows_cs_rwlock_t *)lock);
 #endif
-} 
+}
 #endif
 

@@ -76,7 +76,7 @@ apc_segment_t apc_shm_attach(int shmid, size_t size)
 	}
 
 #ifdef APC_MEMPROTECT
-	
+
 	if ((zend_long)(segment.roaddr = shmat(shmid, 0, SHM_RDONLY)) == -1) {
 		segment.roaddr = NULL;
 	}

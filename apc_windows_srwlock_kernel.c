@@ -22,7 +22,7 @@
 #ifdef APC_SRWLOCK_KERNEL
 #include "apc_windows_srwlock_kernel.h"
 
-apc_windows_cs_rwlock_t *apc_windows_cs_create(apc_windows_cs_rwlock_t *lock) 
+apc_windows_cs_rwlock_t *apc_windows_cs_create(apc_windows_cs_rwlock_t *lock)
 {
 	InitializeSRWLock(lock);
 
