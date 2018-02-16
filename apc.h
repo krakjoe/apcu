@@ -90,9 +90,6 @@ PHP_APCU_API unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
 /* apc_flip_hash flips keys and values for faster searching */
 PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 
-#define APC_NEGATIVE_MATCH 1
-#define APC_POSITIVE_MATCH 2
-
 #define apc_time() \
 	(APCG(use_request_time) ? (time_t) sapi_get_request_time() : time(0))
 
