@@ -83,30 +83,6 @@ PHP_APCU_API void apc_php_free(void* p)
 	efree(p);
 }
 
-PHP_APCU_API char* APC_ALLOC apc_estrdup(const char* s)
-{
-	int len;
-	char* dup;
-
-	if (s == NULL) {
-		return NULL;
-	}
-	len = strlen(s);
-	dup = (char*) malloc(len+1);
-	if (dup == NULL) {
-		apc_error("apc_estrdup: malloc failed to allocate %u bytes:", len+1);
-		return NULL;
-	}
-	memcpy(dup, s, len);
-	dup[len] = '\0';
-	return dup;
-}
-
-PHP_APCU_API void* APC_ALLOC apc_xstrdup(const char* s, apc_malloc_t f)
-{
-	return s != NULL ? apc_xmemcpy(s, strlen(s)+1, f) : NULL;
-}
-
 PHP_APCU_API void* APC_ALLOC apc_xmemcpy(const void* p, size_t n, apc_malloc_t f)
 {
 	void* q;

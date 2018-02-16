@@ -77,8 +77,6 @@ PHP_APCU_API void* apc_erealloc(void* p, size_t n);
 PHP_APCU_API void* apc_php_malloc(size_t n);
 PHP_APCU_API void  apc_php_free(void* p);
 PHP_APCU_API void  apc_efree(void* p);
-PHP_APCU_API char* apc_estrdup(const char* s);
-PHP_APCU_API void* apc_xstrdup(const char* s, apc_malloc_t f);
 PHP_APCU_API void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f);
 
 /* console display functions */
