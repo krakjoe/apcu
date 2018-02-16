@@ -43,11 +43,9 @@ static apc_pool* apc_realpool_create(apc_pool_type type, apc_malloc_t, apc_free_
 /* }}} */
 
 /* {{{ apc_pool_create */
-PHP_APCU_API apc_pool* apc_pool_create(apc_pool_type pool_type,
-									   apc_malloc_t allocate, 
-									   apc_free_t deallocate,
-									   apc_protect_t protect,
-									   apc_unprotect_t unprotect) 
+PHP_APCU_API apc_pool* apc_pool_create(
+        apc_pool_type pool_type, apc_malloc_t allocate, apc_free_t deallocate,
+        apc_protect_t protect, apc_unprotect_t unprotect) 
 {
 	if(pool_type == APC_UNPOOL) {
 		return apc_unpool_create(pool_type, allocate, deallocate, protect, unprotect);
@@ -77,8 +75,7 @@ struct _apc_unpool {
 	/* apc_unpool is a lie! */
 };
 
-static void* apc_unpool_alloc(apc_pool* pool, 
-							  size_t size) 
+static void* apc_unpool_alloc(apc_pool* pool, size_t size) 
 {
 	apc_unpool *upool = (apc_unpool*)pool;
 
@@ -90,8 +87,7 @@ static void* apc_unpool_alloc(apc_pool* pool,
 	return allocate(size);
 }
 
-static void apc_unpool_free(apc_pool* pool, 
-							void *ptr)
+static void apc_unpool_free(apc_pool* pool, void *ptr)
 {
 	apc_unpool *upool = (apc_unpool*) pool;
 
@@ -104,11 +100,9 @@ static void apc_unpool_cleanup(apc_pool* pool)
 {
 }
 
-static apc_pool* apc_unpool_create(apc_pool_type type, 
-								   apc_malloc_t allocate, 
-								   apc_free_t deallocate,
-								   apc_protect_t protect, 
-								   apc_unprotect_t unprotect)
+static apc_pool* apc_unpool_create(
+        apc_pool_type type, apc_malloc_t allocate, apc_free_t deallocate,
+        apc_protect_t protect, apc_unprotect_t unprotect)
 {
 	apc_unpool* upool = allocate(sizeof(apc_unpool));
 
@@ -232,8 +226,7 @@ static pool_block* create_pool_block(apc_realpool *rpool,
 /* }}} */
 
 /* {{{ apc_realpool_alloc */
-static void* apc_realpool_alloc(apc_pool *pool, 
-								size_t size)
+static void* apc_realpool_alloc(apc_pool *pool, size_t size)
 {
 	apc_realpool *rpool = (apc_realpool*)pool;
 	unsigned char *p = NULL;
@@ -410,11 +403,9 @@ static void apc_realpool_cleanup(apc_pool *pool)
 /* }}} */
 
 /* {{{ apc_realpool_create */
-static apc_pool* apc_realpool_create(apc_pool_type type, 
-									 apc_malloc_t allocate, 
-									 apc_free_t deallocate, 
-									 apc_protect_t protect, 
-									 apc_unprotect_t unprotect)
+static apc_pool* apc_realpool_create(
+        apc_pool_type type, apc_malloc_t allocate, apc_free_t deallocate,
+        apc_protect_t protect, apc_unprotect_t unprotect)
 {
 
 	size_t dsize = 0;
@@ -485,17 +476,14 @@ PHP_APCU_API void apc_pool_init()
 /* }}} */
 
 /* {{{ apc_pstrdup */
-PHP_APCU_API void* APC_ALLOC apc_pstrdup(const char* s, 
-							apc_pool* pool)
+PHP_APCU_API void* APC_ALLOC apc_pstrdup(const char* s, apc_pool* pool)
 {
 	return s != NULL ? apc_pmemcpy(s, (strlen(s) + 1), pool) : NULL;
 }
 /* }}} */
 
 /* {{{ apc_pmemcpy */
-PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p, 
-							size_t n, 
-							apc_pool* pool)
+PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p, size_t n, apc_pool* pool)
 {
 	void* q;
 

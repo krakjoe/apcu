@@ -100,9 +100,9 @@ typedef struct _apc_sma_t {
 	void** data;                                 /* data */	
 	
 	/* info */
-	int32_t  num;                               /* number of segments */
+	int32_t  num;                                /* number of segments */
 	zend_ulong size;                             /* segment size */
-	int32_t  last;                              /* last segment */
+	int32_t  last;                               /* last segment */
 
 	/* segments */
 	apc_segment_t* segs;                         /* segments */
@@ -113,12 +113,9 @@ typedef struct _apc_sma_t {
 *
 * should be called once per allocator per process
 */
-PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma,
-								   void** data,
-								   apc_sma_expunge_f expunge,
-								   int32_t num,
-								   zend_ulong size,
-								   char *mask);
+PHP_APCU_API void apc_sma_api_init(
+		apc_sma_t* sma, void** data, apc_sma_expunge_f expunge,
+		int32_t num, zend_ulong size, char *mask);
 
 /*
 * apc_sma_api_cleanup will free the sma allocator
@@ -128,59 +125,48 @@ PHP_APCU_API void apc_sma_api_cleanup(apc_sma_t* sma);
 /*
 * apc_smap_api_malloc will allocate a block from the sma of the given size
 */
-PHP_APCU_API void* apc_sma_api_malloc(apc_sma_t* sma, 
-									  zend_ulong size);
+PHP_APCU_API void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong size);
 
 /*
 * apc_sma_api_malloc_ex will allocate a block from the sma of the given size
 */
-PHP_APCU_API void* apc_sma_api_malloc_ex(apc_sma_t* sma, 
-										 zend_ulong size, 
-										 zend_ulong fragment, 
-										 zend_ulong* allocated);
+PHP_APCU_API void* apc_sma_api_malloc_ex(
+		apc_sma_t* sma, zend_ulong size, zend_ulong fragment, zend_ulong* allocated);
 
 /*
 * apc_sma_api_realloc will reallocate p using a new block from sma (freeing the original p)
 */
-PHP_APCU_API void* apc_sma_api_realloc(apc_sma_t* sma, 
-									   void* p, 
-									   zend_ulong size);
+PHP_APCU_API void* apc_sma_api_realloc(apc_sma_t* sma, void* p, zend_ulong size);
 
 /*
 * apc_sma_api_strdup will duplicate the given string into a block from sma
 */
-PHP_APCU_API char* apc_sma_api_strdup(apc_sma_t* sma, 
-									  const char* s);
+PHP_APCU_API char* apc_sma_api_strdup(apc_sma_t* sma, const char* s);
 
 /*
 * apc_sma_api_free will free p (which should be a pointer to a block allocated from sma)
 */
-PHP_APCU_API void apc_sma_api_free(apc_sma_t* sma, 
-								   void* p);
+PHP_APCU_API void apc_sma_api_free(apc_sma_t* sma, void* p);
 
 /*
 * apc_sma_api_protect will protect p (which should be a pointer to a block allocated from sma)
 */
-PHP_APCU_API void* apc_sma_api_protect(apc_sma_t* sma, 
-									   void* p);
+PHP_APCU_API void* apc_sma_api_protect(apc_sma_t* sma, void* p);
 
 /*
 * apc_sma_api_protect will uprotect p (which should be a pointer to a block allocated from sma)
 */
-PHP_APCU_API void* apc_sma_api_unprotect(apc_sma_t* sma, 
-										 void *p); 
+PHP_APCU_API void* apc_sma_api_unprotect(apc_sma_t* sma, void *p); 
 
 /*
 * apc_sma_api_info returns information about the allocator
 */
-PHP_APCU_API apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, 
-											  zend_bool limited); 
+PHP_APCU_API apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited); 
 
 /*
 * apc_sma_api_info_free_info is for freeing apc_sma_info_t* returned by apc_sma_api_info
 */
-PHP_APCU_API void apc_sma_api_free_info(apc_sma_t* sma,
-										apc_sma_info_t* info); 
+PHP_APCU_API void apc_sma_api_free_info(apc_sma_t* sma, apc_sma_info_t* info); 
 
 /*
 * apc_sma_api_get_avail_mem will return the amount of memory available left to sma
@@ -190,8 +176,7 @@ PHP_APCU_API zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma);
 /*
 * apc_sma_api_get_avail_size will return true if at least size bytes are available to the sma
 */
-PHP_APCU_API zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, 
-												  size_t size); 
+PHP_APCU_API zend_bool apc_sma_api_get_avail_size(apc_sma_t* sma, size_t size); 
 
 /*
 * apc_sma_api_check_integrity will check the integrity of sma

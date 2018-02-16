@@ -32,10 +32,7 @@
 typedef int (*apc_serialize_t)(APC_SERIALIZER_ARGS);
 typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);
 
-typedef int (*apc_register_serializer_t)(const char* name,
-										apc_serialize_t serialize,
-										apc_unserialize_t unserialize,
-										void *config);
+typedef int (*apc_register_serializer_t)(const char* name, apc_serialize_t serialize, apc_unserialize_t unserialize, void *config);
 
 /*
  * ABI version for constant hooks. Increment this any time you make any changes
@@ -52,10 +49,8 @@ typedef int (*apc_register_serializer_t)(const char* name,
 # endif
 #endif
 
-static APC_UNUSED int apc_register_serializer(const char* name,
-									apc_serialize_t serialize,
-									apc_unserialize_t unserialize,
-									void *config)
+static APC_UNUSED int apc_register_serializer(
+        const char* name, apc_serialize_t serialize, apc_unserialize_t unserialize, void *config)
 {
 	int retval = 0;
 

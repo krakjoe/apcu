@@ -143,10 +143,8 @@ static void free_slot(apc_cache_slot_t* slot)
 
 /* {{{ apc_cache_hash_slot
  Note: These calculations can and should be done outside of a lock */
-static void apc_cache_hash_slot(apc_cache_t* cache, 
-								zend_string *key,
-								zend_ulong* hash, 
-								zend_ulong* slot) {
+static void apc_cache_hash_slot(
+		apc_cache_t* cache, zend_string *key, zend_ulong* hash, zend_ulong* slot) {
 	(*hash) = ZSTR_HASH(key);
 	(*slot) = (*hash) % (cache->nslots);
 } /* }}} */
@@ -324,12 +322,9 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	return cache;
 } /* }}} */
 
-static inline zend_bool apc_cache_insert_internal(apc_cache_t* cache, 
-										apc_cache_key_t *key, 
-										apc_cache_entry_t* value, 
-										apc_context_t* ctxt, 
-										time_t t, 
-										zend_bool exclusive) {
+static inline zend_bool apc_cache_insert_internal(
+		apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* value,
+		apc_context_t* ctxt, time_t t, zend_bool exclusive) {
 	/* at least */
 	if (!value) {
 		return 0;
@@ -857,12 +852,9 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 /* }}} */
 
 /* {{{ apc_cache_make_context */
-PHP_APCU_API zend_bool apc_cache_make_context(apc_cache_t* cache,
-											  apc_context_t* context,
-											  apc_context_type context_type,
-											  apc_pool_type pool_type,
-											  apc_copy_type copy_type,
-											  uint force_update) {
+PHP_APCU_API zend_bool apc_cache_make_context(
+		apc_cache_t* cache, apc_context_t* context, apc_context_type context_type,
+		apc_pool_type pool_type, apc_copy_type copy_type, uint force_update) {
 	switch (context_type) {
 		case APC_CONTEXT_SHARE: {
 			return apc_cache_make_context_ex(
@@ -894,15 +886,11 @@ PHP_APCU_API zend_bool apc_cache_make_context(apc_cache_t* cache,
 } /* }}} */
 
 /* {{{ apc_cache_make_context_ex */
-PHP_APCU_API zend_bool apc_cache_make_context_ex(apc_context_t* context,
-												 apc_serializer_t* serializer,
-												 apc_malloc_t _malloc, 
-												 apc_free_t _free, 
-												 apc_protect_t _protect, 
-												 apc_unprotect_t _unprotect, 
-												 apc_pool_type pool_type, 
-												 apc_copy_type copy_type, 
-												 uint force_update) {
+PHP_APCU_API zend_bool apc_cache_make_context_ex(
+		apc_context_t* context, apc_serializer_t* serializer,
+		apc_malloc_t _malloc, apc_free_t _free,
+		apc_protect_t _protect, apc_unprotect_t _unprotect,
+		apc_pool_type pool_type, apc_copy_type copy_type, uint force_update) {
 	/* attempt to create the pool */
 	context->pool = apc_pool_create(
 		pool_type, _malloc, _free, _protect, _unprotect
@@ -936,12 +924,9 @@ PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context) {
 } /* }}} */
 
 /* {{{ apc_cache_insert */
-PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache, 
-										apc_cache_key_t *key, 
-										apc_cache_entry_t* value, 
-										apc_context_t* ctxt, 
-										time_t t, 
-										zend_bool exclusive)
+PHP_APCU_API zend_bool apc_cache_insert(
+		apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* value,
+		apc_context_t* ctxt, time_t t, zend_bool exclusive)
 {
 	zend_bool result = 0;
 
@@ -1357,8 +1342,9 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 
 	if (ctxt->copy == APC_COPY_IN) {
 		target = (HashTable*) pool->palloc(pool, sizeof(HashTable));
-	} else
+	} else {
 		ALLOC_HASHTABLE(target);
+	}
 
 	if (target == NULL)
 		goto bad;

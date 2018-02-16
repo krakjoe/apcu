@@ -148,10 +148,9 @@ typedef struct apc_serializer_t {
 
 /* {{{ _apc_register_serializer
  registers the serializer using the given name and paramters */
-PHP_APCU_API int _apc_register_serializer(const char* name,
-											   apc_serialize_t serialize,
-											   apc_unserialize_t unserialize,
-											   void *config); /* }}} */
+PHP_APCU_API int _apc_register_serializer(
+        const char* name, apc_serialize_t serialize, apc_unserialize_t unserialize, void *config);
+/* }}} */
 
 /* {{{ apc_get_serializers 
  fetches the list of serializers */
@@ -172,9 +171,9 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS); /* }}} */
 #define php_apc_try(begin, block, end) {   \
 	JMP_BUF *zb = EG(bailout);             \
 	JMP_BUF ab;                            \
-										   \
+	                                       \
 	EG(bailout) = &ab;                     \
-										   \
+	                                       \
 	begin;                                 \
 	if (SETJMP(ab) == SUCCESS) {           \
 		block                              \

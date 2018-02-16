@@ -26,13 +26,13 @@
 
  /* $Id: apc_signal.c 327066 2012-08-12 07:48:48Z laruence $ */
 
- /* Allows apc to install signal handlers and maintain signalling
-	to already registered handlers. Registers all signals that
-	coredump by default and unmaps the shared memory segment
-	before the coredump. Note: PHP module init is called before 
-	signals are set by Apache and thus apc_set_signals should
-	be called in request init (RINIT)
-  */
+/* Allows apc to install signal handlers and maintain signalling
+ * to already registered handlers. Registers all signals that
+ * coredump by default and unmaps the shared memory segment
+ * before the coredump. Note: PHP module init is called before 
+ * signals are set by Apache and thus apc_set_signals should
+ * be called in request init (RINIT)
+ */
 
 #include "apc.h"
 

@@ -120,11 +120,9 @@ typedef struct _apc_context_t {
 /*
  apc_pool_create creates a pool of the specified type, setting the handlers passed on the pool, returns apc_pool*
 */
-PHP_APCU_API apc_pool* apc_pool_create(apc_pool_type pool_type,
-									   apc_malloc_t allocate,
-									   apc_free_t deallocate,
-									   apc_protect_t protect,
-									   apc_unprotect_t unprotect);
+PHP_APCU_API apc_pool* apc_pool_create(
+		apc_pool_type pool_type, apc_malloc_t allocate, apc_free_t deallocate,
+		apc_protect_t protect, apc_unprotect_t unprotect);
 
 /*
  apc_pool_destroy first calls apc_cleanup_t set during apc_pool_create, then apc_free_t
@@ -134,9 +132,7 @@ PHP_APCU_API void apc_pool_destroy(apc_pool* pool);
 /*
  apc_pmemcpy performs memcpy using resources provided by pool
 */
-PHP_APCU_API void* apc_pmemcpy(const void* p, 
-							   size_t n, 
-							   apc_pool* pool);
+PHP_APCU_API void* apc_pmemcpy(const void* p, size_t n, apc_pool* pool);
 
 
 PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool);
@@ -145,8 +141,7 @@ PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_po
 /*
  apc_pstrdup performs strdup using resources provided by pool
 */
-PHP_APCU_API void* apc_pstrdup(const char* s, 
-							   apc_pool* pool);
+PHP_APCU_API void* apc_pstrdup(const char* s, apc_pool* pool);
 
 #endif
 

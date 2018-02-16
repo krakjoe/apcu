@@ -134,13 +134,9 @@ typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void*
  *
  * defend enables/disables slam defense for this particular cache
  */
-PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma,
-										   apc_serializer_t* serializer,
-										   zend_long size_hint,
-										   zend_long gc_ttl,
-										   zend_long ttl,
-										   zend_long smart,
-										   zend_bool defend);
+PHP_APCU_API apc_cache_t* apc_cache_create(
+        apc_sma_t* sma, apc_serializer_t* serializer, zend_long size_hint,
+        zend_long gc_ttl, zend_long ttl, zend_long smart, zend_bool defend);
 /*
 * apc_cache_preload preloads the data at path into the specified cache
 */
@@ -166,25 +162,18 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache);
 * The type of context required depends on the operation being performed, for example
 * an insert should happen in a shared context, a fetch should happen in a nonshared context
 */
-PHP_APCU_API zend_bool apc_cache_make_context(apc_cache_t* cache,
-											  apc_context_t* context, 
-											  apc_context_type context_type, 
-											  apc_pool_type pool_type,
-											  apc_copy_type copy_type,
-											  uint force_update);
+PHP_APCU_API zend_bool apc_cache_make_context(
+        apc_cache_t* cache, apc_context_t* context, apc_context_type context_type,
+        apc_pool_type pool_type, apc_copy_type copy_type, uint force_update);
 
 /*
 * apc_cache_make_context_ex is an advanced/external version of make_context
 */
-PHP_APCU_API zend_bool apc_cache_make_context_ex(apc_context_t* context,
-												 apc_serializer_t* serializer,
-												 apc_malloc_t _malloc, 
-												 apc_free_t _free, 
-												 apc_protect_t _protect, 
-												 apc_unprotect_t _unprotect, 
-												 apc_pool_type pool_type, 
-												 apc_copy_type copy_type, 
-												 uint force_update);
+PHP_APCU_API zend_bool apc_cache_make_context_ex(
+        apc_context_t* context, apc_serializer_t* serializer,
+        apc_malloc_t _malloc, apc_free_t _free,
+        apc_protect_t _protect, apc_unprotect_t _unprotect,
+        apc_pool_type pool_type, apc_copy_type copy_type, uint force_update);
 /*
 * apc_context_destroy should be called when a context is finished being used 
 */
@@ -202,21 +191,16 @@ PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context);
  *
  * an easier API exists in the form of apc_cache_store
  */
-PHP_APCU_API zend_bool apc_cache_insert(apc_cache_t* cache,
-										apc_cache_key_t* key,
-										apc_cache_entry_t* value,
-										apc_context_t* ctxt,
-										time_t t,
-										zend_bool exclusive);
+PHP_APCU_API zend_bool apc_cache_insert(
+        apc_cache_t* cache, apc_cache_key_t* key, apc_cache_entry_t* value,
+        apc_context_t* ctxt, time_t t, zend_bool exclusive);
 
 /*
  * apc_cache_store creates key, entry and context in which to make an insertion of val into the specified cache
  */
-PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache,
-										zend_string *key,
-										const zval *val,
-										const int32_t ttl,
-										const zend_bool exclusive);
+PHP_APCU_API zend_bool apc_cache_store(
+        apc_cache_t* cache, zend_string *key, const zval *val,
+        const int32_t ttl, const zend_bool exclusive);
 /*
 * apc_cache_update updates an entry in place, this is used for inc/dec/cas
 */
@@ -274,10 +258,8 @@ PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, zend_string *str
 /*
  * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
  */
-PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt,
-													 apc_cache_key_t* key,
-													 const zval *val,
-													 const int32_t ttl);
+PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(
+        apc_context_t* ctxt, apc_cache_key_t* key, const zval *val, const int32_t ttl);
 
 /*
  fetches information about the cache provided for userland status functions
