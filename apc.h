@@ -82,10 +82,10 @@ PHP_APCU_API void* apc_xstrdup(const char* s, apc_malloc_t f);
 PHP_APCU_API void* apc_xmemcpy(const void* p, size_t n, apc_malloc_t f);
 
 /* console display functions */
-PHP_APCU_API void apc_error(const char *format, ...);
-PHP_APCU_API void apc_warning(const char *format, ...);
-PHP_APCU_API void apc_notice(const char *format, ...);
-PHP_APCU_API void apc_debug(const char *format, ...);
+PHP_APCU_API void apc_error(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
+PHP_APCU_API void apc_warning(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
+PHP_APCU_API void apc_notice(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
+PHP_APCU_API void apc_debug(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
 
 /* string and text manipulation */
 PHP_APCU_API char* apc_append(const char* s, const char* t);

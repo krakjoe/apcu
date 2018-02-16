@@ -199,8 +199,8 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache)
 				/* good ol' whining */
 				if (dead->value->ref_count > 0) {
 					apc_debug(
-						"GC cache entry '%s' was on gc-list for %d seconds",
-						dead->key.str, gc_sec
+						"GC cache entry '%s' was on gc-list for %ld seconds",
+						ZSTR_VAL(dead->key.str), gc_sec
 					);
 				}
 
@@ -1832,7 +1832,7 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* ke
 			if(last->mtime == key->mtime && FROM_DIFFERENT_THREAD(last)) {
 				/* potential cache slam */
 				apc_debug(
-					"Potential cache slam averted for key '%s'", key->str);
+					"Potential cache slam averted for key '%s'", ZSTR_VAL(key->str));
 				result = 1;
 			} else {
 				/* sets enough information for an educated guess, but is not exact */
