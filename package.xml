@@ -24,7 +24,7 @@
  </lead>
  <date>2018-02-16</date>
  <version>
-  <release>5.1.10</release>
+  <release>5.1.11dev</release>
   <api>5.1.2</api>
  </version>
  <stability>
@@ -33,14 +33,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- fix gh#247 when a NUL char is used as key, apcu_fetch(array) truncates the key
-- fix gh#248 apcu_fetch may return values causing zend_mm_corruption or segfaults
-  when custom serializer is used
-- fix gh#260 apcu.serializer=default results in segfault
-- fix gh#274 non-portable shell == in config.m4
-- fix crash when passing bad array to apcu_delete
-- improve fix gh#266 refcounting errors in APCIterator
-- fix for PHP 7.3 compatibility
+-
  </notes>
  <contents>
   <dir name="/">
@@ -156,6 +149,28 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2018-02-16</date>
+   <version>
+    <release>5.1.11dev</release>
+    <api>5.1.2</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- fix gh#247 when a NUL char is used as key, apcu_fetch(array) truncates the key
+- fix gh#248 apcu_fetch may return values causing zend_mm_corruption or segfaults
+  when custom serializer is used
+- fix gh#260 apcu.serializer=default results in segfault
+- fix gh#274 non-portable shell == in config.m4
+- fix crash when passing bad array to apcu_delete
+- improve fix gh#266 refcounting errors in APCIterator
+- fix for PHP 7.3 compatibility
+   </notes>
+  </release>
   <release>
    <date>2018-01-02</date>
    <version>
