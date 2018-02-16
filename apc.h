@@ -84,9 +84,6 @@ PHP_APCU_API void apc_warning(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(pri
 PHP_APCU_API void apc_notice(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
 PHP_APCU_API void apc_debug(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
 
-/* apc_crc32: returns the CRC-32 checksum of the first len bytes in buf */
-PHP_APCU_API unsigned int apc_crc32(const unsigned char* buf, unsigned int len);
-
 /* apc_flip_hash flips keys and values for faster searching */
 PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 
