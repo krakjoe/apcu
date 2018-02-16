@@ -556,6 +556,6 @@ PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_po
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: expandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: expandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */

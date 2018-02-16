@@ -62,6 +62,6 @@ void apc_windows_cs_unlock_wr(apc_windows_cs_rwlock_t *lock)
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: expandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: expandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */

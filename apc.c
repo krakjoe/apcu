@@ -401,6 +401,6 @@ PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name) {
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: expandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: expandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */
