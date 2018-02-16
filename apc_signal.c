@@ -24,8 +24,6 @@
    All other licensing and usage conditions are those of the PHP Group.
  */
 
- /* $Id: apc_signal.c 327066 2012-08-12 07:48:48Z laruence $ */
-
 /* Allows apc to install signal handlers and maintain signalling
  * to already registered handlers. Registers all signals that
  * coredump by default and unmaps the shared memory segment

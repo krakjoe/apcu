@@ -26,8 +26,6 @@
 
  */
 
-/* $Id: apc_sma.c 328896 2012-12-26 05:28:14Z laruence $ */
-
 #include "apc_sma.h"
 #include "apc.h"
 #include "apc_globals.h"

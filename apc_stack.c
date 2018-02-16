@@ -25,8 +25,6 @@
 
  */
 
-/* $Id: apc_stack.c 307048 2011-01-03 23:53:17Z kalle $ */
-
 #include "apc.h"
 #include "apc_stack.h"
 

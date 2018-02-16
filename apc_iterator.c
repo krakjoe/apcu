@@ -17,8 +17,6 @@
 
  */
 
-/* $Id: apc_iterator.c 327134 2012-08-15 14:21:28Z ab $ */
-
 #include "php_apc.h"
 #include "apc_iterator.h"
 #include "apc_cache.h"

@@ -28,8 +28,6 @@
 
  */
 
-/* $Id: apc_cache.c 328743 2012-12-12 07:58:32Z ab $ */
-
 #include "apc_cache.h"
 #include "apc_sma.h"
 #include "apc_globals.h"

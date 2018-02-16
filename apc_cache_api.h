@@ -26,8 +26,6 @@
 
  */
 
-/* $Id: apc_cache.h 328172 2012-10-28 21:44:47Z rasmus $ */
-
 #ifndef APC_CACHE_API_H
 #define APC_CACHE_API_H
 

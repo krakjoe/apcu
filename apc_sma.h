@@ -25,8 +25,6 @@
 
  */
 
-/* $Id: apc_sma.h 307048 2011-01-03 23:53:17Z kalle $ */
-
 #ifndef APC_SMA_H
 #define APC_SMA_H
 

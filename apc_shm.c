@@ -26,8 +26,6 @@
 
  */
 
-/* $Id: apc_shm.c 307259 2011-01-08 12:05:24Z gopalv $ */
-
 #include "apc_shm.h"
 #include "apc.h"
 #ifdef PHP_WIN32

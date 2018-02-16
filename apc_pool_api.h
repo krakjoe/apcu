@@ -25,8 +25,6 @@
 
  */
 
-/* $Id: apc_pool.h 307048 2011-01-03 23:53:17Z kalle $ */
-
 #ifndef APC_POOL_API_H
 #define APC_POOL_API_H
 

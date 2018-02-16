@@ -29,8 +29,6 @@
 
  */
 
-/* $Id: apc.c 328941 2012-12-31 18:41:07Z ab $ */
-
 #include "apc.h"
 #include "apc_cache.h"
 #include "apc_globals.h"

@@ -25,9 +25,6 @@
 
  */
 
-/* $Id: apc_pool.c 327069 2012-08-12 08:56:55Z laruence $ */
-
-
 #include "apc_pool.h"
 #include <assert.h>
 

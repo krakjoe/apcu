@@ -25,8 +25,6 @@
 
  */
 
-/* $Id: apc_shm.h 307259 2011-01-08 12:05:24Z gopalv $ */
-
 #ifndef APC_SHM_H
 #define APC_SHM_H
 

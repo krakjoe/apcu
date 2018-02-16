@@ -29,8 +29,6 @@
 
  */
 
-/* $Id: apc.h 328292 2012-11-09 07:05:17Z laruence $ */
-
 #ifndef APC_H
 #define APC_H
 
