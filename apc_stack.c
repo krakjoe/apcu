@@ -36,11 +36,11 @@ struct apc_stack_t {
 
 apc_stack_t* apc_stack_create(int size_hint)
 {
-	apc_stack_t* stack = (apc_stack_t*) apc_emalloc(sizeof(apc_stack_t));
+	apc_stack_t* stack = emalloc(sizeof(apc_stack_t));
 
 	stack->capacity = (size_hint > 0) ? size_hint : 10;
 	stack->size = 0;
-	stack->data = (void**) apc_emalloc(sizeof(void*) * stack->capacity);
+	stack->data = emalloc(sizeof(void*) * stack->capacity);
 
 	return stack;
 }
@@ -48,8 +48,8 @@ apc_stack_t* apc_stack_create(int size_hint)
 void apc_stack_destroy(apc_stack_t* stack)
 {
 	if (stack != NULL) {
-		apc_efree(stack->data);
-		apc_efree(stack);
+		efree(stack->data);
+		efree(stack);
 	}
 }
 
@@ -64,7 +64,7 @@ void apc_stack_push(apc_stack_t* stack, void* item)
 	assert(stack != NULL);
 	if (stack->size == stack->capacity) {
 		stack->capacity *= 2;
-		stack->data = apc_erealloc(stack->data, sizeof(void*)*stack->capacity);
+		stack->data = erealloc(stack->data, sizeof(void*) * stack->capacity);
 	}
 	stack->data[stack->size++] = item;
 }

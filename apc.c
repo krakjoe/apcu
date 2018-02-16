@@ -47,7 +47,7 @@ PHP_APCU_API void* apc_emalloc(size_t n)
 {
 	void* p = malloc(n);
 	if (p == NULL) {
-		apc_error("apc_emalloc: malloc failed to allocate %u bytes:", n);
+		apc_error("apc_emalloc: malloc failed to allocate %zu bytes:", n);
 		return NULL;
 	}
 	return p;
@@ -58,7 +58,7 @@ PHP_APCU_API void* apc_erealloc(void* p, size_t n)
 	void *new;
 	new = realloc(p, n);
 	if (new == NULL) {
-		apc_error("apc_erealloc: realloc failed to allocate %u bytes:", n);
+		apc_error("apc_erealloc: realloc failed to allocate %zu bytes:", n);
 		return NULL;
 	}
 	return new;
