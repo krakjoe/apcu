@@ -83,17 +83,6 @@ PHP_APCU_API void apc_php_free(void* p)
 	efree(p);
 }
 
-PHP_APCU_API void* APC_ALLOC apc_xmemcpy(const void* p, size_t n, apc_malloc_t f)
-{
-	void* q;
-
-	if (p != NULL && (q = f(n)) != NULL) {
-		memcpy(q, p, n);
-		return q;
-	}
-	return NULL;
-}
-
 /* }}} */
 
 /* {{{ console display functions */
@@ -116,92 +105,6 @@ APC_PRINT_FUNCTION(debug, E_NOTICE)
 #else
 void apc_debug(const char *format, ...) {}
 #endif
-/* }}} */
-
-/* {{{ string and text manipulation */
-
-char* apc_append(const char* s, const char* t)
-{
-	int slen;
-	int tlen;
-	char* p;
-
-	slen = strlen(s);
-	tlen = strlen(t);
-
-	p = (char*) apc_emalloc((slen + tlen + 1) * sizeof(char));
-	memcpy(p, s, slen);
-	memcpy(p + slen, t, tlen + 1);
-
-	return p;
-}
-
-char* apc_substr(const char* s, int start, int length)
-{
-	char* substr;
-	int src_len = strlen(s);
-
-	/* bring start into range */
-	if (start < 0) {
-		start = 0;
-	}
-	else if (start >= src_len) {
-		start = src_len - 1;
-	}
-
-	/* bring length into range */
-	if (length < 0 || src_len - start < length) {
-		length = src_len - start;
-	}
-
-	/* create the substring */
-	substr = apc_xmemcpy(s + start, length + 1, apc_emalloc);
-	substr[length] = '\0';
-	return substr;
-}
-
-char** apc_tokenize(const char* s, char delim)
-{
-	char** tokens;      /* array of tokens, NULL terminated */
-	int size;           /* size of tokens array */
-	int n;              /* index of next token in tokens array */
-	int cur;            /* current position in input string */
-	int end;            /* final legal position in input string */
-	int next;           /* position of next delimiter in input */
-
-	if (!s) {
-		return NULL;
-	}
-
-	size = 2;
-	n    = 0;
-	cur  = 0;
-	end  = strlen(s) - 1;
-
-	tokens = (char**) apc_emalloc(size * sizeof(char*));
-	tokens[n] = NULL;
-
-	while (cur <= end) {
-		/* search for the next delimiter */
-		char* p = strchr(s + cur, delim);
-		next = p ? p-s : end+1;
-
-		/* resize token array if necessary */
-		if (n == size-1) {
-			size *= 2;
-			tokens = (char**) apc_erealloc(tokens, size * sizeof(char*));
-		}
-
-		/* save the current token */
-		tokens[n] = apc_substr(s, cur, next-cur);
-
-		tokens[++n] = NULL;
-		cur = next + 1;
-	}
-
-	return tokens;
-}
-
 /* }}} */
 
 /* {{{ crc32 implementation */
