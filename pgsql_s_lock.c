@@ -64,8 +64,8 @@ static int	spins_per_delay = DEFAULT_SPINS_PER_DELAY;
 
 
 /* -- APC specific additions ------------------------------*/
-/* The following dependencies have been copied from 
- * other pgsql source files.  The original locations 
+/* The following dependencies have been copied from
+ * other pgsql source files.  The original locations
  * have been noted.
  */
 
@@ -79,7 +79,7 @@ static int	spins_per_delay = DEFAULT_SPINS_PER_DELAY;
 #endif
 
 /* -- from include/pg_config_manual.h -- */
-#define MAX_RANDOM_VALUE (0x7FFFFFFF) 
+#define MAX_RANDOM_VALUE (0x7FFFFFFF)
 
 /*
  * Max
@@ -199,7 +199,7 @@ s_lock(volatile slock_t *lock, const char *file, int line)
 	int			spins = 0;
 	int			delays = 0;
 	int			cur_delay = 0;
-  
+
 	while (TAS(lock))
 	{
 		/* CPU-specific delay each time through the loop */

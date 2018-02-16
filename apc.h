@@ -104,7 +104,7 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 #define APC_POSITIVE_MATCH 2
 
 #define apc_time() \
-    (APCG(use_request_time) ? (time_t) sapi_get_request_time() : time(0))
+	(APCG(use_request_time) ? (time_t) sapi_get_request_time() : time(0))
 
 #if defined(__GNUC__)
 # define APC_UNUSED __attribute__((unused))
@@ -112,14 +112,14 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 # define APC_ALLOC __attribute__((malloc))
 # if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__  > 2)
 #  define APC_HOTSPOT __attribute__((hot))
-# else 
+# else
 #  define APC_HOTSPOT
 # endif
-#else 
+#else
 # define APC_UNUSED
 # define APC_USED
-# define APC_ALLOC 
-# define APC_HOTSPOT 
+# define APC_ALLOC
+# define APC_HOTSPOT
 #endif
 
 /*
@@ -139,21 +139,20 @@ typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);
 
 /* {{{ struct definition: apc_serializer_t */
 typedef struct apc_serializer_t {
-    const char*        name;
-    apc_serialize_t    serialize;
-    apc_unserialize_t  unserialize;
-    void*              config;
+	const char*        name;
+	apc_serialize_t    serialize;
+	apc_unserialize_t  unserialize;
+	void*              config;
 } apc_serializer_t;
 /* }}} */
 
 /* {{{ _apc_register_serializer
  registers the serializer using the given name and paramters */
-PHP_APCU_API int _apc_register_serializer(const char* name,
-                                               apc_serialize_t serialize,
-                                               apc_unserialize_t unserialize,
-                                               void *config); /* }}} */
+PHP_APCU_API int _apc_register_serializer(
+        const char* name, apc_serialize_t serialize, apc_unserialize_t unserialize, void *config);
+/* }}} */
 
-/* {{{ apc_get_serializers 
+/* {{{ apc_get_serializers
  fetches the list of serializers */
 PHP_APCU_API apc_serializer_t* apc_get_serializers(); /* }}} */
 
@@ -199,6 +198,6 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS); /* }}} */
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: expandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: expandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */

@@ -32,10 +32,7 @@
 typedef int (*apc_serialize_t)(APC_SERIALIZER_ARGS);
 typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);
 
-typedef int (*apc_register_serializer_t)(const char* name,
-                                        apc_serialize_t serialize,
-                                        apc_unserialize_t unserialize,
-                                        void *config);
+typedef int (*apc_register_serializer_t)(const char* name, apc_serialize_t serialize, apc_unserialize_t unserialize, void *config);
 
 /*
  * ABI version for constant hooks. Increment this any time you make any changes
@@ -52,28 +49,26 @@ typedef int (*apc_register_serializer_t)(const char* name,
 # endif
 #endif
 
-static APC_UNUSED int apc_register_serializer(const char* name,
-                                    apc_serialize_t serialize,
-                                    apc_unserialize_t unserialize,
-                                    void *config)
+static APC_UNUSED int apc_register_serializer(
+        const char* name, apc_serialize_t serialize, apc_unserialize_t unserialize, void *config)
 {
-    int retval = 0;
+	int retval = 0;
 
 	zend_string *lookup = zend_string_init(
 		APC_SERIALIZER_CONSTANT, sizeof(APC_SERIALIZER_CONSTANT)-1, 0);
 	zval *magic = zend_get_constant(lookup);
 
-    /* zend_get_constant will return 1 on success, otherwise apc_magic_constant wouldn't be touched at all */
-    if (magic) {
-        apc_register_serializer_t register_func = (apc_register_serializer_t)(Z_LVAL_P(magic));
-        if(register_func) {
-            retval = register_func(name, serialize, unserialize, NULL);
-        }
-    }
+	/* zend_get_constant will return 1 on success, otherwise apc_magic_constant wouldn't be touched at all */
+	if (magic) {
+		apc_register_serializer_t register_func = (apc_register_serializer_t)(Z_LVAL_P(magic));
+		if(register_func) {
+			retval = register_func(name, serialize, unserialize, NULL);
+		}
+	}
 
 	zend_string_release(lookup);
 
-    return retval;
+	return retval;
 }
 
 #endif
@@ -83,6 +78,6 @@ static APC_UNUSED int apc_register_serializer(const char* name,
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: expandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: expandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */

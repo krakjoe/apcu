@@ -51,80 +51,78 @@ typedef void* (*apc_unprotect_t)(void *p); /* }}} */
 
 /* {{{ enum definition: apc_pool_type */
 typedef enum {
-    APC_UNPOOL         = 0x0,
-    APC_SMALL_POOL     = 0x1,
-    APC_MEDIUM_POOL    = 0x2,
-    APC_LARGE_POOL     = 0x3,
-    APC_POOL_SIZE_MASK = 0x7,   /* waste a bit */
+	APC_UNPOOL         = 0x0,
+	APC_SMALL_POOL     = 0x1,
+	APC_MEDIUM_POOL    = 0x2,
+	APC_LARGE_POOL     = 0x3,
+	APC_POOL_SIZE_MASK = 0x7,   /* waste a bit */
 #if APC_POOL_DEBUG
-    APC_POOL_REDZONES  = 0x08,
-    APC_POOL_SIZEINFO  = 0x10,
-    APC_POOL_OPT_MASK  = 0x18
+	APC_POOL_REDZONES  = 0x08,
+	APC_POOL_SIZEINFO  = 0x10,
+	APC_POOL_OPT_MASK  = 0x18
 #endif
 } apc_pool_type; /* }}} */
 
-/* {{{ structure definition: apc_pool */ 
+/* {{{ structure definition: apc_pool */
 struct _apc_pool {
 	/* denotes the size and debug flags for a pool */
-    apc_pool_type   type;
-	
-	/* handler functions */
-    apc_malloc_t    allocate;
-    apc_free_t      deallocate;
+	apc_pool_type   type;
 
-    apc_palloc_t    palloc;
-    apc_pfree_t     pfree;
+	/* handler functions */
+	apc_malloc_t    allocate;
+	apc_free_t      deallocate;
+
+	apc_palloc_t    palloc;
+	apc_pfree_t     pfree;
 
 	apc_protect_t   protect;
 	apc_unprotect_t unprotect;
 
-    apc_pcleanup_t  cleanup;
+	apc_pcleanup_t  cleanup;
 
 	/* total */
-    size_t          size;
+	size_t          size;
 	/* remaining */
-    size_t          used;
+	size_t          used;
 
-    /* apc_realpool and apc_unpool add more here */
+	/* apc_realpool and apc_unpool add more here */
 }; /* }}} */
 
 /* {{{ enum definition: apc_copy_type */
-/* APC_COPY_IN should be used when copying into APC 
+/* APC_COPY_IN should be used when copying into APC
    APC_COPY_OUT should be used when copying out of APC */
 typedef enum _apc_copy_type {
-    APC_NO_COPY = 0,
-    APC_COPY_IN,
-    APC_COPY_OUT,
+	APC_NO_COPY = 0,
+	APC_COPY_IN,
+	APC_COPY_OUT,
 	APC_COPY_OTHER
 } apc_copy_type; /* }}} */
 
-/* {{{ enum definition: apc_context_type 
-	APC_CONTEXT_SHARE should be used to create contexts using shared memory 
+/* {{{ enum definition: apc_context_type
+	APC_CONTEXT_SHARE should be used to create contexts using shared memory
 	APC_CONTEXT_NOSHARE should be used to create contexts using standard allocators */
 typedef enum _apc_context_type {
 	APC_CONTEXT_NONE = 0,
-    APC_CONTEXT_SHARE,
+	APC_CONTEXT_SHARE,
 	APC_CONTEXT_NOSHARE
 } apc_context_type; /* }}} */
 
 /* {{{ struct definition: apc_context_t */
 typedef struct _apc_context_t {
-    apc_pool*          pool;            /* pool of memory for context */
-    apc_copy_type      copy;            /* copying type for context */
-    unsigned int      force_update:1;  /* flag to force updates */
-    HashTable          copied;          /* copied zvals for recursion support */
-    apc_serializer_t*  serializer;      /* serializer */
-    void*              key;             /* set before serializer API is invoked */
+	apc_pool*          pool;            /* pool of memory for context */
+	apc_copy_type      copy;            /* copying type for context */
+	unsigned int      force_update:1;  /* flag to force updates */
+	HashTable          copied;          /* copied zvals for recursion support */
+	apc_serializer_t*  serializer;      /* serializer */
+	void*              key;             /* set before serializer API is invoked */
 } apc_context_t; /* }}} */
 
 /*
  apc_pool_create creates a pool of the specified type, setting the handlers passed on the pool, returns apc_pool*
 */
-PHP_APCU_API apc_pool* apc_pool_create(apc_pool_type pool_type,
-                                       apc_malloc_t allocate,
-                                       apc_free_t deallocate,
-                                       apc_protect_t protect,
-                                       apc_unprotect_t unprotect);
+PHP_APCU_API apc_pool* apc_pool_create(
+		apc_pool_type pool_type, apc_malloc_t allocate, apc_free_t deallocate,
+		apc_protect_t protect, apc_unprotect_t unprotect);
 
 /*
  apc_pool_destroy first calls apc_cleanup_t set during apc_pool_create, then apc_free_t
@@ -134,9 +132,7 @@ PHP_APCU_API void apc_pool_destroy(apc_pool* pool);
 /*
  apc_pmemcpy performs memcpy using resources provided by pool
 */
-PHP_APCU_API void* apc_pmemcpy(const void* p, 
-                               size_t n, 
-                               apc_pool* pool);
+PHP_APCU_API void* apc_pmemcpy(const void* p, size_t n, apc_pool* pool);
 
 
 PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool);
@@ -145,8 +141,7 @@ PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_po
 /*
  apc_pstrdup performs strdup using resources provided by pool
 */
-PHP_APCU_API void* apc_pstrdup(const char* s, 
-                               apc_pool* pool);
+PHP_APCU_API void* apc_pstrdup(const char* s, apc_pool* pool);
 
 #endif
 

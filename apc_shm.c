@@ -49,60 +49,60 @@
 
 int apc_shm_create(int proj, size_t size)
 {
-    int shmid;			/* shared memory id */
-    int oflag;			/* permissions on shm */
-    key_t key = IPC_PRIVATE;	/* shm key */
+	int shmid;			/* shared memory id */
+	int oflag;			/* permissions on shm */
+	key_t key = IPC_PRIVATE;	/* shm key */
 
-    oflag = IPC_CREAT | SHM_R | SHM_A;
-    if ((shmid = shmget(key, size, oflag)) < 0) {
-        apc_error("apc_shm_create: shmget(%d, %d, %d) failed: %s. It is possible that the chosen SHM segment size is higher than the operation system allows. Linux has usually a default limit of 32MB per segment.", key, size, oflag, strerror(errno));
-    }
+	oflag = IPC_CREAT | SHM_R | SHM_A;
+	if ((shmid = shmget(key, size, oflag)) < 0) {
+		apc_error("apc_shm_create: shmget(%d, %d, %d) failed: %s. It is possible that the chosen SHM segment size is higher than the operation system allows. Linux has usually a default limit of 32MB per segment.", key, size, oflag, strerror(errno));
+	}
 
-    return shmid;
+	return shmid;
 }
 
 void apc_shm_destroy(int shmid)
 {
-    /* we expect this call to fail often, so we do not check */
-    shmctl(shmid, IPC_RMID, 0);
+	/* we expect this call to fail often, so we do not check */
+	shmctl(shmid, IPC_RMID, 0);
 }
 
 apc_segment_t apc_shm_attach(int shmid, size_t size)
 {
-    apc_segment_t segment; /* shm segment */
+	apc_segment_t segment; /* shm segment */
 
-    if ((zend_long)(segment.shmaddr = shmat(shmid, 0, 0)) == -1) {
-        apc_error("apc_shm_attach: shmat failed:");
-    }
+	if ((zend_long)(segment.shmaddr = shmat(shmid, 0, 0)) == -1) {
+		apc_error("apc_shm_attach: shmat failed:");
+	}
 
 #ifdef APC_MEMPROTECT
-    
-    if ((zend_long)(segment.roaddr = shmat(shmid, 0, SHM_RDONLY)) == -1) {
-        segment.roaddr = NULL;
-    }
+
+	if ((zend_long)(segment.roaddr = shmat(shmid, 0, SHM_RDONLY)) == -1) {
+		segment.roaddr = NULL;
+	}
 
 #endif
 
-    segment.size = size;
+	segment.size = size;
 
-    /*
-     * We set the shmid for removal immediately after attaching to it. The
-     * segment won't disappear until all processes have detached from it.
-     */
-    apc_shm_destroy(shmid);
-    return segment;
+	/*
+	 * We set the shmid for removal immediately after attaching to it. The
+	 * segment won't disappear until all processes have detached from it.
+	 */
+	apc_shm_destroy(shmid);
+	return segment;
 }
 
 void apc_shm_detach(apc_segment_t* segment)
 {
-    if (shmdt(segment->shmaddr) < 0) {
-        apc_error("apc_shm_detach: shmdt failed:");
-    }
+	if (shmdt(segment->shmaddr) < 0) {
+		apc_error("apc_shm_detach: shmdt failed:");
+	}
 
 #ifdef APC_MEMPROTECT
-    if (segment->roaddr && shmdt(segment->roaddr) < 0) {
-        apc_error("apc_shm_detach: shmdt failed:");
-    }
+	if (segment->roaddr && shmdt(segment->roaddr) < 0) {
+		apc_error("apc_shm_detach: shmdt failed:");
+	}
 #endif
 }
 
@@ -111,6 +111,6 @@ void apc_shm_detach(apc_segment_t* segment)
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: expandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: expandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */

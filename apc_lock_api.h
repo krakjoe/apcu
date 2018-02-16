@@ -36,20 +36,20 @@
 # ifndef APC_SPIN_LOCK
 #   ifndef APC_FCNTL_LOCK
 #       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS)
-        typedef pthread_rwlock_t apc_lock_t;
+		typedef pthread_rwlock_t apc_lock_t;
 #		define APC_LOCK_SHARED
 #       else
-        typedef pthread_mutex_t apc_lock_t;
+		typedef pthread_mutex_t apc_lock_t;
 #		define APC_LOCK_RECURSIVE
 #       endif
 #   else
-        typedef int apc_lock_t;
+		typedef int apc_lock_t;
 #		define APC_LOCK_FILE
 #   endif
 # else
 # define APC_LOCK_NICE 1
 typedef struct {
-    unsigned long state;
+	unsigned long state;
 } apc_lock_t;
 
 PHP_APCU_API int apc_lock_init(apc_lock_t* lock);

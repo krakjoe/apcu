@@ -39,30 +39,30 @@
 #include "apc_stack.h"
 
 ZEND_BEGIN_MODULE_GLOBALS(apcu)
-    /* configuration parameters */
-    zend_bool enabled;      /* if true, apc is enabled (defaults to true) */
-    zend_long shm_segments;      /* number of shared memory segments to use */
-    zend_long shm_size;          /* size of each shared memory segment (in MB) */
-    zend_long entries_hint;      /* hint at the number of entries expected */
-    zend_long gc_ttl;            /* parameter to apc_cache_create */
-    zend_long ttl;               /* parameter to apc_cache_create */
+	/* configuration parameters */
+	zend_bool enabled;      /* if true, apc is enabled (defaults to true) */
+	zend_long shm_segments;      /* number of shared memory segments to use */
+	zend_long shm_size;          /* size of each shared memory segment (in MB) */
+	zend_long entries_hint;      /* hint at the number of entries expected */
+	zend_long gc_ttl;            /* parameter to apc_cache_create */
+	zend_long ttl;               /* parameter to apc_cache_create */
 	zend_long smart;             /* smart value */
 
 #if APC_MMAP
-    char *mmap_file_mask;   /* mktemp-style file-mask to pass to mmap */
+	char *mmap_file_mask;   /* mktemp-style file-mask to pass to mmap */
 #endif
 
-    /* module variables */
-    zend_bool initialized;       /* true if module was initialized */
-    zend_bool enable_cli;        /* Flag to override turning APC off for CLI */
-    zend_bool slam_defense;      /* true for user cache slam defense */ 
+	/* module variables */
+	zend_bool initialized;       /* true if module was initialized */
+	zend_bool enable_cli;        /* Flag to override turning APC off for CLI */
+	zend_bool slam_defense;      /* true for user cache slam defense */
 
 	char *preload_path;          /* preload path */
-    zend_bool coredump_unmap;    /* trap signals that coredump and unmap shared memory */
-    zend_bool use_request_time;  /* use the SAPI request start time for TTL */
+	zend_bool coredump_unmap;    /* trap signals that coredump and unmap shared memory */
+	zend_bool use_request_time;  /* use the SAPI request start time for TTL */
 
-    char *serializer_name;       /* the serializer config option */
-    char *writable;              /* writable path for general use */
+	char *serializer_name;       /* the serializer config option */
+	char *writable;              /* writable path for general use */
 
 	volatile zend_bool recursion;
 ZEND_END_MODULE_GLOBALS(apcu)
@@ -84,6 +84,6 @@ extern apc_cache_t* apc_user_cache;
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: expandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: expandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */

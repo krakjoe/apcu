@@ -31,68 +31,68 @@
 #include "apc_stack.h"
 
 struct apc_stack_t {
-    void** data;
-    int capacity;
-    int size;
+	void** data;
+	int capacity;
+	int size;
 };
 
 apc_stack_t* apc_stack_create(int size_hint)
 {
-    apc_stack_t* stack = (apc_stack_t*) apc_emalloc(sizeof(apc_stack_t));
+	apc_stack_t* stack = (apc_stack_t*) apc_emalloc(sizeof(apc_stack_t));
 
-    stack->capacity = (size_hint > 0) ? size_hint : 10;
-    stack->size = 0;
-    stack->data = (void**) apc_emalloc(sizeof(void*) * stack->capacity);
+	stack->capacity = (size_hint > 0) ? size_hint : 10;
+	stack->size = 0;
+	stack->data = (void**) apc_emalloc(sizeof(void*) * stack->capacity);
 
-    return stack;
+	return stack;
 }
 
 void apc_stack_destroy(apc_stack_t* stack)
 {
-    if (stack != NULL) {
-        apc_efree(stack->data);
-        apc_efree(stack);
-    }
+	if (stack != NULL) {
+		apc_efree(stack->data);
+		apc_efree(stack);
+	}
 }
 
 void apc_stack_clear(apc_stack_t* stack)
 {
-    assert(stack != NULL);
-    stack->size = 0;
+	assert(stack != NULL);
+	stack->size = 0;
 }
 
 void apc_stack_push(apc_stack_t* stack, void* item)
 {
-    assert(stack != NULL);
-    if (stack->size == stack->capacity) {
-        stack->capacity *= 2;
-        stack->data = apc_erealloc(stack->data, sizeof(void*)*stack->capacity);
-    }
-    stack->data[stack->size++] = item;
+	assert(stack != NULL);
+	if (stack->size == stack->capacity) {
+		stack->capacity *= 2;
+		stack->data = apc_erealloc(stack->data, sizeof(void*)*stack->capacity);
+	}
+	stack->data[stack->size++] = item;
 }
 
 void* apc_stack_pop(apc_stack_t* stack)
 {
-    assert(stack != NULL && stack->size > 0);
-    return stack->data[--stack->size];
+	assert(stack != NULL && stack->size > 0);
+	return stack->data[--stack->size];
 }
 
 void* apc_stack_top(apc_stack_t* stack)
 {
-    assert(stack != NULL && stack->size > 0);
-    return stack->data[stack->size-1];
+	assert(stack != NULL && stack->size > 0);
+	return stack->data[stack->size-1];
 }
 
 void* apc_stack_get(apc_stack_t* stack, int n)
 {
-    assert(stack != NULL && stack->size > n);
-    return stack->data[n];
+	assert(stack != NULL && stack->size > n);
+	return stack->data[n];
 }
 
 int apc_stack_size(apc_stack_t* stack)
 {
-    assert(stack != NULL);
-    return stack->size;
+	assert(stack != NULL);
+	return stack->size;
 }
 
 
@@ -101,6 +101,6 @@ int apc_stack_size(apc_stack_t* stack)
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: expandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: expandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */

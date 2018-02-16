@@ -26,13 +26,13 @@
 
  /* $Id: apc_signal.c 327066 2012-08-12 07:48:48Z laruence $ */
 
- /* Allows apc to install signal handlers and maintain signalling
-    to already registered handlers. Registers all signals that
-    coredump by default and unmaps the shared memory segment
-    before the coredump. Note: PHP module init is called before 
-    signals are set by Apache and thus apc_set_signals should
-    be called in request init (RINIT)
-  */
+/* Allows apc to install signal handlers and maintain signalling
+ * to already registered handlers. Registers all signals that
+ * coredump by default and unmaps the shared memory segment
+ * before the coredump. Note: PHP module init is called before
+ * signals are set by Apache and thus apc_set_signals should
+ * be called in request init (RINIT)
+ */
 
 #include "apc.h"
 
@@ -53,20 +53,20 @@ static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context);
 
 extern apc_cache_t* apc_user_cache;
 
-/* {{{ apc_core_unmap 
- *  Coredump signal handler, unmaps shm and calls previously installed handlers 
+/* {{{ apc_core_unmap
+ *  Coredump signal handler, unmaps shm and calls previously installed handlers
  */
-static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context) 
+static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 {
-    TSRMLS_FETCH();
-	
-    apc_sma_cleanup();
-    apc_rehandle_signal(signo, siginfo, context);
+	TSRMLS_FETCH();
+
+	apc_sma_cleanup();
+	apc_rehandle_signal(signo, siginfo, context);
 
 #if !defined(WIN32) && !defined(NETWARE)
-    kill(getpid(), signo);
+	kill(getpid(), signo);
 #else
-    raise(signo);
+	raise(signo);
 #endif
 } /* }}} */
 
@@ -75,18 +75,18 @@ static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 /* {{{ apc_reload_cache */
 static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
 	TSRMLS_FETCH();
-	
-	if (apc_user_cache) {	
+
+	if (apc_user_cache) {
 		apc_cache_clear(
 			apc_user_cache);
 	}
-	
+
 	apc_rehandle_signal(signo, siginfo, context);
-	
+
 #if !defined(WIN32) && !defined(NETWARE)
-    kill(getpid(), signo);
+	kill(getpid(), signo);
 #else
-    raise(signo);
+	raise(signo);
 #endif
 } /* }}} */
 #endif
@@ -96,80 +96,80 @@ static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
  */
 static void apc_rehandle_signal(int signo, siginfo_t *siginfo, void *context)
 {
-    int i;
-    apc_signal_entry_t p_sig = {0};
+	int i;
+	apc_signal_entry_t p_sig = {0};
 
-    for (i=0;  (i < apc_signal_info.installed && p_sig.signo != signo);  i++) {
-        p_sig = *apc_signal_info.prev[i];
-        if (p_sig.signo == signo) {
-            if (p_sig.siginfo) {
-                (*(void (*)(int, siginfo_t*, void*))p_sig.handler)(signo, siginfo, context);
-            } else {
-                (*(void (*)(int))p_sig.handler)(signo);
-            }
-        }
-    }
+	for (i=0;  (i < apc_signal_info.installed && p_sig.signo != signo);  i++) {
+		p_sig = *apc_signal_info.prev[i];
+		if (p_sig.signo == signo) {
+			if (p_sig.siginfo) {
+				(*(void (*)(int, siginfo_t*, void*))p_sig.handler)(signo, siginfo, context);
+			} else {
+				(*(void (*)(int))p_sig.handler)(signo);
+			}
+		}
+	}
 
 } /* }}} */
 
 /* {{{ apc_register_signal
- *  Set a handler for a previously installed signal and save so we can 
- *  callback when handled 
+ *  Set a handler for a previously installed signal and save so we can
+ *  callback when handled
  */
 static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*))
 {
-    struct sigaction sa = {{0}};
-    apc_signal_entry_t p_sig = {0};
+	struct sigaction sa = {{0}};
+	apc_signal_entry_t p_sig = {0};
 
-    if (sigaction(signo, NULL, &sa) == 0) {
-        if ((void*)sa.sa_handler == (void*)handler) {
-            return SUCCESS;
-        }
+	if (sigaction(signo, NULL, &sa) == 0) {
+		if ((void*)sa.sa_handler == (void*)handler) {
+			return SUCCESS;
+		}
 
-        if (sa.sa_handler != SIG_ERR && sa.sa_handler != SIG_DFL && sa.sa_handler != SIG_IGN) {
-            p_sig.signo = signo;
-            p_sig.siginfo = ((sa.sa_flags & SA_SIGINFO) == SA_SIGINFO);
-            p_sig.handler = (void *)sa.sa_handler;
+		if (sa.sa_handler != SIG_ERR && sa.sa_handler != SIG_DFL && sa.sa_handler != SIG_IGN) {
+			p_sig.signo = signo;
+			p_sig.siginfo = ((sa.sa_flags & SA_SIGINFO) == SA_SIGINFO);
+			p_sig.handler = (void *)sa.sa_handler;
 
-            apc_signal_info.prev = (apc_signal_entry_t **)apc_erealloc(apc_signal_info.prev, (apc_signal_info.installed+1)*sizeof(apc_signal_entry_t *));
-            apc_signal_info.prev[apc_signal_info.installed] = (apc_signal_entry_t *)apc_emalloc(sizeof(apc_signal_entry_t));
-            *apc_signal_info.prev[apc_signal_info.installed++] = p_sig;
-        } else {
-            /* inherit flags and mask if already set */
-            sigemptyset(&sa.sa_mask);
-            sa.sa_flags = 0;
-            sa.sa_flags |= SA_SIGINFO; /* we'll use a siginfo handler */
+			apc_signal_info.prev = (apc_signal_entry_t **)apc_erealloc(apc_signal_info.prev, (apc_signal_info.installed+1)*sizeof(apc_signal_entry_t *));
+			apc_signal_info.prev[apc_signal_info.installed] = (apc_signal_entry_t *)apc_emalloc(sizeof(apc_signal_entry_t));
+			*apc_signal_info.prev[apc_signal_info.installed++] = p_sig;
+		} else {
+			/* inherit flags and mask if already set */
+			sigemptyset(&sa.sa_mask);
+			sa.sa_flags = 0;
+			sa.sa_flags |= SA_SIGINFO; /* we'll use a siginfo handler */
 #if defined(SA_ONESHOT)
-            sa.sa_flags = SA_ONESHOT;
+			sa.sa_flags = SA_ONESHOT;
 #elif defined(SA_RESETHAND)
-            sa.sa_flags = SA_RESETHAND;
+			sa.sa_flags = SA_RESETHAND;
 #endif
-        }
-        sa.sa_handler = (void*)handler;
+		}
+		sa.sa_handler = (void*)handler;
 
-        if (sigaction(signo, &sa, NULL) < 0) {
-            apc_warning("Error installing apc signal handler for %d", signo);
-        }
+		if (sigaction(signo, &sa, NULL) < 0) {
+			apc_warning("Error installing apc signal handler for %d", signo);
+		}
 
-        return SUCCESS;
-    }
-    return FAILURE;
+		return SUCCESS;
+	}
+	return FAILURE;
 } /* }}} */
 
 /* {{{ apc_set_signals
  *  Install our signal handlers */
-void apc_set_signals() 
+void apc_set_signals()
 {
 	if (apc_signal_info.installed == 0) {
 #if defined(SIGUSR1) && defined(APC_SIGNAL_CLEAR)
 		apc_register_signal(SIGUSR1, apc_clear_cache);
 #endif
 		if (APCG(coredump_unmap)) {
-		    /* ISO C standard signals that coredump */
-		    apc_register_signal(SIGSEGV, apc_core_unmap);
-		    apc_register_signal(SIGABRT, apc_core_unmap);
-		    apc_register_signal(SIGFPE, apc_core_unmap);
-		    apc_register_signal(SIGILL, apc_core_unmap);
+			/* ISO C standard signals that coredump */
+			apc_register_signal(SIGSEGV, apc_core_unmap);
+			apc_register_signal(SIGABRT, apc_core_unmap);
+			apc_register_signal(SIGFPE, apc_core_unmap);
+			apc_register_signal(SIGILL, apc_core_unmap);
 /* extended signals that coredump */
 #ifdef SIGBUS
 			apc_register_signal(SIGBUS, apc_core_unmap);
@@ -198,21 +198,21 @@ void apc_set_signals()
 #ifdef SIGXFSZ
 			apc_register_signal(SIGXFSZ, apc_core_unmap);
 #endif
-    	}
+		}
 	}
 } /* }}} */
 
 /* {{{ apc_set_signals
  *  cleanup signals for shutdown */
-void apc_shutdown_signals() 
+void apc_shutdown_signals()
 {
-    int i=0;
-    if (apc_signal_info.installed > 0) {
-        for (i=0;  (i < apc_signal_info.installed);  i++) {
-            apc_efree(apc_signal_info.prev[i]);
-        }
-        apc_efree(apc_signal_info.prev);
-        apc_signal_info.installed = 0; /* just in case */
+	int i=0;
+	if (apc_signal_info.installed > 0) {
+		for (i=0;  (i < apc_signal_info.installed);  i++) {
+			apc_efree(apc_signal_info.prev[i]);
+		}
+		apc_efree(apc_signal_info.prev);
+		apc_signal_info.installed = 0; /* just in case */
 	}
 }
 /* }}} */
@@ -224,6 +224,6 @@ void apc_shutdown_signals()
  * tab-width: 4
  * c-basic-offset: 4
  * End:
- * vim>600: expandtab sw=4 ts=4 sts=4 fdm=marker
- * vim<600: expandtab sw=4 ts=4 sts=4
+ * vim>600: noexpandtab sw=4 ts=4 sts=4 fdm=marker
+ * vim<600: noexpandtab sw=4 ts=4 sts=4
  */
