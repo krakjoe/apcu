@@ -26,7 +26,15 @@ function server_start_one($host, $port, $code = 'echo "Hello world";', $php_opts
 	$php_args = getenv('TEST_PHP_ARGS');
 	if (empty($php_args)) {
 		$ext = (substr(PHP_OS, 0, 3) == 'WIN') ? 'php_apcu.dll' : 'apcu.so';
-		$php_args = "-d extension_dir=$doc_root/../modules -d extension=$ext";
+		if (substr(PHP_OS, 0, 3) == 'WIN') {
+			$part0 = 8 == PHP_INT_SIZE ? "x64" : "";
+			$part1 = ZEND_DEBUG_BUILD ? "Debug" : "Release";
+			$part1 = PHP_ZTS ? ($part1 . "_TS") : $part1;
+			$php_args = "-d extension_dir=$doc_root/../$part0/$part1";
+		} else {
+			$php_args = "-d extension_dir=$doc_root/../modules";
+		}
+		$php_args = "$php_args -d extension=$ext";
 	}
 	if ($php_opts) {
 		$php_args = "$php_args -d " . implode(' -d ', $php_opts);;
