@@ -1,5 +1,7 @@
 --TEST--
 gh bug #168
+--SKIPIF--
+<?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
 apc.enabled=1
 apc.enable_cli=1

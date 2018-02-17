@@ -1,5 +1,7 @@
 --TEST--
 Looped regression test (may take a while) (from tests/lang/024.phpt)
+--SKIPIF--
+<?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
 apc.enabled=1
 apc.cache_by_default=1
