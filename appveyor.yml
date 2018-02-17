@@ -120,7 +120,7 @@ build_script:
                 $runner = 'c:\build-cache\php-sdk-' + $env:BIN_SDK_VER + '\phpsdk' + '-' + $env:VC + '-' + $env:ARCH + '.bat'
                 $task = $here + '\task.bat'
                 & $runner -t $task
-                Exit($lastexitcode)
+                if (-not 0 -eq $LASTEXITCODE) { Exit($LASTEXITCODE); }
 
 after_build:
         ps: |
@@ -159,5 +159,5 @@ test_script:
                 $runner = 'c:\build-cache\php-sdk-' + $env:BIN_SDK_VER + '\phpsdk' + '-' + $env:VC + '-' + $env:ARCH + '.bat'
                 $task = $here + '\task.bat'
                 & $runner -t $task
-                Exit($lastexitcode)
+                if (-not 0 -eq $LASTEXITCODE) { Exit($LASTEXITCODE); }
 
