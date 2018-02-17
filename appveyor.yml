@@ -1,57 +1,159 @@
-version: '{branch}.{build}'
-
-environment:
-  REPORT_EXIT_STATUS: 1
-  matrix:
-    - BUILD_ENV: x86
-    - BUILD_ENV: x64
+version: "{branch}.build.{build}"
+skip_tags: true
 
 branches:
-  only:
-    - master
+        only:
+                - master
+
+clone_folder:  c:\projects\apcu
 
 install:
-  - cmd: cinst wget
+        ps: |
+                if (-not (Test-Path c:\build-cache)) {
+                        mkdir c:\build-cache
+                }
+                $bname = 'php-sdk-' + $env:BIN_SDK_VER + '.zip'
+                if (-not (Test-Path c:\build-cache\$bname)) {
+                        (new-object net.webclient).DownloadFile('https://github.com/OSTC/php-sdk-binary-tools/archive/' + $bname, 'c:\build-cache\' + $bname)
+                }
+                $dname0 = 'php-sdk-binary-tools-php-sdk-' + $env:BIN_SDK_VER
+                $dname1 = 'php-sdk-' + $env:BIN_SDK_VER
+                if (-not (Test-Path c:\build-cache\$dname1)) {
+                        7z x c:\build-cache\$bname -oc:\build-cache
+                        move c:\build-cache\$dname0 c:\build-cache\$dname1
+                }
+
+cache:
+        c:\build-cache -> .appveyor.yml
+
+environment:
+        BIN_SDK_VER: 2.1.0
+        matrix:
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                  ARCH: x64
+                  VC: vc14
+                  PHP_VER: 7.0.27
+                  TS: 0
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                  ARCH: x64
+                  VC: vc14
+                  PHP_VER: 7.0.27
+                  TS: 1
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                  ARCH: x86
+                  VC: vc14
+                  PHP_VER: 7.0.27
+                  TS: 0
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                  ARCH: x86
+                  VC: vc14
+                  PHP_VER: 7.0.27
+                  TS: 1
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                  ARCH: x64
+                  VC: vc14
+                  PHP_VER: 7.1.14
+                  TS: 0
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                  ARCH: x64
+                  VC: vc14
+                  PHP_VER: 7.1.14
+                  TS: 1
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                  ARCH: x86
+                  VC: vc14
+                  PHP_VER: 7.1.14
+                  TS: 0
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+                  ARCH: x86
+                  VC: vc14
+                  PHP_VER: 7.1.14
+                  TS: 1
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+                  ARCH: x64
+                  VC: vc15
+                  PHP_VER: 7.2.2
+                  TS: 0
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+                  ARCH: x64
+                  VC: vc15
+                  PHP_VER: 7.2.2
+                  TS: 1
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+                  ARCH: x86
+                  VC: vc15
+                  PHP_VER: 7.2.2
+                  TS: 0
+                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+                  ARCH: x86
+                  VC: vc15
+                  PHP_VER: 7.2.2
+                  TS: 1
 
 build_script:
-- cmd: >-
-    "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %BUILD_ENV%
+        ps: |
+                $ts_part = ''
+                if ('0' -eq $env:TS) { $ts_part = '-nts' }
+                $bname = 'php-devel-pack-' + $env:PHP_VER + $ts_part + '-Win32-' + $env:VC.toUpper() + '-' + $env:ARCH + '.zip'
+                if (-not (Test-Path c:\build-cache\$bname)) {
+                        (new-object net.webclient).DownloadFile('http://windows.php.net/downloads/releases/archives/' + $bname, 'c:\build-cache\' + $bname)
+                        if (-not (Test-Path c:\build-cache\$bname)) {
+                                (new-object net.webclient).DownloadFile('http://windows.php.net/downloads/releases/' + $bname, 'c:\build-cache\' + $bname)
+                        }
+                }
+                $dname0 = 'php-' + $env:PHP_VER + '-devel-' + $env:VC.toUpper() + '-' + $env:ARCH
+                $dname1 = 'php-' + $env:PHP_VER + $ts_part + '-devel-' + $env:VC.toUpper() + '-' + $env:ARCH
+                if (-not (Test-Path c:\build-cache\$dname1)) {
+                        7z x c:\build-cache\$bname -oc:\build-cache
+                        move c:\build-cache\$dname0 c:\build-cache\$dname1
+                }
+                cd c:\projects\apcu
+                $env:PATH = 'c:\build-cache\' + $dname1 + ';' + $env:PATH
+                #echo "@echo off" | Out-File -Encoding "ASCII" task.bat
+                #echo "" | Out-File -Encoding "ASCII" -Append task.bat
+                echo "" | Out-File -Encoding "ASCII" task.bat
+                echo "call phpize 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                echo "call configure --enable-apcu --enable-debug-pack 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                echo "nmake /nologo 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                $here = (Get-Item -Path "." -Verbose).FullName
+                $runner = 'c:\build-cache\php-sdk-' + $env:BIN_SDK_VER + '\phpsdk' + '-' + $env:VC + '-' + $env:ARCH + '.bat'
+                $task = $here + '\task.bat'
+                & $runner -t $task
 
-    wget http://windows.php.net/downloads/php-sdk/php-sdk-binary-tools-20110915.zip
-
-    7z x -y php-sdk-binary-tools-20110915.zip -oC:\projects\php-sdk
-
-    C:\projects\php-sdk\bin\phpsdk_setvars.bat
-
-    git clone --depth=1 https://github.com/php/php-src C:\projects\php-src
-
-    mkdir C:\projects\php-src\ext\apcu
-
-    xcopy C:\projects\apcu C:\projects\php-src\ext\apcu /s /e /y
-
-    wget http://windows.php.net/downloads/php-sdk/deps-7.0-vc14-%BUILD_ENV%.7z
-
-    7z x -y deps-7.0-vc14-%BUILD_ENV%.7z -oC:\projects\php-src
-
-    cd C:\projects\php-src
-
-    buildconf.bat
-
-    configure.bat --disable-all --enable-cli --enable-zts --enable-apcu=shared --with-config-file-scan-dir=C:\projects\apcu\bin\modules.d --with-prefix=C:\projects\apcu\bin --with-php-build=deps
-
-    nmake
-
-    nmake install
-
-    copy php.ini-development C:\projects\apcu\bin\php.ini
-
-    C:\projects\apcu\bin\php.exe -d extension_dir=C:\projects\apcu\bin\ext\ -d extension=php_apcu.dll -m
+after_build:
+        ps: |
+                $ts_part = 'ts'
+                if ('0' -eq $env:TS) { $ts_part = 'nts' }
+                $zip_bname = 'php_apcu-' + $env:APPVEYOR_REPO_COMMIT.substring(0, 8) + '-' + $env:PHP_VER.substring(0, 3) + '-' + $ts_part + '-' + $env:VC + '-' + $env:ARCH + '.zip'
+                $dir = 'c:\projects\apcu\';
+                if ('x64' -eq $env:ARCH) { $dir = $dir + 'x64\' }
+                $dir = $dir + 'Release'
+                if ('1' -eq $env:TS) { $dir = $dir + '_TS' }
+                & 7z a c:\$zip_bname $dir\php_apcu.dll $dir\php_apcu.pdb c:\projects\apcu\LICENSE
+                Push-AppveyorArtifact c:\$zip_bname
 
 test_script:
-  - cmd: C:\projects\apcu\bin\php.exe -n run-tests.php ext\apcu -n -d extension_dir=C:\projects\apcu\bin\ext\ -d extension=php_apcu.dll -d apc.enable=1 -d apc.enable_cli=1 -p C:\projects\apcu\bin\php.exe --show-diff --set-timeout 120
-
-artifacts:
-  - path: bin
-    name: master
-    type: zip
+        ps: |
+                $ts_part = ''
+                if ('0' -eq $env:TS) { $ts_part = '-nts' }
+                $bname = 'php-' + $env:PHP_VER + $ts_part + '-Win32-' + $env:VC.toUpper() + '-' + $env:ARCH + '.zip'
+                if (-not (Test-Path c:\build-cache\$bname)) {
+                        (new-object net.webclient).DownloadFile('http://windows.php.net/downloads/releases/archives/' + $bname, 'c:\build-cache\' + $bname)
+                        if (-not (Test-Path c:\build-cache\$bname)) {
+                                (new-object net.webclient).DownloadFile('http://windows.php.net/downloads/releases/' + $bname, 'c:\build-cache\' + $bname)
+                        }
+                }
+                $dname = 'php-' + $env:PHP_VER + $ts_part + '-' + $env:VC.toUpper() + '-' + $env:ARCH
+                if (-not (Test-Path c:\build-cache\$dname)) {
+                        7z x c:\build-cache\$bname -oc:\build-cache\$dname
+                }
+                cd c:\projects\apcu
+                echo "" | Out-File -Encoding "ASCII" task.bat
+                $cmd = 'call configure --enable-apcu --with-prefix=c:\build-cache\' + $dname + " 2>&1"
+                echo $cmd | Out-File -Encoding "ASCII" -Append task.bat
+                echo "nmake /nologo test TESTS=-q 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
+                $here = (Get-Item -Path "." -Verbose).FullName
+                $runner = 'c:\build-cache\php-sdk-' + $env:BIN_SDK_VER + '\phpsdk' + '-' + $env:VC + '-' + $env:ARCH + '.bat'
+                $task = $here + '\task.bat'
+                & $runner -t $task
 
