@@ -23,7 +23,7 @@ if(PHP_APCU != 'no')
 	/* XXX srwlock kernel as most BC compatible for now */
 	AC_DEFINE('APC_SRWLOCK_KERNEL', 1);
 	AC_DEFINE('HAVE_APCU', 1);
-	ADD_FLAG('CFLAGS_APC', '/D WIN32_ONLY_COMPILER=1');
+	ADD_FLAG('CFLAGS_APCU', '/D WIN32_ONLY_COMPILER=1 /DAPC_SRWLOCK_KERNEL=1');
 	PHP_INSTALL_HEADERS("ext/apcu", "apc.h apc_api.h apc_cache_api.h apc_lock_api.h apc_pool_api.h apc_sma_api.h apc_serializer.h");
 
 	EXTENSION('apcu', apc_sources, PHP_APCU_SHARED, "/DZEND_ENABLE_STATIC_TSRMLS_CACHE=1");
