@@ -120,7 +120,6 @@ build_script:
                 $runner = 'c:\build-cache\php-sdk-' + $env:BIN_SDK_VER + '\phpsdk' + '-' + $env:VC + '-' + $env:ARCH + '.bat'
                 $task = $here + '\task.bat'
                 & $runner -t $task
-                if($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
 
 after_build:
         ps: |
@@ -151,6 +150,7 @@ test_script:
                 }
                 cd c:\projects\apcu
                 echo "" | Out-File -Encoding "ASCII" task.bat
+                echo "set REPORT_EXIT_STATUS=1" | Out-File -Encoding "ASCII" -Append task.bat
                 $cmd = 'call configure --enable-apcu --with-prefix=c:\build-cache\' + $dname + " 2>&1"
                 echo $cmd | Out-File -Encoding "ASCII" -Append task.bat
                 echo "nmake /nologo test TESTS=-q 2>&1" | Out-File -Encoding "ASCII" -Append task.bat
@@ -159,5 +159,4 @@ test_script:
                 $runner = 'c:\build-cache\php-sdk-' + $env:BIN_SDK_VER + '\phpsdk' + '-' + $env:VC + '-' + $env:ARCH + '.bat'
                 $task = $here + '\task.bat'
                 & $runner -t $task
-                if($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
 
