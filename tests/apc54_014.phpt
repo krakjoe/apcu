@@ -29,9 +29,10 @@ $args = array(
 	'apc.preload_path=' . dirname(__FILE__) . '/data',
 );
 
+$num_servers = 1;
 server_start($file, $args);
 
-for ($i = 0; $i < 10; $i++) {
+for ($i = 0; $i < 10*3; $i++) {
 	run_test_simple();
 }
 echo 'done';
