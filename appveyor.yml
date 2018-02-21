@@ -14,7 +14,7 @@ install:
                 }
                 $bname = 'php-sdk-' + $env:BIN_SDK_VER + '.zip'
                 if (-not (Test-Path c:\build-cache\$bname)) {
-                        (new-object net.webclient).DownloadFile('https://github.com/OSTC/php-sdk-binary-tools/archive/' + $bname, 'c:\build-cache\' + $bname)
+                        Invoke-WebRequest "https://github.com/OSTC/php-sdk-binary-tools/archive/$bname" -OutFile "c:\build-cache\$bname"
                 }
                 $dname0 = 'php-sdk-binary-tools-php-sdk-' + $env:BIN_SDK_VER
                 $dname1 = 'php-sdk-' + $env:BIN_SDK_VER
@@ -27,7 +27,7 @@ cache:
         c:\build-cache -> .appveyor.yml
 
 environment:
-        BIN_SDK_VER: 2.1.0
+        BIN_SDK_VER: 2.1.1
         matrix:
                 - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
                   ARCH: x64
@@ -96,9 +96,9 @@ build_script:
                 if ('0' -eq $env:TS) { $ts_part = '-nts' }
                 $bname = 'php-devel-pack-' + $env:PHP_VER + $ts_part + '-Win32-' + $env:VC.toUpper() + '-' + $env:ARCH + '.zip'
                 if (-not (Test-Path c:\build-cache\$bname)) {
-                        (new-object net.webclient).DownloadFile('http://windows.php.net/downloads/releases/archives/' + $bname, 'c:\build-cache\' + $bname)
+                        Invoke-WebRequest "http://windows.php.net/downloads/releases/archives/$bname" -OutFile "c:\build-cache\$bname"
                         if (-not (Test-Path c:\build-cache\$bname)) {
-                                (new-object net.webclient).DownloadFile('http://windows.php.net/downloads/releases/' + $bname, 'c:\build-cache\' + $bname)
+                                Invoke-WebRequest "http://windows.php.net/downloads/releases/$bname" -OutFile "c:\build-cache\$bname"
                         }
                 }
                 $dname0 = 'php-' + $env:PHP_VER + '-devel-' + $env:VC.toUpper() + '-' + $env:ARCH
@@ -139,9 +139,9 @@ test_script:
                 if ('0' -eq $env:TS) { $ts_part = '-nts' }
                 $bname = 'php-' + $env:PHP_VER + $ts_part + '-Win32-' + $env:VC.toUpper() + '-' + $env:ARCH + '.zip'
                 if (-not (Test-Path c:\build-cache\$bname)) {
-                        (new-object net.webclient).DownloadFile('http://windows.php.net/downloads/releases/archives/' + $bname, 'c:\build-cache\' + $bname)
+                        Invoke-WebRequest "http://windows.php.net/downloads/releases/archives/$bname" -OutFile "c:\build-cache\$bname"
                         if (-not (Test-Path c:\build-cache\$bname)) {
-                                (new-object net.webclient).DownloadFile('http://windows.php.net/downloads/releases/' + $bname, 'c:\build-cache\' + $bname)
+                                Invoke-WebRequest "http://windows.php.net/downloads/releases/$bname" -OutFile "c:\build-cache\$bname"
                         }
                 }
                 $dname = 'php-' + $env:PHP_VER + $ts_part + '-' + $env:VC.toUpper() + '-' + $env:ARCH
