@@ -1113,12 +1113,12 @@ EOB;
 
 		for ($j = 2; $j + 1 < count($changelog); $j += 2) {
 			$v = $changelog[$j];
+			list(, $ver) = explode(' ', $v, 2);
 			if ($i < 0 && version_compare($apcversion, $ver, '>=')) {
 				break;
 			} else if (!$i--) {
 				break;
 			}
-			list($unused, $ver) = $v;
 			$changes = $changelog[$j + 1];
 			echo "<b><a href=\"http://pecl.php.net/package/APCu/$ver\">".htmlspecialchars($v, ENT_QUOTES, 'UTF-8')."</a></b><br><blockquote>";
 			echo nl2br(htmlspecialchars($changes, ENT_QUOTES, 'UTF-8'))."</blockquote>";
