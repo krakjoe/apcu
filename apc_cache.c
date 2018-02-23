@@ -1910,7 +1910,7 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 				}
 			}
 		} else apc_cache_fetch_internal(cache, Z_STR_P(key), entry, now, &return_value);
-	}, apc_cache_entry_try_begin());
+	}, apc_cache_entry_try_end());
 }/*}}}*/
 #undef apc_cache_entry_try_begin
 #undef apc_cache_entry_try_end
