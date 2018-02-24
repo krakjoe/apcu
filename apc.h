@@ -152,13 +152,11 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS); /* }}} */
 PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS);
 PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS); /* }}} */
 
-#define php_apc_try(begin, block, end) {   \
+#define php_apc_try(block, end) {          \
 	JMP_BUF *zb = EG(bailout);             \
 	JMP_BUF ab;                            \
 	                                       \
 	EG(bailout) = &ab;                     \
-	                                       \
-	begin;                                 \
 	if (SETJMP(ab) == SUCCESS) {           \
 		block                              \
 	} else {                               \
