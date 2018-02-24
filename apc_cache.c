@@ -1893,19 +1893,20 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 		entry = apc_cache_find_internal(cache, Z_STR_P(key), now, 0);
 		if (!entry) {
 			int result;
+			zval params[1];
+			ZVAL_COPY(&params[0], key);
 
 			fci->retval = return_value;
-			zend_fcall_info_argn(fci, 1, key);
+			fci->param_count = 1;
+			fci->params = params;
 
 			result = zend_call_function(fci, fcc);
 
-			if (result == SUCCESS) {
-				zend_fcall_info_args_clear(fci, 1);
+			zval_ptr_dtor(&params[0]);
 
-				if (!EG(exception)) {
-					apc_cache_store_internal(
-						cache, Z_STR_P(key), return_value, (uint32_t) ttl, 1);
-				}
+			if (result == SUCCESS && !EG(exception)) {
+				apc_cache_store_internal(
+					cache, Z_STR_P(key), return_value, (uint32_t) ttl, 1);
 			}
 		} else apc_cache_fetch_internal(cache, Z_STR_P(key), entry, now, &return_value);
 	}, apc_cache_entry_try_end());
