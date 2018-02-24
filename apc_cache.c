@@ -1892,14 +1892,12 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 	php_apc_try(apc_cache_entry_try_begin(), {
 		entry = apc_cache_find_internal(cache, Z_STR_P(key), now, 0);
 		if (!entry) {
-			int result = 0;
+			int result;
 
 			fci->retval = return_value;
 			zend_fcall_info_argn(fci, 1, key);
 
-			zend_try {
-				result = zend_call_function(fci, fcc);
-			} zend_end_try ();
+			result = zend_call_function(fci, fcc);
 
 			if (result == SUCCESS) {
 				zend_fcall_info_args_clear(fci, 1);
