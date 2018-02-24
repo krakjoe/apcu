@@ -25,7 +25,7 @@
  <date>2018-02-16</date>
  <version>
   <release>5.1.11dev</release>
-  <api>5.1.2</api>
+  <api>5.1.11</api>
  </version>
  <stability>
   <release>stable</release>
@@ -33,7 +33,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+- fix gh#246 apcu_entry hangs
+- fix gh#281 undefined variable in apc.php
+- fix handling of fatal errors in apcu_entry
  </notes>
  <contents>
   <dir name="/">
@@ -152,7 +154,7 @@
   <release>
    <date>2018-02-16</date>
    <version>
-    <release>5.1.11dev</release>
+    <release>5.1.10</release>
     <api>5.1.2</api>
    </version>
    <stability>
