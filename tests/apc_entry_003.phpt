@@ -12,4 +12,4 @@ $value = apcu_entry("test", function($key) {
 });
 ?>
 --EXPECTF--
-Recoverable fatal error: Object of class stdClass could not be converted to string in %s on line %d
+%s fatal error: Object of class stdClass could not be converted to string in %s on line %d
