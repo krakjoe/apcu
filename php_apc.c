@@ -440,7 +440,7 @@ int php_apc_update(zend_string *key, apc_cache_updater_t updater, void* data)
  */
 static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclusive)
 {
-	zval *key = NULL;
+	zval *key;
 	zval *val = NULL;
 	zend_long ttl = 0L;
 
@@ -448,8 +448,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 		return;
 	}
 
-	if (!key || !APCG(enabled)) {
-		/* cannot work without key */
+	if (!APCG(enabled)) {
 		RETURN_FALSE;
 	}
 
