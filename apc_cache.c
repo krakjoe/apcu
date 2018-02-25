@@ -408,7 +408,7 @@ static inline zend_bool apc_cache_store_internal(apc_cache_t *cache, zend_string
 	t = apc_time();
 
 	/* initialize a context suitable for making an insert */
-	if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0)) {
+	if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN)) {
 
 		/* initialize the key for insertion */
 		if (apc_cache_make_key(&key, strkey)) {
@@ -502,7 +502,7 @@ static inline zend_bool apc_cache_fetch_internal(apc_cache_t* cache, zend_string
 	zval *rv;
 
 	/* create unpool context */
-	if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT, 0)) {
+	if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT)) {
 
 		/* copy to destination */
 		rv = apc_cache_fetch_zval(&ctxt, *dst, &entry->val);
@@ -530,7 +530,7 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, zend_string *strkey, 
 	t = apc_time();
 
 	/* initialize a context suitable for making an insert */
-	if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN, 0)) {
+	if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN)) {
 
 		/* initialize the key for insertion */
 		if (apc_cache_make_key(&key, strkey)) {
@@ -852,7 +852,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 /* {{{ apc_cache_make_context */
 PHP_APCU_API zend_bool apc_cache_make_context(
 		apc_cache_t* cache, apc_context_t* context, apc_context_type context_type,
-		apc_pool_type pool_type, apc_copy_type copy_type, uint force_update) {
+		apc_pool_type pool_type, apc_copy_type copy_type) {
 	switch (context_type) {
 		case APC_CONTEXT_SHARE:
 			return apc_cache_make_context_ex(
@@ -862,7 +862,7 @@ PHP_APCU_API zend_bool apc_cache_make_context(
 				cache->sma->sfree,
 				cache->sma->protect,
 				cache->sma->unprotect,
-				pool_type, copy_type, force_update
+				pool_type, copy_type
 			);
 			break;
 
@@ -871,7 +871,7 @@ PHP_APCU_API zend_bool apc_cache_make_context(
 				context,
 				cache->serializer,
 				apc_php_malloc, apc_php_free, NULL, NULL,
-				pool_type, copy_type, force_update
+				pool_type, copy_type
 			);
 			break;
 	}
@@ -884,7 +884,7 @@ PHP_APCU_API zend_bool apc_cache_make_context_ex(
 		apc_context_t* context, apc_serializer_t* serializer,
 		apc_malloc_t _malloc, apc_free_t _free,
 		apc_protect_t _protect, apc_unprotect_t _unprotect,
-		apc_pool_type pool_type, apc_copy_type copy_type, uint force_update) {
+		apc_pool_type pool_type, apc_copy_type copy_type) {
 	/* attempt to create the pool */
 	context->pool = apc_pool_create(
 		pool_type, _malloc, _free, _protect, _unprotect
@@ -898,7 +898,6 @@ PHP_APCU_API zend_bool apc_cache_make_context_ex(
 	/* set context information */
 	context->serializer = serializer;
 	context->copy = copy_type;
-	context->force_update = force_update;
 
 	/* set this to avoid memory errors */
 	memset(&context->copied, 0, sizeof(HashTable));

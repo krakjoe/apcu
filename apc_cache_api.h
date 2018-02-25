@@ -162,7 +162,7 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache);
 */
 PHP_APCU_API zend_bool apc_cache_make_context(
         apc_cache_t* cache, apc_context_t* context, apc_context_type context_type,
-        apc_pool_type pool_type, apc_copy_type copy_type, uint force_update);
+        apc_pool_type pool_type, apc_copy_type copy_type);
 
 /*
 * apc_cache_make_context_ex is an advanced/external version of make_context
@@ -171,7 +171,7 @@ PHP_APCU_API zend_bool apc_cache_make_context_ex(
         apc_context_t* context, apc_serializer_t* serializer,
         apc_malloc_t _malloc, apc_free_t _free,
         apc_protect_t _protect, apc_unprotect_t _unprotect,
-        apc_pool_type pool_type, apc_copy_type copy_type, uint force_update);
+        apc_pool_type pool_type, apc_copy_type copy_type);
 /*
 * apc_context_destroy should be called when a context is finished being used
 */

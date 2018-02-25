@@ -106,7 +106,6 @@ typedef enum _apc_context_type {
 typedef struct _apc_context_t {
 	apc_pool*          pool;            /* pool of memory for context */
 	apc_copy_type      copy;            /* copying type for context */
-	unsigned int      force_update:1;  /* flag to force updates */
 	HashTable          copied;          /* copied zvals for recursion support */
 	apc_serializer_t*  serializer;      /* serializer */
 	void*              key;             /* set before serializer API is invoked */
