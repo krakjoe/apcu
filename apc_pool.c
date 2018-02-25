@@ -34,6 +34,27 @@
 # endif
 #endif
 
+/* {{{ structure definition: apc_pool */
+struct _apc_pool {
+	/* denotes the size and debug flags for a pool */
+	apc_pool_type   type;
+
+	/* handler functions */
+	apc_malloc_t    allocate;
+	apc_free_t      deallocate;
+
+	apc_protect_t   protect;
+	apc_unprotect_t unprotect;
+
+	/* total */
+	size_t          size;
+	/* remaining */
+	size_t          used;
+
+	/* apc_realpool and apc_unpool add more here */
+}; /* }}} */
+
+
 /*{{{ apc_realpool implementation */
 
 /* {{{ typedefs */
@@ -366,9 +387,11 @@ PHP_APCU_API apc_pool* apc_pool_create(
 
 	return &(rpool->parent);
 }
-
-
 /* }}} */
+
+PHP_APCU_API size_t apc_pool_size(apc_pool *pool) {
+	return pool->size;
+}
 
 /* }}} */
 

@@ -57,26 +57,6 @@ typedef enum {
 #endif
 } apc_pool_type; /* }}} */
 
-/* {{{ structure definition: apc_pool */
-struct _apc_pool {
-	/* denotes the size and debug flags for a pool */
-	apc_pool_type   type;
-
-	/* handler functions */
-	apc_malloc_t    allocate;
-	apc_free_t      deallocate;
-
-	apc_protect_t   protect;
-	apc_unprotect_t unprotect;
-
-	/* total */
-	size_t          size;
-	/* remaining */
-	size_t          used;
-
-	/* apc_realpool and apc_unpool add more here */
-}; /* }}} */
-
 /* {{{ enum definition: apc_copy_type */
 /* APC_COPY_IN should be used when copying into APC
    APC_COPY_OUT should be used when copying out of APC */
@@ -110,6 +90,9 @@ PHP_APCU_API void apc_pool_destroy(apc_pool *pool);
 PHP_APCU_API void *apc_pool_alloc(apc_pool *pool, size_t size);
 /* Free p from the pool (does nothing) */
 PHP_APCU_API void apc_pool_free(apc_pool *pool, void *p);
+
+/* Get allocated size of pool */
+PHP_APCU_API size_t apc_pool_size(apc_pool *pool);
 
 /*
  apc_pmemcpy performs memcpy using resources provided by pool
