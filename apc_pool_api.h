@@ -49,7 +49,6 @@ typedef void* (*apc_unprotect_t)(void *p); /* }}} */
 
 /* {{{ enum definition: apc_pool_type */
 typedef enum {
-	APC_UNPOOL         = 0x0,
 	APC_SMALL_POOL     = 0x1,
 	APC_MEDIUM_POOL    = 0x2,
 	APC_LARGE_POOL     = 0x3,
