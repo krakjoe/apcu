@@ -325,8 +325,7 @@ PHP_FUNCTION(apcu_clear_cache)
 		return;
 	}
 
-	apc_cache_clear(
-		apc_user_cache);
+	apc_cache_clear(apc_user_cache);
 	RETURN_TRUE;
 }
 /* }}} */
@@ -334,21 +333,16 @@ PHP_FUNCTION(apcu_clear_cache)
 /* {{{ proto array apc_cache_info([bool limited]) */
 PHP_FUNCTION(apcu_cache_info)
 {
-	zval info;
 	zend_bool limited = 0;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|b", &limited) == FAILURE) {
 		return;
 	}
 
-	info = apc_cache_info(apc_user_cache, limited);
-
-	if (Z_TYPE(info) != IS_ARRAY) {
+	if (!apc_cache_info(return_value, apc_user_cache, limited)) {
 		php_error_docref(NULL, E_WARNING, "No APC info available.  Perhaps APC is not enabled? Check apc.enabled in your ini file");
 		RETURN_FALSE;
 	}
-
-	RETURN_ZVAL(&info, 0, 0);
 }
 /* }}} */
 

@@ -262,7 +262,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(
 /*
  fetches information about the cache provided for userland status functions
 */
-PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited);
+PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool limited);
 
 /*
  fetches information about the key provided

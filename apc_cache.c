@@ -1686,15 +1686,14 @@ static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_slot_t* p)
 /* }}} */
 
 #if APC_MMAP
-#define apc_cache_info_set_memory_type() add_assoc_stringl(&info, "memory_type", "mmap", sizeof("mmap")-1)
+#define apc_cache_info_set_memory_type() add_assoc_stringl(info, "memory_type", "mmap", sizeof("mmap")-1)
 #else
-#define apc_cache_info_set_memory_type() add_assoc_stringl(&info, "memory_type", "IPC shared", sizeof("IPC shared")-1)
+#define apc_cache_info_set_memory_type() add_assoc_stringl(info, "memory_type", "IPC shared", sizeof("IPC shared")-1)
 #endif
 
 /* {{{ apc_cache_info */
-PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
+PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool limited)
 {
-	zval info;
 	zval list;
 	zval gc;
 	zval slots;
@@ -1702,23 +1701,22 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
 	zend_ulong i, j;
 
 	if (!cache) {
-		ZVAL_NULL(&info);
-
-		return info;
+		ZVAL_NULL(info);
+		return 0;
 	}
 
 	APC_RLOCK(cache->header);
 	php_apc_try({
-		array_init(&info);
-		add_assoc_long(&info, "num_slots", cache->nslots);
-		add_assoc_long(&info, "ttl", cache->ttl);
-		add_assoc_double(&info, "num_hits", (double)cache->header->nhits);
-		add_assoc_double(&info, "num_misses", (double)cache->header->nmisses);
-		add_assoc_double(&info, "num_inserts", (double)cache->header->ninserts);
-		add_assoc_long(&info,   "num_entries", cache->header->nentries);
-		add_assoc_double(&info, "expunges", (double)cache->header->nexpunges);
-		add_assoc_long(&info, "start_time", cache->header->stime);
-		add_assoc_double(&info, "mem_size", (double)cache->header->mem_size);
+		array_init(info);
+		add_assoc_long(info, "num_slots", cache->nslots);
+		add_assoc_long(info, "ttl", cache->ttl);
+		add_assoc_double(info, "num_hits", (double)cache->header->nhits);
+		add_assoc_double(info, "num_misses", (double)cache->header->nmisses);
+		add_assoc_double(info, "num_inserts", (double)cache->header->ninserts);
+		add_assoc_long(info,   "num_entries", cache->header->nentries);
+		add_assoc_double(info, "expunges", (double)cache->header->nexpunges);
+		add_assoc_long(info, "start_time", cache->header->stime);
+		add_assoc_double(info, "mem_size", (double)cache->header->mem_size);
 
 		apc_cache_info_set_memory_type();
 
@@ -1735,7 +1733,7 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
 					add_next_index_zval(&list, &link);
 					j++;
 				}
-				if(j != 0) {
+				if (j != 0) {
 					add_index_long(&slots, (ulong)i, j);
 				}
 			}
@@ -1748,14 +1746,13 @@ PHP_APCU_API zval apc_cache_info(apc_cache_t* cache, zend_bool limited)
 				add_next_index_zval(&gc, &link);
 			}
 
-			add_assoc_zval(&info, "cache_list", &list);
-			add_assoc_zval(&info, "deleted_list", &gc);
-			add_assoc_zval(&info, "slot_distribution", &slots);
+			add_assoc_zval(info, "cache_list", &list);
+			add_assoc_zval(info, "deleted_list", &gc);
+			add_assoc_zval(info, "slot_distribution", &slots);
 		}
-
 	}, APC_RUNLOCK(cache->header));
 
-	return info;
+	return 1;
 }
 /* }}} */
 #undef apc_cache_info_set_memory_type
