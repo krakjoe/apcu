@@ -34,30 +34,6 @@
 # endif
 #endif
 
-/* {{{ forward references */
-static apc_pool* apc_realpool_create(apc_pool_type type, apc_malloc_t, apc_free_t, apc_protect_t, apc_unprotect_t);
-/* }}} */
-
-/* {{{ apc_pool_create */
-PHP_APCU_API apc_pool* apc_pool_create(
-        apc_pool_type pool_type, apc_malloc_t allocate, apc_free_t deallocate,
-        apc_protect_t protect, apc_unprotect_t unprotect)
-{
-	return apc_realpool_create(pool_type, allocate, deallocate, protect,  unprotect);
-}
-/* }}} */
-
-/* {{{ apc_pool_destroy */
-PHP_APCU_API void apc_pool_destroy(apc_pool *pool)
-{
-	apc_free_t deallocate = pool->deallocate;
-	apc_pcleanup_t cleanup = pool->cleanup;
-
-	cleanup(pool);
-	deallocate(pool);
-}
-/* }}} */
-
 /*{{{ apc_realpool implementation */
 
 /* {{{ typedefs */
@@ -154,8 +130,8 @@ static pool_block* create_pool_block(apc_realpool *rpool,
 }
 /* }}} */
 
-/* {{{ apc_realpool_alloc */
-static void* apc_realpool_alloc(apc_pool *pool, size_t size)
+/* {{{ apc_pool_alloc */
+PHP_APCU_API void* apc_pool_alloc(apc_pool *pool, size_t size)
 {
 	apc_realpool *rpool = (apc_realpool*)pool;
 	unsigned char *p = NULL;
@@ -301,18 +277,17 @@ static APC_USED int apc_realpool_check_integrity(apc_realpool *rpool)
 }
 /* }}} */
 
-/* {{{ apc_realpool_free */
+/* {{{ apc_pool_free */
 /*
  * free does not do anything
  */
-static void apc_realpool_free(apc_pool *pool,
-							  void *p)
+PHP_APCU_API void apc_pool_free(apc_pool *pool, void *p)
 {
 }
 /* }}} */
 
-/* {{{ apc_realpool_cleanup */
-static void apc_realpool_cleanup(apc_pool *pool)
+/* {{{ apc_pool_cleanup */
+static void apc_pool_cleanup(apc_pool *pool)
 {
 	pool_block *entry;
 	pool_block *tmp;
@@ -323,7 +298,7 @@ static void apc_realpool_cleanup(apc_pool *pool)
 
 	entry = rpool->head;
 
-	while(entry->next != NULL) {
+	while (entry->next != NULL) {
 		tmp = entry->next;
 		deallocate(entry);
 		entry = tmp;
@@ -331,16 +306,26 @@ static void apc_realpool_cleanup(apc_pool *pool)
 }
 /* }}} */
 
-/* {{{ apc_realpool_create */
-static apc_pool* apc_realpool_create(
+/* {{{ apc_pool_destroy */
+PHP_APCU_API void apc_pool_destroy(apc_pool *pool)
+{
+	apc_free_t deallocate = pool->deallocate;
+
+	apc_pool_cleanup(pool);
+	deallocate(pool);
+}
+/* }}} */
+
+
+/* {{{ apc_pool_create */
+PHP_APCU_API apc_pool* apc_pool_create(
         apc_pool_type type, apc_malloc_t allocate, apc_free_t deallocate,
         apc_protect_t protect, apc_unprotect_t unprotect)
 {
-
 	size_t dsize = 0;
 	apc_realpool *rpool;
 
-	switch(type & APC_POOL_SIZE_MASK) {
+	switch (type & APC_POOL_SIZE_MASK) {
 		case APC_SMALL_POOL:
 			dsize = 512;
 			break;
@@ -370,13 +355,8 @@ static apc_pool* apc_realpool_create(
 
 	rpool->parent.size = sizeof(apc_realpool) + ALIGNWORD(dsize);
 
-	rpool->parent.palloc = apc_realpool_alloc;
-	rpool->parent.pfree  = apc_realpool_free;
-
 	rpool->parent.protect = protect;
 	rpool->parent.unprotect = unprotect;
-
-	rpool->parent.cleanup = apc_realpool_cleanup;
 
 	rpool->dsize = dsize;
 	rpool->head = NULL;
@@ -416,7 +396,7 @@ PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p, size_t n, apc_pool* pool
 {
 	void* q;
 
-	if (p != NULL && (q = pool->palloc(pool, n)) != NULL) {
+	if (p != NULL && (q = apc_pool_alloc(pool, n)) != NULL) {
 		memcpy(q, p, n);
 		return q;
 	}
@@ -426,7 +406,7 @@ PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p, size_t n, apc_pool* pool
 
 /* {{{ apc_pstrcpy */
 PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool) {
-	zend_string* p = (zend_string*) pool->palloc(pool,
+	zend_string* p = (zend_string *) apc_pool_alloc(pool,
 		ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(ZSTR_LEN(str))));
 
 	if (!p) {
@@ -454,7 +434,7 @@ PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool) {
 
 /* {{{ apc_pstrnew */
 PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_pool* pool) {
-	zend_string* p = (zend_string*) pool->palloc(pool,
+	zend_string* p = (zend_string *) apc_pool_alloc(pool,
 		ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(buf_len)));
 
 	if (!p) {

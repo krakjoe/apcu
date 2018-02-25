@@ -101,13 +101,13 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 	apc_cache_slot_t* p = NULL;
 
 	/* allocate slot */
-	if ((p = value->pool->palloc(value->pool, sizeof(apc_cache_slot_t)))) {
+	if ((p = apc_pool_alloc(value->pool, sizeof(apc_cache_slot_t)))) {
 
 		/* copy identifier */
 		zend_string *copiedKey = apc_pstrcpy(key->str, value->pool);
 
 		if (copiedKey == NULL) {
-			value->pool->pfree(value->pool, p);
+			apc_pool_free(value->pool, p);
 			return NULL;
 		}
 
@@ -1315,7 +1315,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 	apc_pool *pool = ctxt->pool;
 
 	if (ctxt->copy == APC_COPY_IN) {
-		target = (HashTable*) pool->palloc(pool, sizeof(HashTable));
+		target = (HashTable*) apc_pool_alloc(pool, sizeof(HashTable));
 	} else {
 		ALLOC_HASHTABLE(target);
 	}
@@ -1353,7 +1353,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		target->nNumOfElements = source->nNumOfElements;
 		target->nNextFreeElement = source->nNextFreeElement;
 		if (ctxt->copy == APC_COPY_IN) {
-			HT_SET_DATA_ADDR(target, pool->palloc(pool, HT_SIZE(target)));
+			HT_SET_DATA_ADDR(target, apc_pool_alloc(pool, HT_SIZE(target)));
 		} else
 			HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
 
@@ -1385,7 +1385,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		target->nTableMask = source->nTableMask;
 		target->nNextFreeElement = source->nNextFreeElement;
 		if (ctxt->copy == APC_COPY_IN) {
-			HT_SET_DATA_ADDR(target, pool->palloc(pool, HT_SIZE(target)));
+			HT_SET_DATA_ADDR(target, apc_pool_alloc(pool, HT_SIZE(target)));
 		} else
 			HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
 
@@ -1413,7 +1413,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 	/* some kind of memory allocation failure */
 	if (target) {
 		if (ctxt->copy == APC_COPY_IN) {
-			pool->pfree(pool, target);
+			apc_pool_free(pool, target);
 		} else {
 			FREE_HASHTABLE(target);
 		}
@@ -1437,7 +1437,7 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 	}
 
 	if (ctxt->copy == APC_COPY_IN) {
-		dst = pool->palloc(pool, sizeof(zend_reference));
+		dst = apc_pool_alloc(pool, sizeof(zend_reference));
 	} else {
 		dst = emalloc(sizeof(zend_reference));
 	}
@@ -1598,7 +1598,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt, apc_ca
 	apc_cache_entry_t* entry;
 	apc_pool* pool = ctxt->pool;
 
-	entry = (apc_cache_entry_t*) pool->palloc(pool, sizeof(apc_cache_entry_t));
+	entry = (apc_cache_entry_t*) apc_pool_alloc(pool, sizeof(apc_cache_entry_t));
 	if (!entry) {
 		return NULL;
 	}
@@ -1607,7 +1607,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(apc_context_t* ctxt, apc_ca
 	ctxt->key = key;
 
 	if (!apc_cache_store_zval(&entry->val, val, ctxt)) {
-		pool->pfree(pool, entry);
+		apc_pool_free(pool, entry);
 		return NULL;
 	}
 
