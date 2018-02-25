@@ -383,9 +383,9 @@ static inline zend_bool apc_cache_insert_internal(
 
 		if ((*slot = make_slot(cache, key, value, *slot, t)) != NULL) {
 			/* set value size from pool size */
-			value->mem_size = ctxt->pool->size;
+			value->mem_size = apc_pool_size(ctxt->pool);
 
-			cache->header->mem_size += ctxt->pool->size;
+			cache->header->mem_size += value->mem_size;
 			cache->header->nentries++;
 			cache->header->ninserts++;
 		} else {
