@@ -854,7 +854,7 @@ PHP_APCU_API zend_bool apc_cache_make_context(
 		apc_cache_t* cache, apc_context_t* context, apc_context_type context_type,
 		apc_pool_type pool_type, apc_copy_type copy_type, uint force_update) {
 	switch (context_type) {
-		case APC_CONTEXT_SHARE: {
+		case APC_CONTEXT_SHARE:
 			return apc_cache_make_context_ex(
 				context,
 				cache->serializer,
@@ -864,19 +864,15 @@ PHP_APCU_API zend_bool apc_cache_make_context(
 				cache->sma->unprotect,
 				pool_type, copy_type, force_update
 			);
-		} break;
+			break;
 
-		case APC_CONTEXT_NOSHARE: {
+		case APC_CONTEXT_NOSHARE:
 			return apc_cache_make_context_ex(
 				context,
 				cache->serializer,
 				apc_php_malloc, apc_php_free, NULL, NULL,
 				pool_type, copy_type, force_update
 			);
-		} break;
-
-		case APC_CONTEXT_NONE:
-			/* never used, just to make gcc warning free */
 			break;
 	}
 
