@@ -1306,9 +1306,6 @@ static zend_always_inline uint32_t apc_array_dup_elements(apc_context_t *ctxt, H
 			idx++; p++;
 			while (p != end) {
 				if (apc_array_dup_element(ctxt, source, target, target_idx, p, q, 0, with_holes)) {
-					if (source->nInternalPointer == idx) {
-						target->nInternalPointer = target_idx;
-					}
 					target_idx++; q++;
 				}
 				idx++; p++;
@@ -1371,7 +1368,6 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		if (HT_GET_DATA_ADDR(target) == NULL)
 			goto bad;
 
-		target->nInternalPointer = source->nInternalPointer;
 		HT_HASH_RESET_PACKED(target);
 
 		if (target->nNumUsed == target->nNumOfElements) {
@@ -1379,13 +1375,14 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		} else {
 			apc_array_dup_packed_elements(ctxt, source, target, 1);
 		}
-		if (target->nNumOfElements > 0 &&
-			target->nInternalPointer == HT_INVALID_IDX) {
+		if (target->nNumOfElements > 0) {
 			idx = 0;
 			while (Z_TYPE(target->arData[idx].val) == IS_UNDEF) {
 				idx++;
 			}
 			target->nInternalPointer = idx;
+		} else {
+			target->nInternalPointer = HT_INVALID_IDX;
 		}
 	} else {
 #if PHP_VERSION_ID >= 70300
@@ -1395,7 +1392,6 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 #endif
 		target->nTableMask = source->nTableMask;
 		target->nNextFreeElement = source->nNextFreeElement;
-		target->nInternalPointer = HT_INVALID_IDX;
 		if (ctxt->copy == APC_COPY_IN) {
 			HT_SET_DATA_ADDR(target, pool->palloc(pool, HT_SIZE(target)));
 		} else
@@ -1413,8 +1409,10 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		}
 		target->nNumUsed = idx;
 		target->nNumOfElements = idx;
-		if (idx > 0 && target->nInternalPointer == HT_INVALID_IDX) {
+		if (idx > 0) {
 			target->nInternalPointer = 0;
+		} else {
+			target->nInternalPointer = HT_INVALID_IDX;
 		}
 	}
 	return target;
