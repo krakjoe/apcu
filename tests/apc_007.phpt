@@ -29,7 +29,7 @@ echo "pass by ref success ". $success . "\n";
 
 ?>
 ===DONE===
---EXPECTF--
+--EXPECT--
 $foobar = 2 
 $foobar += 1 = 3
 $foobar += 10 = 13

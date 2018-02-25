@@ -28,7 +28,7 @@ var_dump($cached_values);
 
 ?>
 ===DONE===
---EXPECTF--
+--EXPECT--
 array(0) {
 }
 array(4) {

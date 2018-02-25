@@ -21,7 +21,7 @@ var_dump($bar);
 
 ?>
 ===DONE===
---EXPECTF--
+--EXPECT--
 string(11) "hello world"
 string(11) "hello world"
 string(4) "nice"

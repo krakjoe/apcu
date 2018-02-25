@@ -17,7 +17,7 @@ $t = microtime(true) - $t;
 var_dump($t < 0.1 ? true : $t);
 ?>
 ===DONE===
---EXPECTF--
+--EXPECT--
 int(1985229329)
 int(1)
 int(1000000000)

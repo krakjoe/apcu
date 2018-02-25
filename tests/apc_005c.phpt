@@ -23,7 +23,7 @@ $bar[0] = 'roh';
 var_dump($bar);
 ?>
 ===DONE===
---EXPECTF--
+--EXPECT--
 array(2) {
   [0]=>
   &object(stdClass)#1 (0) {

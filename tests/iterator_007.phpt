@@ -23,7 +23,7 @@ var_dump(
 	apcu_delete($obj)
 );
 ?>
---EXPECTF--
+--EXPECT--
 bool(false)
 bool(false)
 bool(false)
@@ -33,4 +33,3 @@ bool(false)
 bool(false)
 bool(false)
 bool(false)
-
