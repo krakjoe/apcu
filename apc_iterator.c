@@ -211,10 +211,10 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator) {
 	}
 
 	APC_RLOCK(apc_user_cache->header);
-	php_apc_try({
-		while(count <= iterator->chunk_size && iterator->slot_idx < apc_user_cache->nslots) {
+	php_apc_try {
+		while (count <= iterator->chunk_size && iterator->slot_idx < apc_user_cache->nslots) {
 			slot = &apc_user_cache->slots[iterator->slot_idx];
-			while(*slot) {
+			while (*slot) {
 				if (apc_iterator_check_expiry(apc_user_cache, slot, t)) {
 					if (apc_iterator_search_match(iterator, slot)) {
 						count++;
@@ -228,10 +228,10 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator) {
 			}
 			iterator->slot_idx++;
 		}
-	}, {
+	} php_apc_finally {
 		iterator->stack_idx = 0;
 		APC_RUNLOCK(apc_user_cache->header)
-	});
+	} php_apc_end_try();
 
 	return count;
 }
@@ -244,7 +244,7 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 	apc_iterator_item_t *item;
 
 	APC_RLOCK(apc_user_cache->header);
-	php_apc_try({
+	php_apc_try {
 		slot = &apc_user_cache->header->gc;
 		while ((*slot) && count <= iterator->slot_idx) {
 			count++;
@@ -261,11 +261,11 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 			}
 			slot = &(*slot)->next;
 		}
-	}, {
+	} php_apc_finally {
 		iterator->slot_idx += count;
 		iterator->stack_idx = 0;
 		APC_RUNLOCK(apc_user_cache->header);
-	});
+	} php_apc_end_try();
 
 	return count;
 }
@@ -277,7 +277,7 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 	int i;
 
 	APC_RLOCK(apc_user_cache->header);
-	php_apc_try({
+	php_apc_try {
 		for (i=0; i < apc_user_cache->nslots; i++) {
 			slot = &apc_user_cache->slots[i];
 			while((*slot)) {
@@ -289,10 +289,10 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 				slot = &(*slot)->next;
 			}
 		}
-	}, {
+	} php_apc_finally {
 		iterator->totals_flag = 1;
 		APC_RUNLOCK(apc_user_cache->header);
-	});
+	} php_apc_end_try();
 }
 /* }}} */
 

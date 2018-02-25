@@ -152,26 +152,28 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS); /* }}} */
 PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS);
 PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS); /* }}} */
 
-#define php_apc_try(block, end) {          \
+#define php_apc_try                        \
+{                                          \
 	JMP_BUF *zb = EG(bailout);             \
 	JMP_BUF ab;                            \
+	zend_bool _bailout = 0;                \
 	                                       \
 	EG(bailout) = &ab;                     \
-	if (SETJMP(ab) == SUCCESS) {           \
-		block                              \
+	if (SETJMP(ab) == SUCCESS) {
+
+#define php_apc_finally                    \
 	} else {                               \
-		end;                               \
-		EG(bailout) = zb;                  \
+		_bailout = 1;                      \
+	}
+
+#define php_apc_end_try()                  \
+	EG(bailout) = zb;                      \
+	if (_bailout) {                        \
 		zend_bailout();                    \
 	}                                      \
-	end;                                   \
-	EG(bailout) = zb;                      \
 }
 
-#define php_apc_try_end(early) {           \
-	EG(bailout) = zb;                      \
-	early                                  \
-}
+#define php_apc_try_finish() (EG(bailout) = zb)
 
 #endif
 
