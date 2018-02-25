@@ -71,7 +71,6 @@ struct _apc_pool {
 	size_t          used;
 
 	size_t     dsize;
-	void       *owner;
 
 	unsigned long count;
 
