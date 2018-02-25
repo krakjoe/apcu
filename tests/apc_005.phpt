@@ -1,5 +1,5 @@
 --TEST--
-APC: apcu_store/fetch with arrays of objects 
+APC: apcu_store/fetch with arrays of objects
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
@@ -20,7 +20,7 @@ var_dump($bar);
 
 ?>
 ===DONE===
---EXPECTF--
+--EXPECT--
 array(2) {
   [0]=>
   object(stdClass)#1 (0) {

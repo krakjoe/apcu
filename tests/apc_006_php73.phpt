@@ -34,7 +34,7 @@ debug_zval_dump($x);
 
 ?>
 ===DONE===
---EXPECTF--
+--EXPECT--
 array(9) refcount(2){
   [0]=>
   string(1) "a" refcount(1)

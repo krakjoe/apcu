@@ -1,5 +1,5 @@
 --TEST--
-APC: apcu_store/fetch with bools 
+APC: apcu_store/fetch with bools
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
@@ -25,7 +25,7 @@ var_dump($success); /* false */
 
 ?>
 ===DONE===
---EXPECTF--
+--EXPECT--
 bool(false)
 bool(false)
 bool(false)

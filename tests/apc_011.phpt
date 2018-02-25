@@ -18,7 +18,7 @@ var_dump(current($back));
 
 ?>
 ===DONE===
---EXPECTF--
+--EXPECT--
 string(3) "bar"
 string(3) "bar"
 ===DONE===
