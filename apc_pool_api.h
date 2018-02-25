@@ -120,10 +120,5 @@ PHP_APCU_API void* apc_pmemcpy(const void* p, size_t n, apc_pool* pool);
 PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool);
 PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_pool* pool);
 
-/*
- apc_pstrdup performs strdup using resources provided by pool
-*/
-PHP_APCU_API void* apc_pstrdup(const char* s, apc_pool* pool);
-
 #endif
 
