@@ -446,46 +446,40 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 		RETURN_FALSE;
 	}
 
-	/* keep it tidy */
-	{
-		if (APCG(serializer_name)) {
-			/* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
-			apc_cache_serializer(apc_user_cache, APCG(serializer_name));
-		}
+	if (APCG(serializer_name)) {
+		/* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
+		apc_cache_serializer(apc_user_cache, APCG(serializer_name));
+	}
 
-		if (Z_TYPE_P(key) == IS_ARRAY) {
+	if (Z_TYPE_P(key) == IS_ARRAY) {
+		zval *hentry;
+		zend_string *hkey;
+		zend_ulong hkey_idx;
+		HashTable* hash = Z_ARRVAL_P(key);
 
-			zval *hentry;
-			zend_string *hkey;
-			zend_ulong hkey_idx;
-			HashTable* hash = Z_ARRVAL_P(key);
-
-			/* note: only indicative of error */
-			array_init(return_value);
-			ZEND_HASH_FOREACH_KEY_VAL(hash, hkey_idx, hkey, hentry) {
-				if (hkey) {
-					if (!apc_cache_store(apc_user_cache, hkey, hentry, (uint32_t) ttl, exclusive)) {
-						add_assoc_long_ex(return_value, hkey->val, hkey->len, -1);  /* -1: insertion error */
-					}
-				} else {
-					add_index_long(return_value, hkey_idx, -1);  /* -1: insertion error */
-				}
-			} ZEND_HASH_FOREACH_END();
-			return;
-		} else {
-			if (Z_TYPE_P(key) == IS_STRING) {
-				if (!val) {
-					/* nothing to store */
-					RETURN_FALSE;
-				}
-				/* return true on success */
-				if(apc_cache_store(apc_user_cache, Z_STR_P(key), val, (uint32_t) ttl, exclusive)) {
-					RETURN_TRUE;
+		/* note: only indicative of error */
+		array_init(return_value);
+		ZEND_HASH_FOREACH_KEY_VAL(hash, hkey_idx, hkey, hentry) {
+			if (hkey) {
+				if (!apc_cache_store(apc_user_cache, hkey, hentry, (uint32_t) ttl, exclusive)) {
+					add_assoc_long_ex(return_value, hkey->val, hkey->len, -1);  /* -1: insertion error */
 				}
 			} else {
-				apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs.");
+				add_index_long(return_value, hkey_idx, -1);  /* -1: insertion error */
 			}
+		} ZEND_HASH_FOREACH_END();
+		return;
+	} else if (Z_TYPE_P(key) == IS_STRING) {
+		if (!val) {
+			/* nothing to store */
+			RETURN_FALSE;
 		}
+		/* return true on success */
+		if (apc_cache_store(apc_user_cache, Z_STR_P(key), val, (uint32_t) ttl, exclusive)) {
+			RETURN_TRUE;
+		}
+	} else {
+		apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs.");
 	}
 
 	/* default */
