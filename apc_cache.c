@@ -39,11 +39,6 @@
 #include "ext/standard/php_var.h"
 #include "zend_smart_str.h"
 
-typedef void* (*ht_copy_fun_t)(void*, void*, apc_context_t*);
-typedef int (*ht_check_copy_fun_t)(Bucket*, va_list);
-
-#define CHECK(p) { if ((p) == NULL) return NULL; }
-
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
 
 /* {{{ make_prime */
