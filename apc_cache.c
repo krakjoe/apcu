@@ -406,29 +406,30 @@ static inline zend_bool apc_cache_store_internal(apc_cache_t *cache, zend_string
 	t = apc_time();
 
 	/* initialize a context suitable for making an insert */
-	if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN)) {
+	if (!apc_cache_make_copy_in_context(cache, &ctxt, APC_SMALL_POOL)) {
+		return 0;
+	}
 
-		/* initialize the key for insertion */
-		if (apc_cache_make_key(&key, strkey)) {
+	/* initialize the key for insertion */
+	if (apc_cache_make_key(&key, strkey)) {
 
-			/* run cache defense */
-			if (!apc_cache_defense(cache, &key)) {
+		/* run cache defense */
+		if (!apc_cache_defense(cache, &key)) {
 
-				/* initialize the entry for insertion */
-				if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl))) {
+			/* initialize the entry for insertion */
+			if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl))) {
 
-					/* execute an insertion */
-					if (apc_cache_insert_internal(cache, &key, entry, &ctxt, t, exclusive)) {
-						ret = 1;
-					}
+				/* execute an insertion */
+				if (apc_cache_insert_internal(cache, &key, entry, &ctxt, t, exclusive)) {
+					ret = 1;
 				}
 			}
 		}
+	}
 
-		/* in any case of failure the context should be destroyed */
-		if (!ret) {
-			apc_cache_destroy_context(&ctxt);
-		}
+	/* in any case of failure the context should be destroyed */
+	if (!ret) {
+		apc_cache_destroy_context(&ctxt);
 	}
 	return ret;
 }
@@ -499,22 +500,21 @@ static inline zend_bool apc_cache_fetch_internal(apc_cache_t* cache, zend_string
 	apc_context_t ctxt = {0, };
 	zval *rv;
 
-	/* create unpool context */
-	if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT)) {
-
-		/* copy to destination */
-		rv = apc_cache_fetch_zval(&ctxt, *dst, &entry->val);
-
-		/* release entry */
-		apc_cache_release(cache, entry);
-
-		/* destroy context */
-		apc_cache_destroy_context(&ctxt );
-
-		return rv != NULL;
+	/* create copy-out context */
+	if (!apc_cache_make_copy_out_context(cache, &ctxt)) {
+		return 0;
 	}
 
-	return 0;
+	/* copy to destination */
+	rv = apc_cache_fetch_zval(&ctxt, *dst, &entry->val);
+
+	/* release entry */
+	apc_cache_release(cache, entry);
+
+	/* destroy context */
+	apc_cache_destroy_context(&ctxt);
+
+	return rv != NULL;
 }
 
 /* {{{ apc_cache_store */
@@ -528,29 +528,30 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, zend_string *strkey, 
 	t = apc_time();
 
 	/* initialize a context suitable for making an insert */
-	if (apc_cache_make_context(cache, &ctxt, APC_CONTEXT_SHARE, APC_SMALL_POOL, APC_COPY_IN)) {
+	if (!apc_cache_make_copy_in_context(cache, &ctxt, APC_SMALL_POOL)) {
+		return 0;
+	}
 
-		/* initialize the key for insertion */
-		if (apc_cache_make_key(&key, strkey)) {
+	/* initialize the key for insertion */
+	if (apc_cache_make_key(&key, strkey)) {
 
-			/* run cache defense */
-			if (!apc_cache_defense(cache, &key)) {
+		/* run cache defense */
+		if (!apc_cache_defense(cache, &key)) {
 
-				/* initialize the entry for insertion */
-				if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl))) {
+			/* initialize the entry for insertion */
+			if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl))) {
 
-					/* execute an insertion */
-					if (apc_cache_insert(cache, &key, entry, &ctxt, t, exclusive)) {
-						ret = 1;
-					}
+				/* execute an insertion */
+				if (apc_cache_insert(cache, &key, entry, &ctxt, t, exclusive)) {
+					ret = 1;
 				}
 			}
 		}
+	}
 
-		/* in any case of failure the context should be destroyed */
-		if (!ret) {
-			apc_cache_destroy_context(&ctxt);
-		}
+	/* in any case of failure the context should be destroyed */
+	if (!ret) {
+		apc_cache_destroy_context(&ctxt);
 	}
 
 	return ret;
@@ -847,42 +848,11 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 }
 /* }}} */
 
-/* {{{ apc_cache_make_context */
-PHP_APCU_API zend_bool apc_cache_make_context(
-		apc_cache_t* cache, apc_context_t* context, apc_context_type context_type,
-		apc_pool_type pool_type, apc_copy_type copy_type) {
-	switch (context_type) {
-		case APC_CONTEXT_SHARE:
-			return apc_cache_make_context_ex(
-				context,
-				cache->serializer,
-				(apc_malloc_t) cache->sma->smalloc,
-				cache->sma->sfree,
-				cache->sma->protect,
-				cache->sma->unprotect,
-				pool_type, copy_type
-			);
-			break;
-
-		case APC_CONTEXT_NOSHARE:
-			return apc_cache_make_context_ex(
-				context,
-				cache->serializer,
-				apc_php_malloc, apc_php_free, NULL, NULL,
-				pool_type, copy_type
-			);
-			break;
-	}
-
-	return 0;
-} /* }}} */
-
-/* {{{ apc_cache_make_context_ex */
-PHP_APCU_API zend_bool apc_cache_make_context_ex(
+static zend_bool apc_cache_make_copy_in_context_ex(
 		apc_context_t* context, apc_serializer_t* serializer,
 		apc_malloc_t _malloc, apc_free_t _free,
 		apc_protect_t _protect, apc_unprotect_t _unprotect,
-		apc_pool_type pool_type, apc_copy_type copy_type) {
+		apc_pool_type pool_type) {
 	/* attempt to create the pool */
 	context->pool = apc_pool_create(
 		pool_type, _malloc, _free, _protect, _unprotect
@@ -895,13 +865,43 @@ PHP_APCU_API zend_bool apc_cache_make_context_ex(
 
 	/* set context information */
 	context->serializer = serializer;
-	context->copy = copy_type;
+	context->copy = APC_COPY_IN;
 
 	/* set this to avoid memory errors */
 	memset(&context->copied, 0, sizeof(HashTable));
 
 	return 1;
-} /* }}} */
+}
+
+PHP_APCU_API zend_bool apc_cache_make_copy_in_context(
+		apc_cache_t* cache, apc_context_t* context, apc_pool_type pool_type) {
+	return apc_cache_make_copy_in_context_ex(
+		context,
+		cache->serializer,
+		(apc_malloc_t) cache->sma->smalloc,
+		cache->sma->sfree,
+		cache->sma->protect,
+		cache->sma->unprotect,
+		pool_type
+	);
+}
+
+static int apc_cache_make_copy_out_context_ex(
+		apc_context_t* context, apc_serializer_t* serializer) {
+	/* set context information */
+	context->pool = NULL;
+	context->serializer = serializer;
+	context->copy = APC_COPY_OUT;
+
+	/* set this to avoid memory errors */
+	memset(&context->copied, 0, sizeof(HashTable));
+	return 1;
+}
+
+PHP_APCU_API zend_bool apc_cache_make_copy_out_context(
+		apc_cache_t* cache, apc_context_t* context) {
+	return apc_cache_make_copy_out_context_ex(context, cache->serializer);
+}
 
 /* {{{ apc_context_destroy */
 PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context) {

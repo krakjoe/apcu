@@ -94,14 +94,6 @@ typedef enum _apc_copy_type {
 	APC_COPY_OUT,
 } apc_copy_type; /* }}} */
 
-/* {{{ enum definition: apc_context_type
-	APC_CONTEXT_SHARE should be used to create contexts using shared memory
-	APC_CONTEXT_NOSHARE should be used to create contexts using standard allocators */
-typedef enum _apc_context_type {
-	APC_CONTEXT_SHARE,
-	APC_CONTEXT_NOSHARE
-} apc_context_type; /* }}} */
-
 /* {{{ struct definition: apc_context_t */
 typedef struct _apc_context_t {
 	apc_pool*          pool;            /* pool of memory for context */
