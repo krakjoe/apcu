@@ -384,13 +384,6 @@ PHP_APCU_API void apc_pool_init()
 }
 /* }}} */
 
-/* {{{ apc_pstrdup */
-PHP_APCU_API void* APC_ALLOC apc_pstrdup(const char* s, apc_pool* pool)
-{
-	return s != NULL ? apc_pmemcpy(s, (strlen(s) + 1), pool) : NULL;
-}
-/* }}} */
-
 /* {{{ apc_pmemcpy */
 PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p, size_t n, apc_pool* pool)
 {
