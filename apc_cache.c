@@ -45,6 +45,7 @@
 #endif
 
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
+static void apc_cache_default_expunge_internal(apc_cache_t* cache, size_t size);
 
 /* {{{ make_prime */
 static int const primes[] = {
@@ -321,6 +322,8 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 static inline zend_bool apc_cache_insert_internal(
 		apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* value,
 		apc_context_t* ctxt, time_t t, zend_bool exclusive) {
+	zend_bool expunged = 0;
+
 	/* at least */
 	if (!value) {
 		return 0;
@@ -334,9 +337,10 @@ static inline zend_bool apc_cache_insert_internal(
 	/* process deleted list  */
 	apc_cache_gc(cache);
 
+retry:
 	/* make the insertion */
 	{
-		apc_cache_slot_t** slot;
+		apc_cache_slot_t **slot, *new_slot;
 
 		/*
 		* select appropriate slot ...
@@ -362,7 +366,7 @@ static inline zend_bool apc_cache_insert_internal(
 				}
 				apc_cache_remove_slot(cache, slot);
 				break;
-			} else
+			}
 
 			/*
 			 * This is a bit nasty.  The idea here is to do runtime cleanup of the linked list of
@@ -381,13 +385,28 @@ static inline zend_bool apc_cache_insert_internal(
 			slot = &(*slot)->next;
 		}
 
-		if ((*slot = make_slot(cache, key, value, *slot, t)) != NULL) {
-			/* set value size from pool size */
-			value->mem_size = ctxt->pool->size;
+		/* Set cache to busy to prevent expunge from running if SMA allocation fails.
+		 * This prevents a) a double write-lock acquisition leading to dead-lock if
+		 * rwlocks are used, and b) prevents deletion of the slot chain we're inserting
+		 * into. */
+		cache->header->state |= APC_CACHE_ST_BUSY;
+		new_slot = make_slot(cache, key, value, *slot, t);
+		cache->header->state &= ~APC_CACHE_ST_BUSY;
 
+		if (new_slot) {
+			*slot = new_slot;
+			value->mem_size = ctxt->pool->size;
 			cache->header->mem_size += ctxt->pool->size;
 			cache->header->nentries++;
 			cache->header->ninserts++;
+		} else if (!expunged) {
+			/* Retry after expunging cache. We don't know the actual size of the allocation
+			 * that failed, so we use a rather conservative overestimation of the allocation
+			 * size. */
+			size_t est_size = 1024 + ALIGNSIZE(1024 + ZSTR_LEN(key->str), 8192);
+			expunged = 1;
+			apc_cache_default_expunge_internal(cache, est_size);
+			goto retry;
 		} else {
 			return 0;
 		}
@@ -761,22 +780,12 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 }
 /* }}} */
 
-/* {{{ apc_cache_default_expunge */
-PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
+/* {{{ apc_cache_default_expunge_internal */
+static void apc_cache_default_expunge_internal(apc_cache_t* cache, size_t size)
 {
-	time_t t;
+	time_t t = apc_time();
 	size_t suitable = 0L;
 	size_t available = 0L;
-
-	t = apc_time();
-
-	/* check there is a cache, and it is not busy */
-	if(!cache || apc_cache_busy(cache)) {
-		return;
-	}
-
-	/* get the lock for header */
-	APC_LOCK(cache->header);
 
 	/* update state in header */
 	cache->header->state |= APC_CACHE_ST_BUSY;
@@ -791,8 +800,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	available = cache->sma->get_avail_mem();
 
 	/* perform expunge processing */
-	if(!cache->ttl) {
-
+	if (!cache->ttl) {
 		/* check it is necessary to expunge */
 		if (available < suitable) {
 			apc_cache_real_expunge(cache);
@@ -841,8 +849,19 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 
 	/* we are done */
 	cache->header->state &= ~APC_CACHE_ST_BUSY;
+}
+/* }}} */
 
-	/* unlock header */
+/* {{{ apc_cache_default_expunge */
+PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
+{
+	/* check there is a cache, and it is not busy */
+	if (!cache || apc_cache_busy(cache)) {
+		return;
+	}
+
+	APC_LOCK(cache->header);
+	apc_cache_default_expunge_internal(cache, size);
 	APC_UNLOCK(cache->header);
 }
 /* }}} */
