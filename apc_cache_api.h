@@ -153,25 +153,19 @@ PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache);
 PHP_APCU_API void apc_cache_clear(apc_cache_t* cache);
 
 /*
-* apc_cache_make_context initializes a context with an appropriate pool and options provided
+* apc_cache_make_copy_in/out_context initializes a context for storing values
+* into the cache or retrieving them out of the cache.
 *
-* Some of the APC API requires a context in which to operate
+* Some of the APC API requires a context in which to operate.
 *
 * The type of context required depends on the operation being performed, for example
-* an insert should happen in a shared context, a fetch should happen in a nonshared context
+* an insert should happen in a copy-in context, a fetch should happen in a copy-out context.
 */
-PHP_APCU_API zend_bool apc_cache_make_context(
-        apc_cache_t* cache, apc_context_t* context, apc_context_type context_type,
-        apc_pool_type pool_type, apc_copy_type copy_type);
+PHP_APCU_API zend_bool apc_cache_make_copy_in_context(
+		apc_cache_t* cache, apc_context_t* context, apc_pool_type pool_type);
+PHP_APCU_API zend_bool apc_cache_make_copy_out_context(
+		apc_cache_t* cache, apc_context_t* context);
 
-/*
-* apc_cache_make_context_ex is an advanced/external version of make_context
-*/
-PHP_APCU_API zend_bool apc_cache_make_context_ex(
-        apc_context_t* context, apc_serializer_t* serializer,
-        apc_malloc_t _malloc, apc_free_t _free,
-        apc_protect_t _protect, apc_unprotect_t _unprotect,
-        apc_pool_type pool_type, apc_copy_type copy_type);
 /*
 * apc_context_destroy should be called when a context is finished being used
 */

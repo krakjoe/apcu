@@ -52,12 +52,11 @@ static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc
 	}
 
 	if (APC_ITER_VALUE & iterator->format) {
-		apc_cache_make_context(
-			apc_user_cache, &ctxt, APC_CONTEXT_NOSHARE, APC_UNPOOL, APC_COPY_OUT);
+		apc_cache_make_copy_out_context(apc_user_cache, &ctxt);
 		ZVAL_UNDEF(&zvalue);
 		apc_cache_fetch_zval(&ctxt, &zvalue, &slot->value->val);
 		add_assoc_zval(&item->value, "value", &zvalue);
-		apc_pool_destroy(ctxt.pool);
+		apc_cache_destroy_context(&ctxt);
 	}
 
 	if (APC_ITER_NUM_HITS & iterator->format) {
