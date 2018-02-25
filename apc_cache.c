@@ -39,6 +39,11 @@
 #include "ext/standard/php_var.h"
 #include "zend_smart_str.h"
 
+#if PHP_VERSION_ID < 70300
+# define GC_SET_REFCOUNT(ref, rc) (GC_REFCOUNT(ref) = (rc))
+# define GC_ADDREF(ref) GC_REFCOUNT(ref)++
+#endif
+
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
 
 /* {{{ make_prime */
@@ -1329,11 +1334,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 	if (target == NULL)
 		goto bad;
 
-#if PHP_VERSION_ID >= 70300
 	GC_SET_REFCOUNT(target, 1);
-#else
-	GC_REFCOUNT(target) = 1;
-#endif
 	GC_TYPE_INFO(target) = IS_ARRAY;
 	zend_hash_index_update_ptr(&ctxt->copied, (uintptr_t) source, target);
 
@@ -1440,11 +1441,7 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 	if (ctxt->copied.nTableSize) {
 		zend_reference *rc = zend_hash_index_find_ptr(&ctxt->copied, (uintptr_t) src);
 		if (rc) {
-#if PHP_VERSION_ID >= 70300
 			GC_ADDREF(rc);
-#else
-			GC_REFCOUNT(rc)++;
-#endif
 			return rc;
 		}
 	}
@@ -1458,11 +1455,7 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 	if (dst == NULL)
 		return NULL;
 
-#if PHP_VERSION_ID >= 70300
 	GC_SET_REFCOUNT(dst, 1);
-#else
-	GC_REFCOUNT(dst) = 1;
-#endif
 	GC_TYPE_INFO(dst) = IS_REFERENCE;
 
 	if (my_copy_zval(&dst->val, &src->val, ctxt) == NULL) {
