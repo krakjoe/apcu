@@ -34,7 +34,26 @@
 # endif
 #endif
 
-/* {{{ structure definition: apc_pool */
+/*
+   parts in ? are optional and turned on for fun, memory loss,
+   and for something else that I forgot about ... ah, debugging
+
+				 |--------> data[]         |<-- non word boundary (too)
+   +-------------+--------------+-----------+-------------+-------------->>>
+   | pool_block  | ?sizeinfo<1> | block<1>  | ?redzone<1> | ?sizeinfo<2>
+   |             |  (size_t)    |           | padded left |
+   +-------------+--------------+-----------+-------------+-------------->>>
+ */
+typedef struct _pool_block
+{
+	size_t              avail;
+	size_t              capacity;
+	unsigned char       *mark;
+	struct _pool_block  *next;
+	unsigned             :0; /* this should align to word */
+	/* data comes here */
+} pool_block;
+
 struct _apc_pool {
 	/* denotes the size and debug flags for a pool */
 	apc_pool_type   type;
@@ -51,40 +70,6 @@ struct _apc_pool {
 	/* remaining */
 	size_t          used;
 
-	/* apc_realpool and apc_unpool add more here */
-}; /* }}} */
-
-
-/*{{{ apc_realpool implementation */
-
-/* {{{ typedefs */
-typedef struct _pool_block
-{
-	size_t              avail;
-	size_t              capacity;
-	unsigned char       *mark;
-	struct _pool_block  *next;
-	unsigned             :0; /* this should align to word */
-	/* data comes here */
-}pool_block;
-
-/*
-   parts in ? are optional and turned on for fun, memory loss,
-   and for something else that I forgot about ... ah, debugging
-
-				 |--------> data[]         |<-- non word boundary (too)
-   +-------------+--------------+-----------+-------------+-------------->>>
-   | pool_block  | ?sizeinfo<1> | block<1>  | ?redzone<1> | ?sizeinfo<2>
-   |             |  (size_t)    |           | padded left |
-   +-------------+--------------+-----------+-------------+-------------->>>
- */
-
-typedef struct _apc_realpool apc_realpool;
-
-struct _apc_realpool
-{
-	struct _apc_pool parent;
-
 	size_t     dsize;
 	void       *owner;
 
@@ -93,8 +78,6 @@ struct _apc_realpool
 	pool_block *head;
 	pool_block first;
 };
-
-/* }}} */
 
 /* {{{ redzone code */
 static const unsigned char decaff[] =  {
@@ -128,10 +111,10 @@ static const unsigned char decaff[] =  {
 } while(0)
 
 /* {{{ create_pool_block */
-static pool_block* create_pool_block(apc_realpool *rpool,
+static pool_block* create_pool_block(apc_pool *pool,
 									 size_t size)
 {
-	apc_malloc_t allocate = rpool->parent.allocate;
+	apc_malloc_t allocate = pool->allocate;
 
 	size_t realsize = sizeof(pool_block) + ALIGNWORD(size);
 
@@ -141,11 +124,10 @@ static pool_block* create_pool_block(apc_realpool *rpool,
 		return NULL;
 	}
 
-	INIT_POOL_BLOCK(rpool, entry, size);
+	INIT_POOL_BLOCK(pool, entry, size);
 
-	rpool->parent.size += realsize;
-
-	rpool->count++;
+	pool->size += realsize;
+	pool->count++;
 
 	return entry;
 }
@@ -154,7 +136,6 @@ static pool_block* create_pool_block(apc_realpool *rpool,
 /* {{{ apc_pool_alloc */
 PHP_APCU_API void* apc_pool_alloc(apc_pool *pool, size_t size)
 {
-	apc_realpool *rpool = (apc_realpool*)pool;
 	unsigned char *p = NULL;
 	size_t realsize = ALIGNWORD(size);
 	size_t poolsize;
@@ -177,22 +158,22 @@ PHP_APCU_API void* apc_pool_alloc(apc_pool *pool, size_t size)
 
 	/* minimize look-back, a value of 8 seems to give similar fill-ratios (+2%)
 	 * as looping through the entire list. And much faster in allocations. */
-	for(entry = rpool->head, i = 0; entry != NULL && (i < 8); entry = entry->next, i++) {
+	for(entry = pool->head, i = 0; entry != NULL && (i < 8); entry = entry->next, i++) {
 		if(entry->avail >= realsize) {
 			goto found;
 		}
 	}
 
 	/* upgrade the pool type to reduce overhead */
-	if(rpool->count > 4 && rpool->dsize < 4096) {
-		rpool->dsize = 4096;
-	} else if(rpool->count > 8 && rpool->dsize < 8192) {
-		rpool->dsize = 8192;
+	if(pool->count > 4 && pool->dsize < 4096) {
+		pool->dsize = 4096;
+	} else if(pool->count > 8 && pool->dsize < 8192) {
+		pool->dsize = 8192;
 	}
 
-	poolsize = ALIGNSIZE(realsize, rpool->dsize);
+	poolsize = ALIGNSIZE(realsize, pool->dsize);
 
-	entry = create_pool_block(rpool, poolsize);
+	entry = create_pool_block(pool, poolsize);
 
 	if(!entry) {
 		return NULL;
@@ -232,7 +213,7 @@ found:
 }
 /* }}} */
 
-/* {{{ apc_realpool_check_integrity */
+/* {{{ apc_pool_check_integrity */
 /*
  * Checking integrity at runtime, does an
  * overwrite check only when the sizeinfo
@@ -242,9 +223,8 @@ found:
  * is accessible from gdb, eventhough it is never
  * used in code in non-debug builds.
  */
-static APC_USED int apc_realpool_check_integrity(apc_realpool *rpool)
+static APC_USED int apc_pool_check_integrity(apc_pool *pool)
 {
-	apc_pool *pool = &(rpool->parent);
 	pool_block *entry;
 	size_t *sizeinfo = NULL;
 	unsigned char *start;
@@ -252,7 +232,7 @@ static APC_USED int apc_realpool_check_integrity(apc_realpool *rpool)
 	unsigned char   *redzone;
 	size_t redsize;
 
-	for(entry = rpool->head; entry != NULL; entry = entry->next) {
+	for(entry = pool->head; entry != NULL; entry = entry->next) {
 		start = (unsigned char *)entry + ALIGNWORD(sizeof(pool_block));
 		if((entry->mark - start) != (entry->capacity - entry->avail)) {
 			return 0;
@@ -265,7 +245,7 @@ static APC_USED int apc_realpool_check_integrity(apc_realpool *rpool)
 		return 1;
 	}
 
-	for(entry = rpool->head; entry != NULL; entry = entry->next) {
+	for(entry = pool->head; entry != NULL; entry = entry->next) {
 		start = (unsigned char *)entry + ALIGNWORD(sizeof(pool_block));
 
 		while(start < entry->mark) {
@@ -312,13 +292,11 @@ static void apc_pool_cleanup(apc_pool *pool)
 {
 	pool_block *entry;
 	pool_block *tmp;
-	apc_realpool *rpool = (apc_realpool*)pool;
 	apc_free_t deallocate = pool->deallocate;
 
-	assert(apc_realpool_check_integrity(rpool)!=0);
+	assert(apc_pool_check_integrity(pool)!=0);
 
-	entry = rpool->head;
-
+	entry = pool->head;
 	while (entry->next != NULL) {
 		tmp = entry->next;
 		deallocate(entry);
@@ -344,7 +322,7 @@ PHP_APCU_API apc_pool* apc_pool_create(
         apc_protect_t protect, apc_unprotect_t unprotect)
 {
 	size_t dsize = 0;
-	apc_realpool *rpool;
+	apc_pool *pool;
 
 	switch (type & APC_POOL_SIZE_MASK) {
 		case APC_SMALL_POOL:
@@ -363,29 +341,29 @@ PHP_APCU_API apc_pool* apc_pool_create(
 			return NULL;
 	}
 
-	rpool = (apc_realpool*)allocate((sizeof(apc_realpool) + ALIGNWORD(dsize)));
+	pool = allocate((sizeof(apc_pool) + ALIGNWORD(dsize)));
 
-	if(!rpool) {
+	if (!pool) {
 		return NULL;
 	}
 
-	rpool->parent.type = type;
+	pool->type = type;
 
-	rpool->parent.allocate = allocate;
-	rpool->parent.deallocate = deallocate;
+	pool->allocate = allocate;
+	pool->deallocate = deallocate;
 
-	rpool->parent.size = sizeof(apc_realpool) + ALIGNWORD(dsize);
+	pool->size = sizeof(apc_pool) + ALIGNWORD(dsize);
 
-	rpool->parent.protect = protect;
-	rpool->parent.unprotect = unprotect;
+	pool->protect = protect;
+	pool->unprotect = unprotect;
 
-	rpool->dsize = dsize;
-	rpool->head = NULL;
-	rpool->count = 0;
+	pool->dsize = dsize;
+	pool->head = NULL;
+	pool->count = 0;
 
-	INIT_POOL_BLOCK(rpool, &(rpool->first), dsize);
+	INIT_POOL_BLOCK(pool, &(pool->first), dsize);
 
-	return &(rpool->parent);
+	return pool;
 }
 /* }}} */
 
