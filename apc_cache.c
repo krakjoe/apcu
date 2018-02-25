@@ -1514,9 +1514,6 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 			return NULL;
 		break;
 
-#ifdef IS_CONSTANT
-	case IS_CONSTANT:
-#endif
 	case IS_STRING:
 		if (ctxt->copy == APC_COPY_OUT) {
 			ZVAL_STR(dst, zend_string_dup(Z_STR_P(src), 0));
