@@ -1683,12 +1683,6 @@ static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_slot_t* p)
 }
 /* }}} */
 
-#if APC_MMAP
-#define apc_cache_info_set_memory_type() add_assoc_stringl(info, "memory_type", "mmap", sizeof("mmap")-1)
-#else
-#define apc_cache_info_set_memory_type() add_assoc_stringl(info, "memory_type", "IPC shared", sizeof("IPC shared")-1)
-#endif
-
 /* {{{ apc_cache_info */
 PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool limited)
 {
@@ -1716,7 +1710,11 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 		add_assoc_long(info, "start_time", cache->header->stime);
 		add_assoc_double(info, "mem_size", (double)cache->header->mem_size);
 
-		apc_cache_info_set_memory_type();
+#if APC_MMAP
+		add_assoc_stringl(info, "memory_type", "mmap", sizeof("mmap")-1);
+#else
+		add_assoc_stringl(info, "memory_type", "IPC shared", sizeof("IPC shared")-1);
+#endif
 
 		if (!limited) {
 			/* For each hashtable slot */
@@ -1755,7 +1753,6 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 	return 1;
 }
 /* }}} */
-#undef apc_cache_info_set_memory_type
 
 /*
  fetches information about the key provided
