@@ -134,8 +134,7 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 static void free_slot(apc_cache_slot_t* slot)
 {
 	/* destroy slot pool */
-	apc_pool_destroy(
-		slot->value->pool);
+	apc_pool_destroy(slot->value->pool);
 }
 /* }}} */
 
@@ -208,8 +207,7 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache)
 				*slot = dead->next;
 
 				/* free slot */
-				free_slot(
-					dead);
+				free_slot(dead);
 
 				/* next */
 				continue;
@@ -513,7 +511,7 @@ static inline zend_bool apc_cache_fetch_internal(apc_cache_t* cache, zend_string
 		/* destroy context */
 		apc_cache_destroy_context(&ctxt );
 
-		return (rv != NULL) ? 1 : 0;
+		return rv != NULL;
 	}
 
 	return 0;
@@ -938,37 +936,31 @@ PHP_APCU_API zend_bool apc_cache_insert(
 /* {{{ apc_cache_find */
 PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *key, time_t t)
 {
-	apc_cache_entry_t *entry = NULL;
-
 	/* check we are able to deal with the request */
-	if(!cache || apc_cache_busy(cache)) {
-		return entry;
+	if (!cache || apc_cache_busy(cache)) {
+		return NULL;
 	}
 
-	entry = apc_cache_find_internal(cache, key, t, 1);
-
-	return entry;
+	return apc_cache_find_internal(cache, key, t, 1);
 }
 /* }}} */
 
 /* {{{ apc_cache_fetch */
 PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval **dst)
 {
-	apc_cache_entry_t *entry = NULL;
-	zend_bool ret = 0;
+	apc_cache_entry_t *entry;
 
 	/* check we are able to deal with the request */
-	if(!cache || apc_cache_busy(cache)) {
+	if (!cache || apc_cache_busy(cache)) {
 		return 0;
 	}
 
 	entry = apc_cache_find_internal(cache, key, t, 1);
-
-	if (entry) {
-		ret = apc_cache_fetch_internal(cache, key, entry, t, dst);
+	if (!entry) {
+		return 0;
 	}
 
-	return ret;
+	return apc_cache_fetch_internal(cache, key, entry, t, dst);
 } /* }}} */
 
 /* {{{ apc_cache_exists */
@@ -1873,7 +1865,9 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 				apc_cache_store_internal(
 					cache, Z_STR_P(key), return_value, (uint32_t) ttl, 1);
 			}
-		} else apc_cache_fetch_internal(cache, Z_STR_P(key), entry, now, &return_value);
+		} else {
+			apc_cache_fetch_internal(cache, Z_STR_P(key), entry, now, &return_value);
+		}
 	} php_apc_finally {
 		apc_cache_entry_try_end();
 	} php_apc_end_try();
