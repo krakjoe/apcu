@@ -35,7 +35,6 @@
 #endif
 
 /* {{{ forward references */
-static apc_pool* apc_unpool_create(apc_pool_type type, apc_malloc_t, apc_free_t, apc_protect_t, apc_unprotect_t);
 static apc_pool* apc_realpool_create(apc_pool_type type, apc_malloc_t, apc_free_t, apc_protect_t, apc_unprotect_t);
 /* }}} */
 
@@ -44,10 +43,6 @@ PHP_APCU_API apc_pool* apc_pool_create(
         apc_pool_type pool_type, apc_malloc_t allocate, apc_free_t deallocate,
         apc_protect_t protect, apc_unprotect_t unprotect)
 {
-	if(pool_type == APC_UNPOOL) {
-		return apc_unpool_create(pool_type, allocate, deallocate, protect, unprotect);
-	}
-
 	return apc_realpool_create(pool_type, allocate, deallocate, protect,  unprotect);
 }
 /* }}} */
@@ -60,69 +55,6 @@ PHP_APCU_API void apc_pool_destroy(apc_pool *pool)
 
 	cleanup(pool);
 	deallocate(pool);
-}
-/* }}} */
-
-/* {{{ apc_unpool implementation */
-
-typedef struct _apc_unpool apc_unpool;
-
-struct _apc_unpool {
-	apc_pool parent;
-	/* apc_unpool is a lie! */
-};
-
-static void* apc_unpool_alloc(apc_pool* pool, size_t size)
-{
-	apc_unpool *upool = (apc_unpool*)pool;
-
-	apc_malloc_t allocate = upool->parent.allocate;
-
-	upool->parent.size += size;
-	upool->parent.used += size;
-
-	return allocate(size);
-}
-
-static void apc_unpool_free(apc_pool* pool, void *ptr)
-{
-	apc_unpool *upool = (apc_unpool*) pool;
-
-	apc_free_t deallocate = upool->parent.deallocate;
-
-	deallocate(ptr);
-}
-
-static void apc_unpool_cleanup(apc_pool* pool)
-{
-}
-
-static apc_pool* apc_unpool_create(
-        apc_pool_type type, apc_malloc_t allocate, apc_free_t deallocate,
-        apc_protect_t protect, apc_unprotect_t unprotect)
-{
-	apc_unpool* upool = allocate(sizeof(apc_unpool));
-
-	if (!upool) {
-		return NULL;
-	}
-
-	upool->parent.type = type;
-	upool->parent.allocate = allocate;
-	upool->parent.deallocate = deallocate;
-
-	upool->parent.protect = protect;
-	upool->parent.unprotect = unprotect;
-
-	upool->parent.palloc = apc_unpool_alloc;
-	upool->parent.pfree  = apc_unpool_free;
-
-	upool->parent.cleanup = apc_unpool_cleanup;
-
-	upool->parent.used = 0;
-	upool->parent.size = 0;
-
-	return &(upool->parent);
 }
 /* }}} */
 
