@@ -52,8 +52,6 @@
 #define APC_ITER_NONE       0
 #define APC_ITER_ALL        (0xffffffffL)
 
-typedef void* (*apc_iterator_item_cb_t)(apc_cache_slot_t **slot);
-
 /* {{{ apc_iterator_t */
 typedef struct _apc_iterator_t {
 	short int initialized;   /* sanity check in case __construct failed */
