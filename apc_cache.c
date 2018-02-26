@@ -141,8 +141,8 @@ static void free_slot(apc_cache_slot_t* slot)
  Note: These calculations can and should be done outside of a lock */
 static void apc_cache_hash_slot(
 		apc_cache_t* cache, zend_string *key, zend_ulong* hash, zend_ulong* slot) {
-	(*hash) = ZSTR_HASH(key);
-	(*slot) = (*hash) % (cache->nslots);
+	*hash = ZSTR_HASH(key);
+	*slot = *hash % cache->nslots;
 } /* }}} */
 
 /* {{{ apc_cache_remove_slot  */
@@ -333,17 +333,22 @@ static inline zend_bool apc_cache_insert_internal(
 	/* make the insertion */
 	{
 		apc_cache_slot_t** slot;
+		zend_ulong h, s;
+
+		/* calculate hash and slot */
+		apc_cache_hash_slot(cache, key->str, &h, &s);
 
 		/*
 		* select appropriate slot ...
 		*/
-		slot = &cache->slots[ZSTR_HASH(key->str) % cache->nslots];
+		slot = &cache->slots[s];
 
 		while (*slot) {
 
 			/* check for a match by hash and string */
-			if ((ZSTR_HASH((*slot)->key.str) == ZSTR_HASH(key->str)) &&
-				memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key->str), ZSTR_LEN(key->str)) == SUCCESS) {
+			if ((ZSTR_HASH((*slot)->key.str) == h) &&
+				ZSTR_LEN((*slot)->key.str) == ZSTR_LEN(key->str) &&
+				memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key->str), ZSTR_LEN(key->str)) == 0) {
 
 				/*
 				 * At this point we have found the user cache entry.  If we are doing
@@ -451,8 +456,9 @@ static inline apc_cache_entry_t* apc_cache_find_internal(apc_cache_t *cache, zen
 
 	while (*slot) {
 		/* check for a matching key by has and identifier */
-		if ((h == ZSTR_HASH((*slot)->key.str)) &&
-			memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
+		if (h == ZSTR_HASH((*slot)->key.str) &&
+			ZSTR_LEN((*slot)->key.str) == ZSTR_LEN(key) &&
+			memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
 
 			/* Check to make sure this entry isn't expired by a hard TTL */
 			if((*slot)->value->ttl && (time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
@@ -993,8 +999,9 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, zend_string
 
 		while (*slot) {
 			/* check for match by hash and identifier */
-			if ((h == ZSTR_HASH((*slot)->key.str)) &&
-				memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
+			if (h == ZSTR_HASH((*slot)->key.str) &&
+				ZSTR_LEN((*slot)->key.str) == ZSTR_LEN(key) &&
+				memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
 
 				/* Check to make sure this entry isn't expired by a hard TTL */
 				if((*slot)->value->ttl && (time_t) ((*slot)->ctime + (*slot)->value->ttl) < t) {
@@ -1036,8 +1043,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 	zend_bool retval = 0;
 	zend_ulong h, s;
 
-	if(apc_cache_busy(cache))
-	{
+	if (apc_cache_busy(cache)) {
 		/* cannot service request right now */
 		return 0;
 	}
@@ -1052,8 +1058,9 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 
 		while (*slot) {
 			/* check for a match by hash and identifier */
-			if ((h == ZSTR_HASH((*slot)->key.str)) &&
-				memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
+			if (h == ZSTR_HASH((*slot)->key.str) &&
+				ZSTR_LEN((*slot)->key.str) == ZSTR_LEN(key) &&
+				memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
 				/* attempt to perform update */
 				switch(Z_TYPE((*slot)->value->val)) {
 					case IS_ARRAY:
@@ -1118,7 +1125,8 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache, zend_string *key)
 
 	while (*slot) {
 		/* check for a match by hash and identifier */
-		if ((h == ZSTR_HASH((*slot)->key.str)) &&
+		if (h == ZSTR_HASH((*slot)->key.str) &&
+			ZSTR_LEN((*slot)->key.str) == ZSTR_LEN(key) &&
 			memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
 			/* executing removal */
 			apc_cache_remove_slot(
@@ -1732,7 +1740,8 @@ PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *st
 
 		while (*slot) {
 			/* check for a matching key by has and identifier */
-			if ((h == ZSTR_HASH((*slot)->key.str)) &&
+			if (h == ZSTR_HASH((*slot)->key.str) &&
+				ZSTR_LEN((*slot)->key.str) == ZSTR_LEN(key) &&
 				memcmp(ZSTR_VAL((*slot)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
 				array_init(stat);
 
