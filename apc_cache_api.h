@@ -173,19 +173,15 @@ PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context);
 
 /*
  * apc_cache_insert adds an entry to the cache.
- * Returns true if the entry was successfully inserted, false otherwise.
- * If false is returned, the caller must free the cache entry by calling
- * apc_cache_free_entry (see below).
+ * Returns true if the slot was successfully inserted, false otherwise.
+ * If false is returned, the caller must free the slot pool.
  *
- * key is the value created by apc_cache_make_key
- *
- * value is a cache entry returned by apc_cache_make_entry (see below).
+ * slot is a cache slot returned by apc_cache_make_slot.
  *
  * an easier API exists in the form of apc_cache_store
  */
 PHP_APCU_API zend_bool apc_cache_insert(
-        apc_cache_t* cache, apc_cache_key_t* key, apc_cache_entry_t* value,
-        apc_context_t* ctxt, time_t t, zend_bool exclusive);
+        apc_cache_t* cache, apc_cache_slot_t* slot, zend_bool exclusive);
 
 /*
  * apc_cache_store creates key, entry and context in which to make an insertion of val into the specified cache
@@ -252,6 +248,12 @@ PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, zend_string *str
  */
 PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(
         apc_context_t* ctxt, apc_cache_key_t* key, const zval *val, const int32_t ttl);
+
+/*
+ * apc_cache_make_slot creates an apc_cache_slot_t given a key, entry and time
+ */
+PHP_APCU_API apc_cache_slot_t *apc_cache_make_slot(
+		apc_cache_t *cache, apc_cache_key_t *key, apc_cache_entry_t *value, time_t t);
 
 /*
  fetches information about the cache provided for userland status functions

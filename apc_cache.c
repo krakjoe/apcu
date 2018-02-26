@@ -96,7 +96,8 @@ static int make_prime(int n)
 /* }}} */
 
 /* {{{ make_slot */
-apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* value, apc_cache_slot_t* next, time_t t)
+PHP_APCU_API apc_cache_slot_t *apc_cache_make_slot(
+		apc_cache_t *cache, apc_cache_key_t *key, apc_cache_entry_t *value, time_t t)
 {
 	apc_cache_slot_t* p = NULL;
 
@@ -112,14 +113,12 @@ apc_cache_slot_t* make_slot(apc_cache_t* cache, apc_cache_key_t *key, apc_cache_
 		}
 
 		/* set slot data */
-		p->key = key[0];
+		p->key = *key;
 		p->key.str = copiedKey;
 		p->value = value;
 
-		/* set slot relation */
-		p->next = next;
-
 		/* set slot defaults */
+		p->next = NULL;
 		p->nhits = 0;
 		p->ctime = t;
 		p->atime = t;
@@ -319,12 +318,9 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 } /* }}} */
 
 static inline zend_bool apc_cache_insert_internal(
-		apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* value,
-		apc_context_t* ctxt, time_t t, zend_bool exclusive) {
-	/* at least */
-	if (!value) {
-		return 0;
-	}
+		apc_cache_t* cache, apc_cache_slot_t *new_slot, zend_bool exclusive) {
+	apc_cache_key_t *key = &new_slot->key;
+	time_t t = new_slot->ctime;
 
 	/* check we are able to deal with this request */
 	if (!cache || apc_cache_busy(cache)) {
@@ -381,22 +377,22 @@ static inline zend_bool apc_cache_insert_internal(
 			slot = &(*slot)->next;
 		}
 
-		if ((*slot = make_slot(cache, key, value, *slot, t)) != NULL) {
-			/* set value size from pool size */
-			value->mem_size = apc_pool_size(ctxt->pool);
+		/* link in new slot */
+		new_slot->next = *slot;
+		*slot = new_slot;
 
-			cache->header->mem_size += value->mem_size;
-			cache->header->nentries++;
-			cache->header->ninserts++;
-		} else {
-			return 0;
-		}
+		/* set value size from pool size */
+		new_slot->value->mem_size = apc_pool_size(new_slot->value->pool);
+		cache->header->mem_size += new_slot->value->mem_size;
+		cache->header->nentries++;
+		cache->header->ninserts++;
 	}
 
 	return 1;
 }
 
 static inline zend_bool apc_cache_store_internal(apc_cache_t *cache, zend_string *strkey, const zval *val, const int32_t ttl, const zend_bool exclusive) {
+	apc_cache_slot_t *slot;
 	apc_cache_entry_t *entry;
 	apc_cache_key_t key;
 	time_t t;
@@ -419,9 +415,13 @@ static inline zend_bool apc_cache_store_internal(apc_cache_t *cache, zend_string
 			/* initialize the entry for insertion */
 			if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl))) {
 
-				/* execute an insertion */
-				if (apc_cache_insert_internal(cache, &key, entry, &ctxt, t, exclusive)) {
-					ret = 1;
+				/* initialize the slot for insertion */
+				if ((slot = apc_cache_make_slot(cache, &key, entry, t))) {
+
+					/* execute an insertion */
+					if (apc_cache_insert_internal(cache, slot, exclusive)) {
+						ret = 1;
+					}
 				}
 			}
 		}
@@ -519,6 +519,7 @@ static inline zend_bool apc_cache_fetch_internal(apc_cache_t* cache, zend_string
 
 /* {{{ apc_cache_store */
 PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, zend_string *strkey, const zval *val, const int32_t ttl, const zend_bool exclusive) {
+	apc_cache_slot_t *slot;
 	apc_cache_entry_t *entry;
 	apc_cache_key_t key;
 	time_t t;
@@ -541,9 +542,13 @@ PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, zend_string *strkey, 
 			/* initialize the entry for insertion */
 			if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl))) {
 
-				/* execute an insertion */
-				if (apc_cache_insert(cache, &key, entry, &ctxt, t, exclusive)) {
-					ret = 1;
+				/* initialize the slot for insertion */
+				if ((slot = apc_cache_make_slot(cache, &key, entry, t))) {
+
+					/* execute an insertion */
+					if (apc_cache_insert(cache, slot, exclusive)) {
+						ret = 1;
+					}
 				}
 			}
 		}
@@ -916,15 +921,13 @@ PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context) {
 
 /* {{{ apc_cache_insert */
 PHP_APCU_API zend_bool apc_cache_insert(
-		apc_cache_t* cache, apc_cache_key_t *key, apc_cache_entry_t* value,
-		apc_context_t* ctxt, time_t t, zend_bool exclusive)
+		apc_cache_t* cache, apc_cache_slot_t *new_slot, zend_bool exclusive)
 {
 	zend_bool result = 0;
 
 	APC_LOCK(cache->header);
 	php_apc_try {
-		result = apc_cache_insert_internal(
-			cache, key, value, ctxt, t, exclusive);
+		result = apc_cache_insert_internal(cache, new_slot, exclusive);
 	} php_apc_finally {
 		APC_UNLOCK(cache->header);
 	} php_apc_end_try();
