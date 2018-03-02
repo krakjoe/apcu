@@ -410,12 +410,12 @@ PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool) {
 
 #if PHP_VERSION_ID >= 70300
 	GC_SET_REFCOUNT(p, 1);
+	GC_TYPE_INFO(p) = IS_STRING | (IS_STR_PERSISTENT << GC_FLAGS_SHIFT);
 #else
 	GC_REFCOUNT(p) = 1;
-#endif
-
 	GC_TYPE_INFO(p) = IS_STRING;
 	GC_FLAGS(p) = IS_STR_PERSISTENT;
+#endif
 
 	memcpy(ZSTR_VAL(p), ZSTR_VAL(str), ZSTR_LEN(str));
 	p->len = ZSTR_LEN(str);
@@ -438,12 +438,12 @@ PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_po
 
 #if PHP_VERSION_ID >= 70300
 	GC_SET_REFCOUNT(p, 1);
+	GC_TYPE_INFO(p) = IS_STRING | (IS_STR_PERSISTENT << GC_FLAGS_SHIFT);
 #else
 	GC_REFCOUNT(p) = 1;
-#endif
-
 	GC_TYPE_INFO(p) = IS_STRING;
 	GC_FLAGS(p) = IS_STR_PERSISTENT;
+#endif
 
 	memcpy(ZSTR_VAL(p), buf, buf_len);
 	p->len = buf_len;
