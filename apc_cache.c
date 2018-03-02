@@ -1187,8 +1187,8 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 
 	ZVAL_NULL(dst);
 
-	if(serialize((unsigned char**)&buf, &buf_len, src, config)) {
-		if (!(serial = apc_pstrnew(buf, buf_len, pool))) {
+	if (serialize(&buf, &buf_len, src, config)) {
+		if (!(serial = apc_pstrnew((char *) buf, buf_len, pool))) {
 			efree(buf);
 
 			return dst;

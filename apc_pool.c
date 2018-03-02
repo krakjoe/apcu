@@ -399,34 +399,11 @@ PHP_APCU_API void* APC_ALLOC apc_pmemcpy(const void* p, size_t n, apc_pool* pool
 
 /* {{{ apc_pstrcpy */
 PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool) {
-	zend_string* p = (zend_string *) apc_pool_alloc(pool,
-		ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(ZSTR_LEN(str))));
-
-	if (!p) {
-		return NULL;
-	}
-
-	memset(p, 0, sizeof(zend_string));
-
-#if PHP_VERSION_ID >= 70300
-	GC_SET_REFCOUNT(p, 1);
-	GC_TYPE_INFO(p) = IS_STRING | (IS_STR_PERSISTENT << GC_FLAGS_SHIFT);
-#else
-	GC_REFCOUNT(p) = 1;
-	GC_TYPE_INFO(p) = IS_STRING;
-	GC_FLAGS(p) = IS_STR_PERSISTENT;
-#endif
-
-	memcpy(ZSTR_VAL(p), ZSTR_VAL(str), ZSTR_LEN(str));
-	p->len = ZSTR_LEN(str);
-	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';
-	zend_string_forget_hash_val(p);
-
-	return p;
+	return apc_pstrnew(ZSTR_VAL(str), ZSTR_LEN(str), pool);
 } /* }}} */
 
 /* {{{ apc_pstrnew */
-PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_pool* pool) {
+PHP_APCU_API zend_string* apc_pstrnew(char *buf, size_t buf_len, apc_pool* pool) {
 	zend_string* p = (zend_string *) apc_pool_alloc(pool,
 		ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(buf_len)));
 
@@ -446,8 +423,8 @@ PHP_APCU_API zend_string* apc_pstrnew(unsigned char *buf, size_t buf_len, apc_po
 #endif
 
 	memcpy(ZSTR_VAL(p), buf, buf_len);
-	p->len = buf_len;
-	ZSTR_VAL(p)[ZSTR_LEN(p)] = '\0';
+	ZSTR_LEN(p) = buf_len;
+	ZSTR_VAL(p)[buf_len] = '\0';
 	zend_string_forget_hash_val(p);
 
 	return p;
