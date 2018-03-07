@@ -34,6 +34,7 @@
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
 - fix gh#246 apcu_entry hangs
+- fix gh#259 deadlock in apcu_store
 - fix gh#281 undefined variable in apc.php
 - fix handling of fatal errors in apcu_entry
 - check string lengths when looking up keys
