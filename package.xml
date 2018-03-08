@@ -24,7 +24,7 @@
  </lead>
  <date>2018-03-08</date>
  <version>
-  <release>5.1.11</release>
+  <release>5.1.12dev</release>
   <api>5.1.11</api>
  </version>
  <stability>
@@ -33,12 +33,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- fix gh#246 apcu_entry hangs
-- fix gh#259 deadlock in apcu_store
-- fix gh#281 undefined variable in apc.php
-- fix handling of fatal errors in apcu_entry
-- check string lengths when looking up keys
-- many internal C APIs changed
+-
  </notes>
  <contents>
   <dir name="/">
@@ -156,6 +151,26 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2018-03-08</date>
+   <version>
+    <release>5.1.11</release>
+    <api>5.1.11</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- fix gh#246 apcu_entry hangs
+- fix gh#259 deadlock in apcu_store
+- fix gh#281 undefined variable in apc.php
+- fix handling of fatal errors in apcu_entry
+- check string lengths when looking up keys
+- many internal C APIs changed
+   </notes>
+  </release>
   <release>
    <date>2018-02-16</date>
    <version>
