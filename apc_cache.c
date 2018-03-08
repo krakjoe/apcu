@@ -1303,19 +1303,11 @@ static zend_always_inline uint32_t apc_array_dup_elements(apc_context_t *ctxt, H
 	Bucket *end = p + source->nNumUsed;
 
 	do {
-		if (!apc_array_dup_element(ctxt, source, target, idx, p, q, 0, with_holes)) {
-			uint32_t target_idx = idx;
-
-			idx++; p++;
-			while (p != end) {
-				if (apc_array_dup_element(ctxt, source, target, target_idx, p, q, 0, with_holes)) {
-					target_idx++; q++;
-				}
-				idx++; p++;
-			}
-			return target_idx;
+		if (apc_array_dup_element(ctxt, source, target, idx, p, q, 0, with_holes)) {
+			idx++;
+			q++;
 		}
-		idx++; p++; q++;
+		p++;
 	} while (p != end);
 	return idx;
 }
