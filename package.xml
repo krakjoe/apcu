@@ -22,6 +22,12 @@
   <email>remi@php.net</email>
   <active>yes</active>
  </lead>
+ <lead>
+  <name>Nikita Popov</name>
+  <user>nikic</user>
+  <email>nikic@php.net</email>
+  <active>yes</active>
+ </lead>
  <date>2018-03-08</date>
  <version>
   <release>5.1.12dev</release>
