@@ -196,9 +196,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator) {
 	int count=0;
 	apc_cache_slot_t *slot;
 	apc_iterator_item_t *item;
-	time_t t;
-
-	t = apc_time();
+	time_t t = apc_time();
 
 	while (apc_stack_size(iterator->stack) > 0) {
 		apc_iterator_item_dtor(apc_stack_pop(iterator->stack));
@@ -267,6 +265,7 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 
 /* {{{ apc_iterator_totals */
 static void apc_iterator_totals(apc_iterator_t *iterator) {
+	time_t t = apc_time();
 	apc_cache_slot_t *slot;
 	int i;
 
@@ -275,10 +274,12 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 		for (i=0; i < apc_user_cache->nslots; i++) {
 			slot = apc_user_cache->slots[i];
 			while (slot) {
-				if (apc_iterator_search_match(iterator, slot)) {
-					iterator->size += slot->value->mem_size;
-					iterator->hits += slot->nhits;
-					iterator->count++;
+				if (apc_iterator_check_expiry(apc_user_cache, slot, t)) {
+					if (apc_iterator_search_match(iterator, slot)) {
+						iterator->size += slot->value->mem_size;
+						iterator->hits += slot->nhits;
+						iterator->count++;
+					}
 				}
 				slot = slot->next;
 			}
