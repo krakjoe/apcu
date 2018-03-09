@@ -45,7 +45,7 @@ static apc_signal_info_t apc_signal_info = {0};
 static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*));
 static void apc_rehandle_signal(int signo, siginfo_t *siginfo, void *context);
 static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context);
-#if defined(SIGUSR1) && defined(APC_SIGNAL_CLEAR)
+#if defined(SIGUSR1) && defined(APC_CLEAR_SIGNAL)
 static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context);
 #endif
 
@@ -56,8 +56,6 @@ extern apc_cache_t* apc_user_cache;
  */
 static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 {
-	TSRMLS_FETCH();
-
 	apc_sma_cleanup();
 	apc_rehandle_signal(signo, siginfo, context);
 
@@ -69,14 +67,11 @@ static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 } /* }}} */
 
 
-#if defined(SIGUSR1) && defined(APC_SIGNAL_CLEAR)
+#if defined(SIGUSR1) && defined(APC_CLEAR_SIGNAL)
 /* {{{ apc_reload_cache */
 static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
-	TSRMLS_FETCH();
-
 	if (apc_user_cache) {
-		apc_cache_clear(
-			apc_user_cache);
+		apc_cache_clear(apc_user_cache);
 	}
 
 	apc_rehandle_signal(signo, siginfo, context);
@@ -159,7 +154,7 @@ static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*
 void apc_set_signals()
 {
 	if (apc_signal_info.installed == 0) {
-#if defined(SIGUSR1) && defined(APC_SIGNAL_CLEAR)
+#if defined(SIGUSR1) && defined(APC_CLEAR_SIGNAL)
 		apc_register_signal(SIGUSR1, apc_clear_cache);
 #endif
 		if (APCG(coredump_unmap)) {
