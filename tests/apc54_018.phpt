@@ -10,22 +10,22 @@ APC: Bug #59938 APCIterator fails with large user cache
 include "server_test.inc";
 
 $file = <<<FL
-//to fill apc cache (~200MB):
-for(\$i=0;\$i<50000;\$i++) {
+//to fill apc cache (~40MB):
+for(\$i=0;\$i<10000;\$i++) {
     \$value = str_repeat(md5(microtime()), 100);
     apcu_store('test-niko-asdfasdfasdfkjasdflkasjdfasf'.\$i, \$value);
 }
 
 //then later (usually after a few minutes) this won't work correctly:
 \$it = new APCuIterator('#^test-niko-asdfasdfasdfkjasdflkasjdfasf#');
-var_dump(\$it->getTotalCount()); //returns 50000
+var_dump(\$it->getTotalCount()); //returns 10000
 var_dump(\$it->current()); //returns false on error
 FL;
 
 $args = array(
 	'apc.enabled=1',
 	'apc.enable_cli=1',
-	'apc.shm_size=256M',
+	'apc.shm_size=64M',
 );
 
 server_start($file, $args);
@@ -36,7 +36,7 @@ for ($i = 0; $i < 3; $i++) {
 echo 'done';
 
 --EXPECTF--
-int(50000)
+int(10000)
 array(11) {
   ["type"]=>
   string(4) "user"
@@ -61,7 +61,7 @@ array(11) {
   ["ttl"]=>
   int(0)
 }
-int(50000)
+int(10000)
 array(11) {
   ["type"]=>
   string(4) "user"
@@ -86,7 +86,7 @@ array(11) {
   ["ttl"]=>
   int(0)
 }
-int(50000)
+int(10000)
 array(11) {
   ["type"]=>
   string(4) "user"
@@ -111,7 +111,7 @@ array(11) {
   ["ttl"]=>
   int(0)
 }
-int(50000)
+int(10000)
 array(11) {
   ["type"]=>
   string(4) "user"
@@ -136,7 +136,7 @@ array(11) {
   ["ttl"]=>
   int(0)
 }
-int(50000)
+int(10000)
 array(11) {
   ["type"]=>
   string(4) "user"
@@ -161,7 +161,7 @@ array(11) {
   ["ttl"]=>
   int(0)
 }
-int(50000)
+int(10000)
 array(11) {
   ["type"]=>
   string(4) "user"
@@ -186,7 +186,7 @@ array(11) {
   ["ttl"]=>
   int(0)
 }
-int(50000)
+int(10000)
 array(11) {
   ["type"]=>
   string(4) "user"
@@ -211,7 +211,7 @@ array(11) {
   ["ttl"]=>
   int(0)
 }
-int(50000)
+int(10000)
 array(11) {
   ["type"]=>
   string(4) "user"
@@ -236,7 +236,7 @@ array(11) {
   ["ttl"]=>
   int(0)
 }
-int(50000)
+int(10000)
 array(11) {
   ["type"]=>
   string(4) "user"
