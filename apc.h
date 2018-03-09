@@ -88,7 +88,11 @@ PHP_APCU_API void apc_debug(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(print
 PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 
 #define apc_time() \
-	(APCG(use_request_time) ? (time_t) sapi_get_request_time() : time(0))
+	(APCG(use_request_time) \
+	 ? (APCG(request_time) \
+		? APCG(request_time) \
+		: (APCG(request_time) = (time_t) sapi_get_request_time())) \
+	 : time(0))
 
 #if defined(__GNUC__)
 # define APC_UNUSED __attribute__((unused))
