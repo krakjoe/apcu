@@ -304,6 +304,7 @@ static PHP_RINIT_FUNCTION(apcu)
 	ZEND_TSRMLS_CACHE_UPDATE();
 #endif
 
+	APCG(request_time) = 0;
 	if (APCG(enabled)) {
 		if (APCG(serializer_name)) {
 			/* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
@@ -817,6 +818,28 @@ PHP_FUNCTION(apcu_entry) {
 }
 /* }}} */
 
+#ifdef APC_DEBUG
+/* This function is used to test TTL behavior without having to perform sleeps. */
+PHP_FUNCTION(apcu_inc_request_time) {
+	zend_long by = 1;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &by) != SUCCESS) {
+		return;
+	}
+
+	if (!APCG(use_request_time)) {
+		php_error_docref(NULL, E_WARNING,
+			"Trying to increment request time while use_request_time is disabled");
+		return;
+	}
+
+	/* Ensure APCG(request_time) is primed */
+	(void) apc_time();
+
+	APCG(request_time) += by;
+}
+#endif
+
 /* {{{ apcu_functions[] */
 zend_function_entry apcu_functions[] = {
 	PHP_FE(apcu_cache_info,         arginfo_apcu_cache_info)
@@ -833,6 +856,9 @@ zend_function_entry apcu_functions[] = {
 	PHP_FE(apcu_cas,                arginfo_apcu_cas)
 	PHP_FE(apcu_exists,             arginfo_apcu_exists)
 	PHP_FE(apcu_entry,				arginfo_apcu_entry)
+#ifdef APC_DEBUG
+	PHP_FE(apcu_inc_request_time,   NULL)
+#endif
 	PHP_FE_END
 };
 /* }}} */
