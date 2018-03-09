@@ -13,25 +13,27 @@ apc.ttl=1
 --FILE--
 <?php
 
-function printKeys() {
-    $keys = array_keys(iterator_to_array(new APCuIterator()));
+function printInfo() {
+    $it = new APCuIterator();
+    $keys = array_keys(iterator_to_array($it));
     sort($keys);
     var_dump($keys);
+    echo "Total: {$it->getTotalCount()}\n\n";
 }
 
 apcu_store("no_ttl", "a");
 apcu_store("ttl", "a", 3);
 
 echo "Initial state:\n";
-printKeys();
+printInfo();
 
 echo "T+2:\n";
 apcu_inc_request_time(2);
-printKeys();
+printInfo();
 
 echo "T+4:\n";
 apcu_inc_request_time(2);
-printKeys();
+printInfo();
 
 ?>
 --EXPECT--
@@ -42,6 +44,8 @@ array(2) {
   [1]=>
   string(3) "ttl"
 }
+Total: 2
+
 T+2:
 array(2) {
   [0]=>
@@ -49,8 +53,11 @@ array(2) {
   [1]=>
   string(3) "ttl"
 }
+Total: 2
+
 T+4:
 array(1) {
   [0]=>
   string(6) "no_ttl"
 }
+Total: 1
