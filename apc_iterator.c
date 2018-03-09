@@ -181,12 +181,8 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, apc_cache_slot_t 
 /* {{{ apc_iterator_check_expiry */
 static int apc_iterator_check_expiry(apc_cache_t* cache, apc_cache_slot_t *slot, time_t t)
 {
-	if(slot->value->ttl) {
-		if((time_t) (slot->ctime + slot->value->ttl) < t) {
-			return 0;
-		}
-	} else if(cache->ttl) {
-		if(slot->ctime + cache->ttl < t) {
+	if (slot->value->ttl) {
+		if ((time_t) (slot->ctime + slot->value->ttl) < t) {
 			return 0;
 		}
 	}
