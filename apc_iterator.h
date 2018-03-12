@@ -99,6 +99,7 @@ PHP_APCU_API void apc_iterator_obj_init(
 	zend_long list);
 PHP_APCU_API zend_class_entry* apc_iterator_get_ce(void);
 PHP_APCU_API int apc_iterator_init(int module_number);
+PHP_APCU_API int apc_iterator_shutdown(int module_number);
 
 extern int apc_iterator_delete(zval *key);
 #endif

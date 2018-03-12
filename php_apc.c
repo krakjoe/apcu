@@ -293,6 +293,8 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 #endif
 	}
 
+	apc_iterator_shutdown(module_number);
+
 	UNREGISTER_INI_ENTRIES();
 	return SUCCESS;
 } /* }}} */

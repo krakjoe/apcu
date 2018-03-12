@@ -25,8 +25,26 @@
 #include "SAPI.h"
 #include "zend_interfaces.h"
 
+#define APC_STRINGS \
+	X(user) \
+	X(type) \
+	X(key) \
+	X(value) \
+	X(num_hits) \
+	X(mtime) \
+	X(creation_time) \
+	X(deletion_time) \
+	X(access_time) \
+	X(ref_count) \
+	X(mem_size) \
+	X(ttl)
+
 static zend_class_entry *apc_iterator_ce;
 zend_object_handlers apc_iterator_object_handlers;
+
+#define X(str) static zend_string *apc_str_ ## str;
+	APC_STRINGS
+#undef X
 
 zend_class_entry* apc_iterator_get_ce(void) {
 	return apc_iterator_ce;
@@ -34,53 +52,65 @@ zend_class_entry* apc_iterator_get_ce(void) {
 
 /* {{{ apc_iterator_item */
 static apc_iterator_item_t* apc_iterator_item_ctor(apc_iterator_t *iterator, apc_cache_slot_t *slot) {
-	zval zvalue;
+	zval zv;
+	HashTable *ht;
 	apc_context_t ctxt = {0, };
 	apc_iterator_item_t *item = ecalloc(1, sizeof(apc_iterator_item_t));
 
 	array_init(&item->value);
+	ht = Z_ARRVAL(item->value);
 
 	item->key = zend_string_dup(slot->key.str, 0);
 
 	if (APC_ITER_TYPE & iterator->format) {
-		add_assoc_string_ex(&item->value, "type", sizeof("type")-1, "user");
+		ZVAL_STR_COPY(&zv, apc_str_user);
+		zend_hash_add_new(ht, apc_str_type, &zv);
 	}
 
 	if (APC_ITER_KEY & iterator->format) {
-		add_assoc_str(&item->value, "key", zend_string_copy(item->key));
+		ZVAL_STR_COPY(&zv, item->key);
+		zend_hash_add_new(ht, apc_str_key, &zv);
 	}
 
 	if (APC_ITER_VALUE & iterator->format) {
 		apc_cache_make_copy_out_context(apc_user_cache, &ctxt);
-		ZVAL_UNDEF(&zvalue);
-		apc_cache_fetch_zval(&ctxt, &zvalue, &slot->value->val);
-		add_assoc_zval(&item->value, "value", &zvalue);
+		ZVAL_UNDEF(&zv);
+		apc_cache_fetch_zval(&ctxt, &zv, &slot->value->val);
+		zend_hash_add_new(ht, apc_str_value, &zv);
 		apc_cache_destroy_context(&ctxt);
 	}
 
 	if (APC_ITER_NUM_HITS & iterator->format) {
-		add_assoc_long(&item->value, "num_hits", slot->nhits);
+		ZVAL_LONG(&zv, slot->nhits);
+		zend_hash_add_new(ht, apc_str_num_hits, &zv);
 	}
 	if (APC_ITER_MTIME & iterator->format) {
-		add_assoc_long(&item->value, "mtime", slot->key.mtime);
+		ZVAL_LONG(&zv, slot->key.mtime);
+		zend_hash_add_new(ht, apc_str_mtime, &zv);
 	}
 	if (APC_ITER_CTIME & iterator->format) {
-		add_assoc_long(&item->value, "creation_time", slot->ctime);
+		ZVAL_LONG(&zv, slot->ctime);
+		zend_hash_add_new(ht, apc_str_creation_time, &zv);
 	}
 	if (APC_ITER_DTIME & iterator->format) {
-		add_assoc_long(&item->value, "deletion_time", slot->dtime);
+		ZVAL_LONG(&zv, slot->dtime);
+		zend_hash_add_new(ht, apc_str_deletion_time, &zv);
 	}
 	if (APC_ITER_ATIME & iterator->format) {
-		add_assoc_long(&item->value, "access_time", slot->atime);
+		ZVAL_LONG(&zv, slot->atime);
+		zend_hash_add_new(ht, apc_str_access_time, &zv);
 	}
 	if (APC_ITER_REFCOUNT & iterator->format) {
-		add_assoc_long(&item->value, "ref_count", slot->value->ref_count);
+		ZVAL_LONG(&zv, slot->value->ref_count);
+		zend_hash_add_new(ht, apc_str_ref_count, &zv);
 	}
 	if (APC_ITER_MEM_SIZE & iterator->format) {
-		add_assoc_long(&item->value, "mem_size", slot->value->mem_size);
+		ZVAL_LONG(&zv, slot->value->mem_size);
+		zend_hash_add_new(ht, apc_str_mem_size, &zv);
 	}
 	if (APC_ITER_TTL & iterator->format) {
-		add_assoc_long(&item->value, "ttl", slot->value->ttl);
+		ZVAL_LONG(&zv, slot->value->ttl);
+		zend_hash_add_new(ht, apc_str_ttl, &zv);
 	}
 
 	return item;
@@ -596,9 +626,23 @@ int apc_iterator_init(int module_number) {
 	apc_iterator_object_handlers.free_obj = apc_iterator_free;
 	apc_iterator_object_handlers.offset = XtOffsetOf(apc_iterator_t, obj);
 
+#define X(str) \
+	apc_str_ ## str = zend_new_interned_string( \
+		zend_string_init(#str, sizeof(#str) - 1, 1));
+	APC_STRINGS
+#undef X
+
 	return SUCCESS;
 }
 /* }}} */
+
+int apc_iterator_shutdown(int module_number) {
+#define X(str) zend_string_release(apc_str_ ## str);
+	APC_STRINGS
+#undef X
+
+	return SUCCESS;
+}
 
 /* {{{ apc_iterator_delete */
 int apc_iterator_delete(zval *zobj) {
