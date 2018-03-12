@@ -63,11 +63,9 @@ typedef struct _apc_iterator_t {
 	apc_stack_t *stack;      /* stack of entries pulled from cache */
 	int stack_idx;           /* index into the current stack */
 #ifdef ITERATOR_PCRE
+	pcre_cache_entry *pce;     /* regex filter on entry identifiers */
 # if PHP_VERSION_ID >= 70300
-	pcre2_code *re;            /* regex filter on entry identifiers */
 	pcre2_match_data *re_match_data; /* match data for regex */
-# else
-	pcre *re;                /* regex filter on entry identifiers */
 # endif
 #endif
 	zend_string *regex;
