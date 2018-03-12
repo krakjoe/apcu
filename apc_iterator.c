@@ -193,9 +193,15 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, apc_cache_slot_t 
 #ifdef ITERATOR_PCRE
 	if (iterator->regex) {
 # if PHP_VERSION_ID >= 70300
-		rval = (pcre2_match(iterator->re, (PCRE2_SPTR) ZSTR_VAL(slot->key.str), ZSTR_LEN(slot->key.str), 0, 0, iterator->re_match_data, php_pcre_mctx()) >= 0);
+		rval = pcre2_match(
+			php_pcre_pce_re(iterator->pce),
+			(PCRE2_SPTR) ZSTR_VAL(slot->key.str), ZSTR_LEN(slot->key.str),
+			0, 0, iterator->re_match_data, php_pcre_mctx()) >= 0;
 # else
-		rval = (pcre_exec(iterator->re, NULL, ZSTR_VAL(slot->key.str), ZSTR_LEN(slot->key.str), 0, 0, NULL, 0) >= 0);
+		rval = pcre_exec(
+			iterator->pce->re, iterator->pce->extra,
+			ZSTR_VAL(slot->key.str), ZSTR_LEN(slot->key.str),
+			0, 0, NULL, 0) >= 0;
 # endif
 	}
 #endif
@@ -361,16 +367,17 @@ void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long for
 	if (search && Z_TYPE_P(search) == IS_STRING && Z_STRLEN_P(search)) {
 #ifdef ITERATOR_PCRE
 		iterator->regex = zend_string_copy(Z_STR_P(search));
-		iterator->re = pcre_get_compiled_regex(iterator->regex, NULL, NULL);
+		iterator->pce = pcre_get_compiled_regex_cache(iterator->regex);
 
-		if (!iterator->re) {
+		if (!iterator->pce) {
 			apc_error("Could not compile regular expression: %s", Z_STRVAL_P(search));
 			zend_string_release(iterator->regex);
 			iterator->regex = NULL;
 		}
 
 # if PHP_VERSION_ID >= 70300
-		iterator->re_match_data = pcre2_match_data_create_from_pattern(iterator->re, php_pcre_gctx());
+		iterator->re_match_data = pcre2_match_data_create_from_pattern(
+			php_pcre_pce_re(iterator->pce), php_pcre_gctx());
 # endif
 #else
 		apc_error("Regular expressions support is not enabled, please enable PCRE for " APC_ITERATOR_NAME " regex support.");
