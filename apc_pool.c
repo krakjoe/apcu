@@ -265,15 +265,6 @@ static APC_USED int apc_pool_check_integrity(apc_pool *pool)
 }
 /* }}} */
 
-/* {{{ apc_pool_free */
-/*
- * free does not do anything
- */
-PHP_APCU_API void apc_pool_free(apc_pool *pool, void *p)
-{
-}
-/* }}} */
-
 /* {{{ apc_pool_cleanup */
 static void apc_pool_cleanup(apc_pool *pool)
 {

@@ -1344,7 +1344,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 	/* some kind of memory allocation failure */
 	if (target) {
 		if (ctxt->copy == APC_COPY_IN) {
-			apc_pool_free(pool, target);
+			/* will be mass-freed */
 		} else {
 			FREE_HASHTABLE(target);
 		}
@@ -1537,13 +1537,10 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_make_entry(
 	/* copy key into pool */
 	copied_key = apc_pstrcpy(key->str, pool);
 	if (!copied_key) {
-		apc_pool_free(pool, entry);
 		return NULL;
 	}
 
 	if (!apc_cache_store_zval(&entry->val, val, ctxt)) {
-		apc_pool_free(pool, entry);
-		apc_pool_free(pool, copied_key);
 		return NULL;
 	}
 
