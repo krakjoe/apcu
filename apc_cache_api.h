@@ -146,18 +146,6 @@ PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache);
 PHP_APCU_API void apc_cache_clear(apc_cache_t* cache);
 
 /*
- * apc_cache_insert adds an entry to the cache.
- * Returns true if the entry was successfully inserted, false otherwise.
- * If false is returned, the caller must free the entry pool.
- *
- * entry is a cache entry returned by apc_cache_make_entry.
- *
- * an easier API exists in the form of apc_cache_store
- */
-PHP_APCU_API zend_bool apc_cache_insert(
-        apc_cache_t *cache, apc_cache_entry_t *entry, zend_bool exclusive);
-
-/*
  * apc_cache_store creates key, entry and context in which to make an insertion of val into the specified cache
  */
 PHP_APCU_API zend_bool apc_cache_store(
@@ -207,12 +195,6 @@ PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
  * entry is the cache entry whose ref count you want to decrement.
  */
 PHP_APCU_API void apc_cache_entry_release(apc_cache_t *cache, apc_cache_entry_t *entry);
-
-/*
- * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
- */
-PHP_APCU_API apc_cache_entry_t *apc_cache_make_entry(
-        apc_context_t *ctxt, zend_string *key, const zval *val, const int32_t ttl, time_t t);
 
 /*
  fetches information about the cache provided for userland status functions

@@ -351,38 +351,40 @@ static inline zend_bool apc_cache_wlocked_insert(
 static zend_bool apc_cache_make_copy_in_context(
 		apc_cache_t* cache, apc_context_t* context, apc_pool_type pool_type);
 static zend_bool apc_cache_destroy_context(apc_context_t *context);
+static apc_cache_entry_t *apc_cache_make_entry(
+		apc_context_t *ctxt, zend_string *key, const zval* val, const int32_t ttl, time_t t);
 
+/* TODO This function may lead to a deadlock on expunge */
 static inline zend_bool apc_cache_store_internal(
 		apc_cache_t *cache, zend_string *key, const zval *val,
 		const int32_t ttl, const zend_bool exclusive) {
 	apc_cache_entry_t *entry;
 	time_t t = apc_time();
 	apc_context_t ctxt={0,};
-	zend_bool ret = 0;
+
+	if (apc_cache_defense(cache, key, t)) {
+		return 0;
+	}
 
 	/* initialize a context suitable for making an insert */
 	if (!apc_cache_make_copy_in_context(cache, &ctxt, APC_SMALL_POOL)) {
 		return 0;
 	}
 
-	/* run cache defense */
-	if (!apc_cache_defense(cache, key, t)) {
-
-		/* initialize the entry for insertion */
-		if ((entry = apc_cache_make_entry(&ctxt, key, val, ttl, t))) {
-
-			/* execute an insertion */
-			if (apc_cache_wlocked_insert(cache, entry, exclusive)) {
-				ret = 1;
-			}
-		}
-	}
-
-	/* in any case of failure the context should be destroyed */
-	if (!ret) {
+	/* initialize the entry for insertion */
+	entry = apc_cache_make_entry(&ctxt, key, val, ttl, t);
+	if (!entry) {
 		apc_cache_destroy_context(&ctxt);
+		return 0;
 	}
-	return ret;
+
+	/* execute an insertion */
+	if (!apc_cache_wlocked_insert(cache, entry, exclusive)) {
+		apc_cache_destroy_context(&ctxt);
+		return 0;
+	}
+
+	return 1;
 }
 
 /* Find entry, without updating stat counters or access time */
@@ -470,24 +472,32 @@ PHP_APCU_API zend_bool apc_cache_store(
 	apc_context_t ctxt={0,};
 	zend_bool ret = 0;
 
+	/* run cache defense */
+	if (apc_cache_defense(cache, key, t)) {
+		return 0;
+	}
+
 	/* initialize a context suitable for making an insert */
 	if (!apc_cache_make_copy_in_context(cache, &ctxt, APC_SMALL_POOL)) {
 		return 0;
 	}
 
-	/* run cache defense */
-	if (!apc_cache_defense(cache, key, t)) {
-
-		/* initialize the entry for insertion */
-		if ((entry = apc_cache_make_entry(&ctxt, key, val, ttl, t))) {
-			/* execute an insertion */
-			if (apc_cache_insert(cache, entry, exclusive)) {
-				ret = 1;
-			}
-		}
+	/* initialize the entry for insertion */
+	entry = apc_cache_make_entry(&ctxt, key, val, ttl, t);
+	if (!entry) {
+		apc_cache_destroy_context(&ctxt);
+		return 0;
 	}
 
-	/* in any case of failure the context should be destroyed */
+	/* execute an insertion */
+	APC_LOCK(cache->header);
+	php_apc_try {
+		ret = apc_cache_wlocked_insert(cache, entry, exclusive);
+	} php_apc_finally {
+		APC_UNLOCK(cache->header);
+	} php_apc_end_try();
+
+	/* destroy context if insertion failed */
 	if (!ret) {
 		apc_cache_destroy_context(&ctxt);
 	}
@@ -801,7 +811,7 @@ static zend_bool apc_cache_make_copy_in_context(
 	return 1;
 }
 
-/* {{{ apc_context_destroy */
+/* {{{ apc_cache_destroy_context */
 static zend_bool apc_cache_destroy_context(apc_context_t *context) {
 	if (!context->pool) {
 		return 0;
@@ -811,23 +821,6 @@ static zend_bool apc_cache_destroy_context(apc_context_t *context) {
 
 	return 1;
 } /* }}} */
-
-/* {{{ apc_cache_insert */
-PHP_APCU_API zend_bool apc_cache_insert(
-		apc_cache_t* cache, apc_cache_entry_t *new_entry, zend_bool exclusive)
-{
-	zend_bool result = 0;
-
-	APC_LOCK(cache->header);
-	php_apc_try {
-		result = apc_cache_wlocked_insert(cache, new_entry, exclusive);
-	} php_apc_finally {
-		APC_UNLOCK(cache->header);
-	} php_apc_end_try();
-
-	return result;
-}
-/* }}} */
 
 /* {{{ apc_cache_find */
 PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *key, time_t t)
@@ -1439,7 +1432,7 @@ PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 /* }}} */
 
 /* {{{ apc_cache_make_entry */
-PHP_APCU_API apc_cache_entry_t *apc_cache_make_entry(
+static apc_cache_entry_t *apc_cache_make_entry(
 		apc_context_t *ctxt, zend_string *key, const zval* val, const int32_t ttl, time_t t)
 {
 	zend_string *copied_key;
