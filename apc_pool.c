@@ -32,6 +32,12 @@
 # ifdef HAVE_VALGRIND_MEMCHECK_H
 #  include <valgrind/memcheck.h>
 # endif
+
+# define APC_POOL_HAS_SIZEINFO 1
+# define APC_POOL_HAS_REDZONES 1
+#else
+# define APC_POOL_HAS_SIZEINFO 0
+# define APC_POOL_HAS_REDZONES 0
 #endif
 
 /*
@@ -55,9 +61,6 @@ typedef struct _pool_block
 } pool_block;
 
 struct _apc_pool {
-	/* denotes the size and debug flags for a pool */
-	apc_pool_type   type;
-
 	/* handler functions */
 	apc_malloc_t    allocate;
 	apc_free_t      deallocate;
@@ -141,14 +144,14 @@ PHP_APCU_API void* apc_pool_alloc(apc_pool *pool, size_t size)
 	pool_block *entry = NULL;
 	unsigned long i;
 
-	if(APC_POOL_HAS_REDZONES(pool)) {
+	if (APC_POOL_HAS_REDZONES) {
 		redsize = REDZONE_SIZE(size); /* redsize might be re-using word size padding */
 		realsize = size + redsize;    /* recalculating realsize */
 	} else {
 		redsize = realsize - size; /* use padding space */
 	}
 
-	if(APC_POOL_HAS_SIZEINFO(pool)) {
+	if (APC_POOL_HAS_SIZEINFO) {
 		realsize += ALIGNWORD(sizeof(size_t));
 	}
 
@@ -178,7 +181,7 @@ PHP_APCU_API void* apc_pool_alloc(apc_pool *pool, size_t size)
 found:
 	p = entry->mark;
 
-	if(APC_POOL_HAS_SIZEINFO(pool)) {
+	if (APC_POOL_HAS_SIZEINFO) {
 		sizeinfo = (size_t*)p;
 		p += SIZEINFO_SIZE;
 		*sizeinfo = size;
@@ -186,7 +189,7 @@ found:
 
 	redzone = p + size;
 
-	if(APC_POOL_HAS_REDZONES(pool)) {
+	if (APC_POOL_HAS_REDZONES) {
 		MARK_REDZONE(redzone, redsize);
 	}
 
@@ -235,8 +238,7 @@ static APC_USED int apc_pool_check_integrity(apc_pool *pool)
 		}
 	}
 
-	if(!APC_POOL_HAS_REDZONES(pool) ||
-		!APC_POOL_HAS_SIZEINFO(pool)) {
+	if (!APC_POOL_HAS_REDZONES || !APC_POOL_HAS_SIZEINFO) {
 		(void)pool; /* remove unused warning */
 		return 1;
 	}
@@ -319,7 +321,7 @@ PHP_APCU_API apc_pool* apc_pool_create(
 	size_t dsize = 0;
 	apc_pool *pool;
 
-	switch (type & APC_POOL_SIZE_MASK) {
+	switch (type) {
 		case APC_SMALL_POOL:
 			dsize = 512;
 			break;
@@ -341,8 +343,6 @@ PHP_APCU_API apc_pool* apc_pool_create(
 	if (!pool) {
 		return NULL;
 	}
-
-	pool->type = type;
 
 	pool->allocate = allocate;
 	pool->deallocate = deallocate;
