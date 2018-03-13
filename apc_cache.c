@@ -1108,11 +1108,9 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 	void *config = NULL;
 	zend_string *serial = NULL;
 
-	if(ctxt->serializer) {
+	if (ctxt->serializer) {
 		serialize = ctxt->serializer->serialize;
-		config =
-			(ctxt->serializer->config != NULL) ?
-			ctxt->serializer->config : ctxt;
+		config = ctxt->serializer->config;
 	}
 
 	ZVAL_NULL(dst);
@@ -1140,12 +1138,12 @@ static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ct
 	apc_unserialize_t unserialize = APC_UNSERIALIZER_NAME(php);
 	void *config = NULL;
 
-	if(ctxt->serializer) {
+	if (ctxt->serializer) {
 		unserialize = ctxt->serializer->unserialize;
-		config = (ctxt->serializer->config != NULL) ? ctxt->serializer->config : ctxt;
+		config = ctxt->serializer->config;
 	}
 
-	if(unserialize(dst, (unsigned char *)Z_STRVAL_P(src), Z_STRLEN_P(src), config)) {
+	if (unserialize(dst, (unsigned char *)Z_STRVAL_P(src), Z_STRLEN_P(src), config)) {
 		return dst;
 	} else {
 		zval_dtor(dst);
@@ -1543,9 +1541,6 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_make_entry(
 		return NULL;
 	}
 
-	/* TODO Remove this */
-	/* set key for serializer */
-	ctxt->key = key;
 	if (!apc_cache_store_zval(&entry->val, val, ctxt)) {
 		apc_pool_free(pool, entry);
 		apc_pool_free(pool, copied_key);
