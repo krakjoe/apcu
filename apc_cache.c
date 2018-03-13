@@ -111,7 +111,7 @@ static void apc_cache_hash_slot(
 	*slot = *hash % cache->nslots;
 } /* }}} */
 
-/* {{{ apc_cache_remove_entry  */
+/* {{{ apc_cache_wlocked_remove_entry  */
 static void apc_cache_wlocked_remove_entry(apc_cache_t *cache, apc_cache_entry_t **entry)
 {
 	apc_cache_entry_t *dead = *entry;
@@ -138,23 +138,23 @@ static void apc_cache_wlocked_remove_entry(apc_cache_t *cache, apc_cache_entry_t
 }
 /* }}} */
 
-/* {{{ apc_cache_gc */
-PHP_APCU_API void apc_cache_gc(apc_cache_t* cache)
+/* {{{ apc_cache_wlocked_gc */
+static void apc_cache_wlocked_gc(apc_cache_t* cache)
 {
 	/* This function scans the list of removed cache entries and deletes any
 	 * entry whose reference count is zero  or that has been on the gc
 	 * list for more than cache->gc_ttl seconds
 	 *   (we issue a warning in the latter case).
 	 */
-	if (!cache || !cache->header->gc) {
+	if (!cache->header->gc) {
 		return;
 	}
 
 	{
 		apc_cache_entry_t **entry = &cache->header->gc;
+		time_t now = time(0);
 
 		while (*entry != NULL) {
-			time_t now = time(0);
 			time_t gc_sec = cache->gc_ttl ? (now - (*entry)->dtime) : 0;
 
 			if (!(*entry)->ref_count || gc_sec > (time_t)cache->gc_ttl) {
@@ -285,7 +285,7 @@ static inline zend_bool apc_cache_wlocked_insert(
 	time_t t = new_entry->ctime;
 
 	/* process deleted list  */
-	apc_cache_gc(cache);
+	apc_cache_wlocked_gc(cache);
 
 	/* make the insertion */
 	{
@@ -723,7 +723,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	suitable = (cache->smart > 0L) ? (size_t) (cache->smart * size) : (size_t) (cache->sma->size/2);
 
 	/* gc */
-	apc_cache_gc(cache);
+	apc_cache_wlocked_gc(cache);
 
 	/* get available */
 	available = cache->sma->get_avail_mem();

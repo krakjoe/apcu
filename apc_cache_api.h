@@ -301,13 +301,6 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size);
 PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache);
 
 /*
-* apc_cache_gc: runs garbage collection on cache
-*
-* Note: it is assumed you have a write lock on the header when you enter gc
-*/
-PHP_APCU_API void apc_cache_gc(apc_cache_t* cache);
-
-/*
 * apc_cache_entry: generate and create or fetch an entry
 *
 * @see https://github.com/krakjoe/apcu/issues/142
