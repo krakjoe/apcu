@@ -615,8 +615,8 @@ PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path)
 #endif
 } /* }}} */
 
-/* {{{ apc_cache_release */
-PHP_APCU_API void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry)
+/* {{{ apc_cache_entry_release */
+PHP_APCU_API void apc_cache_entry_release(apc_cache_t *cache, apc_cache_entry_t *entry)
 {
 	ATOMIC_DEC(cache, entry->ref_count);
 }
@@ -867,9 +867,9 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 	}
 
 	php_apc_try {
-		retval = apc_cache_fetch_zval(cache, entry, *dst);
+		retval = apc_cache_entry_fetch_zval(cache, entry, *dst);
 	} php_apc_finally {
-		apc_cache_release(cache, entry);
+		apc_cache_entry_release(cache, entry);
 	} php_apc_end_try();
 
 	return retval;
@@ -1409,8 +1409,8 @@ PHP_APCU_API zval* apc_cache_store_zval(zval* dst, const zval* src, apc_context_
 }
 /* }}} */
 
-/* {{{ apc_cache_fetch_zval */
-PHP_APCU_API zend_bool apc_cache_fetch_zval(
+/* {{{ apc_cache_entry_fetch_zval */
+PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 		apc_cache_t *cache, apc_cache_entry_t *entry, zval *dst)
 {
 	apc_context_t ctxt = {0, };
@@ -1718,8 +1718,8 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 					cache, Z_STR_P(key), return_value, (uint32_t) ttl, 1);
 			}
 		} else {
-			apc_cache_fetch_zval(cache, entry, return_value);
-			apc_cache_release(cache, entry);
+			apc_cache_entry_fetch_zval(cache, entry, return_value);
+			apc_cache_entry_release(cache, entry);
 		}
 	} php_apc_finally {
 		apc_cache_entry_try_end();

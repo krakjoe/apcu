@@ -74,7 +74,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(
 
 	if (APC_ITER_VALUE & iterator->format) {
 		ZVAL_UNDEF(&zv);
-		apc_cache_fetch_zval(apc_user_cache, entry, &zv);
+		apc_cache_entry_fetch_zval(apc_user_cache, entry, &zv);
 		zend_hash_add_new(ht, apc_str_value, &zv);
 	}
 
