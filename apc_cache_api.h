@@ -146,25 +146,6 @@ PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache);
 PHP_APCU_API void apc_cache_clear(apc_cache_t* cache);
 
 /*
-* apc_cache_make_copy_in/out_context initializes a context for storing values
-* into the cache or retrieving them out of the cache.
-*
-* Some of the APC API requires a context in which to operate.
-*
-* The type of context required depends on the operation being performed, for example
-* an insert should happen in a copy-in context, a fetch should happen in a copy-out context.
-*/
-PHP_APCU_API zend_bool apc_cache_make_copy_in_context(
-		apc_cache_t* cache, apc_context_t* context, apc_pool_type pool_type);
-PHP_APCU_API zend_bool apc_cache_make_copy_out_context(
-		apc_cache_t* cache, apc_context_t* context);
-
-/*
-* apc_context_destroy should be called when a context is finished being used
-*/
-PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context);
-
-/*
  * apc_cache_insert adds an entry to the cache.
  * Returns true if the entry was successfully inserted, false otherwise.
  * If false is returned, the caller must free the entry pool.
@@ -202,23 +183,19 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 
 /*
  * apc_cache_exists searches for a cache entry by its hashed identifier,
- * and returns a pointer to the entry if found, NULL otherwise.  This is a
- * quick non-locking version of apc_cache_find that does not modify the
- * shared memory segment in any way.
- *
+ * and returns whether the entry exists.
  */
-PHP_APCU_API apc_cache_entry_t* apc_cache_exists(apc_cache_t* cache, zend_string *key, time_t t);
+PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, time_t t);
 
 /*
  * apc_cache_delete and apc_cache_delete finds an entry in the cache and deletes it.
  */
 PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache, zend_string *key);
 
-/* apc_cach_fetch_zval takes a zval in the cache and reconstructs a runtime
- * zval from it.
- *
+/* apc_cache_fetch_zval copies a cache entry value to be usable at runtime.
  */
-PHP_APCU_API zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zval* src);
+PHP_APCU_API zend_bool apc_cache_fetch_zval(
+		apc_cache_t *cache, apc_cache_entry_t *entry, zval *dst);
 
 /*
  * apc_cache_release decrements the reference count associated with a cache
