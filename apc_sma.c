@@ -453,28 +453,7 @@ PHP_APCU_API void* apc_sma_api_malloc(apc_sma_t* sma, zend_ulong n)
 
 PHP_APCU_API void* apc_sma_api_realloc(apc_sma_t* sma, void* p, zend_ulong n) {
 	apc_sma_api_free(sma, p);
-	return apc_sma_api_malloc(
-		sma, n);
-}
-
-PHP_APCU_API char* apc_sma_api_strdup(apc_sma_t* sma, const char* s) {
-	void* q;
-	int len;
-
-	if(!s) {
-		return NULL;
-	}
-
-	len = strlen(s)+1;
-	q = apc_sma_api_malloc(
-		sma, len);
-
-	if(!q) {
-		return NULL;
-	}
-
-	memcpy(q, s, len);
-	return q;
+	return apc_sma_api_malloc(sma, n);
 }
 
 PHP_APCU_API void apc_sma_api_free(apc_sma_t* sma, void* p) {

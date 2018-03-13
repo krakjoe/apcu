@@ -64,7 +64,6 @@ typedef void (*apc_sma_cleanup_f) ();
 typedef void* (*apc_sma_malloc_f) (zend_ulong size);
 typedef void* (*apc_sma_malloc_ex_f) (zend_ulong size, zend_ulong fragment, zend_ulong *allocated);
 typedef void* (*apc_sma_realloc_f) (void* p, zend_ulong size);
-typedef char* (*apc_sma_strdup_f) (const char* str);
 typedef void (*apc_sma_free_f) (void *p);
 typedef void* (*apc_sma_protect_f) (void* p);
 typedef void* (*apc_sma_unprotect_f) (void* p);
@@ -85,7 +84,6 @@ typedef struct _apc_sma_t {
 	apc_sma_malloc_f smalloc;                    /* malloc */
 	apc_sma_malloc_ex_f malloc_ex;               /* malloc_ex */
 	apc_sma_realloc_f realloc;                   /* realloc */
-	apc_sma_strdup_f strdup;                     /* strdup */
 	apc_sma_free_f sfree;                        /* free */
 	apc_sma_protect_f protect;                   /* protect */
 	apc_sma_unprotect_f unprotect;               /* unprotect */
@@ -137,11 +135,6 @@ PHP_APCU_API void* apc_sma_api_malloc_ex(
 * apc_sma_api_realloc will reallocate p using a new block from sma (freeing the original p)
 */
 PHP_APCU_API void* apc_sma_api_realloc(apc_sma_t* sma, void* p, zend_ulong size);
-
-/*
-* apc_sma_api_strdup will duplicate the given string into a block from sma
-*/
-PHP_APCU_API char* apc_sma_api_strdup(apc_sma_t* sma, const char* s);
 
 /*
 * apc_sma_api_free will free p (which should be a pointer to a block allocated from sma)
@@ -211,7 +204,6 @@ typedef union { void* p; int i; long l; double d; void (*f)(void); } apc_word_t;
 	PHP_APCU_API void* apc_sma_api_func(name, malloc)(zend_ulong size); \
 	PHP_APCU_API void* apc_sma_api_func(name, malloc_ex)(zend_ulong size, zend_ulong fragment, zend_ulong* allocated); \
 	PHP_APCU_API void* apc_sma_api_func(name, realloc)(void* p, zend_ulong size); \
-	PHP_APCU_API char* apc_sma_api_func(name, strdup)(const char* s); \
 	PHP_APCU_API void apc_sma_api_func(name, free)(void* p); \
 	PHP_APCU_API void* apc_sma_api_func(name, protect)(void* p); \
 	PHP_APCU_API void* apc_sma_api_func(name, unprotect)(void* p); \
@@ -229,7 +221,6 @@ typedef union { void* p; int i; long l; double d; void (*f)(void); } apc_word_t;
 		&apc_sma_api_func(name, malloc), \
 		&apc_sma_api_func(name, malloc_ex), \
 		&apc_sma_api_func(name, realloc), \
-		&apc_sma_api_func(name, strdup), \
 		&apc_sma_api_func(name, free), \
 		&apc_sma_api_func(name, protect), \
 		&apc_sma_api_func(name, unprotect), \
@@ -249,8 +240,6 @@ typedef union { void* p; int i; long l; double d; void (*f)(void); } apc_word_t;
 		{ return apc_sma_api_malloc_ex(apc_sma_api_ptr(name), size, fragment, allocated); } \
 	PHP_APCU_API void* apc_sma_api_func(name, realloc)(void* p, zend_ulong size) \
 		{ return apc_sma_api_realloc(apc_sma_api_ptr(name), p, size); } \
-	PHP_APCU_API char* apc_sma_api_func(name, strdup)(const char* s) \
-		{ return apc_sma_api_strdup(apc_sma_api_ptr(name), s); } \
 	PHP_APCU_API void  apc_sma_api_func(name, free)(void* p) \
 		{ apc_sma_api_free(apc_sma_api_ptr(name), p); } \
 	PHP_APCU_API void* apc_sma_api_func(name, protect)(void* p) \
