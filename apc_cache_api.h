@@ -308,16 +308,6 @@ PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache);
 PHP_APCU_API void apc_cache_gc(apc_cache_t* cache);
 
 /*
-* apc_cache_remove_entry: removes entry
-*
-* if no references remain, the entry is free'd immediately
-* if there are references remaining, the entry is trashed
-*
-* Note: it is assumed you have a write lock on the header when you remove entries
-*/
-PHP_APCU_API void apc_cache_remove_entry(apc_cache_t *cache, apc_cache_entry_t **entry);
-
-/*
 * apc_cache_entry: generate and create or fetch an entry
 *
 * @see https://github.com/krakjoe/apcu/issues/142

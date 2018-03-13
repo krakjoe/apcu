@@ -112,7 +112,7 @@ static void apc_cache_hash_slot(
 } /* }}} */
 
 /* {{{ apc_cache_remove_entry  */
-PHP_APCU_API void apc_cache_remove_entry(apc_cache_t *cache, apc_cache_entry_t **entry)
+static void apc_cache_wlocked_remove_entry(apc_cache_t *cache, apc_cache_entry_t **entry)
 {
 	apc_cache_entry_t *dead = *entry;
 
@@ -313,7 +313,7 @@ static inline zend_bool apc_cache_wlocked_insert(
 						return 0;
 					}
 				}
-				apc_cache_remove_entry(cache, entry);
+				apc_cache_wlocked_remove_entry(cache, entry);
 				break;
 			}
 
@@ -326,7 +326,7 @@ static inline zend_bool apc_cache_wlocked_insert(
 			 */
 			if((cache->ttl && (time_t)(*entry)->atime < (t - (time_t)cache->ttl)) ||
 			   ((*entry)->ttl && (time_t) ((*entry)->ctime + (*entry)->ttl) < t)) {
-				apc_cache_remove_entry(cache, entry);
+				apc_cache_wlocked_remove_entry(cache, entry);
 				continue;
 			}
 
@@ -650,11 +650,10 @@ PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache) {
 		zend_ulong i;
 
 		for (i = 0; i < cache->nslots; i++) {
-			apc_cache_entry_t *p = cache->slots[i];
-			while (p) {
-				apc_cache_remove_entry(cache, &p);
+			apc_cache_entry_t **entry = &cache->slots[i];
+			while (*entry) {
+				apc_cache_wlocked_remove_entry(cache, entry);
 			}
-			cache->slots[i] = NULL;
 		}
 	}
 
@@ -749,12 +748,12 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 					 */
 					if ((*entry)->ttl) {
 						if((time_t) ((*entry)->ctime + (*entry)->ttl) < t) {
-							apc_cache_remove_entry(cache, entry);
+							apc_cache_wlocked_remove_entry(cache, entry);
 							continue;
 						}
 					} else if (cache->ttl) {
 						if((time_t) ((*entry)->ctime + cache->ttl) < t) {
-							apc_cache_remove_entry(cache, entry);
+							apc_cache_wlocked_remove_entry(cache, entry);
 							continue;
 						}
 					}
@@ -987,25 +986,21 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 		if (h == ZSTR_HASH((*entry)->key) &&
 			ZSTR_LEN((*entry)->key) == ZSTR_LEN(key) &&
 			memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
+
 			/* executing removal */
-			apc_cache_remove_entry(cache, entry);
-			goto deleted;
+			apc_cache_wlocked_remove_entry(cache, entry);
+
+			/* unlock header */
+			APC_UNLOCK(cache->header);
+			return 1;
 		}
 
-		/* continue locking */
 		entry = &(*entry)->next;
 	}
 
 	/* unlock header */
 	APC_UNLOCK(cache->header);
-
 	return 0;
-
-deleted:
-	/* unlock deleted */
-	APC_UNLOCK(cache->header);
-
-	return 1;
 }
 /* }}} */
 
