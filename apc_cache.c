@@ -862,12 +862,9 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 static zend_bool apc_cache_make_copy_in_context_ex(
 		apc_context_t* context, apc_serializer_t* serializer,
 		apc_malloc_t _malloc, apc_free_t _free,
-		apc_protect_t _protect, apc_unprotect_t _unprotect,
 		apc_pool_type pool_type) {
 	/* attempt to create the pool */
-	context->pool = apc_pool_create(
-		pool_type, _malloc, _free, _protect, _unprotect
-	);
+	context->pool = apc_pool_create(pool_type, _malloc, _free);
 
 	if (!context->pool) {
 		apc_warning("Unable to allocate memory for pool.");
@@ -891,8 +888,6 @@ PHP_APCU_API zend_bool apc_cache_make_copy_in_context(
 		cache->serializer,
 		(apc_malloc_t) cache->sma->smalloc,
 		cache->sma->sfree,
-		cache->sma->protect,
-		cache->sma->unprotect,
 		pool_type
 	);
 }
