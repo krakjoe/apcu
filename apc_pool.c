@@ -61,8 +61,7 @@ typedef struct _pool_block
 
 struct _apc_pool {
 	/* handler functions */
-	apc_malloc_t    allocate;
-	apc_free_t      deallocate;
+	apc_sma_t *sma;
 
 	/* total */
 	size_t          size;
@@ -107,14 +106,11 @@ static const unsigned char decaff[] =  {
 } while(0)
 
 /* {{{ create_pool_block */
-static pool_block* create_pool_block(apc_pool *pool,
-									 size_t size)
+static pool_block* create_pool_block(apc_pool *pool, size_t size)
 {
-	apc_malloc_t allocate = pool->allocate;
-
 	size_t realsize = sizeof(pool_block) + ALIGNWORD(size);
 
-	pool_block* entry = allocate(realsize);
+	pool_block* entry = pool->sma->smalloc(realsize);
 
 	if (!entry) {
 		return NULL;
@@ -268,16 +264,10 @@ static APC_USED int apc_pool_check_integrity(apc_pool *pool)
 /* {{{ apc_pool_cleanup */
 static void apc_pool_cleanup(apc_pool *pool)
 {
-	pool_block *entry;
-	pool_block *tmp;
-	apc_free_t deallocate = pool->deallocate;
-
-	assert(apc_pool_check_integrity(pool)!=0);
-
-	entry = pool->head;
+	pool_block *entry = pool->head;
 	while (entry->next != NULL) {
-		tmp = entry->next;
-		deallocate(entry);
+		pool_block *tmp = entry->next;
+		pool->sma->sfree(entry);
 		entry = tmp;
 	}
 }
@@ -286,7 +276,8 @@ static void apc_pool_cleanup(apc_pool *pool)
 /* {{{ apc_pool_destroy */
 PHP_APCU_API void apc_pool_destroy(apc_pool *pool)
 {
-	apc_free_t deallocate = pool->deallocate;
+	apc_free_t deallocate = pool->sma->sfree;
+	assert(apc_pool_check_integrity(pool)!=0);
 
 	apc_pool_cleanup(pool);
 	deallocate(pool);
@@ -295,8 +286,7 @@ PHP_APCU_API void apc_pool_destroy(apc_pool *pool)
 
 
 /* {{{ apc_pool_create */
-PHP_APCU_API apc_pool* apc_pool_create(
-        apc_pool_type type, apc_malloc_t allocate, apc_free_t deallocate)
+PHP_APCU_API apc_pool* apc_pool_create(apc_pool_type type, apc_sma_t *sma)
 {
 	size_t dsize = 0;
 	apc_pool *pool;
@@ -318,15 +308,13 @@ PHP_APCU_API apc_pool* apc_pool_create(
 			return NULL;
 	}
 
-	pool = allocate((sizeof(apc_pool) + ALIGNWORD(dsize)));
+	pool = sma->smalloc((sizeof(apc_pool) + ALIGNWORD(dsize)));
 
 	if (!pool) {
 		return NULL;
 	}
 
-	pool->allocate = allocate;
-	pool->deallocate = deallocate;
-
+	pool->sma = sma;
 	pool->size = sizeof(apc_pool) + ALIGNWORD(dsize);
 	pool->dsize = dsize;
 	pool->head = NULL;
