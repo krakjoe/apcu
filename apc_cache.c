@@ -1672,14 +1672,12 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 		/* for copy of locking key struct */
 		apc_cache_slam_key_t *last = &cache->header->lastkey;
 
-		if (!last->str) {
+		if (!last->hash) {
 			return 0;
 		}
 
-		/* TODO This looks somewhat unsafe. Better store hash + len explicitly? */
-
 		/* check the hash and length match */
-		if (ZSTR_HASH(last->str) == ZSTR_HASH(key) && ZSTR_LEN(last->str) == ZSTR_LEN(key)) {
+		if (last->hash == ZSTR_HASH(key) && last->len == ZSTR_LEN(key)) {
 			apc_cache_owner_t owner;
 #ifdef ZTS
 			owner = TSRMLS_CACHE;
@@ -1687,7 +1685,7 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 			owner = getpid();
 #endif
 
-			/* check the time ( last second considered slam ) and context */
+			/* check the time (last second considered slam) and context */
 			if (last->mtime == t && last->owner != owner) {
 				/* potential cache slam */
 				apc_debug(
@@ -1695,7 +1693,8 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 				result = 1;
 			} else {
 				/* sets enough information for an educated guess, but is not exact */
-				last->str = key;
+				last->hash = ZSTR_HASH(key);
+				last->len = ZSTR_LEN(key);
 				last->mtime = t;
 				last->owner = owner;
 			}
