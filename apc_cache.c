@@ -44,6 +44,9 @@
 # define GC_ADDREF(ref) GC_REFCOUNT(ref)++
 #endif
 
+#define APC_POOL_ALLOC(size) apc_pool_alloc(ctxt->pool, ctxt->sma, (size))
+#define APC_POOL_STRING_DUP(str) apc_pool_string_dup(ctxt->pool, ctxt->sma, (str))
+
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
 
 /* {{{ make_prime */
@@ -95,9 +98,9 @@ static int make_prime(int n)
 }
 /* }}} */
 
-static void free_entry(apc_cache_entry_t *entry)
+static void free_entry(apc_cache_t *cache, apc_cache_entry_t *entry)
 {
-	apc_pool_destroy(entry->pool);
+	apc_pool_destroy(entry->pool, cache->sma);
 }
 
 /* {{{ apc_cache_hash_slot
@@ -125,7 +128,7 @@ PHP_APCU_API void apc_cache_remove_entry(apc_cache_t *cache, apc_cache_entry_t *
 
 	/* remove if there are no references */
 	if (dead->ref_count <= 0) {
-		free_entry(dead);
+		free_entry(cache, dead);
 	} else {
 		/* add to gc if there are still refs */
 		dead->next = cache->header->gc;
@@ -169,7 +172,7 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache)
 				*entry = (*entry)->next;
 
 				/* free entry */
-				free_entry(dead);
+				free_entry(cache, dead);
 			} else {
 				entry = &(*entry)->next;
 			}
@@ -803,13 +806,13 @@ PHP_APCU_API zend_bool apc_cache_make_copy_in_context(
 		apc_cache_t* cache, apc_context_t* context, apc_pool_type pool_type) {
 	/* attempt to create the pool */
 	context->pool = apc_pool_create(pool_type, cache->sma);
-
 	if (!context->pool) {
 		apc_warning("Unable to allocate memory for pool");
 		return 0;
 	}
 
 	/* set context information */
+	context->sma = cache->sma;
 	context->serializer = cache->serializer;
 	context->copy = APC_COPY_IN;
 
@@ -842,7 +845,7 @@ PHP_APCU_API zend_bool apc_cache_destroy_context(apc_context_t* context) {
 		return 0;
 	}
 
-	apc_pool_destroy(context->pool);
+	apc_pool_destroy(context->pool, context->sma);
 
 	return 1;
 } /* }}} */
@@ -1090,7 +1093,6 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 	unsigned char *buf = NULL;
 	size_t buf_len = 0;
 
-	apc_pool* pool = ctxt->pool;
 	apc_serialize_t serialize = APC_SERIALIZER_NAME(php);
 	void *config = NULL;
 	zend_string *serial = NULL;
@@ -1103,7 +1105,7 @@ static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt
 	ZVAL_NULL(dst);
 
 	if (serialize(&buf, &buf_len, src, config)) {
-		if (!(serial = apc_pstrnew((char *) buf, buf_len, pool))) {
+		if (!(serial = apc_pool_string_init(ctxt->pool, ctxt->sma, (char *) buf, buf_len))) {
 			efree(buf);
 
 			return dst;
@@ -1181,7 +1183,7 @@ static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTab
 		q->key = p->key;
 		if (q->key) {
 			if (ctxt->copy == APC_COPY_IN) {
-				q->key = apc_pstrcpy(q->key, ctxt->pool);
+				q->key = APC_POOL_STRING_DUP(q->key);
 			} else {
 				q->key = zend_string_dup(p->key, 0);
 			}
@@ -1230,10 +1232,9 @@ static zend_always_inline uint32_t apc_array_dup_elements(apc_context_t *ctxt, H
 static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t *ctxt) {
 	uint32_t idx;
 	HashTable *target;
-	apc_pool *pool = ctxt->pool;
 
 	if (ctxt->copy == APC_COPY_IN) {
-		target = (HashTable*) apc_pool_alloc(pool, sizeof(HashTable));
+		target = APC_POOL_ALLOC(sizeof(HashTable));
 	} else {
 		ALLOC_HASHTABLE(target);
 	}
@@ -1271,7 +1272,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		target->nNumOfElements = source->nNumOfElements;
 		target->nNextFreeElement = source->nNextFreeElement;
 		if (ctxt->copy == APC_COPY_IN) {
-			HT_SET_DATA_ADDR(target, apc_pool_alloc(pool, HT_SIZE(target)));
+			HT_SET_DATA_ADDR(target, APC_POOL_ALLOC(HT_SIZE(target)));
 		} else
 			HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
 
@@ -1303,7 +1304,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		target->nTableMask = source->nTableMask;
 		target->nNextFreeElement = source->nNextFreeElement;
 		if (ctxt->copy == APC_COPY_IN) {
-			HT_SET_DATA_ADDR(target, apc_pool_alloc(pool, HT_SIZE(target)));
+			HT_SET_DATA_ADDR(target, APC_POOL_ALLOC(HT_SIZE(target)));
 		} else
 			HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
 
@@ -1341,7 +1342,6 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 }
 
 static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, apc_context_t *ctxt) {
-	apc_pool* pool = ctxt->pool;
 	zend_reference *dst;
 
 	assert(src != NULL);
@@ -1355,7 +1355,7 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 	}
 
 	if (ctxt->copy == APC_COPY_IN) {
-		dst = apc_pool_alloc(pool, sizeof(zend_reference));
+		dst = APC_POOL_ALLOC(sizeof(zend_reference));
 	} else {
 		dst = emalloc(sizeof(zend_reference));
 	}
@@ -1381,8 +1381,6 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 /* This function initializes *dst (temporary zval with request lifetime) with the (possibly serialized) contents of the serialized value in *src */
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt)
 {
-	apc_pool* pool = ctxt->pool;
-
 	assert(dst != NULL);
 	assert(src != NULL);
 
@@ -1422,7 +1420,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 			ZVAL_STR(dst, zend_string_dup(Z_STR_P(src), 0));
 		} else {
 			Z_TYPE_INFO_P(dst) = IS_STRING_EX;
-			Z_STR_P(dst) = apc_pstrcpy(Z_STR_P(src), pool);
+			Z_STR_P(dst) = APC_POOL_STRING_DUP(Z_STR_P(src));
 		}
 		if (Z_STR_P(dst) == NULL)
 			return NULL;
@@ -1515,14 +1513,13 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_make_entry(
 		apc_context_t* ctxt, apc_cache_key_t *key, const zval* val, const int32_t ttl, time_t t)
 {
 	zend_string *copied_key;
-	apc_pool *pool = ctxt->pool;
-	apc_cache_entry_t *entry = apc_pool_alloc(pool, sizeof(apc_cache_entry_t));
+	apc_cache_entry_t *entry = APC_POOL_ALLOC(sizeof(apc_cache_entry_t));
 	if (!entry) {
 		return NULL;
 	}
 
 	/* copy key into pool */
-	copied_key = apc_pstrcpy(key->str, pool);
+	copied_key = APC_POOL_STRING_DUP(key->str);
 	if (!copied_key) {
 		return NULL;
 	}
@@ -1531,7 +1528,7 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_make_entry(
 		return NULL;
 	}
 
-	entry->pool = pool;
+	entry->pool = ctxt->pool;
 	entry->ttl = ttl;
 	entry->key = *key;
 	entry->key.str = copied_key;
