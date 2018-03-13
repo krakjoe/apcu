@@ -53,7 +53,6 @@
 typedef struct _pool_block
 {
 	size_t              avail;
-	size_t              capacity;
 	unsigned char       *mark;
 	struct _pool_block  *next;
 	unsigned             :0; /* this should align to word */
@@ -103,8 +102,8 @@ static const unsigned char decaff[] =  {
 /* }}} */
 
 #define INIT_POOL_BLOCK(rpool, entry, size) do {\
-	(entry)->avail = (entry)->capacity = (size);\
-	(entry)->mark =  ((unsigned char*)(entry)) + ALIGNWORD(sizeof(pool_block));\
+	(entry)->avail = (size);\
+	(entry)->mark = ((unsigned char*)(entry)) + ALIGNWORD(sizeof(pool_block));\
 	(entry)->next = (rpool)->head;\
 	(rpool)->head = (entry);\
 } while(0)
@@ -230,13 +229,6 @@ static APC_USED int apc_pool_check_integrity(apc_pool *pool)
 	size_t realsize;
 	unsigned char   *redzone;
 	size_t redsize;
-
-	for(entry = pool->head; entry != NULL; entry = entry->next) {
-		start = (unsigned char *)entry + ALIGNWORD(sizeof(pool_block));
-		if((entry->mark - start) != (entry->capacity - entry->avail)) {
-			return 0;
-		}
-	}
 
 	if (!APC_POOL_HAS_REDZONES || !APC_POOL_HAS_SIZEINFO) {
 		(void)pool; /* remove unused warning */
