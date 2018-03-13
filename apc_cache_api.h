@@ -194,11 +194,11 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t* cache, zend_string *key);
 
 /* apc_cache_fetch_zval copies a cache entry value to be usable at runtime.
  */
-PHP_APCU_API zend_bool apc_cache_fetch_zval(
+PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 		apc_cache_t *cache, apc_cache_entry_t *entry, zval *dst);
 
 /*
- * apc_cache_release decrements the reference count associated with a cache
+ * apc_cache_entry_release decrements the reference count associated with a cache
  * entry. Calling apc_cache_find automatically increments the reference count,
  * and this function must be called post-execution to return the count to its
  * original value. Failing to do so will prevent the entry from being
@@ -206,7 +206,7 @@ PHP_APCU_API zend_bool apc_cache_fetch_zval(
  *
  * entry is the cache entry whose ref count you want to decrement.
  */
-PHP_APCU_API void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry);
+PHP_APCU_API void apc_cache_entry_release(apc_cache_t *cache, apc_cache_entry_t *entry);
 
 /*
  * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
