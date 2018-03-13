@@ -61,7 +61,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(
 	array_init(&item->value);
 	ht = Z_ARRVAL(item->value);
 
-	item->key = zend_string_dup(entry->key.str, 0);
+	item->key = zend_string_dup(entry->key, 0);
 
 	if (APC_ITER_TYPE & iterator->format) {
 		ZVAL_STR_COPY(&zv, apc_str_user);
@@ -86,7 +86,7 @@ static apc_iterator_item_t* apc_iterator_item_ctor(
 		zend_hash_add_new(ht, apc_str_num_hits, &zv);
 	}
 	if (APC_ITER_MTIME & iterator->format) {
-		ZVAL_LONG(&zv, entry->key.mtime);
+		ZVAL_LONG(&zv, entry->mtime);
 		zend_hash_add_new(ht, apc_str_mtime, &zv);
 	}
 	if (APC_ITER_CTIME & iterator->format) {
@@ -196,19 +196,19 @@ static int apc_iterator_search_match(apc_iterator_t *iterator, apc_cache_entry_t
 # if PHP_VERSION_ID >= 70300
 		rval = pcre2_match(
 			php_pcre_pce_re(iterator->pce),
-			(PCRE2_SPTR) ZSTR_VAL(entry->key.str), ZSTR_LEN(entry->key.str),
+			(PCRE2_SPTR) ZSTR_VAL(entry->key), ZSTR_LEN(entry->key),
 			0, 0, iterator->re_match_data, php_pcre_mctx()) >= 0;
 # else
 		rval = pcre_exec(
 			iterator->pce->re, iterator->pce->extra,
-			ZSTR_VAL(entry->key.str), ZSTR_LEN(entry->key.str),
+			ZSTR_VAL(entry->key), ZSTR_LEN(entry->key),
 			0, 0, NULL, 0) >= 0;
 # endif
 	}
 #endif
 
 	if (iterator->search_hash) {
-		rval = zend_hash_exists(iterator->search_hash, entry->key.str);
+		rval = zend_hash_exists(iterator->search_hash, entry->key);
 	}
 
 	return rval;

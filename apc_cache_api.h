@@ -36,27 +36,27 @@ typedef void*** apc_cache_owner_t;
 typedef pid_t apc_cache_owner_t;
 #endif /* }}} */
 
-/* {{{ struct definition: apc_cache_key_t */
-typedef struct apc_cache_key_t apc_cache_key_t;
-struct apc_cache_key_t {
-	zend_string *str;			  /* the key for this cached entry */
-	time_t mtime;                 /* the mtime of this cached entry */
-	apc_cache_owner_t owner;      /* the context that created this key */
-}; /* }}} */
+typedef struct apc_cache_slam_key_t apc_cache_slam_key_t;
+struct apc_cache_slam_key_t {
+	zend_string *str;        /* the key for this cached entry */
+	time_t mtime;            /* the mtime of this cached entry */
+	apc_cache_owner_t owner; /* the context that created this key */
+};
 
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
-	apc_cache_key_t key;     /* entry key */
-	zval val;			     /* the zval copied at store time */
+	zend_string *key;        /* entry key */
+	zval val;                /* the zval copied at store time */
 	apc_cache_entry_t *next; /* next entry in linked list */
-	zend_long ttl;		     /* the ttl on this specific entry */
+	zend_long ttl;           /* the ttl on this specific entry */
 	zend_long ref_count;     /* the reference count of this entry */
 	zend_long nhits;         /* number of hits to this entry */
 	time_t ctime;            /* time entry was initialized */
+	time_t mtime;            /* the mtime of this cached entry */
 	time_t dtime;            /* time entry was removed from cache */
 	time_t atime;            /* time entry was last accessed */
-	zend_long mem_size;	     /* memory used */
+	zend_long mem_size;      /* memory used */
 	apc_pool *pool;	         /* pool which allocated the value */
 };
 /* }}} */
@@ -77,7 +77,7 @@ typedef struct _apc_cache_header_t {
 	zend_long mem_size;             /* used */
 	time_t stime;                   /* start time */
 	unsigned short state;           /* cache state */
-	apc_cache_key_t lastkey;        /* last key inserted (not necessarily without error) */
+	apc_cache_slam_key_t lastkey;   /* last key inserted (not necessarily without error) */
 	apc_cache_entry_t *gc;          /* gc list */
 } apc_cache_header_t; /* }}} */
 
@@ -231,15 +231,10 @@ PHP_APCU_API zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zv
 PHP_APCU_API void apc_cache_release(apc_cache_t* cache, apc_cache_entry_t* entry);
 
 /*
-* apc_cache_make_key creates an apc_cache_key_t from an identifier, it's length and the current time
-*/
-PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, zend_string *str);
-
-/*
  * apc_cache_make_entry creates an apc_cache_entry_t given a zval, context and ttl
  */
-PHP_APCU_API apc_cache_entry_t* apc_cache_make_entry(
-        apc_context_t* ctxt, apc_cache_key_t* key, const zval *val, const int32_t ttl, time_t t);
+PHP_APCU_API apc_cache_entry_t *apc_cache_make_entry(
+        apc_context_t *ctxt, zend_string *key, const zval *val, const int32_t ttl, time_t t);
 
 /*
  fetches information about the cache provided for userland status functions
@@ -272,7 +267,7 @@ PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache);
 * in non-ZTS mode, PID determines owner
 * Note: this function sets the owner of key during execution
 */
-PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key);
+PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, time_t t);
 
 /*
 * apc_cache_serializer

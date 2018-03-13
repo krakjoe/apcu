@@ -164,7 +164,7 @@ PHP_APCU_API void apc_cache_gc(apc_cache_t* cache)
 				if (dead->ref_count > 0) {
 					apc_debug(
 						"GC cache entry '%s' was on gc-list for %ld seconds",
-						ZSTR_VAL(dead->key.str), gc_sec
+						ZSTR_VAL(dead->key), gc_sec
 					);
 				}
 
@@ -281,7 +281,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 
 static inline zend_bool apc_cache_insert_internal(
 		apc_cache_t *cache, apc_cache_entry_t *new_entry, zend_bool exclusive) {
-	apc_cache_key_t *key = &new_entry->key;
+	zend_string *key = new_entry->key;
 	time_t t = new_entry->ctime;
 
 	/* check we are able to deal with this request */
@@ -298,7 +298,7 @@ static inline zend_bool apc_cache_insert_internal(
 		zend_ulong h, s;
 
 		/* calculate hash and entry */
-		apc_cache_hash_slot(cache, key->str, &h, &s);
+		apc_cache_hash_slot(cache, key, &h, &s);
 
 		/*
 		* select appropriate entry ...
@@ -307,9 +307,9 @@ static inline zend_bool apc_cache_insert_internal(
 
 		while (*entry) {
 			/* check for a match by hash and string */
-			if ((ZSTR_HASH((*entry)->key.str) == h) &&
-				ZSTR_LEN((*entry)->key.str) == ZSTR_LEN(key->str) &&
-				memcmp(ZSTR_VAL((*entry)->key.str), ZSTR_VAL(key->str), ZSTR_LEN(key->str)) == 0) {
+			if ((ZSTR_HASH((*entry)->key) == h) &&
+				ZSTR_LEN((*entry)->key) == ZSTR_LEN(key) &&
+				memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
 
 				/*
 				 * At this point we have found the user cache entry.  If we are doing
@@ -357,33 +357,28 @@ static inline zend_bool apc_cache_insert_internal(
 	return 1;
 }
 
-static inline zend_bool apc_cache_store_internal(apc_cache_t *cache, zend_string *strkey, const zval *val, const int32_t ttl, const zend_bool exclusive) {
+static inline zend_bool apc_cache_store_internal(
+		apc_cache_t *cache, zend_string *key, const zval *val,
+		const int32_t ttl, const zend_bool exclusive) {
 	apc_cache_entry_t *entry;
-	apc_cache_key_t key;
-	time_t t;
+	time_t t = apc_time();
 	apc_context_t ctxt={0,};
 	zend_bool ret = 0;
-
-	t = apc_time();
 
 	/* initialize a context suitable for making an insert */
 	if (!apc_cache_make_copy_in_context(cache, &ctxt, APC_SMALL_POOL)) {
 		return 0;
 	}
 
-	/* initialize the key for insertion */
-	if (apc_cache_make_key(&key, strkey)) {
+	/* run cache defense */
+	if (!apc_cache_defense(cache, key, t)) {
 
-		/* run cache defense */
-		if (!apc_cache_defense(cache, &key)) {
+		/* initialize the entry for insertion */
+		if ((entry = apc_cache_make_entry(&ctxt, key, val, ttl, t))) {
 
-			/* initialize the entry for insertion */
-			if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl, t))) {
-
-				/* execute an insertion */
-				if (apc_cache_insert_internal(cache, entry, exclusive)) {
-					ret = 1;
-				}
+			/* execute an insertion */
+			if (apc_cache_insert_internal(cache, entry, exclusive)) {
+				ret = 1;
 			}
 		}
 	}
@@ -411,9 +406,9 @@ static inline apc_cache_entry_t *apc_cache_find_internal(
 
 	while (*entry) {
 		/* check for a matching key by has and identifier */
-		if (h == ZSTR_HASH((*entry)->key.str) &&
-			ZSTR_LEN((*entry)->key.str) == ZSTR_LEN(key) &&
-			memcmp(ZSTR_VAL((*entry)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
+		if (h == ZSTR_HASH((*entry)->key) &&
+			ZSTR_LEN((*entry)->key) == ZSTR_LEN(key) &&
+			memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
 
 			/* Check to make sure this entry isn't expired by a hard TTL */
 			if ((*entry)->ttl && (time_t) ((*entry)->ctime + (*entry)->ttl) < t) {
@@ -476,32 +471,27 @@ static inline zend_bool apc_cache_fetch_internal(apc_cache_t* cache, zend_string
 }
 
 /* {{{ apc_cache_store */
-PHP_APCU_API zend_bool apc_cache_store(apc_cache_t* cache, zend_string *strkey, const zval *val, const int32_t ttl, const zend_bool exclusive) {
+PHP_APCU_API zend_bool apc_cache_store(
+		apc_cache_t* cache, zend_string *key, const zval *val,
+		const int32_t ttl, const zend_bool exclusive) {
 	apc_cache_entry_t *entry;
-	apc_cache_key_t key;
-	time_t t;
+	time_t t = apc_time();
 	apc_context_t ctxt={0,};
 	zend_bool ret = 0;
-
-	t = apc_time();
 
 	/* initialize a context suitable for making an insert */
 	if (!apc_cache_make_copy_in_context(cache, &ctxt, APC_SMALL_POOL)) {
 		return 0;
 	}
 
-	/* initialize the key for insertion */
-	if (apc_cache_make_key(&key, strkey)) {
+	/* run cache defense */
+	if (!apc_cache_defense(cache, key, t)) {
 
-		/* run cache defense */
-		if (!apc_cache_defense(cache, &key)) {
-
-			/* initialize the entry for insertion */
-			if ((entry = apc_cache_make_entry(&ctxt, &key, val, ttl, t))) {
-				/* execute an insertion */
-				if (apc_cache_insert(cache, entry, exclusive)) {
-					ret = 1;
-				}
+		/* initialize the entry for insertion */
+		if ((entry = apc_cache_make_entry(&ctxt, key, val, ttl, t))) {
+			/* execute an insertion */
+			if (apc_cache_insert(cache, entry, exclusive)) {
+				ret = 1;
 			}
 		}
 	}
@@ -687,7 +677,7 @@ PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache) {
 	cache->header->nmisses = 0;
 
 	/* resets lastkey */
-	memset(&cache->header->lastkey, 0, sizeof(apc_cache_key_t));
+	memset(&cache->header->lastkey, 0, sizeof(apc_cache_slam_key_t));
 } /* }}} */
 
 /* {{{ apc_cache_clear */
@@ -786,7 +776,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 			/* if the cache now has space, then reset last key */
 			if (cache->sma->get_avail_size(size)) {
 				/* wipe lastkey */
-				memset(&cache->header->lastkey, 0, sizeof(apc_cache_key_t));
+				memset(&cache->header->lastkey, 0, sizeof(apc_cache_slam_key_t));
 			} else {
 				/* with not enough space left in cache, we are forced to expunge */
 				apc_cache_real_expunge(cache);
@@ -921,9 +911,9 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_exists(apc_cache_t* cache, zend_string
 
 		while (*entry) {
 			/* check for match by hash and identifier */
-			if (h == ZSTR_HASH((*entry)->key.str) &&
-				ZSTR_LEN((*entry)->key.str) == ZSTR_LEN(key) &&
-				memcmp(ZSTR_VAL((*entry)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
+			if (h == ZSTR_HASH((*entry)->key) &&
+				ZSTR_LEN((*entry)->key) == ZSTR_LEN(key) &&
+				memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
 
 				/* Check to make sure this entry isn't expired by a hard TTL */
 				if ((*entry)->ttl && (time_t) ((*entry)->ctime + (*entry)->ttl) < t) {
@@ -978,9 +968,9 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 
 		while (*entry) {
 			/* check for a match by hash and identifier */
-			if (h == ZSTR_HASH((*entry)->key.str) &&
-				ZSTR_LEN((*entry)->key.str) == ZSTR_LEN(key) &&
-				memcmp(ZSTR_VAL((*entry)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
+			if (h == ZSTR_HASH((*entry)->key) &&
+				ZSTR_LEN((*entry)->key) == ZSTR_LEN(key) &&
+				memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
 				/* attempt to perform update */
 				switch (Z_TYPE((*entry)->val)) {
 					case IS_ARRAY:
@@ -995,7 +985,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 						/* executing update */
 						retval = updater(cache, *entry, data);
 						/* set modified time */
-						(*entry)->key.mtime = apc_time();
+						(*entry)->mtime = apc_time();
 						break;
 				}
 
@@ -1046,9 +1036,9 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 
 	while (*entry) {
 		/* check for a match by hash and identifier */
-		if (h == ZSTR_HASH((*entry)->key.str) &&
-			ZSTR_LEN((*entry)->key.str) == ZSTR_LEN(key) &&
-			memcmp(ZSTR_VAL((*entry)->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
+		if (h == ZSTR_HASH((*entry)->key) &&
+			ZSTR_LEN((*entry)->key) == ZSTR_LEN(key) &&
+			memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
 			/* executing removal */
 			apc_cache_remove_entry(cache, entry);
 			goto deleted;
@@ -1066,22 +1056,6 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 deleted:
 	/* unlock deleted */
 	APC_UNLOCK(cache->header);
-
-	return 1;
-}
-/* }}} */
-
-/* {{{ apc_cache_make_key */
-PHP_APCU_API zend_bool apc_cache_make_key(apc_cache_key_t* key, zend_string *str)
-{
-	assert(key != NULL);
-
-	if (!str) {
-		return 0;
-	}
-
-	key->str = str;
-	key->mtime = apc_time();
 
 	return 1;
 }
@@ -1510,7 +1484,7 @@ PHP_APCU_API zval* apc_cache_fetch_zval(apc_context_t* ctxt, zval* dst, const zv
 
 /* {{{ apc_cache_make_entry */
 PHP_APCU_API apc_cache_entry_t *apc_cache_make_entry(
-		apc_context_t* ctxt, apc_cache_key_t *key, const zval* val, const int32_t ttl, time_t t)
+		apc_context_t *ctxt, zend_string *key, const zval* val, const int32_t ttl, time_t t)
 {
 	zend_string *copied_key;
 	apc_cache_entry_t *entry = APC_POOL_ALLOC(sizeof(apc_cache_entry_t));
@@ -1519,7 +1493,7 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_make_entry(
 	}
 
 	/* copy key into pool */
-	copied_key = APC_POOL_STRING_DUP(key->str);
+	copied_key = APC_POOL_STRING_DUP(key);
 	if (!copied_key) {
 		return NULL;
 	}
@@ -1530,8 +1504,7 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_make_entry(
 
 	entry->pool = ctxt->pool;
 	entry->ttl = ttl;
-	entry->key = *key;
-	entry->key.str = copied_key;
+	entry->key = copied_key;
 
 	entry->next = NULL;
 	entry->ref_count = 0;
@@ -1552,11 +1525,11 @@ static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_entry_t *p)
 
 	array_init(&link);
 
-	add_assoc_str(&link, "info", zend_string_dup(p->key.str, 0));
+	add_assoc_str(&link, "info", zend_string_dup(p->key, 0));
 	add_assoc_long(&link, "ttl", p->ttl);
 
 	add_assoc_double(&link, "num_hits", (double)p->nhits);
-	add_assoc_long(&link, "mtime", p->key.mtime);
+	add_assoc_long(&link, "mtime", p->mtime);
 	add_assoc_long(&link, "creation_time", p->ctime);
 	add_assoc_long(&link, "deletion_time", p->dtime);
 	add_assoc_long(&link, "access_time", p->atime);
@@ -1654,15 +1627,15 @@ PHP_APCU_API zval *apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *st
 
 		while (entry) {
 			/* check for a matching key by has and identifier */
-			if (h == ZSTR_HASH(entry->key.str) &&
-				ZSTR_LEN(entry->key.str) == ZSTR_LEN(key) &&
-				memcmp(ZSTR_VAL(entry->key.str), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS
+			if (h == ZSTR_HASH(entry->key) &&
+				ZSTR_LEN(entry->key) == ZSTR_LEN(key) &&
+				memcmp(ZSTR_VAL(entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS
 			) {
 				array_init(stat);
 
 				add_assoc_long(stat, "hits",  entry->nhits);
 				add_assoc_long(stat, "access_time", entry->atime);
-				add_assoc_long(stat, "mtime", entry->key.mtime);
+				add_assoc_long(stat, "mtime", entry->mtime);
 				add_assoc_long(stat, "creation_time", entry->ctime);
 				add_assoc_long(stat, "deletion_time", entry->dtime);
 				add_assoc_long(stat, "ttl", entry->ttl);
@@ -1689,45 +1662,42 @@ PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache)
 /* }}} */
 
 /* {{{ apc_cache_defense */
-PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t* cache, apc_cache_key_t* key)
+PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, time_t t)
 {
 	zend_bool result = 0;
-
-#ifdef ZTS
-#	define FROM_DIFFERENT_THREAD(k) ((key->owner = TSRMLS_CACHE) != (k)->owner)
-#else
-#	define FROM_DIFFERENT_THREAD(k) ((key->owner = getpid()) != (k)->owner)
-#endif
 
 	/* only continue if slam defense is enabled */
 	if (cache->defend) {
 
 		/* for copy of locking key struct */
-		apc_cache_key_t *last = &cache->header->lastkey;
+		apc_cache_slam_key_t *last = &cache->header->lastkey;
 
 		if (!last->str) {
 			return 0;
 		}
 
+		/* TODO This looks somewhat unsafe. Better store hash + len explicitly? */
+
 		/* check the hash and length match */
-		if(ZSTR_HASH(last->str) == ZSTR_HASH(key->str) && ZSTR_LEN(last->str) == ZSTR_LEN(key->str)) {
+		if (ZSTR_HASH(last->str) == ZSTR_HASH(key) && ZSTR_LEN(last->str) == ZSTR_LEN(key)) {
+			apc_cache_owner_t owner;
+#ifdef ZTS
+			owner = TSRMLS_CACHE;
+#else
+			owner = getpid();
+#endif
+
 			/* check the time ( last second considered slam ) and context */
-			if(last->mtime == key->mtime && FROM_DIFFERENT_THREAD(last)) {
+			if (last->mtime == t && last->owner != owner) {
 				/* potential cache slam */
 				apc_debug(
-					"Potential cache slam averted for key '%s'", ZSTR_VAL(key->str));
+					"Potential cache slam averted for key '%s'", ZSTR_VAL(key));
 				result = 1;
 			} else {
 				/* sets enough information for an educated guess, but is not exact */
-				last->str = key->str;
-				last->mtime = apc_time();
-
-				/* required to tell contexts apart */
-#ifdef ZTS
-				last->owner = TSRMLS_CACHE;
-#else
-				last->owner = getpid();
-#endif
+				last->str = key;
+				last->mtime = t;
+				last->owner = owner;
 			}
 		}
 	}
