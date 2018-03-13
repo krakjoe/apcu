@@ -48,6 +48,7 @@ typedef enum _apc_copy_type {
 /* {{{ struct definition: apc_context_t */
 typedef struct _apc_context_t {
 	apc_pool*          pool;            /* pool of memory for context */
+	apc_sma_t*         sma;             /* SMA reference for the pool */
 	apc_copy_type      copy;            /* copying type for context */
 	HashTable          copied;          /* copied zvals for recursion support */
 	apc_serializer_t*  serializer;      /* serializer */
@@ -62,16 +63,17 @@ PHP_APCU_API apc_pool* apc_pool_create(apc_pool_type pool_type, apc_sma_t *sma);
 /*
  apc_pool_destroy first calls apc_cleanup_t set during apc_pool_create, then apc_free_t
 */
-PHP_APCU_API void apc_pool_destroy(apc_pool *pool);
+PHP_APCU_API void apc_pool_destroy(apc_pool *pool, apc_sma_t *sma);
 
 /* Allocate size bytes in the pool */
-PHP_APCU_API void *apc_pool_alloc(apc_pool *pool, size_t size);
+PHP_APCU_API void *apc_pool_alloc(apc_pool *pool, apc_sma_t *sma, size_t size);
 
 /* Get allocated size of pool */
 PHP_APCU_API size_t apc_pool_size(apc_pool *pool);
 
-PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool);
-PHP_APCU_API zend_string* apc_pstrnew(char *buf, size_t buf_len, apc_pool* pool);
+PHP_APCU_API zend_string* apc_pool_string_dup(apc_pool *pool, apc_sma_t *sma, zend_string *str);
+PHP_APCU_API zend_string* apc_pool_string_init(
+		apc_pool *pool, apc_sma_t *sma, char *buf, size_t buf_len);
 
 #endif
 

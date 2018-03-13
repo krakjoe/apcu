@@ -60,13 +60,10 @@ typedef struct _pool_block
 } pool_block;
 
 struct _apc_pool {
-	/* handler functions */
-	apc_sma_t *sma;
-
 	/* total */
-	size_t          size;
+	size_t size;
 
-	size_t     dsize;
+	size_t dsize;
 
 	unsigned long count;
 
@@ -106,12 +103,11 @@ static const unsigned char decaff[] =  {
 } while(0)
 
 /* {{{ create_pool_block */
-static pool_block* create_pool_block(apc_pool *pool, size_t size)
+static pool_block* create_pool_block(apc_pool *pool, apc_sma_t *sma, size_t size)
 {
 	size_t realsize = sizeof(pool_block) + ALIGNWORD(size);
 
-	pool_block* entry = pool->sma->smalloc(realsize);
-
+	pool_block* entry = sma->smalloc(realsize);
 	if (!entry) {
 		return NULL;
 	}
@@ -126,7 +122,7 @@ static pool_block* create_pool_block(apc_pool *pool, size_t size)
 /* }}} */
 
 /* {{{ apc_pool_alloc */
-PHP_APCU_API void* apc_pool_alloc(apc_pool *pool, size_t size)
+PHP_APCU_API void *apc_pool_alloc(apc_pool *pool, apc_sma_t *sma, size_t size)
 {
 	unsigned char *p = NULL;
 	size_t realsize = ALIGNWORD(size);
@@ -165,7 +161,7 @@ PHP_APCU_API void* apc_pool_alloc(apc_pool *pool, size_t size)
 
 	poolsize = ALIGNSIZE(realsize, pool->dsize);
 
-	entry = create_pool_block(pool, poolsize);
+	entry = create_pool_block(pool, sma, poolsize);
 
 	if(!entry) {
 		return NULL;
@@ -261,26 +257,21 @@ static APC_USED int apc_pool_check_integrity(apc_pool *pool)
 }
 /* }}} */
 
-/* {{{ apc_pool_cleanup */
-static void apc_pool_cleanup(apc_pool *pool)
-{
-	pool_block *entry = pool->head;
-	while (entry->next != NULL) {
-		pool_block *tmp = entry->next;
-		pool->sma->sfree(entry);
-		entry = tmp;
-	}
-}
-/* }}} */
 
 /* {{{ apc_pool_destroy */
-PHP_APCU_API void apc_pool_destroy(apc_pool *pool)
+PHP_APCU_API void apc_pool_destroy(apc_pool *pool, apc_sma_t *sma)
 {
-	apc_free_t deallocate = pool->sma->sfree;
+	pool_block *entry;
 	assert(apc_pool_check_integrity(pool)!=0);
 
-	apc_pool_cleanup(pool);
-	deallocate(pool);
+	entry = pool->head;
+	while (entry->next != NULL) {
+		pool_block *tmp = entry->next;
+		sma->sfree(entry);
+		entry = tmp;
+	}
+
+	sma->sfree(pool);
 }
 /* }}} */
 
@@ -309,12 +300,10 @@ PHP_APCU_API apc_pool* apc_pool_create(apc_pool_type type, apc_sma_t *sma)
 	}
 
 	pool = sma->smalloc((sizeof(apc_pool) + ALIGNWORD(dsize)));
-
 	if (!pool) {
 		return NULL;
 	}
 
-	pool->sma = sma;
 	pool->size = sizeof(apc_pool) + ALIGNWORD(dsize);
 	pool->dsize = dsize;
 	pool->head = NULL;
@@ -345,15 +334,15 @@ PHP_APCU_API void apc_pool_init()
 /* }}} */
 
 /* {{{ apc_pstrcpy */
-PHP_APCU_API zend_string* apc_pstrcpy(zend_string *str, apc_pool* pool) {
-	return apc_pstrnew(ZSTR_VAL(str), ZSTR_LEN(str), pool);
+PHP_APCU_API zend_string *apc_pool_string_dup(apc_pool *pool, apc_sma_t *sma, zend_string *str) {
+	return apc_pool_string_init(pool, sma, ZSTR_VAL(str), ZSTR_LEN(str));
 } /* }}} */
 
 /* {{{ apc_pstrnew */
-PHP_APCU_API zend_string* apc_pstrnew(char *buf, size_t buf_len, apc_pool* pool) {
-	zend_string* p = (zend_string *) apc_pool_alloc(pool,
+PHP_APCU_API zend_string *apc_pool_string_init(
+		apc_pool *pool, apc_sma_t *sma, char *buf, size_t buf_len) {
+	zend_string *p = apc_pool_alloc(pool, sma,
 		ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(buf_len)));
-
 	if (!p) {
 		return NULL;
 	}
