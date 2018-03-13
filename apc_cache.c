@@ -640,8 +640,8 @@ PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache)
 }
 /* }}} */
 
-/* {{{ apc_cache_real_expunge */
-PHP_APCU_API void apc_cache_real_expunge(apc_cache_t* cache) {
+/* {{{ apc_cache_wlocked_real_expunge */
+static void apc_cache_wlocked_real_expunge(apc_cache_t* cache) {
 	/* increment counter */
 	cache->header->nexpunges++;
 
@@ -685,7 +685,7 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 	cache->header->state |= APC_CACHE_ST_BUSY;
 
 	/* expunge cache */
-	apc_cache_real_expunge(cache);
+	apc_cache_wlocked_real_expunge(cache);
 
 	/* set info */
 	cache->header->stime = apc_time();
@@ -702,11 +702,10 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 /* {{{ apc_cache_default_expunge */
 PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 {
-	time_t t;
+	time_t t = apc_time();
 	size_t suitable = 0L;
 	size_t available = 0L;
 
-	t = apc_time();
 
 	/* check there is a cache, and it is not busy */
 	if(!cache || apc_cache_busy(cache)) {
@@ -732,7 +731,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	if (!cache->ttl) {
 		/* check it is necessary to expunge */
 		if (available < suitable) {
-			apc_cache_real_expunge(cache);
+			apc_cache_wlocked_real_expunge(cache);
 		}
 	} else {
 		/* check that expunge is necessary */
@@ -769,7 +768,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 				memset(&cache->header->lastkey, 0, sizeof(apc_cache_slam_key_t));
 			} else {
 				/* with not enough space left in cache, we are forced to expunge */
-				apc_cache_real_expunge(cache);
+				apc_cache_wlocked_real_expunge(cache);
 			}
 		}
 	}
