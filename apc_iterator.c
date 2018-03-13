@@ -55,7 +55,6 @@ static apc_iterator_item_t* apc_iterator_item_ctor(
 		apc_iterator_t *iterator, apc_cache_entry_t *entry) {
 	zval zv;
 	HashTable *ht;
-	apc_context_t ctxt = {0, };
 	apc_iterator_item_t *item = ecalloc(1, sizeof(apc_iterator_item_t));
 
 	array_init(&item->value);
@@ -74,11 +73,9 @@ static apc_iterator_item_t* apc_iterator_item_ctor(
 	}
 
 	if (APC_ITER_VALUE & iterator->format) {
-		apc_cache_make_copy_out_context(apc_user_cache, &ctxt);
 		ZVAL_UNDEF(&zv);
-		apc_cache_fetch_zval(&ctxt, &zv, &entry->val);
+		apc_cache_fetch_zval(apc_user_cache, entry, &zv);
 		zend_hash_add_new(ht, apc_str_value, &zv);
-		apc_cache_destroy_context(&ctxt);
 	}
 
 	if (APC_ITER_NUM_HITS & iterator->format) {
