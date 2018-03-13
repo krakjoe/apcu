@@ -66,8 +66,6 @@ struct _apc_pool {
 
 	/* total */
 	size_t          size;
-	/* remaining */
-	size_t          used;
 
 	size_t     dsize;
 
@@ -200,7 +198,6 @@ found:
 
 	entry->avail -= realsize;
 	entry->mark  += realsize;
-	pool->used   += realsize;
 
 #ifdef VALGRIND_MAKE_MEM_UNDEFINED
 	/* need to write before reading data off this */
