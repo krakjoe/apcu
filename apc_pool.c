@@ -62,9 +62,6 @@ struct _apc_pool {
 	apc_malloc_t    allocate;
 	apc_free_t      deallocate;
 
-	apc_protect_t   protect;
-	apc_unprotect_t unprotect;
-
 	/* total */
 	size_t          size;
 	/* remaining */
@@ -317,8 +314,7 @@ PHP_APCU_API void apc_pool_destroy(apc_pool *pool)
 
 /* {{{ apc_pool_create */
 PHP_APCU_API apc_pool* apc_pool_create(
-        apc_pool_type type, apc_malloc_t allocate, apc_free_t deallocate,
-        apc_protect_t protect, apc_unprotect_t unprotect)
+        apc_pool_type type, apc_malloc_t allocate, apc_free_t deallocate)
 {
 	size_t dsize = 0;
 	apc_pool *pool;
@@ -352,10 +348,6 @@ PHP_APCU_API apc_pool* apc_pool_create(
 	pool->deallocate = deallocate;
 
 	pool->size = sizeof(apc_pool) + ALIGNWORD(dsize);
-
-	pool->protect = protect;
-	pool->unprotect = unprotect;
-
 	pool->dsize = dsize;
 	pool->head = NULL;
 	pool->count = 0;
