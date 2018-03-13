@@ -38,8 +38,9 @@ typedef pid_t apc_cache_owner_t;
 
 typedef struct apc_cache_slam_key_t apc_cache_slam_key_t;
 struct apc_cache_slam_key_t {
-	zend_string *str;        /* the key for this cached entry */
-	time_t mtime;            /* the mtime of this cached entry */
+	zend_ulong hash;         /* hash of the key */
+	size_t len;              /* length of the key */
+	time_t mtime;            /* creation time of this key */
 	apc_cache_owner_t owner; /* the context that created this key */
 };
 
