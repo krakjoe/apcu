@@ -67,8 +67,6 @@ PHP_APCU_API void apc_pool_destroy(apc_pool *pool);
 
 /* Allocate size bytes in the pool */
 PHP_APCU_API void *apc_pool_alloc(apc_pool *pool, size_t size);
-/* Free p from the pool (does nothing) */
-PHP_APCU_API void apc_pool_free(apc_pool *pool, void *p);
 
 /* Get allocated size of pool */
 PHP_APCU_API size_t apc_pool_size(apc_pool *pool);
