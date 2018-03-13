@@ -57,8 +57,7 @@ typedef struct _apc_context_t {
  apc_pool_create creates a pool of the specified type,
  setting the handlers passed on the pool, returns apc_pool*
 */
-PHP_APCU_API apc_pool* apc_pool_create(
-		apc_pool_type pool_type, apc_malloc_t allocate, apc_free_t deallocate);
+PHP_APCU_API apc_pool* apc_pool_create(apc_pool_type pool_type, apc_sma_t *sma);
 
 /*
  apc_pool_destroy first calls apc_cleanup_t set during apc_pool_create, then apc_free_t

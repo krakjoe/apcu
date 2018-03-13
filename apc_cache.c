@@ -799,37 +799,24 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 }
 /* }}} */
 
-static zend_bool apc_cache_make_copy_in_context_ex(
-		apc_context_t* context, apc_serializer_t* serializer,
-		apc_malloc_t _malloc, apc_free_t _free,
-		apc_pool_type pool_type) {
+PHP_APCU_API zend_bool apc_cache_make_copy_in_context(
+		apc_cache_t* cache, apc_context_t* context, apc_pool_type pool_type) {
 	/* attempt to create the pool */
-	context->pool = apc_pool_create(pool_type, _malloc, _free);
+	context->pool = apc_pool_create(pool_type, cache->sma);
 
 	if (!context->pool) {
-		apc_warning("Unable to allocate memory for pool.");
+		apc_warning("Unable to allocate memory for pool");
 		return 0;
 	}
 
 	/* set context information */
-	context->serializer = serializer;
+	context->serializer = cache->serializer;
 	context->copy = APC_COPY_IN;
 
 	/* set this to avoid memory errors */
 	memset(&context->copied, 0, sizeof(HashTable));
 
 	return 1;
-}
-
-PHP_APCU_API zend_bool apc_cache_make_copy_in_context(
-		apc_cache_t* cache, apc_context_t* context, apc_pool_type pool_type) {
-	return apc_cache_make_copy_in_context_ex(
-		context,
-		cache->serializer,
-		(apc_malloc_t) cache->sma->smalloc,
-		cache->sma->sfree,
-		pool_type
-	);
 }
 
 static int apc_cache_make_copy_out_context_ex(
