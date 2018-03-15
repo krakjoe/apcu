@@ -499,11 +499,15 @@ PHP_APCU_API zend_bool apc_cache_store(
 	}
 
 	/* execute an insertion */
-	APC_LOCK(cache->header);
+	if (!APC_WLOCK(cache->header)) {
+		apc_cache_destroy_context(&ctxt);
+		return 0;
+	}
+
 	php_apc_try {
 		ret = apc_cache_wlocked_insert(cache, entry, exclusive);
 	} php_apc_finally {
-		APC_UNLOCK(cache->header);
+		APC_WUNLOCK(cache->header);
 	} php_apc_end_try();
 
 	/* destroy context if insertion failed */
@@ -693,12 +697,14 @@ static void apc_cache_wlocked_real_expunge(apc_cache_t* cache) {
 PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 {
 	/* check there is a cache and it is not busy */
-	if(!cache || apc_cache_busy(cache)) {
+	if (!cache || apc_cache_busy(cache)) {
 		return;
 	}
 
 	/* lock header */
-	APC_LOCK(cache->header);
+	if (!APC_WLOCK(cache->header)) {
+		return;
+	}
 
 	/* set busy */
 	cache->header->state |= APC_CACHE_ST_BUSY;
@@ -714,7 +720,7 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 	cache->header->state &= ~APC_CACHE_ST_BUSY;
 
 	/* unlock header */
-	APC_UNLOCK(cache->header);
+	APC_WUNLOCK(cache->header);
 }
 /* }}} */
 
@@ -732,7 +738,9 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	}
 
 	/* get the lock for header */
-	APC_LOCK(cache->header);
+	if (!APC_WLOCK(cache->header)) {
+		return;
+	}
 
 	/* update state in header */
 	cache->header->state |= APC_CACHE_ST_BUSY;
@@ -796,7 +804,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	cache->header->state &= ~APC_CACHE_ST_BUSY;
 
 	/* unlock header */
-	APC_UNLOCK(cache->header);
+	APC_WUNLOCK(cache->header);
 }
 /* }}} */
 
@@ -889,7 +897,7 @@ PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, ti
 
 	APC_RLOCK(cache->header);
 	entry = apc_cache_rlocked_find_nostat(cache, key, t);
-	APC_UNLOCK(cache->header);
+	APC_RUNLOCK(cache->header);
 
 	return entry != NULL;
 }
@@ -912,7 +920,10 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 	/* calculate hash */
 	apc_cache_hash_slot(cache, key, &h, &s);
 
-	APC_LOCK(cache->header);
+	if (!APC_WLOCK(cache->header)) {
+		return 0;
+	}
+
 	php_apc_try {
 		/* find head */
 		entry = &cache->slots[s];
@@ -940,7 +951,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 						break;
 				}
 
-				APC_UNLOCK(cache->header);
+				APC_WUNLOCK(cache->header);
 				php_apc_try_finish();
 				return retval;
 			}
@@ -949,7 +960,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 			entry = &(*entry)->next;
 		}
 	} php_apc_finally {
-		APC_UNLOCK(cache->header);
+		APC_WUNLOCK(cache->header);
 	} php_apc_end_try();
 
 	/* TODO This is non-atomic... */
@@ -980,7 +991,9 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 	apc_cache_hash_slot(cache, key, &h, &s);
 
 	/* lock cache */
-	APC_LOCK(cache->header);
+	if (!APC_WLOCK(cache->header)) {
+		return 1;
+	}
 
 	/* find head */
 	entry = &cache->slots[s];
@@ -995,7 +1008,7 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 			apc_cache_wlocked_remove_entry(cache, entry);
 
 			/* unlock header */
-			APC_UNLOCK(cache->header);
+			APC_WUNLOCK(cache->header);
 			return 1;
 		}
 
@@ -1003,7 +1016,7 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 	}
 
 	/* unlock header */
-	APC_UNLOCK(cache->header);
+	APC_WUNLOCK(cache->header);
 	return 0;
 }
 /* }}} */
@@ -1670,23 +1683,6 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name) {
 	}
 } /* }}} */
 
-#ifndef APC_LOCK_RECURSIVE
-# define apc_cache_entry_try_begin() { \
-	if (APCG(recursion)++ == 0) { \
-		APC_LOCK(cache->header); \
-	} \
-}
-
-# define apc_cache_entry_try_end() { \
-	if (--APCG(recursion) == 0) { \
-		APC_UNLOCK(cache->header); \
-	} \
-}
-#else
-# define apc_cache_entry_try_begin() APC_LOCK(cache->header);
-# define apc_cache_entry_try_end() APC_UNLOCK(cache->header);
-#endif
-
 PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value) {/*{{{*/
 	apc_cache_entry_t *entry = NULL;
 
@@ -1699,7 +1695,19 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 		return;
 	}
 
-	apc_cache_entry_try_begin();
+#ifndef APC_LOCK_RECURSIVE
+	if (APCG(recursion)++ == 0) {
+		if (!APC_WLOCK(cache->header)) {
+			APCG(recursion)--;
+			return;
+		}
+	}
+#else
+	if (!APC_WLOCK(cache->header)) {
+		return;
+	}
+#endif
+
 	php_apc_try {
 		entry = apc_cache_rlocked_find_incref(cache, Z_STR_P(key), now);
 		if (!entry) {
@@ -1724,11 +1732,17 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 			apc_cache_entry_release(cache, entry);
 		}
 	} php_apc_finally {
-		apc_cache_entry_try_end();
+#ifndef APC_LOCK_RECURSIVE
+		if (--APCG(recursion) == 0) {
+			APC_WUNLOCK(cache->header);
+		}
+#else
+		APC_WUNLOCK(cache->header);
+#endif
+
 	} php_apc_end_try();
-}/*}}}*/
-#undef apc_cache_entry_try_begin
-#undef apc_cache_entry_try_end
+}
+/*}}}*/
 
 /*
  * Local variables:

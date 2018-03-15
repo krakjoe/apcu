@@ -382,16 +382,20 @@ PHP_APCU_API void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulon
 restart:
 	assert(sma->initialized);
 
-	WLOCK(&SMA_LCK(sma, sma->last));
+	if (!WLOCK(&SMA_LCK(sma, sma->last))) {
+		return NULL;
+	}
 
 	off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
 
-	if(off == -1) {
+	if (off == -1) {
 		/* retry failed allocation after we expunge */
 		WUNLOCK(&SMA_LCK(sma, sma->last));
 		sma->expunge(
 			*(sma->data), (n+fragment));
-		WLOCK(&SMA_LCK(sma, sma->last));
+		if (!WLOCK(&SMA_LCK(sma, sma->last))) {
+			return NULL;
+		}
 		off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
 	}
 
@@ -410,14 +414,20 @@ restart:
 		if (i == sma->last) {
 			continue;
 		}
-		WLOCK(&SMA_LCK(sma, i));
+
+		if (!WLOCK(&SMA_LCK(sma, i))) {
+			return NULL;
+		}
+
 		off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
-		if(off == -1) {
+		if (off == -1) {
 			/* retry failed allocation after we expunge */
 			WUNLOCK(&SMA_LCK(sma, i));
 			sma->expunge(
 				*(sma->data), (n+fragment));
-			WLOCK(&SMA_LCK(sma, i));
+			if (!WLOCK(&SMA_LCK(sma, i))) {
+				return NULL;
+			}
 			off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
 		}
 		if (off != -1) {
@@ -469,7 +479,10 @@ PHP_APCU_API void apc_sma_api_free(apc_sma_t* sma, void* p) {
 	for (i = 0; i < sma->num; i++) {
 		offset = (size_t)((char *)p - SMA_ADDR(sma, i));
 		if (p >= (void*)SMA_ADDR(sma, i) && offset < sma->size) {
-			WLOCK(&SMA_LCK(sma, i));
+			if (!WLOCK(&SMA_LCK(sma, i))) {
+				return;
+			}
+
 			sma_deallocate(SMA_HDR(sma, i), offset);
 			WUNLOCK(&SMA_LCK(sma, i));
 #ifdef VALGRIND_FREELIKE_BLOCK

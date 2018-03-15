@@ -23,10 +23,9 @@
 #endif
 
 /*
- APCu never checks the return value of a locking call, it assumes it should not fail
- and execution continues regardless, therefore it is pointless to check the return
- values of calls to locking functions, lets save ourselves the comparison.
-*/
+ * While locking calls should never fail, apcu checks for the success of write-lock
+ * acquisitions, to prevent more damage when a deadlock is detected.
+ */
 
 /* {{{ There's very little point in initializing a billion sets of attributes */
 #ifndef PHP_WIN32
@@ -233,14 +232,14 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
 	return 1;
 }
 
-PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
+static inline zend_bool apc_lock_wlock_impl(apc_lock_t *lock) {
 #ifndef PHP_WIN32
 #ifndef APC_SPIN_LOCK
 # ifndef APC_FCNTL_LOCK
 #   ifdef APC_LOCK_RECURSIVE
-		pthread_mutex_lock(lock);
+		return pthread_mutex_lock(lock) == 0;
 #   else
-		pthread_rwlock_wrlock(lock);
+		return pthread_rwlock_wrlock(lock) == 0;
 #   endif
 # else
 	{
@@ -258,6 +257,17 @@ PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
 	apc_windows_cs_lock((apc_windows_cs_rwlock_t *)lock);
 #endif
 	return 1;
+}
+
+PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
+	HANDLE_BLOCK_INTERRUPTIONS();
+	if (apc_lock_wlock_impl(lock)) {
+		return 1;
+	}
+
+	HANDLE_UNBLOCK_INTERRUPTIONS();
+	apc_warning("Failed to acquire write lock");
+	return 0;
 }
 
 PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock) {

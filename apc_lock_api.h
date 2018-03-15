@@ -86,19 +86,15 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 /* {{{ generic locking macros */
 #define CREATE_LOCK(lock)     apc_lock_create(lock)
 #define DESTROY_LOCK(lock)    apc_lock_destroy(lock)
-#define WLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_wlock(lock); }
+#define WLOCK(lock)           apc_lock_wlock(lock)
 #define WUNLOCK(lock)         { apc_lock_wunlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
 #define RLOCK(lock)           { HANDLE_BLOCK_INTERRUPTIONS(); apc_lock_rlock(lock); }
 #define RUNLOCK(lock)         { apc_lock_runlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
-#define LOCK                  WLOCK
-#define UNLOCK                WUNLOCK
 /* }}} */
 
 /* {{{ object locking macros */
 #define APC_WLOCK(o)          WLOCK(&(o)->lock)
-#define APC_LOCK              APC_WLOCK
 #define APC_WUNLOCK(o)        WUNLOCK(&(o)->lock)
-#define APC_UNLOCK            APC_WUNLOCK
 #define APC_RLOCK(o)          RLOCK(&(o)->lock)
 #define APC_RUNLOCK(o)        RUNLOCK(&(o)->lock) /* }}} */
 
