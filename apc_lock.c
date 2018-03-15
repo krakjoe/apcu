@@ -181,12 +181,10 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 	{
 		/* FCNTL */
 		char lock_path[] = "/tmp/.apc.XXXXXX";
-		mktemp(
-			lock_path);
+		mktemp(lock_path);
 		(*lock) = open(lock_path, O_RDWR|O_CREAT, 0666);
 		if((*lock) > 0 ) {
-			unlink(
-				lock_path);
+			unlink(lock_path);
 			return 1;
 		} else {
 			return 0;
@@ -328,7 +326,7 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock) {
 # else
 	{
 		/* FCNTL */
-		close ((*lock));
+		close((*lock));
 	}
 # endif
 #endif
