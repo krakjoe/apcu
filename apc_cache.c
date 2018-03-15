@@ -56,6 +56,10 @@
 # define ATOMIC_INC_RLOCKED(a) ATOMIC_INC(a)
 #endif
 
+/* Defined in apc_persist.c */
+apc_cache_entry_t *apc_persist(
+		apc_sma_t *sma, apc_serializer_t *serializer, const apc_cache_entry_t *orig_entry);
+
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
 
 /* {{{ make_prime */
@@ -107,9 +111,8 @@ static int make_prime(int n)
 }
 /* }}} */
 
-static void free_entry(apc_cache_t *cache, apc_cache_entry_t *entry)
-{
-	apc_pool_destroy(entry->pool, cache->sma);
+static void free_entry(apc_cache_t *cache, apc_cache_entry_t *entry) {
+	cache->sma->sfree(entry);
 }
 
 /* {{{ apc_cache_hash_slot
@@ -371,8 +374,6 @@ static inline zend_bool apc_cache_wlocked_insert(
 		new_entry->next = *entry;
 		*entry = new_entry;
 
-		/* set value size from pool size */
-		new_entry->mem_size = apc_pool_size(new_entry->pool);
 		cache->header->mem_size += new_entry->mem_size;
 		cache->header->nentries++;
 		cache->header->ninserts++;
@@ -381,39 +382,30 @@ static inline zend_bool apc_cache_wlocked_insert(
 	return 1;
 }
 
-static zend_bool apc_cache_make_copy_in_context(
-		apc_cache_t* cache, apc_context_t* context, apc_pool_type pool_type);
-static zend_bool apc_cache_destroy_context(apc_context_t *context);
-static apc_cache_entry_t *apc_cache_make_entry(
-		apc_context_t *ctxt, zend_string *key, const zval* val, const int32_t ttl, time_t t);
+static void apc_cache_init_entry(
+		apc_cache_entry_t *entry, zend_string *key, const zval* val, const int32_t ttl, time_t t);
 
 /* TODO This function may lead to a deadlock on expunge */
 static inline zend_bool apc_cache_store_internal(
 		apc_cache_t *cache, zend_string *key, const zval *val,
 		const int32_t ttl, const zend_bool exclusive) {
-	apc_cache_entry_t *entry;
+	apc_cache_entry_t tmp_entry, *entry;
 	time_t t = apc_time();
-	apc_context_t ctxt={0,};
 
 	if (apc_cache_defense(cache, key, t)) {
 		return 0;
 	}
 
-	/* initialize a context suitable for making an insert */
-	if (!apc_cache_make_copy_in_context(cache, &ctxt, APC_SMALL_POOL)) {
-		return 0;
-	}
-
 	/* initialize the entry for insertion */
-	entry = apc_cache_make_entry(&ctxt, key, val, ttl, t);
+	apc_cache_init_entry(&tmp_entry, key, val, ttl, t);
+	entry = apc_persist(cache->sma, cache->serializer, &tmp_entry);
 	if (!entry) {
-		apc_cache_destroy_context(&ctxt);
 		return 0;
 	}
 
 	/* execute an insertion */
 	if (!apc_cache_wlocked_insert(cache, entry, exclusive)) {
-		apc_cache_destroy_context(&ctxt);
+		free_entry(cache, entry);
 		return 0;
 	}
 
@@ -500,9 +492,8 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find_incref(
 PHP_APCU_API zend_bool apc_cache_store(
 		apc_cache_t* cache, zend_string *key, const zval *val,
 		const int32_t ttl, const zend_bool exclusive) {
-	apc_cache_entry_t *entry;
+	apc_cache_entry_t tmp_entry, *entry;
 	time_t t = apc_time();
-	apc_context_t ctxt={0,};
 	zend_bool ret = 0;
 
 	/* run cache defense */
@@ -510,21 +501,16 @@ PHP_APCU_API zend_bool apc_cache_store(
 		return 0;
 	}
 
-	/* initialize a context suitable for making an insert */
-	if (!apc_cache_make_copy_in_context(cache, &ctxt, APC_SMALL_POOL)) {
-		return 0;
-	}
-
 	/* initialize the entry for insertion */
-	entry = apc_cache_make_entry(&ctxt, key, val, ttl, t);
+	apc_cache_init_entry(&tmp_entry, key, val, ttl, t);
+	entry = apc_persist(cache->sma, cache->serializer, &tmp_entry);
 	if (!entry) {
-		apc_cache_destroy_context(&ctxt);
 		return 0;
 	}
 
 	/* execute an insertion */
 	if (!APC_WLOCK(cache->header)) {
-		apc_cache_destroy_context(&ctxt);
+		free_entry(cache, entry);
 		return 0;
 	}
 
@@ -534,9 +520,8 @@ PHP_APCU_API zend_bool apc_cache_store(
 		APC_WUNLOCK(cache->header);
 	} php_apc_end_try();
 
-	/* destroy context if insertion failed */
 	if (!ret) {
-		apc_cache_destroy_context(&ctxt);
+		free_entry(cache, entry);
 	}
 
 	return ret;
@@ -821,37 +806,6 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	APC_WUNLOCK(cache->header);
 }
 /* }}} */
-
-static zend_bool apc_cache_make_copy_in_context(
-		apc_cache_t* cache, apc_context_t* context, apc_pool_type pool_type) {
-	/* attempt to create the pool */
-	context->pool = apc_pool_create(pool_type, cache->sma);
-	if (!context->pool) {
-		apc_warning("Unable to allocate memory for pool");
-		return 0;
-	}
-
-	/* set context information */
-	context->sma = cache->sma;
-	context->serializer = cache->serializer;
-	context->copy = APC_COPY_IN;
-
-	/* set this to avoid memory errors */
-	memset(&context->copied, 0, sizeof(HashTable));
-
-	return 1;
-}
-
-/* {{{ apc_cache_destroy_context */
-static zend_bool apc_cache_destroy_context(apc_context_t *context) {
-	if (!context->pool) {
-		return 0;
-	}
-
-	apc_pool_destroy(context->pool, context->sma);
-
-	return 1;
-} /* }}} */
 
 /* {{{ apc_cache_find */
 PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *key, time_t t)
@@ -1343,7 +1297,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 	assert(src != NULL);
 
 	/* If src was already unserialized, then make dst a copy of the unserialization of src */
-	if (Z_REFCOUNTED_P(src)) {
+	if (Z_TYPE_P(src) >= IS_STRING) {
 		if (zend_hash_num_elements(&ctxt->copied)) {
 			zval *rc = zend_hash_index_find(
 					&ctxt->copied, (uintptr_t) Z_COUNTED_P(src));
@@ -1478,28 +1432,13 @@ PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 /* }}} */
 
 /* {{{ apc_cache_make_entry */
-static apc_cache_entry_t *apc_cache_make_entry(
-		apc_context_t *ctxt, zend_string *key, const zval* val, const int32_t ttl, time_t t)
+static void apc_cache_init_entry(
+		apc_cache_entry_t *entry, zend_string *key, const zval *val, const int32_t ttl, time_t t)
 {
-	zend_string *copied_key;
-	apc_cache_entry_t *entry = APC_POOL_ALLOC(sizeof(apc_cache_entry_t));
-	if (!entry) {
-		return NULL;
-	}
-
-	/* copy key into pool */
-	copied_key = APC_POOL_STRING_DUP(key);
-	if (!copied_key) {
-		return NULL;
-	}
-
-	if (!apc_cache_store_zval(&entry->val, val, ctxt)) {
-		return NULL;
-	}
-
-	entry->pool = ctxt->pool;
+	entry->pool = NULL;
 	entry->ttl = ttl;
-	entry->key = copied_key;
+	entry->key = key;
+	ZVAL_COPY_VALUE(&entry->val, val);
 
 	entry->next = NULL;
 	entry->ref_count = 0;
@@ -1509,8 +1448,6 @@ static apc_cache_entry_t *apc_cache_make_entry(
 	entry->mtime = t;
 	entry->atime = t;
 	entry->dtime = 0;
-
-	return entry;
 }
 /* }}} */
 
