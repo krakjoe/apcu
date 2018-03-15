@@ -35,7 +35,7 @@
 # include "pthread.h"
 # ifndef APC_SPIN_LOCK
 #   ifndef APC_FCNTL_LOCK
-#       if defined(APC_NATIVE_RWLOCK) && defined(HAVE_ATOMIC_OPERATIONS)
+#       ifdef APC_NATIVE_RWLOCK
 		typedef pthread_rwlock_t apc_lock_t;
 #		define APC_LOCK_SHARED
 #       else
@@ -103,35 +103,17 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 #define APC_RUNLOCK(o)        RUNLOCK(&(o)->lock) /* }}} */
 
 /* atomic operations */
-#if defined(APC_LOCK_SHARED)
-# ifdef PHP_WIN32
-#  ifdef _WIN64
-#   define ATOMIC_INC(c, a) InterlockedIncrement64(&a)
-#   define ATOMIC_DEC(c, a) InterlockedDecrement64(&a)
-#  else
-#   define ATOMIC_INC(c, a) InterlockedIncrement(&a)
-#   define ATOMIC_DEC(c, a) InterlockedDecrement(&a)
-#  endif
+#ifdef PHP_WIN32
+# ifdef _WIN64
+#  define ATOMIC_INC(a) InterlockedIncrement64(&a)
+#  define ATOMIC_DEC(a) InterlockedDecrement64(&a)
 # else
-#  define ATOMIC_INC(c, a) __sync_add_and_fetch(&a, 1)
-#  define ATOMIC_DEC(c, a) __sync_sub_and_fetch(&a, 1)
+#  define ATOMIC_INC(a) InterlockedIncrement(&a)
+#  define ATOMIC_DEC(a) InterlockedDecrement(&a)
 # endif
-#elif defined(APC_LOCK_RECURSIVE)
-# define ATOMIC_INC(c, a) do { \
-	if (apc_lock_wlock(&(c)->header->lock)) { \
-		(a)++; \
-		apc_lock_wunlock(&(c)->header->lock); \
-	} \
-} while(0)
-# define ATOMIC_DEC(c, a) do { \
-	if (apc_lock_wlock(&(c)->header->lock)) { \
-		(a)--; \
-		apc_lock_wunlock(&(c)->header->lock); \
-	} \
-} while(0)
 #else
-# define ATOMIC_INC(c, a) (a)++
-# define ATOMIC_DEC(c, a) (a)--
+# define ATOMIC_INC(a) __sync_add_and_fetch(&a, 1)
+# define ATOMIC_DEC(a) __sync_sub_and_fetch(&a, 1)
 #endif
 
 #endif

@@ -47,6 +47,15 @@
 #define APC_POOL_ALLOC(size) apc_pool_alloc(ctxt->pool, ctxt->sma, (size))
 #define APC_POOL_STRING_DUP(str) apc_pool_string_dup(ctxt->pool, ctxt->sma, (str))
 
+/* If recursive mutexes are used, there is no distinction between read and write locks.
+ * As such, if we acquire a read-lock, it's really a write-lock and we are free to perform
+ * increments without atomics. */
+#ifdef APC_LOCK_RECURSIVE
+# define ATOMIC_INC_RLOCKED(a) (a)++
+#else
+# define ATOMIC_INC_RLOCKED(a) ATOMIC_INC(a)
+#endif
+
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
 
 /* {{{ make_prime */
@@ -438,8 +447,8 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find(
 				break;
 			}
 
-			ATOMIC_INC(cache, cache->header->nhits);
-			ATOMIC_INC(cache, entry->nhits);
+			ATOMIC_INC_RLOCKED(cache->header->nhits);
+			ATOMIC_INC_RLOCKED(entry->nhits);
 			entry->atime = t;
 
 			return entry;
@@ -448,7 +457,7 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find(
 		entry = entry->next;
 	}
 
-	ATOMIC_INC(cache, cache->header->nmisses);
+	ATOMIC_INC_RLOCKED(cache->header->nmisses);
 	return NULL;
 }
 
@@ -459,7 +468,7 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find_incref(
 		return NULL;
 	}
 
-	ATOMIC_INC(cache, entry->ref_count);
+	ATOMIC_INC_RLOCKED(entry->ref_count);
 	return entry;
 }
 
@@ -628,7 +637,7 @@ PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path)
 /* {{{ apc_cache_entry_release */
 PHP_APCU_API void apc_cache_entry_release(apc_cache_t *cache, apc_cache_entry_t *entry)
 {
-	ATOMIC_DEC(cache, entry->ref_count);
+	ATOMIC_DEC(entry->ref_count);
 }
 /* }}} */
 

@@ -60,6 +60,24 @@ AC_ARG_ENABLE(apcu-spinlocks,
 ])
 AC_MSG_RESULT($PHP_APCU_SPINLOCK)
 
+if test "$PHP_APCU_RWLOCKS" != "no"; then
+	AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_cv_APCU_GCC_ATOMICS, [
+
+		AC_TRY_LINK([],[
+				int foo = 0;
+				__sync_add_and_fetch(&foo, 1);
+				__sync_sub_and_fetch(&foo, 1);
+				return 0;
+			],
+			[PHP_cv_APCU_GCC_ATOMICS=yes],
+			[PHP_cv_APCU_GCC_ATOMICS=no])
+	])
+
+	if test "x${PHP_cv_APCU_GCC_ATOMICS}" != "xyes"; then
+		AC_MSG_ERROR([Compiler does not support atomics])
+	fi
+fi
+
 if test "$PHP_APCU" != "no"; then
 	if test "$PHP_APCU_DEBUG" != "no"; then
 		AC_DEFINE(APC_DEBUG, 1, [ ])
@@ -123,30 +141,6 @@ if test "$PHP_APCU" != "no"; then
     )
     LIBS="$orig_LIBS"
   fi
-
-	if test "$PHP_APCU_RWLOCKS" != "no"; then
-		AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_cv_APCU_GCC_ATOMICS, [
-
-			AC_TRY_LINK([],[
-					int foo = 0;
-					__sync_fetch_and_add(&foo, 1);
-					__sync_bool_compare_and_swap(&foo, 0, 1);
-					return __sync_fetch_and_add(&foo, 1);
-				],
-				[PHP_cv_APCU_GCC_ATOMICS=yes],
-				[PHP_cv_APCU_GCC_ATOMICS=no])
-		])
-
-		if test "x${PHP_cv_APCU_GCC_ATOMICS}" != "xno"; then
-				AC_DEFINE(HAVE_ATOMIC_OPERATIONS, 1,
-					[Define this if your target compiler supports builtin atomics])
-			else
-				if test "$PHP_APC_PTHREADRWLOCK" != "no"; then
-					AC_MSG_WARN([Disabling pthread rwlocks, because of missing atomic operations])
-					PHP_APCU_RWLOCKS=no
-				fi
-		fi
-	fi
   
   if test "$PHP_APCU_RWLOCKS" = "no"; then
     orig_LIBS="$LIBS"
