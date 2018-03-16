@@ -37,23 +37,6 @@ typedef enum {
 	APC_LARGE_POOL     = 0x3,
 } apc_pool_type; /* }}} */
 
-/* {{{ enum definition: apc_copy_type */
-/* APC_COPY_IN should be used when copying into APC
-   APC_COPY_OUT should be used when copying out of APC */
-typedef enum _apc_copy_type {
-	APC_COPY_IN,
-	APC_COPY_OUT,
-} apc_copy_type; /* }}} */
-
-/* {{{ struct definition: apc_context_t */
-typedef struct _apc_context_t {
-	apc_pool*          pool;            /* pool of memory for context */
-	apc_sma_t*         sma;             /* SMA reference for the pool */
-	apc_copy_type      copy;            /* copying type for context */
-	HashTable          copied;          /* copied zvals for recursion support */
-	apc_serializer_t*  serializer;      /* serializer */
-} apc_context_t; /* }}} */
-
 /*
  apc_pool_create creates a pool of the specified type,
  setting the handlers passed on the pool, returns apc_pool*

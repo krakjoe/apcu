@@ -60,6 +60,11 @@
 apc_cache_entry_t *apc_persist(
 		apc_sma_t *sma, apc_serializer_t *serializer, const apc_cache_entry_t *orig_entry);
 
+typedef struct _apc_context_t {
+	HashTable          copied;          /* copied zvals for recursion support */
+	apc_serializer_t*  serializer;      /* serializer */
+} apc_context_t;
+
 static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt);
 
 /* {{{ make_prime */
@@ -999,40 +1004,6 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 }
 /* }}} */
 
-/* {{{ my_serialize_object */
-static zval* my_serialize_object(zval* dst, const zval* src, apc_context_t* ctxt)
-{
-	unsigned char *buf = NULL;
-	size_t buf_len = 0;
-
-	apc_serialize_t serialize = APC_SERIALIZER_NAME(php);
-	void *config = NULL;
-	zend_string *serial = NULL;
-
-	if (ctxt->serializer) {
-		serialize = ctxt->serializer->serialize;
-		config = ctxt->serializer->config;
-	}
-
-	ZVAL_NULL(dst);
-
-	if (serialize(&buf, &buf_len, src, config)) {
-		if (!(serial = apc_pool_string_init(ctxt->pool, ctxt->sma, (char *) buf, buf_len))) {
-			efree(buf);
-
-			return dst;
-		}
-
-		ZVAL_STR(dst, serial);
-		/* Give this the type of a refcounted object/array. */
-		Z_TYPE_INFO_P(dst) = Z_TYPE_P(src) | (IS_TYPE_REFCOUNTED << Z_TYPE_FLAGS_SHIFT);
-		efree(buf);
-	}
-
-	return dst;
-}
-/* }}} */
-
 /* {{{ my_unserialize_object */
 static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ctxt)
 {
@@ -1094,11 +1065,7 @@ static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTab
 
 		q->key = p->key;
 		if (q->key) {
-			if (ctxt->copy == APC_COPY_IN) {
-				q->key = APC_POOL_STRING_DUP(q->key);
-			} else {
-				q->key = zend_string_dup(p->key, 0);
-			}
+			q->key = zend_string_dup(p->key, 0);
 		}
 
 		nIndex = q->h | target->nTableMask;
@@ -1145,14 +1112,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 	uint32_t idx;
 	HashTable *target;
 
-	if (ctxt->copy == APC_COPY_IN) {
-		target = APC_POOL_ALLOC(sizeof(HashTable));
-	} else {
-		ALLOC_HASHTABLE(target);
-	}
-
-	if (target == NULL)
-		goto bad;
+	ALLOC_HASHTABLE(target);
 
 	GC_SET_REFCOUNT(target, 1);
 	GC_TYPE_INFO(target) = IS_ARRAY;
@@ -1183,14 +1143,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		target->nNumUsed = source->nNumUsed;
 		target->nNumOfElements = source->nNumOfElements;
 		target->nNextFreeElement = source->nNextFreeElement;
-		if (ctxt->copy == APC_COPY_IN) {
-			HT_SET_DATA_ADDR(target, APC_POOL_ALLOC(HT_SIZE(target)));
-		} else
-			HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
-
-		if (HT_GET_DATA_ADDR(target) == NULL)
-			goto bad;
-
+		HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
 		HT_HASH_RESET_PACKED(target);
 
 		if (target->nNumUsed == target->nNumOfElements) {
@@ -1215,14 +1168,7 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 #endif
 		target->nTableMask = source->nTableMask;
 		target->nNextFreeElement = source->nNextFreeElement;
-		if (ctxt->copy == APC_COPY_IN) {
-			HT_SET_DATA_ADDR(target, APC_POOL_ALLOC(HT_SIZE(target)));
-		} else
-			HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
-
-		if (HT_GET_DATA_ADDR(target) == NULL)
-			goto bad;
-
+		HT_SET_DATA_ADDR(target, emalloc(HT_SIZE(target)));
 		HT_HASH_RESET(target);
 
 		if (source->nNumUsed == source->nNumOfElements) {
@@ -1239,18 +1185,6 @@ static APC_HOTSPOT HashTable* my_copy_hashtable(HashTable *source, apc_context_t
 		}
 	}
 	return target;
-
-  bad:
-	/* some kind of memory allocation failure */
-	if (target) {
-		if (ctxt->copy == APC_COPY_IN) {
-			/* will be mass-freed */
-		} else {
-			FREE_HASHTABLE(target);
-		}
-	}
-
-	return NULL;
 }
 
 static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, apc_context_t *ctxt) {
@@ -1266,14 +1200,7 @@ static APC_HOTSPOT zend_reference* my_copy_reference(const zend_reference* src, 
 		}
 	}
 
-	if (ctxt->copy == APC_COPY_IN) {
-		dst = APC_POOL_ALLOC(sizeof(zend_reference));
-	} else {
-		dst = emalloc(sizeof(zend_reference));
-	}
-
-	if (dst == NULL)
-		return NULL;
+	dst = emalloc(sizeof(zend_reference));
 
 	GC_SET_REFCOUNT(dst, 1);
 	GC_TYPE_INFO(dst) = IS_REFERENCE;
@@ -1328,14 +1255,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 		break;
 
 	case IS_STRING:
-		if (ctxt->copy == APC_COPY_OUT) {
-			ZVAL_STR(dst, zend_string_dup(Z_STR_P(src), 0));
-		} else {
-			Z_TYPE_INFO_P(dst) = IS_STRING_EX;
-			Z_STR_P(dst) = APC_POOL_STRING_DUP(Z_STR_P(src));
-		}
-		if (Z_STR_P(dst) == NULL)
-			return NULL;
+		ZVAL_STR(dst, zend_string_dup(Z_STR_P(src), 0));
 		break;
 
 	case IS_ARRAY:
@@ -1351,12 +1271,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 		/* break intentionally omitted */
 
 	case IS_OBJECT:
-		if (ctxt->copy == APC_COPY_IN) {
-			/* For objects and arrays, their pointer points to a serialized string instead of a zend_array or zend_object. */
-			/* Unserialize that, and on success, give dst the default type flags for an object/array (We check Z_REFCOUNTED_P below). */
-			dst = my_serialize_object(dst, src, ctxt);
-		} else
-			dst = my_unserialize_object(dst, src, ctxt);
+		dst = my_unserialize_object(dst, src, ctxt);
 		if (dst == NULL)
 			return NULL;
 		break;
@@ -1406,14 +1321,10 @@ PHP_APCU_API zval* apc_cache_store_zval(zval* dst, const zval* src, apc_context_
 PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 		apc_cache_t *cache, apc_cache_entry_t *entry, zval *dst)
 {
-	apc_context_t ctxt = {0, };
+	apc_context_t ctxt;
 
 	/* set context information */
-	ctxt.pool = NULL;
 	ctxt.serializer = cache->serializer;
-	ctxt.copy = APC_COPY_OUT;
-
-	/* set this to avoid memory errors */
 	memset(&ctxt.copied, 0, sizeof(HashTable));
 
 	if (Z_TYPE(entry->val) == IS_ARRAY) {
@@ -1442,7 +1353,7 @@ static void apc_cache_init_entry(
 
 	entry->next = NULL;
 	entry->ref_count = 0;
-	entry->mem_size = 0; /* TODO Initialize here already? */
+	entry->mem_size = 0;
 	entry->nhits = 0;
 	entry->ctime = t;
 	entry->mtime = t;
