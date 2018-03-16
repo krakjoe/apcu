@@ -232,7 +232,6 @@ if test "$PHP_APCU" != "no"; then
                  apc_sma.c \
                  apc_stack.c \
                  apc_signal.c \
-                 apc_pool.c \
                  apc_iterator.c \
 				 apc_persist.c"
 							   
@@ -241,7 +240,7 @@ if test "$PHP_APCU" != "no"; then
   PHP_SUBST(APCU_SHARED_LIBADD)
   PHP_SUBST(APCU_CFLAGS)
   PHP_SUBST(PHP_LDFLAGS)
-  PHP_INSTALL_HEADERS(ext/apcu, [php_apc.h apc.h apc_api.h apc_arginfo.h apc_cache.h apc_cache_api.h apc_globals.h apc_iterator.h apc_lock.h apc_lock_api.h apc_pool.h apc_pool_api.h apc_sma.h apc_sma_api.h apc_serializer.h apc_stack.h])
+  PHP_INSTALL_HEADERS(ext/apcu, [php_apc.h apc.h apc_api.h apc_arginfo.h apc_cache.h apc_cache_api.h apc_globals.h apc_iterator.h apc_lock.h apc_lock_api.h apc_sma.h apc_sma_api.h apc_serializer.h apc_stack.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
 fi
 

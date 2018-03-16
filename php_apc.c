@@ -252,9 +252,6 @@ static PHP_MINIT_FUNCTION(apcu)
 				apc_find_serializer(APCG(serializer_name)),
 				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(smart), APCG(slam_defense));
 
-			/* initialize pooling */
-			apc_pool_init();
-
 			/* preload data from path specified in configuration */
 			if (APCG(preload_path)) {
 				apc_cache_preload(

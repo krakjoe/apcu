@@ -21,7 +21,6 @@
 
 #include "apc.h"
 #include "apc_lock_api.h"
-#include "apc_pool_api.h"
 #include "apc_sma_api.h"
 #include "apc_cache_api.h"
 

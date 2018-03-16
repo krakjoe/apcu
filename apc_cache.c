@@ -44,9 +44,6 @@
 # define GC_ADDREF(ref) GC_REFCOUNT(ref)++
 #endif
 
-#define APC_POOL_ALLOC(size) apc_pool_alloc(ctxt->pool, ctxt->sma, (size))
-#define APC_POOL_STRING_DUP(str) apc_pool_string_dup(ctxt->pool, ctxt->sma, (str))
-
 /* If recursive mutexes are used, there is no distinction between read and write locks.
  * As such, if we acquire a read-lock, it's really a write-lock and we are free to perform
  * increments without atomics. */
@@ -1346,7 +1343,6 @@ PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 static void apc_cache_init_entry(
 		apc_cache_entry_t *entry, zend_string *key, const zval *val, const int32_t ttl, time_t t)
 {
-	entry->pool = NULL;
 	entry->ttl = ttl;
 	entry->key = key;
 	ZVAL_COPY_VALUE(&entry->val, val);
