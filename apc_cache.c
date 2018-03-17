@@ -1045,12 +1045,6 @@ static zend_always_inline int apc_array_dup_element(apc_context_t *ctxt, HashTab
 		}
 	}
 
-	if (Z_ISREF_P(data) && Z_REFCOUNT_P(data) == 1 &&
-		(Z_TYPE_P(Z_REFVAL_P(data)) != IS_ARRAY ||
-		  Z_ARRVAL_P(Z_REFVAL_P(data)) != source)) {
-		data = Z_REFVAL_P(data);
-	}
-
 	if (my_copy_zval(&q->val, data, ctxt) == NULL)
 		return 0;
 
