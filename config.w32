@@ -12,7 +12,6 @@ if(PHP_APCU != 'no')
 						'apc_sma.c ' +
 						'apc_stack.c ' +
 						'apc_signal.c ' +
-						'apc_pool.c ' +
 						'apc_iterator.c' +
 						'apc_persist.c'; 
 
