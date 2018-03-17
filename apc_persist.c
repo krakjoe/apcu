@@ -267,6 +267,12 @@ static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTa
 	GC_SET_REFCOUNT(ht, 1);
 	GC_SET_PERSISTENT_TYPE(ht, IS_ARRAY);
 
+	/* Immutable arrays from opcache may lack a dtor and the apply protection flag. */
+	ht->pDestructor = ZVAL_PTR_DTOR;
+#if PHP_VERSION_ID < 70300
+	ht->u.flags |= HASH_FLAG_APPLY_PROTECTION;
+#endif
+
 	ht->u.flags |= HASH_FLAG_STATIC_KEYS;
 	if (ht->nNumUsed == 0) {
 		ht->u.flags &= ~(HASH_FLAG_INITIALIZED|HASH_FLAG_PACKED);
