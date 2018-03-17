@@ -303,7 +303,7 @@ static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTa
 static void apc_persist_copy_serialize(
 		apc_persist_context_t *ctxt, zval *zv) {
 	zend_string *str;
-	zend_type orig_type = Z_TYPE_P(zv);
+	zend_uchar orig_type = Z_TYPE_P(zv);
 	ZEND_ASSERT(orig_type == IS_ARRAY || orig_type == IS_OBJECT);
 
 	if (ctxt->memoization_needed) {
