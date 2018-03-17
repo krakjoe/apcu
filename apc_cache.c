@@ -1482,6 +1482,7 @@ static apc_cache_entry_t *apc_cache_make_entry(
 	entry->mem_size = 0; /* TODO Initialize here already? */
 	entry->nhits = 0;
 	entry->ctime = t;
+	entry->mtime = t;
 	entry->atime = t;
 	entry->dtime = 0;
 
