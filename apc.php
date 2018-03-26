@@ -933,7 +933,7 @@ EOB;
 		"<option value=C",$MYREQUEST['SORT1']=='C' ? " selected":"",">Created at</option>",
 		"<option value=D",$MYREQUEST['SORT1']=='D' ? " selected":"",">Deleted at</option>";
 	if($fieldname=='info') echo
-		"<option value=D",$MYREQUEST['SORT1']=='T' ? " selected":"",">Timeout</option>";
+		"<option value=T",$MYREQUEST['SORT1']=='T' ? " selected":"",">Timeout</option>";
 	echo
 		'</select>',
 		'<select name=SORT2>',
