@@ -957,8 +957,8 @@ EOB;
 	if (isset($MYREQUEST['SEARCH'])) {
 		// Don't use preg_quote because we want the user to be able to specify a
 		// regular expression subpattern.
-		$MYREQUEST['SEARCH'] = '/'.str_replace('/', '\\/', $MYREQUEST['SEARCH']).'/i';
-		if (preg_match($MYREQUEST['SEARCH'], 'test') === false) {
+		$MYREQUEST['SEARCH_REGEX'] = '/'.str_replace('/', '\\/', $MYREQUEST['SEARCH']).'/i';
+		if (preg_match($MYREQUEST['SEARCH_REGEX'], 'test') === false) {
 			echo '<div class="error">Error: enter a valid regular expression as a search query.</div>';
 			break;
 		}
@@ -1014,12 +1014,12 @@ EOB;
 		// output list
 		$i=0;
 		foreach($list as $k => $entry) {
-			if(!$MYREQUEST['SEARCH'] || preg_match($MYREQUEST['SEARCH'], $entry[$fieldname]) != 0) {
+			if(empty($MYREQUEST['SEARCH_REGEX']) || preg_match($MYREQUEST['SEARCH_REGEX'], $entry[$fieldname]) != 0) {
 				$sh=md5($entry["info"]);
 				$field_value = htmlentities(strip_tags($entry[$fieldname],''), ENT_QUOTES, 'UTF-8');
 				echo
 					'<tr id="key-'. $sh .'" class=tr-',$i%2,'>',
-					"<td class=td-0><a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],"&SH=",$sh,"#key-". $sh ."\">",$field_value,'</a></td>',
+					"<td class=td-0><a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],(!empty($MYREQUEST['SEARCH']) ? "&SEARCH=" . urlencode($MYREQUEST['SEARCH']) : ''),"&SH=",$sh,"#key-". $sh ."\">",$field_value,'</a></td>',
 					'<td class="td-n center">',$entry['num_hits'],'</td>',
 					'<td class="td-n right">',$entry['mem_size'],'</td>',
 					'<td class="td-n center">',date(DATE_FORMAT,$entry['access_time']),'</td>',
