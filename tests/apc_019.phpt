@@ -2,7 +2,7 @@
 The per-entry TTL should take precedence over the global TTL
 --SKIPIF--
 <?php
-require_once(__DIR . '/skipif.inc');
+require_once(__DIR__ . '/skipif.inc');
 if (!function_exists('apcu_inc_request_time')) die('skip APC debug build required');
 ?>
 --INI--
