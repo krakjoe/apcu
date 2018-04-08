@@ -44,6 +44,7 @@
  - Fix --enable-apcu-clear-signal support.
  - Show entries with expired global TTL in APCuIterator.
  - Respect TTL when calculating APCuIterator totals.
+ - PHP bug #76145: Fix use of APCu inside Serializer::(un)serialize().
  - gh#295: Improve APCuIterator performance by using PCRE JIT and preallocating key strings.
  - Reduce the memory overhead of cache entries.
  - Prevent potential memory corruption in the cache slam defense implementation.

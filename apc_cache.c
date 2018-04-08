@@ -195,9 +195,13 @@ PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS)
 {
 	smart_str strbuf = {0};
 	php_serialize_data_t var_hash;
+
+	/* Lock in case apcu is accessed inside Serializer::serialize() */
+	BG(serialize_lock)++;
 	PHP_VAR_SERIALIZE_INIT(var_hash);
 	php_var_serialize(&strbuf, (zval*) value, &var_hash);
 	PHP_VAR_SERIALIZE_DESTROY(var_hash);
+	BG(serialize_lock)--;
 
 	if (strbuf.s != NULL) {
 		*buf = (unsigned char *)estrndup(ZSTR_VAL(strbuf.s), ZSTR_LEN(strbuf.s));
@@ -216,14 +220,20 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 {
 	const unsigned char *tmp = buf;
 	php_unserialize_data_t var_hash;
+	int result;
+
+	/* Lock in case apcu is accessed inside Serializer::unserialize() */
+	BG(serialize_lock)++;
 	PHP_VAR_UNSERIALIZE_INIT(var_hash);
-	if(!php_var_unserialize(value, &tmp, buf + buf_len, &var_hash)) {
-		PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
+	result = php_var_unserialize(value, &tmp, buf + buf_len, &var_hash);
+	PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
+	BG(serialize_lock)--;
+	
+	if (!result) {
 		php_error_docref(NULL, E_NOTICE, "Error at offset %ld of %ld bytes", (zend_long)(tmp - buf), (zend_long)buf_len);
 		ZVAL_NULL(value);
 		return 0;
 	}
-	PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
 	return 1;
 } /* }}} */
 
