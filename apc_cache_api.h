@@ -156,7 +156,7 @@ PHP_APCU_API zend_bool apc_cache_store(
 */
 PHP_APCU_API zend_bool apc_cache_update(
 		apc_cache_t *cache, zend_string *key, apc_cache_updater_t updater, void *data,
-		zend_bool insert_if_not_found);
+		zend_bool insert_if_not_found, zend_long ttl);
 
 /*
  * apc_cache_find searches for a cache entry by its hashed identifier,

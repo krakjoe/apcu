@@ -58,6 +58,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_inc, 0, 0, 1)
 	ZEND_ARG_INFO(0, key)
 	ZEND_ARG_INFO(0, step)
 	ZEND_ARG_INFO(1, success)
+	ZEND_ARG_INFO(0, ttl)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(arginfo_apcu_cas, 0)

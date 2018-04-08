@@ -415,7 +415,8 @@ PHP_FUNCTION(apcu_sma_info)
 
 /* {{{ php_apc_update  */
 int php_apc_update(
-		zend_string *key, apc_cache_updater_t updater, void *data, zend_bool insert_if_not_found)
+		zend_string *key, apc_cache_updater_t updater, void *data,
+		zend_bool insert_if_not_found, time_t ttl)
 {
 	if (!APCG(enabled)) {
 		return 0;
@@ -426,7 +427,7 @@ int php_apc_update(
 		apc_cache_serializer(apc_user_cache, APCG(serializer_name));
 	}
 
-	if (!apc_cache_update(apc_user_cache, key, updater, data, insert_if_not_found)) {
+	if (!apc_cache_update(apc_user_cache, key, updater, data, insert_if_not_found, ttl)) {
 		return 0;
 	}
 
@@ -530,15 +531,15 @@ static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
 	return 0;
 }
 
-/* {{{ proto long apcu_inc(string key [, long step [, bool& success]])
+/* {{{ proto long apcu_inc(string key [, long step [, bool& success [, long ttl]]])
  */
 PHP_FUNCTION(apcu_inc) {
 	zend_string *key;
 	struct php_inc_updater_args args;
-	zend_long step = 1;
+	zend_long step = 1, ttl = 0;
 	zval *success = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|lz", &key, &step, &success) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|lzl", &key, &step, &success, &ttl) == FAILURE) {
 		return;
 	}
 
@@ -549,7 +550,7 @@ PHP_FUNCTION(apcu_inc) {
 
 	ZVAL_LONG(&args.step, step);
 
-	if (php_apc_update(key, php_inc_updater, &args, 1)) {
+	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
 		if (success) {
 			ZVAL_TRUE(success);
 		}
@@ -564,15 +565,15 @@ PHP_FUNCTION(apcu_inc) {
 }
 /* }}} */
 
-/* {{{ proto long apcu_dec(string key [, long step [, bool &success]])
+/* {{{ proto long apcu_dec(string key [, long step [, bool &success [, long ttl]]])
  */
 PHP_FUNCTION(apcu_dec) {
 	zend_string *key;
 	struct php_inc_updater_args args;
-	zend_long step = 1;
+	zend_long step = 1, ttl = 0;
 	zval *success = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|lz", &key, &step, &success) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|lzl", &key, &step, &success, &ttl) == FAILURE) {
 		return;
 	}
 
@@ -583,7 +584,7 @@ PHP_FUNCTION(apcu_dec) {
 
 	ZVAL_LONG(&args.step, 0 - step);
 
-	if (php_apc_update(key, php_inc_updater, &args, 1)) {
+	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
 		if (success) {
 			ZVAL_TRUE(success);
 		}
@@ -626,7 +627,7 @@ PHP_FUNCTION(apcu_cas) {
 		return;
 	}
 
-	if (php_apc_update(key, php_cas_updater, &vals, 0)) {
+	if (php_apc_update(key, php_cas_updater, &vals, 0, 0)) {
 		RETURN_TRUE;
 	}
 

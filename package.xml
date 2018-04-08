@@ -46,7 +46,8 @@
  - Respect TTL when calculating APCuIterator totals.
  - The per-entry TTL now always takes precedence over the global TTL.
  - The global TTL is now always relative to the access time.
- - apc_inc() and apc_dec() no longer update hard-expired entries. Instead a new entry is created.
+ - apcu_inc() and apcu_dec() no longer update hard-expired entries. Instead a new entry is created.
+ - Added optional $ttl argument to apcu_inc() and apcu_dec(), used when creating a new entry.
  - PHP bug #76145: Fix use of APCu inside Serializer::(un)serialize().
  - gh#304: If apcu_cas() is used on a non-existing entry, don't insert it.
  - gh#295: Improve APCuIterator performance by using PCRE JIT and preallocating key strings.

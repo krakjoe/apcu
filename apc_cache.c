@@ -920,7 +920,7 @@ PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, ti
 /* {{{ apc_cache_update */
 PHP_APCU_API zend_bool apc_cache_update(
 		apc_cache_t *cache, zend_string *key, apc_cache_updater_t updater, void *data,
-		zend_bool insert_if_not_found)
+		zend_bool insert_if_not_found, zend_long ttl)
 {
 	apc_cache_entry_t **entry;
 
@@ -990,8 +990,7 @@ retry_update:
 		/* We do not check the return value of the exclusive-store (add), as the entry might have
 		 * been added between the cache unlock and the store call. In this case we just want to
 		 * update the entry created by a different process. */
-		/* TODO Always uses TTL 0 */
-		apc_cache_store(cache, key, &val, 0, 1);
+		apc_cache_store(cache, key, &val, ttl, 1);
 
 		/* Only attempt to perform insertion once. */
 		insert_if_not_found = 0;
