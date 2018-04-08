@@ -31,7 +31,7 @@
  <date>2018-03-08</date>
  <version>
   <release>5.1.12dev</release>
-  <api>5.1.11</api>
+  <api>5.1.12</api>
  </version>
  <stability>
   <release>stable</release>
@@ -39,7 +39,18 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+ - gh#307: Fix 'Timout' sort option (apc.php).
+ - gh#308: Keep search parameter on cache entry detail link (apc.php).
+ - Fix --enable-apcu-clear-signal support.
+ - Show entries with expired global TTL in APCuIterator.
+ - Respect TTL when calculating APCuIterator totals.
+ - gh#295: Improve APCuIterator performance by using PCRE JIT and preallocating key strings.
+ - Reduce the memory overhead of cache entries.
+ - Prevent potential memory corruption in the cache slam defense implementation.
+ - Ensure cache entry references are released on bailout during unserialization.
+ - Make support for atomic operations a hard requirement for building APCu.
+ - Check write-lock acquisition for failure, to help debugging deadlock situations.
+ - Many changes to internal C APIs.
  </notes>
  <contents>
   <dir name="/">
