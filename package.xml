@@ -51,6 +51,7 @@
  - Ensure cache entry references are released on bailout during unserialization.
  - Make support for atomic operations a hard requirement for building APCu.
  - Check write-lock acquisition for failure, to help debugging deadlock situations.
+ - Make sure apcu_inc/dec are atomic when working on a non-existing entry.
  - Many changes to internal C APIs.
  </notes>
  <contents>

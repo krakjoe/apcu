@@ -917,9 +917,9 @@ PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, ti
 PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, apc_cache_updater_t updater, void* data)
 {
 	apc_cache_entry_t **entry;
-	apc_cache_entry_t tmp_entry;
 
 	zend_bool retval = 0;
+	zend_bool insert_if_not_found = 1;
 	zend_ulong h, s;
 
 	if (apc_cache_busy(cache)) {
@@ -930,6 +930,7 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 	/* calculate hash */
 	apc_cache_hash_slot(cache, key, &h, &s);
 
+retry_update:
 	if (!APC_WLOCK(cache->header)) {
 		return 0;
 	}
@@ -973,14 +974,20 @@ PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, ap
 		APC_WUNLOCK(cache->header);
 	} php_apc_end_try();
 
-	/* TODO This is non-atomic... */
-	/* failed to find matching entry, create it */
-	ZVAL_LONG(&tmp_entry.val, 0);
-	updater(cache, &tmp_entry, data);
+	if (insert_if_not_found) {
+		/* Failed to find matching entry. Add key with value 0 and run the updater again. */
+		zval val;
+		ZVAL_LONG(&val, 0);
 
-	/* TODO Always uses TTL 0 */
-	if (apc_cache_store(cache, key, &tmp_entry.val, 0, 0)) {
-		return 1;
+		/* We do not check the return value of the exclusive-store (add), as the entry might have
+		 * been added between the cache unlock and the store call. In this case we just want to
+		 * update the entry created by a different process. */
+		/* TODO Always uses TTL 0 */
+		apc_cache_store(cache, key, &val, 0, 1);
+
+		/* Only attempt to perform insertion once. */
+		insert_if_not_found = 0;
+		goto retry_update;
 	}
 
 	return 0;

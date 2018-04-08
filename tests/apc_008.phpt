@@ -26,7 +26,7 @@ $foobar = 2
 $foobar == 1 ? 2 : 1 = fail
 $foobar == 2 ? 1 : 2 = ok
 $foobar = 1
-$f__bar == 1 ? 2 : 1 = ok
+$f__bar == 1 ? 2 : 1 = fail
 $perfection == 2 ? 1 : 2 = epic fail
 $foobar = 1
 ===DONE===
