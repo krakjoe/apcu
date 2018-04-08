@@ -914,12 +914,13 @@ PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, ti
 /* }}} */
 
 /* {{{ apc_cache_update */
-PHP_APCU_API zend_bool apc_cache_update(apc_cache_t* cache, zend_string *key, apc_cache_updater_t updater, void* data)
+PHP_APCU_API zend_bool apc_cache_update(
+		apc_cache_t *cache, zend_string *key, apc_cache_updater_t updater, void *data,
+		zend_bool insert_if_not_found)
 {
 	apc_cache_entry_t **entry;
 
 	zend_bool retval = 0;
-	zend_bool insert_if_not_found = 1;
 	zend_ulong h, s;
 
 	if (apc_cache_busy(cache)) {

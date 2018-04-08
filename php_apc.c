@@ -414,7 +414,8 @@ PHP_FUNCTION(apcu_sma_info)
 /* }}} */
 
 /* {{{ php_apc_update  */
-int php_apc_update(zend_string *key, apc_cache_updater_t updater, void* data)
+int php_apc_update(
+		zend_string *key, apc_cache_updater_t updater, void *data, zend_bool insert_if_not_found)
 {
 	if (!APCG(enabled)) {
 		return 0;
@@ -425,7 +426,7 @@ int php_apc_update(zend_string *key, apc_cache_updater_t updater, void* data)
 		apc_cache_serializer(apc_user_cache, APCG(serializer_name));
 	}
 
-	if (!apc_cache_update(apc_user_cache, key, updater, data)) {
+	if (!apc_cache_update(apc_user_cache, key, updater, data, insert_if_not_found)) {
 		return 0;
 	}
 
@@ -548,7 +549,7 @@ PHP_FUNCTION(apcu_inc) {
 
 	ZVAL_LONG(&args.step, step);
 
-	if (php_apc_update(key, php_inc_updater, &args)) {
+	if (php_apc_update(key, php_inc_updater, &args, 1)) {
 		if (success) {
 			ZVAL_TRUE(success);
 		}
@@ -582,7 +583,7 @@ PHP_FUNCTION(apcu_dec) {
 
 	ZVAL_LONG(&args.step, 0 - step);
 
-	if (php_apc_update(key, php_inc_updater, &args)) {
+	if (php_apc_update(key, php_inc_updater, &args, 1)) {
 		if (success) {
 			ZVAL_TRUE(success);
 		}
@@ -625,7 +626,7 @@ PHP_FUNCTION(apcu_cas) {
 		return;
 	}
 
-	if (php_apc_update(key, php_cas_updater, &vals)) {
+	if (php_apc_update(key, php_cas_updater, &vals, 0)) {
 		RETURN_TRUE;
 	}
 
