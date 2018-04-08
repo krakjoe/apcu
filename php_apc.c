@@ -321,7 +321,7 @@ static PHP_RINIT_FUNCTION(apcu)
 }
 /* }}} */
 
-/* {{{ proto void apc_clear_cache() */
+/* {{{ proto void apcu_clear_cache() */
 PHP_FUNCTION(apcu_clear_cache)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -333,7 +333,7 @@ PHP_FUNCTION(apcu_clear_cache)
 }
 /* }}} */
 
-/* {{{ proto array apc_cache_info([bool limited]) */
+/* {{{ proto array apcu_cache_info([bool limited]) */
 PHP_FUNCTION(apcu_cache_info)
 {
 	zend_bool limited = 0;
@@ -349,7 +349,7 @@ PHP_FUNCTION(apcu_cache_info)
 }
 /* }}} */
 
-/* {{{ */
+/* {{{ proto array apcu_key_info(string key) */
 PHP_FUNCTION(apcu_key_info)
 {
 	zend_string *key;
@@ -361,7 +361,7 @@ PHP_FUNCTION(apcu_key_info)
 	apc_cache_stat(apc_user_cache, key, return_value);
 } /* }}} */
 
-/* {{{ proto array apc_sma_info([bool limited]) */
+/* {{{ proto array apcu_sma_info([bool limited]) */
 PHP_FUNCTION(apcu_sma_info)
 {
 	apc_sma_info_t* info;
@@ -497,14 +497,14 @@ PHP_FUNCTION(apcu_enabled) {
 	RETURN_BOOL(APCG(enabled));
 }  /* }}} */
 
-/* {{{ proto int apc_store(mixed key, mixed var [, long ttl ])
+/* {{{ proto int apcu_store(mixed key, mixed var [, long ttl ])
  */
 PHP_FUNCTION(apcu_store) {
 	apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 0);
 }
 /* }}} */
 
-/* {{{ proto int apc_add(mixed key, mixed var [, long ttl ])
+/* {{{ proto int apcu_add(mixed key, mixed var [, long ttl ])
  */
 PHP_FUNCTION(apcu_add) {
 	apc_store_helper(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1);
@@ -530,7 +530,7 @@ static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
 	return 0;
 }
 
-/* {{{ proto long apc_inc(string key [, long step [, bool& success]])
+/* {{{ proto long apcu_inc(string key [, long step [, bool& success]])
  */
 PHP_FUNCTION(apcu_inc) {
 	zend_string *key;
@@ -564,7 +564,7 @@ PHP_FUNCTION(apcu_inc) {
 }
 /* }}} */
 
-/* {{{ proto long apc_dec(string key [, long step [, bool &success]])
+/* {{{ proto long apcu_dec(string key [, long step [, bool &success]])
  */
 PHP_FUNCTION(apcu_dec) {
 	zend_string *key;
@@ -616,7 +616,7 @@ static zend_bool php_cas_updater(apc_cache_t* cache, apc_cache_entry_t* entry, v
 }
 /* }}} */
 
-/* {{{ proto int apc_cas(string key, int old, int new)
+/* {{{ proto int apcu_cas(string key, int old, int new)
  */
 PHP_FUNCTION(apcu_cas) {
 	zend_string *key;
@@ -634,7 +634,7 @@ PHP_FUNCTION(apcu_cas) {
 }
 /* }}} */
 
-/* {{{ proto mixed apc_fetch(mixed key[, bool &success])
+/* {{{ proto mixed apcu_fetch(mixed key[, bool &success])
  */
 PHP_FUNCTION(apcu_fetch) {
 	zval *key;
@@ -702,7 +702,7 @@ PHP_FUNCTION(apcu_fetch) {
 }
 /* }}} */
 
-/* {{{ proto mixed apc_exists(mixed key)
+/* {{{ proto mixed apcu_exists(mixed key)
  */
 PHP_FUNCTION(apcu_exists) {
 	zval *key;
@@ -755,7 +755,7 @@ PHP_FUNCTION(apcu_exists) {
 }
 /* }}} */
 
-/* {{{ proto mixed apc_delete(mixed keys)
+/* {{{ proto mixed apcu_delete(mixed keys)
  */
 PHP_FUNCTION(apcu_delete) {
 	zval *keys;
