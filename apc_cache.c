@@ -926,6 +926,7 @@ PHP_APCU_API zend_bool apc_cache_update(
 
 	zend_bool retval = 0;
 	zend_ulong h, s;
+	time_t t = apc_time();
 
 	if (apc_cache_busy(cache)) {
 		/* cannot service request right now */
@@ -948,7 +949,9 @@ retry_update:
 			/* check for a match by hash and identifier */
 			if (h == ZSTR_HASH((*entry)->key) &&
 				ZSTR_LEN((*entry)->key) == ZSTR_LEN(key) &&
-				memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
+				memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0 &&
+				!apc_cache_entry_hard_expired(*entry, t)
+			) {
 				/* attempt to perform update */
 				switch (Z_TYPE((*entry)->val)) {
 					case IS_ARRAY:
@@ -963,7 +966,7 @@ retry_update:
 						/* executing update */
 						retval = updater(cache, *entry, data);
 						/* set modified time */
-						(*entry)->mtime = apc_time();
+						(*entry)->mtime = t;
 						break;
 				}
 
