@@ -793,19 +793,9 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 			for (i = 0; i < cache->nslots; i++) {
 				apc_cache_entry_t **entry = &cache->slots[i];
 				while (*entry) {
-					/*
-					 * Entry TTL has precedence over cache TTL
-					 */
-					if ((*entry)->ttl) {
-						if((time_t) ((*entry)->ctime + (*entry)->ttl) < t) {
-							apc_cache_wlocked_remove_entry(cache, entry);
-							continue;
-						}
-					} else if (cache->ttl) {
-						if((time_t) ((*entry)->ctime + cache->ttl) < t) {
-							apc_cache_wlocked_remove_entry(cache, entry);
-							continue;
-						}
+					if (apc_cache_entry_expired(cache, *entry, t)) {
+						apc_cache_wlocked_remove_entry(cache, entry);
+						continue;
 					}
 
 					/* grab next entry */
