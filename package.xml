@@ -44,6 +44,7 @@
  - Fix --enable-apcu-clear-signal support.
  - Show entries with expired global TTL in APCuIterator.
  - Respect TTL when calculating APCuIterator totals.
+ - The per-entry TTL now always takes precedence over the global TTL.
  - PHP bug #76145: Fix use of APCu inside Serializer::(un)serialize().
  - gh#304: If apcu_cas() is used on a non-existing entry, don't insert it.
  - gh#295: Improve APCuIterator performance by using PCRE JIT and preallocating key strings.

@@ -120,6 +120,26 @@ static void apc_cache_hash_slot(
 	*slot = *hash % cache->nslots;
 } /* }}} */
 
+/* An entry is hard expired if the creation time if older than the per-entry TTL.
+ * Hard expired entries must be treated indentially to non-existent entries. */
+static zend_bool apc_cache_entry_hard_expired(apc_cache_entry_t *entry, time_t t) {
+	return entry->ttl && (time_t) (entry->ctime + entry->ttl) < t;
+}
+
+/* An entry is soft expired if no per-entry TTL is set, a global cache TTL is set,
+ * and the access time of the entry is older than the global TTL. Soft expired entries
+ * are accessible by lookup operation, but may be removed from the cache at any time. */
+static zend_bool apc_cache_entry_soft_expired(
+		apc_cache_t *cache, apc_cache_entry_t *entry, time_t t) {
+	return !entry->ttl && cache->ttl && (time_t) (entry->atime + cache->ttl) < t;
+}
+
+static zend_bool apc_cache_entry_expired(
+		apc_cache_t *cache, apc_cache_entry_t *entry, time_t t) {
+	return apc_cache_entry_hard_expired(entry, t)
+		|| apc_cache_entry_soft_expired(cache, entry, t);
+}
+
 /* {{{ apc_cache_wlocked_remove_entry  */
 static void apc_cache_wlocked_remove_entry(apc_cache_t *cache, apc_cache_entry_t **entry)
 {
@@ -324,27 +344,21 @@ static inline zend_bool apc_cache_wlocked_insert(
 				/*
 				 * At this point we have found the user cache entry.  If we are doing
 				 * an exclusive insert (apc_add) we are going to bail right away if
-				 * the user entry already exists and it has no ttl, or
-				 * there is a ttl and the entry has not timed out yet.
+				 * the user entry already exists and is hard expired.
 				 */
-				if (exclusive) {
-					if (!(*entry)->ttl || (time_t) ((*entry)->ctime + (*entry)->ttl) >= t) {
-						return 0;
-					}
+				if (exclusive && !apc_cache_entry_hard_expired(*entry, t)) {
+					return 0;
 				}
+
 				apc_cache_wlocked_remove_entry(cache, entry);
 				break;
 			}
 
 			/*
-			 * This is a bit nasty.  The idea here is to do runtime cleanup of the linked list of
-			 * entry entries so we don't always have to skip past a bunch of stale entries.  We check
-			 * for staleness here and get rid of them by first checking to see if the cache has a global
-			 * access ttl on it and removing entries that haven't been accessed for ttl seconds and secondly
-			 * we see if the entry has a hard ttl on it and remove it if it has been around longer than its ttl
+			 * This is a bit nasty. The idea here is to do runtime cleanup of the linked list of
+			 * entry entries so we don't always have to skip past a bunch of stale entries.
 			 */
-			if((cache->ttl && (time_t)(*entry)->atime < (t - (time_t)cache->ttl)) ||
-			   ((*entry)->ttl && (time_t) ((*entry)->ctime + (*entry)->ttl) < t)) {
+			if (apc_cache_entry_expired(cache, *entry, t)) {
 				apc_cache_wlocked_remove_entry(cache, entry);
 				continue;
 			}
@@ -423,7 +437,7 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find_nostat(
 			memcmp(ZSTR_VAL(entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
 
 			/* Check to make sure this entry isn't expired by a hard TTL */
-			if (entry->ttl && (time_t) (entry->ctime + entry->ttl) < t) {
+			if (apc_cache_entry_hard_expired(entry, t)) {
 				break;
 			}
 
@@ -453,7 +467,7 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find(
 			memcmp(ZSTR_VAL(entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
 
 			/* Check to make sure this entry isn't expired by a hard TTL */
-			if (entry->ttl && (time_t) (entry->ctime + entry->ttl) < t) {
+			if (apc_cache_entry_hard_expired(entry, t)) {
 				break;
 			}
 
