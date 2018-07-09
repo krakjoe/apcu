@@ -30,7 +30,7 @@
  </lead>
  <date>2018-07-09</date>
  <version>
-  <release>5.1.12</release>
+  <release>5.1.13dev</release>
   <api>5.1.12</api>
  </version>
  <stability>
@@ -39,25 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
- - gh#307: Fix 'Timout' sort option (apc.php).
- - gh#308: Keep search parameter on cache entry detail link (apc.php).
- - Fix --enable-apcu-clear-signal support.
- - Show entries with expired global TTL in APCuIterator.
- - Respect TTL when calculating APCuIterator totals.
- - The per-entry TTL now always takes precedence over the global TTL.
- - The global TTL is now always relative to the access time.
- - apcu_inc() and apcu_dec() no longer update hard-expired entries. Instead a new entry is created.
- - Added optional $ttl argument to apcu_inc() and apcu_dec(), used when creating a new entry.
- - PHP bug #76145: Fix use of APCu inside Serializer::(un)serialize().
- - gh#304: If apcu_cas() is used on a non-existing entry, don't insert it.
- - gh#295: Improve APCuIterator performance by using PCRE JIT and preallocating key strings.
- - Reduce the memory overhead of cache entries.
- - Prevent potential memory corruption in the cache slam defense implementation.
- - Ensure cache entry references are released on bailout during unserialization.
- - Make support for atomic operations a hard requirement for building APCu.
- - Check write-lock acquisition for failure, to help debugging deadlock situations.
- - Make sure apcu_inc/dec are atomic when working on a non-existing entry.
- - Many changes to internal C APIs.
+-
  </notes>
  <contents>
   <dir name="/">
@@ -182,6 +164,39 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2018-07-09</date>
+   <version>
+    <release>5.1.12</release>
+    <api>5.1.12</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- gh#307: Fix 'Timout' sort option (apc.php).
+- gh#308: Keep search parameter on cache entry detail link (apc.php).
+- Fix --enable-apcu-clear-signal support.
+- Show entries with expired global TTL in APCuIterator.
+- Respect TTL when calculating APCuIterator totals.
+- The per-entry TTL now always takes precedence over the global TTL.
+- The global TTL is now always relative to the access time.
+- apcu_inc() and apcu_dec() no longer update hard-expired entries. Instead a new entry is created.
+- Added optional $ttl argument to apcu_inc() and apcu_dec(), used when creating a new entry.
+- PHP bug #76145: Fix use of APCu inside Serializer::(un)serialize().
+- gh#304: If apcu_cas() is used on a non-existing entry, don't insert it.
+- gh#295: Improve APCuIterator performance by using PCRE JIT and preallocating key strings.
+- Reduce the memory overhead of cache entries.
+- Prevent potential memory corruption in the cache slam defense implementation.
+- Ensure cache entry references are released on bailout during unserialization.
+- Make support for atomic operations a hard requirement for building APCu.
+- Check write-lock acquisition for failure, to help debugging deadlock situations.
+- Make sure apcu_inc/dec are atomic when working on a non-existing entry.
+- Many changes to internal C APIs.
+   </notes>
+  </release>
   <release>
    <date>2018-03-08</date>
    <version>
