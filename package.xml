@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2018-03-08</date>
+ <date>2018-07-09</date>
  <version>
-  <release>5.1.12dev</release>
+  <release>5.1.12</release>
   <api>5.1.12</api>
  </version>
  <stability>
@@ -83,6 +83,11 @@
     <file name="apc_015.phpt" role="test" />
     <file name="apc_016.phpt" role="test" />
     <file name="apc_017.phpt" role="test" />
+    <file name="apc_018.phpt" role="test" />
+    <file name="apc_019.phpt" role="test" />
+    <file name="apc_020.phpt" role="test" />
+    <file name="apc_021.phpt" role="test" />
+    <file name="apc_022.phpt" role="test" />
     <file name="apc_099.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
     <file name="apc54_018.phpt" role="test" />
@@ -91,6 +96,7 @@
     <file name="apc_entry_003.phpt" role="test" />
     <file name="apc_inc_perf.phpt" role="test" />
     <file name="bug63224.phpt" role="test" />
+    <file name="bug76145.phpt" role="test" />
     <file name="get_included_files_inc1.inc" role="test" />
     <file name="get_included_files_inc2.inc" role="test" />
     <file name="get_included_files_inc3.inc" role="test" />
@@ -108,6 +114,7 @@
     <file name="iterator_007.phpt" role="test" />
     <file name="iterator_008.phpt" role="test" />
     <file name="iterator_009.phpt" role="test" />
+    <file name="iterator_010.phpt" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />
     <file name="data/abc.data" role="test" />
