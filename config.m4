@@ -63,14 +63,12 @@ AC_MSG_RESULT($PHP_APCU_SPINLOCK)
 if test "$PHP_APCU_RWLOCKS" != "no"; then
 	AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_cv_APCU_GCC_ATOMICS, [
 
-		AC_TRY_LINK([],[
+		AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 				int foo = 0;
 				__sync_add_and_fetch(&foo, 1);
 				__sync_sub_and_fetch(&foo, 1);
 				return 0;
-			],
-			[PHP_cv_APCU_GCC_ATOMICS=yes],
-			[PHP_cv_APCU_GCC_ATOMICS=no])
+			]])],[PHP_cv_APCU_GCC_ATOMICS=yes],[PHP_cv_APCU_GCC_ATOMICS=no])
 	])
 
 	if test "x${PHP_cv_APCU_GCC_ATOMICS}" != "xyes"; then
@@ -90,8 +88,7 @@ if test "$PHP_APCU" != "no"; then
   if test "$PHP_APCU_RWLOCKS" != "no"; then
 	    orig_LIBS="$LIBS"
 	    LIBS="$LIBS -lpthread"
-	    AC_TRY_RUN(
-		    [
+	    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 			    #include <sys/types.h>
 			    #include <pthread.h>
           main() {
@@ -121,32 +118,27 @@ if test "$PHP_APCU" != "no"; then
 
 			      return 0;
           }
-		    ],
-		    [ dnl -Success-
+		    ]])],[ dnl -Success-
 			    APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
 			    PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 			    AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
 			    AC_MSG_WARN([APCu has access to native rwlocks])
-		    ],
-		    [ dnl -Failure-
+		    ],[ dnl -Failure-
 			    AC_MSG_WARN([It doesn't appear that pthread rwlocks are supported on your system])
     			PHP_APCU_RWLOCKS=no
-		    ],
-		    [
+		    ],[
 			    APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
 			    PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
-		    ]
-    )
+    ])
     LIBS="$orig_LIBS"
   fi
   
   if test "$PHP_APCU_RWLOCKS" = "no"; then
     orig_LIBS="$LIBS"
 	  LIBS="$LIBS -lpthread"
-	  AC_TRY_RUN(
-			  [
+	  AC_RUN_IFELSE([AC_LANG_SOURCE([[
 				  #include <sys/types.h>
 				  #include <pthread.h>
           main() {
@@ -175,23 +167,19 @@ if test "$PHP_APCU" != "no"; then
 				    }
 				    return 0;
         }
-			  ],
-			  [ dnl -Success-
+			  ]])],[ dnl -Success-
 				  APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
 				  PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 				  AC_MSG_WARN([APCu has access to mutexes])
-			  ],
-			  [ dnl -Failure-
+			  ],[ dnl -Failure-
 				  AC_MSG_WARN([It doesn't appear that pthread mutexes are supported on your system])
     			PHP_APCU_MUTEX=no
-			  ],
-			  [
+			  ],[
 				  APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
 				  PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
-			  ]
-	  )
+	  ])
 	  LIBS="$orig_LIBS"
   fi
   
@@ -210,11 +198,11 @@ if test "$PHP_APCU" != "no"; then
   AC_CHECK_FUNCS(sigaction)
   AC_CACHE_CHECK(for union semun, php_cv_semun,
   [
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
-    ], [union semun x; x.val=1], [
+    ]], [[union semun x; x.val=1]])],[
       php_cv_semun=yes
     ],[
       php_cv_semun=no
