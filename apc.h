@@ -135,7 +135,7 @@ typedef struct apc_serializer_t {
 /* }}} */
 
 /* {{{ _apc_register_serializer
- registers the serializer using the given name and paramters */
+ registers the serializer using the given name and parameters */
 PHP_APCU_API int _apc_register_serializer(
         const char* name, apc_serialize_t serialize, apc_unserialize_t unserialize, void *config);
 /* }}} */
