@@ -66,7 +66,7 @@ for ($i = 0; $i < 10; $i++) {
 			"Host: " . PHP_CLI_SERVER_HOSTNAME . "\n" .
 			"Cookie: PHPSESSID=$sid;" .
 			"\r\n\r\n";
-	for ($j = 0; $j < $num_servers; $j++) {
+	for ($j = 0; $j < ServerTestGlobals::$num_servers; $j++) {
 		run_test(PHP_CLI_SERVER_HOSTNAME, PHP_CLI_SERVER_PORT+$j, $send);
 	}
 }
