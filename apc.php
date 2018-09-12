@@ -120,7 +120,7 @@ foreach($vardom as $var => $dom) {
 	}
 }
 
-// check parameter sematics
+// check parameter semantics
 if (empty($MYREQUEST['SCOPE'])) $MYREQUEST['SCOPE']="A";
 if (empty($MYREQUEST['SORT1'])) $MYREQUEST['SORT1']="H";
 if (empty($MYREQUEST['SORT2'])) $MYREQUEST['SORT2']="D";

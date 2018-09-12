@@ -76,7 +76,7 @@ typedef void (*apc_sma_expunge_f)(void* pointer, zend_ulong size); /* }}} */
 
 /* {{{ struct definition: apc_sma_t */
 typedef struct _apc_sma_t {
-	zend_bool  initialized;                      /* flag to indicate this sma has been intialized */
+	zend_bool  initialized;                      /* flag to indicate this sma has been initialized */
 
 	/* functions */
 	apc_sma_init_f init;                         /* init */
@@ -184,7 +184,7 @@ typedef union { void* p; int i; long l; double d; void (*f)(void); } apc_word_t;
 
 /*
 * The following macros help to implement APC SMA in a few easy steps:
-*  1) call apc_sma_api_decl(name) to intialize an APC SMA by the given name in a global project header
+*  1) call apc_sma_api_decl(name) to initialize an APC SMA by the given name in a global project header
 *  2) call apc_sma_api_impl(name) to implement the APC SMA in a compilation unit
 *  3) call apc_sma_api_extern(name) in any compilation unit without direct access to your SMA
 *

@@ -207,7 +207,7 @@ found:
  * is set.
  *
  * Marked as used in gcc, so that this function
- * is accessible from gdb, eventhough it is never
+ * is accessible from gdb, even though it is never
  * used in code in non-debug builds.
  */
 static APC_USED int apc_pool_check_integrity(apc_pool *pool)
