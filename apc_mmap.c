@@ -64,7 +64,7 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 	/* If no filename was provided, do an anonymous mmap */
 	if(!file_mask || (file_mask && !strlen(file_mask))) {
 #if !defined(MAP_ANON)
-		apc_error("Anonymous mmap does not apear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the apc.mmap_file_mask INI option.");
+		apc_error("Anonymous mmap does not appear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the apc.mmap_file_mask INI option.");
 #else
 		fd = -1;
 		flags = MAP_SHARED | MAP_ANON;
