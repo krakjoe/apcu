@@ -228,6 +228,11 @@ PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS)
 	PHP_VAR_SERIALIZE_DESTROY(var_hash);
 	BG(serialize_lock)--;
 
+	if (EG(exception)) {
+		smart_str_free(&strbuf);
+		strbuf.s = NULL;
+	}
+
 	if (strbuf.s != NULL) {
 		*buf = (unsigned char *)estrndup(ZSTR_VAL(strbuf.s), ZSTR_LEN(strbuf.s));
 		if (*buf == NULL)
