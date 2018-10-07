@@ -1286,28 +1286,6 @@ PHP_APCU_API zval* apc_copy_zval(zval* dst, const zval* src, apc_context_t* ctxt
 }
 /* }}} */
 
-/* {{{ apc_cache_store_zval */
-PHP_APCU_API zval* apc_cache_store_zval(zval* dst, const zval* src, apc_context_t* ctxt)
-{
-	if (Z_TYPE_P(src) == IS_ARRAY) {
-		/* Maintain a list of zvals we've copied to properly handle recursive structures */
-		zend_hash_init(&ctxt->copied, 16, NULL, NULL, 0);
-		dst = apc_copy_zval(dst, src, ctxt);
-		/* remove from copied regardless if allocation failure */
-		zend_hash_destroy(&ctxt->copied);
-		ctxt->copied.nTableSize=0;
-	} else {
-		dst = apc_copy_zval(dst, src, ctxt);
-	}
-
-	if (dst == NULL || EG(exception)) {
-		return NULL;
-	}
-
-	return dst;
-}
-/* }}} */
-
 /* {{{ apc_cache_entry_fetch_zval */
 PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 		apc_cache_t *cache, apc_cache_entry_t *entry, zval *dst)
