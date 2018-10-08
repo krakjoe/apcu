@@ -455,7 +455,12 @@ static zend_bool apc_unpersist_serialized(
 		config = serializer->config;
 	}
 
-	return unserialize(dst, (unsigned char *) ZSTR_VAL(str), ZSTR_LEN(str), config);
+	if (unserialize(dst, (unsigned char *) ZSTR_VAL(str), ZSTR_LEN(str), config)) {
+		return 1;
+	}
+
+	ZVAL_NULL(dst);
+	return 0;
 }
 
 static inline void *apc_unpersist_get_already_copied(apc_unpersist_context_t *ctxt, void *ptr) {
