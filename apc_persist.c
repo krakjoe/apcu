@@ -520,16 +520,32 @@ static zend_array *apc_unpersist_ht(
 	}
 
 	HT_SET_DATA_ADDR(ht, emalloc(HT_SIZE(ht)));
-	memcpy(HT_GET_DATA_ADDR(ht), HT_GET_DATA_ADDR(orig_ht), HT_USED_SIZE(ht));
+	memcpy(HT_GET_DATA_ADDR(ht), HT_GET_DATA_ADDR(orig_ht), HT_HASH_SIZE(ht->nTableMask));
 
-	for (idx = 0; idx < ht->nNumUsed; idx++) {
-		Bucket *p = ht->arData + idx;
-		if (Z_TYPE(p->val) == IS_UNDEF) continue;
-
-		if (p->key) {
-			p->key = zend_string_dup(p->key, 0);
+	if (ht->u.flags & HASH_FLAG_STATIC_KEYS) {
+		Bucket *p = ht->arData, *q = orig_ht->arData, *p_end = p + ht->nNumUsed;
+		for (; p < p_end; p++, q++) {
+			/* No need to check for UNDEF, as unpersist_zval can be safely called on UNDEF */
+			*p = *q;
+			apc_unpersist_zval(ctxt, &p->val);
 		}
-		apc_unpersist_zval(ctxt, &p->val);
+	} else {
+		Bucket *p = ht->arData, *q = orig_ht->arData, *p_end = p + ht->nNumUsed;
+		for (; p < p_end; p++, q++) {
+			if (Z_TYPE(q->val) == IS_UNDEF) {
+				ZVAL_UNDEF(&p->val);
+				continue;
+			}
+
+			p->val = q->val;
+			p->h = q->h;
+			if (q->key) {
+				p->key = zend_string_dup(q->key, 0);
+			} else {
+				p->key = NULL;
+			}
+			apc_unpersist_zval(ctxt, &p->val);
+		}
 	}
 
 	return ht;
