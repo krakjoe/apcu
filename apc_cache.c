@@ -1007,7 +1007,7 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 /* }}} */
 
 /* {{{ my_unserialize_object */
-static zval* my_unserialize_object(zval* dst, const zval* src, apc_context_t* ctxt)
+static zval *my_unserialize_object(zval* dst, const zval* src, apc_context_t* ctxt)
 {
 	apc_unserialize_t unserialize = APC_UNSERIALIZER_NAME(php);
 	void *config = NULL;
@@ -1220,7 +1220,7 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 	assert(src != NULL);
 
 	/* If src was already unserialized, then make dst a copy of the unserialization of src */
-	if (Z_TYPE_P(src) >= IS_STRING) {
+	if (Z_TYPE_P(src) >= IS_STRING && Z_TYPE_P(src) != IS_PTR) {
 		if (zend_hash_num_elements(&ctxt->copied)) {
 			zval *rc = zend_hash_index_find(
 					&ctxt->copied, (uintptr_t) Z_COUNTED_P(src));
@@ -1255,18 +1255,16 @@ static APC_HOTSPOT zval* my_copy_zval(zval* dst, const zval* src, apc_context_t*
 		break;
 
 	case IS_ARRAY:
-		if (GC_TYPE(Z_COUNTED_P(src)) != IS_STRING) {
-			HashTable *ht = my_copy_hashtable(Z_ARRVAL_P(src), ctxt);
-			if (!ht) {
-				return NULL;
-			}
-			ZVAL_ARR(dst, ht);
-			break;
+	{
+		HashTable *ht = my_copy_hashtable(Z_ARRVAL_P(src), ctxt);
+		if (!ht) {
+			return NULL;
 		}
+		ZVAL_ARR(dst, ht);
+		break;
+	}
 
-		/* break intentionally omitted */
-
-	case IS_OBJECT:
+	case IS_PTR:
 		dst = my_unserialize_object(dst, src, ctxt);
 		if (dst == NULL)
 			return NULL;

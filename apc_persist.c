@@ -329,9 +329,8 @@ static void apc_persist_copy_serialize(
 	str = apc_persist_copy_cstr(ctxt,
 		(char *) ctxt->serialized_str, ctxt->serialized_str_len);
 
-	/* Store string, but give it the type of an array/object */
-	ZVAL_STR(zv, str);
-	Z_TYPE_INFO_P(zv) = orig_type;
+	/* Store as PTR type to distinguish from other strings */
+	ZVAL_PTR(zv, str);
 }
 
 static void apc_persist_copy_zval(apc_persist_context_t *ctxt, zval *zv) {
