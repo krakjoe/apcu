@@ -443,7 +443,16 @@ typedef struct _apc_unpersist_context_t {
 	HashTable already_copied;
 } apc_unpersist_context_t;
 
-static void apc_unpersist_zval(zval *zv, apc_unpersist_context_t *ctxt);
+static void apc_unpersist_zval_impl(apc_unpersist_context_t *ctxt, zval *zv);
+
+static inline void apc_unpersist_zval(apc_unpersist_context_t *ctxt, zval *zv) {
+	/* No data apart from the zval itself */
+	if (Z_TYPE_P(zv) < IS_STRING) {
+		return;
+	}
+
+	apc_unpersist_zval_impl(ctxt, zv);
+}
 
 static zend_bool apc_unpersist_serialized(
 		zval *dst, zend_string *str, apc_serializer_t *serializer) {
@@ -493,7 +502,7 @@ static zend_reference *apc_unpersist_ref(
 	GC_TYPE_INFO(ref) = IS_REFERENCE;
 
 	ZVAL_COPY_VALUE(&ref->val, &orig_ref->val);
-	apc_unpersist_zval(&ref->val, ctxt);
+	apc_unpersist_zval(ctxt, &ref->val);
 	return ref;
 }
 
@@ -520,21 +529,14 @@ static zend_array *apc_unpersist_ht(
 		if (p->key) {
 			p->key = zend_string_dup(p->key, 0);
 		}
-		apc_unpersist_zval(&p->val, ctxt);
+		apc_unpersist_zval(ctxt, &p->val);
 	}
 
 	return ht;
 }
 
-static void apc_unpersist_zval(zval *zv, apc_unpersist_context_t *ctxt) {
-	void *ptr;
-
-	if (Z_TYPE_P(zv) < IS_STRING) {
-		/* No data apart from the zval itself */
-		return;
-	}
-
-	ptr = apc_unpersist_get_already_copied(ctxt, Z_COUNTED_P(zv));
+static void apc_unpersist_zval_impl(apc_unpersist_context_t *ctxt, zval *zv) {
+	void *ptr = apc_unpersist_get_already_copied(ctxt, Z_COUNTED_P(zv));
 	if (ptr) {
 		Z_COUNTED_P(zv) = ptr;
 		Z_ADDREF_P(zv);
@@ -571,7 +573,7 @@ zend_bool apc_unpersist(zval *dst, const zval *value, apc_serializer_t *serializ
 	}
 
 	ZVAL_COPY_VALUE(dst, value);
-	apc_unpersist_zval(dst, &ctxt);
+	apc_unpersist_zval(&ctxt, dst);
 
 	if (ctxt.memoization_needed) {
 		zend_hash_destroy(&ctxt.already_copied);
