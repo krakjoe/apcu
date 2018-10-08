@@ -28,6 +28,10 @@
 	(GC_TYPE_INFO(ref) = type | (GC_PERSISTENT << GC_FLAGS_SHIFT))
 #endif
 
+/*
+ * PERSIST: Copy from request memory to SHM.
+ */
+
 typedef struct _apc_persist_context_t {
 	/* Serializer to use */
 	apc_serializer_t *serializer;
@@ -46,7 +50,7 @@ typedef struct _apc_persist_context_t {
 	char *alloc_cur;
 	/* HashTable storing refcounteds for which the size has already been counted. */
 	HashTable already_counted;
-	/* HashTable storing already allocated refcounteds. The entire zvals are stored. */
+	/* HashTable storing already allocated refcounteds. Pointers to refcounteds are stored. */
 	HashTable already_allocated;
 } apc_persist_context_t;
 
@@ -392,7 +396,7 @@ apc_cache_entry_t *apc_persist(
 	if (!serializer && (Z_TYPE(orig_entry->val) == IS_ARRAY ||
 	                    Z_TYPE(orig_entry->val) == IS_REFERENCE)) {
 		ctxt.memoization_needed = 1;
-		zend_hash_init(&ctxt.already_counted, 0, NULL, ZVAL_PTR_DTOR, 0);
+		zend_hash_init(&ctxt.already_counted, 0, NULL, NULL, 0);
 		zend_hash_init(&ctxt.already_allocated, 0, NULL, NULL, 0);
 	}
 
@@ -425,4 +429,138 @@ apc_cache_entry_t *apc_persist(
 
 	apc_persist_destroy_context(&ctxt);
 	return entry;
+}
+
+/*
+ * UNPERSIST: Copy from SHM to request memory.
+ */
+
+typedef struct _apc_unpersist_context_t {
+	/* Whether we need to memoize already copied refcounteds. */
+	zend_bool memoization_needed;
+	/* HashTable storing already copied refcounteds. */
+	HashTable already_copied;
+} apc_unpersist_context_t;
+
+static void apc_unpersist_zval(zval *dst, const zval *zv, apc_unpersist_context_t *ctxt);
+
+static zend_bool apc_unpersist_serialized(
+		zval *dst, zend_string *str, apc_serializer_t *serializer) {
+	apc_unserialize_t unserialize = APC_UNSERIALIZER_NAME(php);
+	void *config = NULL;
+
+	if (serializer) {
+		unserialize = serializer->unserialize;
+		config = serializer->config;
+	}
+
+	return unserialize(dst, (unsigned char *) ZSTR_VAL(str), ZSTR_LEN(str), config);
+}
+
+static inline void *apc_unpersist_get_already_copied(apc_unpersist_context_t *ctxt, void *ptr) {
+	if (ctxt->memoization_needed) {
+		return zend_hash_index_find_ptr(&ctxt->already_copied, (uintptr_t) ptr);
+	}
+	return NULL;
+}
+
+static inline void apc_unpersist_add_already_copied(
+		apc_unpersist_context_t *ctxt, const void *old_ptr, void *new_ptr) {
+	if (ctxt->memoization_needed) {
+		zend_hash_index_add_new_ptr(&ctxt->already_copied, (uintptr_t) old_ptr, new_ptr);
+	}
+}
+
+static zend_reference *apc_unpersist_ref(
+		apc_unpersist_context_t *ctxt, const zend_reference *orig_ref) {
+	zend_reference *ref = emalloc(sizeof(zend_reference));
+	apc_unpersist_add_already_copied(ctxt, orig_ref, ref);
+
+	GC_SET_REFCOUNT(ref, 1);
+	GC_TYPE_INFO(ref) = IS_REFERENCE;
+
+	apc_unpersist_zval(&ref->val, &orig_ref->val, ctxt);
+	return ref;
+}
+
+static zend_array *apc_unpersist_ht(
+		apc_unpersist_context_t *ctxt, const HashTable *orig_ht) {
+	HashTable *ht = emalloc(sizeof(HashTable));
+	uint32_t idx;
+
+	apc_unpersist_add_already_copied(ctxt, orig_ht, ht);
+	memcpy(ht, orig_ht, sizeof(HashTable));
+
+	if (ht->nNumUsed == 0) {
+		HT_SET_DATA_ADDR(ht, &uninitialized_bucket);
+		return ht;
+	}
+
+	HT_SET_DATA_ADDR(ht, emalloc(HT_SIZE(ht)));
+	memcpy(HT_GET_DATA_ADDR(ht), HT_GET_DATA_ADDR(orig_ht), HT_USED_SIZE(ht));
+
+	for (idx = 0; idx < ht->nNumUsed; idx++) {
+		Bucket *p = ht->arData + idx;
+		if (Z_TYPE(p->val) == IS_UNDEF) continue;
+
+		if (p->key) {
+			p->key = zend_string_dup(p->key, 0);
+		}
+		apc_unpersist_zval(&p->val, &p->val, ctxt);
+	}
+
+	return ht;
+}
+
+static void apc_unpersist_zval(zval *dst, const zval *zv, apc_unpersist_context_t *ctxt) {
+	void *ptr;
+
+	ZVAL_COPY_VALUE(dst, zv);
+	if (Z_TYPE_P(zv) < IS_STRING) {
+		/* No data apart from the zval itself */
+		return;
+	}
+
+	ptr = apc_unpersist_get_already_copied(ctxt, Z_COUNTED_P(zv));
+	switch (Z_TYPE_P(zv)) {
+		case IS_STRING:
+			if (!ptr) {
+				ptr = zend_string_dup(Z_STR_P(zv), 0);
+				apc_unpersist_add_already_copied(ctxt, Z_STR_P(zv), ptr);
+			}
+			ZVAL_STR(dst, ptr);
+			return;
+		case IS_REFERENCE:
+			if (!ptr) ptr = apc_unpersist_ref(ctxt, Z_REF_P(zv));
+			ZVAL_REF(dst, ptr);
+			return;
+		case IS_ARRAY:
+			if (!ptr) ptr = apc_unpersist_ht(ctxt, Z_ARR_P(zv));
+			ZVAL_ARR(dst, ptr);
+			return;
+		default:
+			ZEND_ASSERT(0);
+			return;
+	}
+}
+
+zend_bool apc_unpersist(zval *dst, const zval *value, apc_serializer_t *serializer) {
+	apc_unpersist_context_t ctxt;
+
+	if (Z_TYPE_P(value) == IS_PTR) {
+		return apc_unpersist_serialized(dst, Z_PTR_P(value), serializer);
+	}
+
+	ctxt.memoization_needed = 0;
+	if (Z_TYPE_P(value) == IS_ARRAY || Z_TYPE_P(value) == IS_REFERENCE) {
+		ctxt.memoization_needed = 1;
+		zend_hash_init(&ctxt.already_copied, 0, NULL, NULL, 0);
+	}
+
+	apc_unpersist_zval(dst, value, &ctxt);
+
+	if (ctxt.memoization_needed) {
+		zend_hash_destroy(&ctxt.already_copied);
+	}
+	return 1;
 }
