@@ -237,13 +237,13 @@ static inline void *apc_persist_alloc_copy(
 }
 
 static zend_string *apc_persist_copy_cstr(
-		apc_persist_context_t *ctxt, const char *orig_buf, size_t buf_len) {
+		apc_persist_context_t *ctxt, const char *orig_buf, size_t buf_len, zend_ulong hash) {
 	zend_string *str = ALLOC(_ZSTR_STRUCT_SIZE(buf_len));
 
 	GC_SET_REFCOUNT(str, 1);
 	GC_SET_PERSISTENT_TYPE(str, IS_STRING);
 
-	ZSTR_H(str) = 0;
+	ZSTR_H(str) = hash;
 	ZSTR_LEN(str) = buf_len;
 	memcpy(ZSTR_VAL(str), orig_buf, buf_len);
 	ZSTR_VAL(str)[buf_len] = '\0';
@@ -254,7 +254,8 @@ static zend_string *apc_persist_copy_cstr(
 
 static zend_string *apc_persist_copy_zstr(
 		apc_persist_context_t *ctxt, const zend_string *orig_str) {
-	zend_string *str = apc_persist_copy_cstr(ctxt, ZSTR_VAL(orig_str), ZSTR_LEN(orig_str));
+	zend_string *str = apc_persist_copy_cstr(
+		ctxt, ZSTR_VAL(orig_str), ZSTR_LEN(orig_str), ZSTR_H(orig_str));
 	apc_persist_add_already_allocated(ctxt, orig_str, str);
 	return str;
 }
@@ -331,7 +332,7 @@ static void apc_persist_copy_serialize(
 	ZEND_ASSERT(!ctxt->memoization_needed);
 	ZEND_ASSERT(ctxt->serialized_str);
 	str = apc_persist_copy_cstr(ctxt,
-		(char *) ctxt->serialized_str, ctxt->serialized_str_len);
+		(char *) ctxt->serialized_str, ctxt->serialized_str_len, 0);
 
 	/* Store as PTR type to distinguish from other strings */
 	ZVAL_PTR(zv, str);
@@ -471,6 +472,13 @@ static inline void apc_unpersist_add_already_copied(
 	}
 }
 
+static zend_string *apc_unpersist_zstr(apc_unpersist_context_t *ctxt, const zend_string *orig_str) {
+	zend_string *str = zend_string_init(ZSTR_VAL(orig_str), ZSTR_LEN(orig_str), 0);
+	ZSTR_H(str) = ZSTR_H(orig_str);
+	apc_unpersist_add_already_copied(ctxt, orig_str, str);
+	return str;
+}
+
 static zend_reference *apc_unpersist_ref(
 		apc_unpersist_context_t *ctxt, const zend_reference *orig_ref) {
 	zend_reference *ref = emalloc(sizeof(zend_reference));
@@ -524,10 +532,7 @@ static void apc_unpersist_zval(zval *dst, const zval *zv, apc_unpersist_context_
 	ptr = apc_unpersist_get_already_copied(ctxt, Z_COUNTED_P(zv));
 	switch (Z_TYPE_P(zv)) {
 		case IS_STRING:
-			if (!ptr) {
-				ptr = zend_string_dup(Z_STR_P(zv), 0);
-				apc_unpersist_add_already_copied(ctxt, Z_STR_P(zv), ptr);
-			}
+			if (!ptr) ptr = apc_unpersist_zstr(ctxt, Z_STR_P(zv));
 			ZVAL_STR(dst, ptr);
 			return;
 		case IS_REFERENCE:
