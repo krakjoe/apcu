@@ -62,7 +62,16 @@ typedef struct _apc_persist_context_t {
 
 static zend_bool apc_persist_calc_zval(
 		apc_persist_context_t *ctxt, const zval *zv, zend_bool top_level);
-static void apc_persist_copy_zval(apc_persist_context_t *ctxt, zval *zv);
+static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv);
+
+static inline void apc_persist_copy_zval(apc_persist_context_t *ctxt, zval *zv) {
+	/* No data apart from the zval itself */
+	if (Z_TYPE_P(zv) < IS_STRING) {
+		return;
+	}
+
+	apc_persist_copy_zval_impl(ctxt, zv);
+}
 
 void apc_persist_init_context(apc_persist_context_t *ctxt, apc_serializer_t *serializer) {
 	ctxt->serializer = serializer;
@@ -338,13 +347,8 @@ static void apc_persist_copy_serialize(
 	ZVAL_PTR(zv, str);
 }
 
-static void apc_persist_copy_zval(apc_persist_context_t *ctxt, zval *zv) {
+static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv) {
 	void *ptr;
-
-	if (Z_TYPE_P(zv) < IS_STRING) {
-		/* No data apart from the zval itself */
-		return;
-	}
 
 	if (ctxt->force_serialization) {
 		apc_persist_copy_serialize(ctxt, zv);
