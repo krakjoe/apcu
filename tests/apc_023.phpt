@@ -33,8 +33,11 @@ $ary = apcu_fetch("key");
 $ary[] = 1;
 var_dump($ary);
 
+echo "Resources:\n";
+apcu_store("key", fopen(__FILE__, "r"));
+
 ?>
---EXPECT--
+--EXPECTF--
 GLOBALS:
 int(1)
 Object referential identity:
@@ -56,3 +59,6 @@ array(2) {
   [1]=>
   int(1)
 }
+Resources:
+
+Warning: apcu_store(): Cannot store resources in apcu cache in %s on line %d
