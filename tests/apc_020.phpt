@@ -27,7 +27,7 @@ apcu_inc_request_time(1);
 // Fill the cache
 $i = 0;
 while (apcu_exists("dummy")) {
-    apcu_store("key" . $i, "foobar");
+    apcu_store("key" . $i, str_repeat('x', 500));
     $i++;
 }
 
