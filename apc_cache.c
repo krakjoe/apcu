@@ -119,6 +119,12 @@ static void apc_cache_hash_slot(
 	*slot = *hash % cache->nslots;
 } /* }}} */
 
+static inline zend_bool apc_entry_key_equals(const apc_cache_entry_t *entry, zend_string *key, zend_ulong hash) {
+	return ZSTR_H(entry->key) == hash
+		&& ZSTR_LEN(entry->key) == ZSTR_LEN(key)
+		&& memcmp(ZSTR_VAL(entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0;
+}
+
 /* An entry is hard expired if the creation time if older than the per-entry TTL.
  * Hard expired entries must be treated indentially to non-existent entries. */
 static zend_bool apc_cache_entry_hard_expired(apc_cache_entry_t *entry, time_t t) {
@@ -341,10 +347,7 @@ static inline zend_bool apc_cache_wlocked_insert(
 		entry = &cache->slots[s];
 		while (*entry) {
 			/* check for a match by hash and string */
-			if ((ZSTR_HASH((*entry)->key) == h) &&
-				ZSTR_LEN((*entry)->key) == ZSTR_LEN(key) &&
-				memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
-
+			if (apc_entry_key_equals(*entry, key, h)) {
 				/*
 				 * At this point we have found the user cache entry.  If we are doing
 				 * an exclusive insert (apc_add) we are going to bail right away if
@@ -425,10 +428,7 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find_nostat(
 	entry = cache->slots[s];
 	while (entry) {
 		/* check for a matching key by has and identifier */
-		if (h == ZSTR_HASH(entry->key) &&
-			ZSTR_LEN(entry->key) == ZSTR_LEN(key) &&
-			memcmp(ZSTR_VAL(entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
-
+		if (apc_entry_key_equals(entry, key, h)) {
 			/* Check to make sure this entry isn't expired by a hard TTL */
 			if (apc_cache_entry_hard_expired(entry, t)) {
 				break;
@@ -455,10 +455,7 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find(
 	entry = cache->slots[s];
 	while (entry) {
 		/* check for a matching key by has and identifier */
-		if (h == ZSTR_HASH(entry->key) &&
-			ZSTR_LEN(entry->key) == ZSTR_LEN(key) &&
-			memcmp(ZSTR_VAL(entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0) {
-
+		if (apc_entry_key_equals(entry, key, h)) {
 			/* Check to make sure this entry isn't expired by a hard TTL */
 			if (apc_cache_entry_hard_expired(entry, t)) {
 				break;
@@ -902,9 +899,7 @@ retry_update:
 
 		while (*entry) {
 			/* check for a match by hash and identifier */
-			if (h == ZSTR_HASH((*entry)->key) &&
-				ZSTR_LEN((*entry)->key) == ZSTR_LEN(key) &&
-				memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0 &&
+			if (apc_entry_key_equals(*entry, key, h) &&
 				!apc_cache_entry_hard_expired(*entry, t)
 			) {
 				/* attempt to perform update */
@@ -979,10 +974,7 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 
 	while (*entry) {
 		/* check for a match by hash and identifier */
-		if (h == ZSTR_HASH((*entry)->key) &&
-			ZSTR_LEN((*entry)->key) == ZSTR_LEN(key) &&
-			memcmp(ZSTR_VAL((*entry)->key), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS) {
-
+		if (apc_entry_key_equals(*entry, key, h)) {
 			/* executing removal */
 			apc_cache_wlocked_remove_entry(cache, entry);
 
@@ -1136,10 +1128,7 @@ PHP_APCU_API zval *apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *st
 
 		while (entry) {
 			/* check for a matching key by has and identifier */
-			if (h == ZSTR_HASH(entry->key) &&
-				ZSTR_LEN(entry->key) == ZSTR_LEN(key) &&
-				memcmp(ZSTR_VAL(entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == SUCCESS
-			) {
+			if (apc_entry_key_equals(entry, key, h)) {
 				array_init(stat);
 
 				add_assoc_long(stat, "hits",  entry->nhits);
