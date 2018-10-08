@@ -58,7 +58,6 @@ struct apc_cache_entry_t {
 	time_t dtime;            /* time entry was removed from cache */
 	time_t atime;            /* time entry was last accessed */
 	zend_long mem_size;      /* memory used */
-	apc_pool *pool;	         /* pool which allocated the value */
 };
 /* }}} */
 

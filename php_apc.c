@@ -145,7 +145,7 @@ STD_PHP_INI_BOOLEAN("apc.slam_defense", "1",    PHP_INI_SYSTEM, OnUpdateBool,   
 STD_PHP_INI_ENTRY("apc.preload_path", (char*)NULL,              PHP_INI_SYSTEM, OnUpdateString,       preload_path,  zend_apcu_globals, apcu_globals)
 STD_PHP_INI_BOOLEAN("apc.coredump_unmap", "0", PHP_INI_SYSTEM, OnUpdateBool, coredump_unmap, zend_apcu_globals, apcu_globals)
 STD_PHP_INI_BOOLEAN("apc.use_request_time", "1", PHP_INI_ALL, OnUpdateBool, use_request_time,  zend_apcu_globals, apcu_globals)
-STD_PHP_INI_ENTRY("apc.serializer", "php", PHP_INI_SYSTEM, OnUpdateStringUnempty, serializer_name, zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.serializer", "default", PHP_INI_SYSTEM, OnUpdateStringUnempty, serializer_name, zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.writable", "/tmp", PHP_INI_SYSTEM, OnUpdateStringUnempty, writable, zend_apcu_globals, apcu_globals)
 PHP_INI_END()
 
@@ -251,9 +251,6 @@ static PHP_MINIT_FUNCTION(apcu)
 				&apc_sma,
 				apc_find_serializer(APCG(serializer_name)),
 				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(smart), APCG(slam_defense));
-
-			/* initialize pooling */
-			apc_pool_init();
 
 			/* preload data from path specified in configuration */
 			if (APCG(preload_path)) {

@@ -30,8 +30,8 @@
 #define APC_CACHE_H
 
 #include "apc.h"
+#include "apc_sma.h"
 #include "apc_lock.h"
-#include "apc_pool.h"
 #include "TSRM.h"
 
 #ifndef APC_CACHE_API_H

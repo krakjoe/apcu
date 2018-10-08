@@ -71,16 +71,6 @@ PHP_APCU_API void apc_efree(void* p)
 	free(p);
 }
 
-PHP_APCU_API void* apc_php_malloc(size_t n)
-{
-	return emalloc(n);
-}
-
-PHP_APCU_API void apc_php_free(void* p)
-{
-	efree(p);
-}
-
 /* }}} */
 
 /* {{{ console display functions */
