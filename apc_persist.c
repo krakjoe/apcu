@@ -443,7 +443,7 @@ typedef struct _apc_unpersist_context_t {
 	HashTable already_copied;
 } apc_unpersist_context_t;
 
-static void apc_unpersist_zval(zval *dst, const zval *zv, apc_unpersist_context_t *ctxt);
+static void apc_unpersist_zval(zval *zv, apc_unpersist_context_t *ctxt);
 
 static zend_bool apc_unpersist_serialized(
 		zval *dst, zend_string *str, apc_serializer_t *serializer) {
@@ -492,7 +492,8 @@ static zend_reference *apc_unpersist_ref(
 	GC_SET_REFCOUNT(ref, 1);
 	GC_TYPE_INFO(ref) = IS_REFERENCE;
 
-	apc_unpersist_zval(&ref->val, &orig_ref->val, ctxt);
+	ZVAL_COPY_VALUE(&ref->val, &orig_ref->val);
+	apc_unpersist_zval(&ref->val, ctxt);
 	return ref;
 }
 
@@ -519,16 +520,15 @@ static zend_array *apc_unpersist_ht(
 		if (p->key) {
 			p->key = zend_string_dup(p->key, 0);
 		}
-		apc_unpersist_zval(&p->val, &p->val, ctxt);
+		apc_unpersist_zval(&p->val, ctxt);
 	}
 
 	return ht;
 }
 
-static void apc_unpersist_zval(zval *dst, const zval *zv, apc_unpersist_context_t *ctxt) {
+static void apc_unpersist_zval(zval *zv, apc_unpersist_context_t *ctxt) {
 	void *ptr;
 
-	ZVAL_COPY_VALUE(dst, zv);
 	if (Z_TYPE_P(zv) < IS_STRING) {
 		/* No data apart from the zval itself */
 		return;
@@ -536,20 +536,20 @@ static void apc_unpersist_zval(zval *dst, const zval *zv, apc_unpersist_context_
 
 	ptr = apc_unpersist_get_already_copied(ctxt, Z_COUNTED_P(zv));
 	if (ptr) {
-		Z_COUNTED_P(dst) = ptr;
-		Z_ADDREF_P(dst);
+		Z_COUNTED_P(zv) = ptr;
+		Z_ADDREF_P(zv);
 		return;
 	}
 
 	switch (Z_TYPE_P(zv)) {
 		case IS_STRING:
-			Z_STR_P(dst) = apc_unpersist_zstr(ctxt, Z_STR_P(zv));
+			Z_STR_P(zv) = apc_unpersist_zstr(ctxt, Z_STR_P(zv));
 			return;
 		case IS_REFERENCE:
-			Z_REF_P(dst) = apc_unpersist_ref(ctxt, Z_REF_P(zv));
+			Z_REF_P(zv) = apc_unpersist_ref(ctxt, Z_REF_P(zv));
 			return;
 		case IS_ARRAY:
-			Z_ARR_P(dst) = apc_unpersist_ht(ctxt, Z_ARR_P(zv));
+			Z_ARR_P(zv) = apc_unpersist_ht(ctxt, Z_ARR_P(zv));
 			return;
 		default:
 			ZEND_ASSERT(0);
@@ -570,7 +570,8 @@ zend_bool apc_unpersist(zval *dst, const zval *value, apc_serializer_t *serializ
 		zend_hash_init(&ctxt.already_copied, 0, NULL, NULL, 0);
 	}
 
-	apc_unpersist_zval(dst, value, &ctxt);
+	ZVAL_COPY_VALUE(dst, value);
+	apc_unpersist_zval(dst, &ctxt);
 
 	if (ctxt.memoization_needed) {
 		zend_hash_destroy(&ctxt.already_copied);
