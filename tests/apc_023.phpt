@@ -8,6 +8,7 @@ apc.enable_cli=1
 --FILE--
 <?php
 
+echo "Object referential identity:\n";
 $obj = new stdClass;
 $obj2 = new stdClass;
 $obj2->obj = $obj;
@@ -16,8 +17,19 @@ apcu_store("key", $ary);
 // $obj and $obj2->obj should have the same ID
 var_dump(apcu_fetch("key"));
 
+echo "Array next free element:\n";
+$ary = [0, 1];
+unset($ary[1]);
+apcu_store("key", $ary);
+$ary = apcu_fetch("key");
+// This should use key 1 rather than 2, as
+// nextFreeElement should not be preserved (serialization does not)
+$ary[] = 1;
+var_dump($ary);
+
 ?>
 --EXPECT--
+Object referential identity:
 array(2) {
   [0]=>
   object(stdClass)#3 (0) {
@@ -28,4 +40,11 @@ array(2) {
     object(stdClass)#3 (0) {
     }
   }
+}
+Array next free element:
+array(2) {
+  [0]=>
+  int(0)
+  [1]=>
+  int(1)
 }
