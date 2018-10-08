@@ -535,18 +535,21 @@ static void apc_unpersist_zval(zval *dst, const zval *zv, apc_unpersist_context_
 	}
 
 	ptr = apc_unpersist_get_already_copied(ctxt, Z_COUNTED_P(zv));
+	if (ptr) {
+		Z_COUNTED_P(dst) = ptr;
+		Z_ADDREF_P(dst);
+		return;
+	}
+
 	switch (Z_TYPE_P(zv)) {
 		case IS_STRING:
-			if (!ptr) ptr = apc_unpersist_zstr(ctxt, Z_STR_P(zv));
-			ZVAL_STR(dst, ptr);
+			Z_STR_P(dst) = apc_unpersist_zstr(ctxt, Z_STR_P(zv));
 			return;
 		case IS_REFERENCE:
-			if (!ptr) ptr = apc_unpersist_ref(ctxt, Z_REF_P(zv));
-			ZVAL_REF(dst, ptr);
+			Z_REF_P(dst) = apc_unpersist_ref(ctxt, Z_REF_P(zv));
 			return;
 		case IS_ARRAY:
-			if (!ptr) ptr = apc_unpersist_ht(ctxt, Z_ARR_P(zv));
-			ZVAL_ARR(dst, ptr);
+			Z_ARR_P(dst) = apc_unpersist_ht(ctxt, Z_ARR_P(zv));
 			return;
 		default:
 			ZEND_ASSERT(0);
