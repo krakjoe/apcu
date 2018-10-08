@@ -8,6 +8,12 @@ apc.enable_cli=1
 --FILE--
 <?php
 
+echo "GLOBALS:\n";
+$foo = 1;
+apcu_store("key", $GLOBALS);
+$globals = apcu_fetch("key");
+var_dump($globals['foo']);
+
 echo "Object referential identity:\n";
 $obj = new stdClass;
 $obj2 = new stdClass;
@@ -29,6 +35,8 @@ var_dump($ary);
 
 ?>
 --EXPECT--
+GLOBALS:
+int(1)
 Object referential identity:
 array(2) {
   [0]=>

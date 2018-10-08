@@ -110,6 +110,13 @@ static zend_bool apc_persist_calc_ht(apc_persist_context_t *ctxt, const HashTabl
 		Bucket *p = ht->arData + idx;
 		if (Z_TYPE(p->val) == IS_UNDEF) continue;
 
+		/* This can only happen if $GLOBALS is placed in the cache.
+		 * Don't bother with this edge-case, fall back to serialization. */
+		if (Z_TYPE(p->val) == IS_INDIRECT) {
+			ctxt->force_serialization = 1;
+			return 0;
+		}
+
 		/* TODO These strings can be reused
 		if (p->key && !apc_persist_calc_is_handled(ctxt, (zend_refcounted *) p->key)) {
 			ADD_SIZE_STR(ZSTR_LEN(p->key));
