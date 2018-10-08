@@ -12,7 +12,7 @@ if(PHP_APCU != 'no')
 						'apc_sma.c ' +
 						'apc_stack.c ' +
 						'apc_signal.c ' +
-						'apc_iterator.c' +
+						'apc_iterator.c ' +
 						'apc_persist.c'; 
 
 	if(PHP_APCU_DEBUG != 'no')

@@ -233,7 +233,7 @@ if test "$PHP_APCU" != "no"; then
                  apc_stack.c \
                  apc_signal.c \
                  apc_iterator.c \
-				 apc_persist.c"
+                 apc_persist.c"
 							   
   PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
   PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
