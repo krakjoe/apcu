@@ -35,6 +35,8 @@ typedef struct _apc_persist_context_t {
 	size_t size;
 	/* Whether or not we may have to memoize refcounted addresses */
 	zend_bool memoization_needed;
+	/* Whether to force serialization of the top-level value */
+	zend_bool force_serialization;
 	/* Serialized object/array string, in case there can only be one */
 	unsigned char *serialized_str;
 	size_t serialized_str_len;
@@ -42,8 +44,7 @@ typedef struct _apc_persist_context_t {
 	char *alloc;
 	/* Current position in allocation */
 	char *alloc_cur;
-	/* HashTable storing refcounteds for which the size has already been counted.
-	 * Also stores serialized object strings if there can be more than one. */
+	/* HashTable storing refcounteds for which the size has already been counted. */
 	HashTable already_counted;
 	/* HashTable storing already allocated refcounteds. The entire zvals are stored. */
 	HashTable already_allocated;
@@ -55,13 +56,15 @@ typedef struct _apc_persist_context_t {
 #define ALLOC(sz) apc_persist_alloc(ctxt, sz)
 #define COPY(val, sz) apc_persist_alloc_copy(ctxt, val, sz)
 
-static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *zv);
+static zend_bool apc_persist_calc_zval(
+		apc_persist_context_t *ctxt, const zval *zv, zend_bool top_level);
 static void apc_persist_copy_zval(apc_persist_context_t *ctxt, zval *zv);
 
 void apc_persist_init_context(apc_persist_context_t *ctxt, apc_serializer_t *serializer) {
 	ctxt->serializer = serializer;
 	ctxt->size = 0;
 	ctxt->memoization_needed = 0;
+	ctxt->force_serialization = 0;
 	ctxt->serialized_str = NULL;
 	ctxt->serialized_str_len = 0;
 	ctxt->alloc = NULL;
@@ -114,7 +117,7 @@ static zend_bool apc_persist_calc_ht(apc_persist_context_t *ctxt, const HashTabl
 		if (p->key) {
 			ADD_SIZE_STR(ZSTR_LEN(p->key));
 		}
-		if (!apc_persist_calc_zval(ctxt, &p->val)) {
+		if (!apc_persist_calc_zval(ctxt, &p->val, 0)) {
 			return 0;
 		}
 	}
@@ -137,26 +140,24 @@ static zend_bool apc_persist_calc_serialize(apc_persist_context_t *ctxt, const z
 		return 0;
 	}
 
-	/* Remember serialized string, either in the already_counted HT if there may be multiple,
-	 * or in dedicated context members if there can only be one serialized string. */
-	if (ctxt->memoization_needed) {
-		zval tmp;
-		ZVAL_STRINGL(&tmp, (char *) buf, buf_len);
-		zend_hash_index_update(&ctxt->already_counted, (uintptr_t) Z_COUNTED_P(zv), &tmp);
-		efree(buf);
-	} else {
-		ctxt->serialized_str = buf;
-		ctxt->serialized_str_len = buf_len;
-	}
+	/* We only ever serialize the top-level value, memoization cannot be needed */
+	ZEND_ASSERT(!ctxt->memoization_needed);
+	ctxt->serialized_str = buf;
+	ctxt->serialized_str_len = buf_len;
 
 	ADD_SIZE_STR(buf_len);
 	return 1;
 }
 
-static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *zv) {
+static zend_bool apc_persist_calc_zval(
+		apc_persist_context_t *ctxt, const zval *zv, zend_bool top_level) {
 	if (Z_TYPE_P(zv) < IS_STRING) {
 		/* No data apart from the zval itself */
 		return 1;
+	}
+
+	if (ctxt->force_serialization) {
+		return apc_persist_calc_serialize(ctxt, zv);
 	}
 
 	if (apc_persist_calc_memoize(ctxt, Z_COUNTED_P(zv))) {
@@ -173,10 +174,14 @@ static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *
 			}
 			/* break missing intentionally */
 		case IS_OBJECT:
+			if (!top_level) {
+				ctxt->force_serialization = 1;
+				return 0;
+			}
 			return apc_persist_calc_serialize(ctxt, zv);
 		case IS_REFERENCE:
 			ADD_SIZE(sizeof(zend_reference));
-			return apc_persist_calc_zval(ctxt, Z_REFVAL_P(zv));
+			return apc_persist_calc_zval(ctxt, Z_REFVAL_P(zv), 0);
 		case IS_RESOURCE:
 			apc_warning("Cannot store resources in apcu cache");
 			return 0;
@@ -189,7 +194,7 @@ static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *
 static zend_bool apc_persist_calc(apc_persist_context_t *ctxt, const apc_cache_entry_t *entry) {
 	ADD_SIZE(sizeof(apc_cache_entry_t));
 	ADD_SIZE_STR(ZSTR_LEN(entry->key));
-	return apc_persist_calc_zval(ctxt, &entry->val);
+	return apc_persist_calc_zval(ctxt, &entry->val, 1);
 }
 
 static inline void *apc_persist_get_already_allocated(apc_persist_context_t *ctxt, void *ptr) {
@@ -312,20 +317,10 @@ static void apc_persist_copy_serialize(
 	zend_uchar orig_type = Z_TYPE_P(zv);
 	ZEND_ASSERT(orig_type == IS_ARRAY || orig_type == IS_OBJECT);
 
-	if (ctxt->memoization_needed) {
-		str = apc_persist_get_already_allocated(ctxt, Z_COUNTED_P(zv));
-		if (!str) {
-			zval *str_zv = zend_hash_index_find(
-				&ctxt->already_counted, (uintptr_t) Z_COUNTED_P(zv));
-			ZEND_ASSERT(Z_TYPE_P(str_zv) == IS_STRING);
-			str = apc_persist_copy_zstr(ctxt, Z_STR_P(str_zv));
-			apc_persist_add_already_allocated(ctxt, Z_COUNTED_P(zv), str);
-		}
-	} else {
-		ZEND_ASSERT(ctxt->serialized_str);
-		str = apc_persist_copy_cstr(ctxt,
-			(char *) ctxt->serialized_str, ctxt->serialized_str_len);
-	}
+	ZEND_ASSERT(!ctxt->memoization_needed);
+	ZEND_ASSERT(ctxt->serialized_str);
+	str = apc_persist_copy_cstr(ctxt,
+		(char *) ctxt->serialized_str, ctxt->serialized_str_len);
 
 	/* Store string, but give it the type of an array/object */
 	ZVAL_STR(zv, str);
@@ -337,6 +332,11 @@ static void apc_persist_copy_zval(apc_persist_context_t *ctxt, zval *zv) {
 
 	if (Z_TYPE_P(zv) < IS_STRING) {
 		/* No data apart from the zval itself */
+		return;
+	}
+
+	if (ctxt->force_serialization) {
+		apc_persist_copy_serialize(ctxt, zv);
 		return;
 	}
 
@@ -391,8 +391,19 @@ apc_cache_entry_t *apc_persist(
 	}
 
 	if (!apc_persist_calc(&ctxt, orig_entry)) {
+		if (!ctxt.force_serialization) {
+			apc_persist_destroy_context(&ctxt);
+			return NULL;
+		}
+
+		/* Try again with forced serialization */
 		apc_persist_destroy_context(&ctxt);
-		return NULL;
+		apc_persist_init_context(&ctxt, serializer);
+		ctxt.force_serialization = 1;
+		if (!apc_persist_calc(&ctxt, orig_entry)) {
+			apc_persist_destroy_context(&ctxt);
+			return NULL;
+		}
 	}
 
 	ctxt.alloc = ctxt.alloc_cur = sma->smalloc(ctxt.size);
