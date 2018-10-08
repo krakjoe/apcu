@@ -74,8 +74,6 @@ typedef void  (*apc_free_t)  (void *);
 /* wrappers for memory allocation routines */
 PHP_APCU_API void* apc_emalloc(size_t n);
 PHP_APCU_API void* apc_erealloc(void* p, size_t n);
-PHP_APCU_API void* apc_php_malloc(size_t n);
-PHP_APCU_API void  apc_php_free(void* p);
 PHP_APCU_API void  apc_efree(void* p);
 
 /* console display functions */
