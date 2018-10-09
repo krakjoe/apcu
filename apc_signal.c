@@ -124,8 +124,8 @@ static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*
 			p_sig.siginfo = ((sa.sa_flags & SA_SIGINFO) == SA_SIGINFO);
 			p_sig.handler = (void *)sa.sa_handler;
 
-			apc_signal_info.prev = (apc_signal_entry_t **)apc_erealloc(apc_signal_info.prev, (apc_signal_info.installed+1)*sizeof(apc_signal_entry_t *));
-			apc_signal_info.prev[apc_signal_info.installed] = (apc_signal_entry_t *)apc_emalloc(sizeof(apc_signal_entry_t));
+			apc_signal_info.prev = (apc_signal_entry_t **) perealloc(apc_signal_info.prev, (apc_signal_info.installed+1)*sizeof(apc_signal_entry_t *), 1);
+			apc_signal_info.prev[apc_signal_info.installed] = (apc_signal_entry_t *) pemalloc(sizeof(apc_signal_entry_t), 1);
 			*apc_signal_info.prev[apc_signal_info.installed++] = p_sig;
 		} else {
 			/* inherit flags and mask if already set */
@@ -201,10 +201,10 @@ void apc_shutdown_signals()
 {
 	int i=0;
 	if (apc_signal_info.installed > 0) {
-		for (i=0;  (i < apc_signal_info.installed);  i++) {
-			apc_efree(apc_signal_info.prev[i]);
+		for (i=0; i < apc_signal_info.installed; i++) {
+			free(apc_signal_info.prev[i]);
 		}
-		apc_efree(apc_signal_info.prev);
+		free(apc_signal_info.prev);
 		apc_signal_info.installed = 0; /* just in case */
 	}
 }

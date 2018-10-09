@@ -34,45 +34,6 @@
 #include "apc_globals.h"
 #include "php.h"
 
-#if HAVE_PCRE || HAVE_BUNDLED_PCRE
-#   include "ext/pcre/php_pcre.h"
-#   include "zend_smart_str.h"
-#endif
-
-/* {{{ memory allocation wrappers */
-
-PHP_APCU_API void* apc_emalloc(size_t n)
-{
-	void* p = malloc(n);
-	if (p == NULL) {
-		apc_error("apc_emalloc: malloc failed to allocate %zu bytes:", n);
-		return NULL;
-	}
-	return p;
-}
-
-PHP_APCU_API void* apc_erealloc(void* p, size_t n)
-{
-	void *new;
-	new = realloc(p, n);
-	if (new == NULL) {
-		apc_error("apc_erealloc: realloc failed to allocate %zu bytes:", n);
-		return NULL;
-	}
-	return new;
-}
-
-PHP_APCU_API void apc_efree(void* p)
-{
-	if (p == NULL) {
-		apc_error("apc_efree: attempt to free null pointer");
-		return;
-	}
-	free(p);
-}
-
-/* }}} */
-
 /* {{{ console display functions */
 #define APC_PRINT_FUNCTION(name, verbosity)					\
 	void apc_##name(const char *format, ...)				\

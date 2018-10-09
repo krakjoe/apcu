@@ -295,7 +295,7 @@ PHP_APCU_API void apc_sma_api_init(apc_sma_t* sma, void** data, apc_sma_expunge_
 
 	sma->size = size > 0 ? size : DEFAULT_SEGSIZE;
 
-	sma->segs = (apc_segment_t*) apc_emalloc((sma->num * sizeof(apc_segment_t)));
+	sma->segs = (apc_segment_t*) pemalloc(sma->num * sizeof(apc_segment_t), 1);
 
 	for (i = 0; i < sma->num; i++) {
 		sma_header_t*   header;
@@ -371,7 +371,7 @@ PHP_APCU_API void apc_sma_api_cleanup(apc_sma_t* sma) {
 	}
 	sma->initialized = 0;
 
-	apc_efree(sma->segs);
+	free(sma->segs);
 }
 
 PHP_APCU_API void* apc_sma_api_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, zend_ulong* allocated) {
@@ -563,11 +563,11 @@ PHP_APCU_API apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited)
 		return NULL;
 	}
 
-	info = (apc_sma_info_t*) apc_emalloc(sizeof(apc_sma_info_t));
+	info = (apc_sma_info_t*) pemalloc(sizeof(apc_sma_info_t), 1);
 	info->num_seg = sma->num;
 	info->seg_size = sma->size - (ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t)) + ALIGNWORD(sizeof(block_t)));
 
-	info->list = apc_emalloc(info->num_seg * sizeof(apc_sma_link_t*));
+	info->list = pemalloc(info->num_seg * sizeof(apc_sma_link_t*), 1);
 	for (i = 0; i < sma->num; i++) {
 		info->list[i] = NULL;
 	}
@@ -590,7 +590,7 @@ PHP_APCU_API apc_sma_info_t* apc_sma_api_info(apc_sma_t* sma, zend_bool limited)
 
 			CHECK_CANARY(cur);
 
-			*link = apc_emalloc(sizeof(apc_sma_link_t));
+			*link = pemalloc(sizeof(apc_sma_link_t), 1);
 			(*link)->size = cur->size;
 			(*link)->offset = prv->fnext;
 			(*link)->next = NULL;
@@ -612,11 +612,11 @@ PHP_APCU_API void apc_sma_api_free_info(apc_sma_t* sma, apc_sma_info_t* info) {
 		while (p) {
 			apc_sma_link_t* q = p;
 			p = p->next;
-			apc_efree(q);
+			free(q);
 		}
 	}
-	apc_efree(info->list);
-	apc_efree(info);
+	free(info->list);
+	free(info);
 }
 
 PHP_APCU_API zend_ulong apc_sma_api_get_avail_mem(apc_sma_t* sma) {
