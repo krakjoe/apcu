@@ -53,7 +53,7 @@ int apc_shm_create(int proj, size_t size)
 
 	oflag = IPC_CREAT | SHM_R | SHM_A;
 	if ((shmid = shmget(key, size, oflag)) < 0) {
-		apc_error("apc_shm_create: shmget(%d, %zd, %d) failed: %s. It is possible that the chosen SHM segment size is higher than the operation system allows. Linux has usually a default limit of 32MB per segment.", key, size, oflag, strerror(errno));
+		zend_error_noreturn(E_CORE_ERROR, "apc_shm_create: shmget(%d, %zd, %d) failed: %s. It is possible that the chosen SHM segment size is higher than the operation system allows. Linux has usually a default limit of 32MB per segment.", key, size, oflag, strerror(errno));
 	}
 
 	return shmid;
@@ -70,7 +70,7 @@ apc_segment_t apc_shm_attach(int shmid, size_t size)
 	apc_segment_t segment; /* shm segment */
 
 	if ((zend_long)(segment.shmaddr = shmat(shmid, 0, 0)) == -1) {
-		apc_error("apc_shm_attach: shmat failed:");
+		zend_error_noreturn(E_CORE_ERROR, "apc_shm_attach: shmat failed:");
 	}
 
 #ifdef APC_MEMPROTECT
@@ -94,12 +94,12 @@ apc_segment_t apc_shm_attach(int shmid, size_t size)
 void apc_shm_detach(apc_segment_t* segment)
 {
 	if (shmdt(segment->shmaddr) < 0) {
-		apc_error("apc_shm_detach: shmdt failed:");
+		apc_warning("apc_shm_detach: shmdt failed:");
 	}
 
 #ifdef APC_MEMPROTECT
 	if (segment->roaddr && shmdt(segment->roaddr) < 0) {
-		apc_error("apc_shm_detach: shmdt failed:");
+		apc_warning("apc_shm_detach: shmdt failed:");
 	}
 #endif
 }

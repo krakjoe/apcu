@@ -64,7 +64,7 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 	/* If no filename was provided, do an anonymous mmap */
 	if(!file_mask || (file_mask && !strlen(file_mask))) {
 #if !defined(MAP_ANON)
-		apc_error("Anonymous mmap does not appear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the apc.mmap_file_mask INI option.");
+		zend_error_noreturn(E_CORE_ERROR, "Anonymous mmap does not appear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the apc.mmap_file_mask INI option.");
 #else
 		fd = -1;
 		flags = MAP_SHARED | MAP_ANON;
@@ -75,8 +75,7 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 	} else if(!strcmp(file_mask,"/dev/zero")) {
 		fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
 		if(fd == -1) {
-			apc_error("apc_mmap: open on /dev/zero failed:");
-			goto error;
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: open on /dev/zero failed:");
 		}
 #ifdef APC_MEMPROTECT
 		remap = 0; /* cannot remap */
@@ -93,19 +92,16 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 		 * path you want here.
 		 */
 		if(!mktemp(file_mask)) {
-			apc_error("apc_mmap: mktemp on %s failed:", file_mask);
-			goto error;
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: mktemp on %s failed:", file_mask);
 		}
 		fd = shm_open(file_mask, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
 		if(fd == -1) {
-			apc_error("apc_mmap: shm_open on %s failed:", file_mask);
-			goto error;
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: shm_open on %s failed:", file_mask);
 		}
 		if (ftruncate(fd, size) < 0) {
 			close(fd);
 			shm_unlink(file_mask);
-			apc_error("apc_mmap: ftruncate failed:");
-			goto error;
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: ftruncate failed:");
 		}
 		shm_unlink(file_mask);
 	} else {
@@ -114,14 +110,12 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 		 */
 		fd = mkstemp(file_mask);
 		if(fd == -1) {
-			apc_error("apc_mmap: mkstemp on %s failed:", file_mask);
-			goto error;
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: mkstemp on %s failed:", file_mask);
 		}
 		if (ftruncate(fd, size) < 0) {
 			close(fd);
 			unlink(file_mask);
-			apc_error("apc_mmap: ftruncate failed:");
-			goto error;
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: ftruncate failed:");
 		}
 		unlink(file_mask);
 	}
@@ -138,20 +132,11 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 #endif
 
 	if((long)segment.shmaddr == -1) {
-		apc_error("apc_mmap: mmap failed:");
+		zend_error_noreturn(E_CORE_ERROR, "apc_mmap: mmap failed:");
 	}
 
 	if(fd != -1) close(fd);
 
-	return segment;
-
-error:
-
-	segment.shmaddr = (void*)-1;
-	segment.size = 0;
-#ifdef APC_MEMPROTECT
-	segment.roaddr = NULL;
-#endif
 	return segment;
 }
 
