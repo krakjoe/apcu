@@ -56,7 +56,9 @@ extern apc_cache_t* apc_user_cache;
  */
 static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 {
-	apc_sma_cleanup();
+	if (apc_user_cache) {
+		apc_sma_cleanup(apc_user_cache->sma);
+	}
 	apc_rehandle_signal(signo, siginfo, context);
 
 #if !defined(WIN32) && !defined(NETWARE)

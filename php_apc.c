@@ -76,7 +76,7 @@ ZEND_DECLARE_MODULE_GLOBALS(apcu)
 apc_cache_t* apc_user_cache = NULL;
 
 /* External APC SMA */
-apc_sma_api_extern(apc_sma);
+apc_sma_t apc_sma;
 
 /* Global init functions */
 static void php_apc_init_globals(zend_apcu_globals* apcu_globals)
@@ -227,15 +227,19 @@ static PHP_MINIT_FUNCTION(apcu)
 	if (APCG(enabled)) {
 
 		if (!APCG(initialized)) {
+#if APC_MMAP
+			char *mmap_file_mask = APCG(mmap_file_mask);
+#else
+			char *mmap_file_mask = NULL;
+#endif
+
 			/* ensure this runs only once */
 			APCG(initialized) = 1;
 
 			/* initialize shared memory allocator */
-#if APC_MMAP
-			apc_sma.init(APCG(shm_segments), APCG(shm_size), APCG(mmap_file_mask));
-#else
-			apc_sma.init(APCG(shm_segments), APCG(shm_size), NULL);
-#endif
+			apc_sma_init(
+				&apc_sma, (void **) &apc_user_cache, (apc_sma_expunge_f) apc_cache_default_expunge,
+				APCG(shm_segments), APCG(shm_size), mmap_file_mask);
 
 			REGISTER_LONG_CONSTANT(APC_SERIALIZER_CONSTANT, (zend_long)&_apc_register_serializer, CONST_PERSISTENT | CONST_CS);
 
@@ -280,7 +284,7 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 			/* destroy cache pointer */
 			apc_cache_destroy(apc_user_cache);
 			/* cleanup shared memory */
-			apc_sma.cleanup();
+			apc_sma_cleanup(&apc_sma);
 
 			APCG(initialized) = 0;
 		}
@@ -370,7 +374,7 @@ PHP_FUNCTION(apcu_sma_info)
 		return;
 	}
 
-	info = apc_sma.info(limited);
+	info = apc_sma_info(&apc_sma, limited);
 
 	if (!info) {
 		php_error_docref(NULL, E_WARNING, "No APC SMA info available.  Perhaps APC is disabled via apc.enabled?");
@@ -380,10 +384,10 @@ PHP_FUNCTION(apcu_sma_info)
 
 	add_assoc_long(return_value, "num_seg", info->num_seg);
 	add_assoc_double(return_value, "seg_size", (double)info->seg_size);
-	add_assoc_double(return_value, "avail_mem", (double)apc_sma.get_avail_mem());
+	add_assoc_double(return_value, "avail_mem", (double)apc_sma_get_avail_mem(&apc_sma));
 
 	if (limited) {
-		apc_sma.free_info(info);
+		apc_sma_free_info(&apc_sma, info);
 		return;
 	}
 
@@ -406,7 +410,7 @@ PHP_FUNCTION(apcu_sma_info)
 		add_next_index_zval(&block_lists, &list);
 	}
 	add_assoc_zval(return_value, "block_lists", &block_lists);
-	apc_sma.free_info(info);
+	apc_sma_free_info(&apc_sma, info);
 }
 /* }}} */
 

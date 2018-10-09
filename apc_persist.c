@@ -421,7 +421,7 @@ apc_cache_entry_t *apc_persist(
 		}
 	}
 
-	ctxt.alloc = ctxt.alloc_cur = sma->smalloc(ctxt.size);
+	ctxt.alloc = ctxt.alloc_cur = apc_sma_malloc(sma, ctxt.size);
 	if (!ctxt.alloc) {
 		apc_persist_destroy_context(&ctxt);
 		return NULL;

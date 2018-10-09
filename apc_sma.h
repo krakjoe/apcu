@@ -31,8 +31,6 @@
 #include "apc.h"
 #include "apc_sma_api.h"
 
-/* {{{ SMA APC */
-apc_sma_api_decl(apc_sma); /* }}} */
 #endif
 
 /*
