@@ -277,12 +277,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	nslots = make_prime(size_hint > 0 ? size_hint : 2000);
 
 	/* allocate pointer by normal means */
-	cache = (apc_cache_t*) pemalloc(sizeof(apc_cache_t), 1);
-
-	if (!cache) {
-		apc_error("Unable to allocate memory for cache structures. (Perhaps your memory_limit isn't large enough?). ");
-		return NULL;
-	}
+	cache = pemalloc(sizeof(apc_cache_t), 1);
 
 	/* calculate cache size for shm allocation */
 	cache_size = sizeof(apc_cache_header_t) + nslots*sizeof(apc_cache_entry_t *);
