@@ -286,11 +286,11 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache->shmaddr = apc_sma_malloc(sma, cache_size);
 
 	if (!cache->shmaddr) {
-		zend_error_noreturn(E_CORE_ERROR, "Unable to allocate shared memory for cache structures. Perhaps your shared memory size isn't large enough?");
+		zend_error_noreturn(E_CORE_ERROR, "Unable to allocate %zu bytes of shared memory for cache structures. Either apc.shm_size is too small or apc.entries_hint too large", cache_size);
 		return NULL;
 	}
 
-	/* zero shm */
+	/* zero cache header and hash slots */
 	memset(cache->shmaddr, 0, cache_size);
 
 	/* set default header */
@@ -316,9 +316,6 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 
 	/* header lock */
 	CREATE_LOCK(&cache->header->lock);
-
-	/* zero slots */
-	memset(cache->slots, 0, sizeof(apc_cache_entry_t *) * nslots);
 
 	return cache;
 } /* }}} */
