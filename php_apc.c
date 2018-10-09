@@ -662,7 +662,7 @@ PHP_FUNCTION(apcu_fetch) {
 		convert_to_string(key);
 	}
 
-	if (Z_TYPE_P(key) == IS_ARRAY || (Z_TYPE_P(key) == IS_STRING && Z_STRLEN_P(key) > 0)) {
+	if (Z_TYPE_P(key) == IS_ARRAY || Z_TYPE_P(key) == IS_STRING) {
 		if (Z_TYPE_P(key) == IS_STRING) {
 			if (apc_cache_fetch(apc_user_cache, Z_STR_P(key), t, &return_value)) {
 				if (success) {
@@ -724,12 +724,10 @@ PHP_FUNCTION(apcu_exists) {
 	}
 
 	if (Z_TYPE_P(key) == IS_STRING) {
-		if (Z_STRLEN_P(key)) {
-			if (apc_cache_exists(apc_user_cache, Z_STR_P(key), t)) {
-				RETURN_TRUE;
-			} else {
-				RETURN_FALSE;
-			}
+		if (apc_cache_exists(apc_user_cache, Z_STR_P(key), t)) {
+			RETURN_TRUE;
+		} else {
+			RETURN_FALSE;
 		}
 	} else if (Z_TYPE_P(key) == IS_ARRAY) {
 		zval *hentry;
@@ -770,10 +768,6 @@ PHP_FUNCTION(apcu_delete) {
 	}
 
 	if (Z_TYPE_P(keys) == IS_STRING) {
-		if (!Z_STRLEN_P(keys)) {
-			RETURN_FALSE;
-		}
-
 		if (apc_cache_delete(apc_user_cache, Z_STR_P(keys))) {
 			RETURN_TRUE;
 		} else {
