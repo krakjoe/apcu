@@ -285,8 +285,8 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	/* allocate shm */
 	cache->shmaddr = apc_sma_malloc(sma, cache_size);
 
-	if(!cache->shmaddr) {
-		apc_error("Unable to allocate shared memory for cache structures.  (Perhaps your shared memory size isn't large enough?). ");
+	if (!cache->shmaddr) {
+		zend_error_noreturn(E_CORE_ERROR, "Unable to allocate shared memory for cache structures. Perhaps your shared memory size isn't large enough?");
 		return NULL;
 	}
 
