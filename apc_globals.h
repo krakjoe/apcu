@@ -61,7 +61,6 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
 	time_t request_time;         /* cached request time */
 
 	char *serializer_name;       /* the serializer config option */
-	char *writable;              /* writable path for general use */
 
 	volatile zend_bool recursion;
 ZEND_END_MODULE_GLOBALS(apcu)
