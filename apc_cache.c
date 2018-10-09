@@ -108,7 +108,7 @@ static int make_prime(int n)
 /* }}} */
 
 static void free_entry(apc_cache_t *cache, apc_cache_entry_t *entry) {
-	cache->sma->sfree(entry);
+	apc_sma_free(cache->sma, entry);
 }
 
 /* {{{ apc_cache_hash_slot
@@ -288,7 +288,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache_size = sizeof(apc_cache_header_t) + nslots*sizeof(apc_cache_entry_t *);
 
 	/* allocate shm */
-	cache->shmaddr = sma->smalloc(cache_size);
+	cache->shmaddr = apc_sma_malloc(sma, cache_size);
 
 	if(!cache->shmaddr) {
 		apc_error("Unable to allocate shared memory for cache structures.  (Perhaps your shared memory size isn't large enough?). ");
@@ -759,7 +759,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	apc_cache_wlocked_gc(cache);
 
 	/* get available */
-	available = cache->sma->get_avail_mem();
+	available = apc_sma_get_avail_mem(cache->sma);
 
 	/* perform expunge processing */
 	if (!cache->ttl) {
@@ -787,7 +787,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 			}
 
 			/* if the cache now has space, then reset last key */
-			if (cache->sma->get_avail_size(size)) {
+			if (apc_sma_get_avail_size(cache->sma, size)) {
 				/* wipe lastkey */
 				memset(&cache->header->lastkey, 0, sizeof(apc_cache_slam_key_t));
 			} else {
