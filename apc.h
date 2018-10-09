@@ -67,15 +67,6 @@
 #include "php.h"
 #include "main/php_streams.h"
 
-/* typedefs for extensible memory allocators */
-typedef void* (*apc_malloc_t)(size_t);
-typedef void  (*apc_free_t)  (void *);
-
-/* wrappers for memory allocation routines */
-PHP_APCU_API void* apc_emalloc(size_t n);
-PHP_APCU_API void* apc_erealloc(void* p, size_t n);
-PHP_APCU_API void  apc_efree(void* p);
-
 /* console display functions */
 PHP_APCU_API void apc_error(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
 PHP_APCU_API void apc_warning(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);

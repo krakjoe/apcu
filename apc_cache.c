@@ -277,7 +277,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	nslots = make_prime(size_hint > 0 ? size_hint : 2000);
 
 	/* allocate pointer by normal means */
-	cache = (apc_cache_t*) apc_emalloc(sizeof(apc_cache_t));
+	cache = (apc_cache_t*) pemalloc(sizeof(apc_cache_t), 1);
 
 	if (!cache) {
 		apc_error("Unable to allocate memory for cache structures. (Perhaps your memory_limit isn't large enough?). ");
@@ -666,7 +666,7 @@ PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache)
 		children to freeze. It might be because the segment is shared between
 		several processes. To figure out is how to free this safely. */
 	/*apc_sma_free(cache->shmaddr);*/
-	apc_efree(cache);
+	free(cache);
 }
 /* }}} */
 
