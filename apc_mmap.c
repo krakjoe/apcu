@@ -75,7 +75,7 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 	} else if(!strcmp(file_mask,"/dev/zero")) {
 		fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
 		if(fd == -1) {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: open on /dev/zero failed:");
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: open on /dev/zero failed");
 		}
 #ifdef APC_MEMPROTECT
 		remap = 0; /* cannot remap */
@@ -92,16 +92,16 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 		 * path you want here.
 		 */
 		if(!mktemp(file_mask)) {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: mktemp on %s failed:", file_mask);
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: mktemp on %s failed", file_mask);
 		}
 		fd = shm_open(file_mask, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
 		if(fd == -1) {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: shm_open on %s failed:", file_mask);
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: shm_open on %s failed", file_mask);
 		}
 		if (ftruncate(fd, size) < 0) {
 			close(fd);
 			shm_unlink(file_mask);
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: ftruncate failed:");
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: ftruncate failed");
 		}
 		shm_unlink(file_mask);
 	} else {
@@ -110,12 +110,12 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 		 */
 		fd = mkstemp(file_mask);
 		if(fd == -1) {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: mkstemp on %s failed:", file_mask);
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: mkstemp on %s failed", file_mask);
 		}
 		if (ftruncate(fd, size) < 0) {
 			close(fd);
 			unlink(file_mask);
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: ftruncate failed:");
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: ftruncate failed");
 		}
 		unlink(file_mask);
 	}
@@ -131,11 +131,11 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 	}
 #endif
 
-	if((long)segment.shmaddr == -1) {
-		zend_error_noreturn(E_CORE_ERROR, "apc_mmap: mmap failed:");
+	if ((long)segment.shmaddr == -1) {
+		zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. Is your apc.shm_size too large?", size);
 	}
 
-	if(fd != -1) close(fd);
+	if (fd != -1) close(fd);
 
 	return segment;
 }
@@ -143,12 +143,12 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 void apc_unmap(apc_segment_t *segment)
 {
 	if (munmap(segment->shmaddr, segment->size) < 0) {
-		apc_warning("apc_unmap: munmap failed:");
+		apc_warning("apc_unmap: munmap failed");
 	}
 
 #ifdef APC_MEMPROTECT
 	if (segment->roaddr && munmap(segment->roaddr, segment->size) < 0) {
-		apc_warning("apc_unmap: munmap failed:");
+		apc_warning("apc_unmap: munmap failed");
 	}
 #endif
 
