@@ -24,6 +24,7 @@
 	X(creation_time) \
 	X(deletion_time) \
 	X(hits) \
+	X(info) \
 	X(key) \
 	X(mem_size) \
 	X(mtime) \
