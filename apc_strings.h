@@ -20,18 +20,20 @@
 #define APC_STRINGS_H
 
 #define APC_STRINGS \
-	X(user) \
-	X(type) \
-	X(key) \
-	X(value) \
-	X(num_hits) \
-	X(mtime) \
+	X(access_time) \
 	X(creation_time) \
 	X(deletion_time) \
-	X(access_time) \
-	X(ref_count) \
+	X(hits) \
+	X(key) \
 	X(mem_size) \
-	X(ttl)
+	X(mtime) \
+	X(num_hits) \
+	X(ref_count) \
+	X(refs) \
+	X(ttl) \
+	X(type) \
+	X(user) \
+	X(value) \
 
 #define X(str) extern zend_string *apc_str_ ## str;
 	APC_STRINGS
