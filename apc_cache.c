@@ -1108,7 +1108,7 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 PHP_APCU_API void apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *stat) {
 	zend_ulong h, s;
 
-	ZVAL_FALSE(stat);
+	ZVAL_NULL(stat);
 	if (!cache) {
 		return;
 	}

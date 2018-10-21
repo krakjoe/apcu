@@ -61,7 +61,7 @@ bool(false)
 bool(false)
 bool(false)
 bool(false)
-bool(false)
+NULL
 bool(false)
 
 store/add/exists/fetch/delete array
