@@ -997,23 +997,32 @@ static void apc_cache_init_entry(
 }
 /* }}} */
 
+static inline void array_add_long(zval *array, zend_string *key, zend_long lval) {
+	zval zv;
+	ZVAL_LONG(&zv, lval);
+	zend_hash_add_new(Z_ARRVAL_P(array), key, &zv);
+}
+
 /* {{{ apc_cache_link_info */
 static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_entry_t *p)
 {
-	zval link;
-
+	zval link, zv;
 	array_init(&link);
 
-	add_assoc_str(&link, "info", zend_string_dup(p->key, 0));
-	add_assoc_long(&link, "ttl", p->ttl);
+	ZVAL_STR(&zv, zend_string_dup(p->key, 0));
+	zend_hash_add_new(Z_ARRVAL(link), apc_str_info, &zv);
 
-	add_assoc_double(&link, "num_hits", (double)p->nhits);
-	add_assoc_long(&link, "mtime", p->mtime);
-	add_assoc_long(&link, "creation_time", p->ctime);
-	add_assoc_long(&link, "deletion_time", p->dtime);
-	add_assoc_long(&link, "access_time", p->atime);
-	add_assoc_long(&link, "ref_count", p->ref_count);
-	add_assoc_long(&link, "mem_size", p->mem_size);
+	array_add_long(&link, apc_str_ttl, p->ttl);
+
+	ZVAL_DOUBLE(&zv, (double) p->nhits);
+	zend_hash_add_new(Z_ARRVAL(link), apc_str_num_hits, &zv);
+
+	array_add_long(&link, apc_str_mtime, p->mtime);
+	array_add_long(&link, apc_str_creation_time, p->ctime);
+	array_add_long(&link, apc_str_deletion_time, p->dtime);
+	array_add_long(&link, apc_str_access_time, p->atime);
+	array_add_long(&link, apc_str_ref_count, p->ref_count);
+	array_add_long(&link, apc_str_mem_size, p->mem_size);
 
 	return link;
 }
@@ -1089,12 +1098,6 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 	return 1;
 }
 /* }}} */
-
-static inline void array_add_long(zval *array, zend_string *key, zend_long lval) {
-	zval zv;
-	ZVAL_LONG(&zv, lval);
-	zend_hash_add_new(Z_ARRVAL_P(array), key, &zv);
-}
 
 /*
  fetches information about the key provided
