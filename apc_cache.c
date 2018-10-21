@@ -31,6 +31,7 @@
 #include "apc_cache.h"
 #include "apc_sma.h"
 #include "apc_globals.h"
+#include "apc_strings.h"
 #include "php_scandir.h"
 #include "SAPI.h"
 #include "TSRM.h"
@@ -1089,6 +1090,12 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 }
 /* }}} */
 
+static inline void array_add_long(zval *array, zend_string *key, zend_long lval) {
+	zval zv;
+	ZVAL_LONG(&zv, lval);
+	zend_hash_add_new(Z_ARRVAL_P(array), key, &zv);
+}
+
 /*
  fetches information about the key provided
 */
@@ -1112,15 +1119,13 @@ PHP_APCU_API void apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *sta
 			/* check for a matching key by has and identifier */
 			if (apc_entry_key_equals(entry, key, h)) {
 				array_init(stat);
-
-				add_assoc_long(stat, "hits",  entry->nhits);
-				add_assoc_long(stat, "access_time", entry->atime);
-				add_assoc_long(stat, "mtime", entry->mtime);
-				add_assoc_long(stat, "creation_time", entry->ctime);
-				add_assoc_long(stat, "deletion_time", entry->dtime);
-				add_assoc_long(stat, "ttl", entry->ttl);
-				add_assoc_long(stat, "refs", entry->ref_count);
-
+				array_add_long(stat, apc_str_hits, entry->nhits);
+				array_add_long(stat, apc_str_access_time, entry->atime);
+				array_add_long(stat, apc_str_mtime, entry->mtime);
+				array_add_long(stat, apc_str_creation_time, entry->ctime);
+				array_add_long(stat, apc_str_deletion_time, entry->dtime);
+				array_add_long(stat, apc_str_ttl, entry->ttl);
+				array_add_long(stat, apc_str_refs, entry->ref_count);
 				break;
 			}
 
