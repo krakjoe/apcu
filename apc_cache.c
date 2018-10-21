@@ -302,7 +302,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache->header->nexpunges = 0;
 	cache->header->gc = NULL;
 	cache->header->stime = time(NULL);
-	cache->header->state |= APC_CACHE_ST_NONE;
+	cache->header->state = 0;
 
 	/* set cache options */
 	cache->slots = (apc_cache_entry_t **) (((char*) cache->shmaddr) + sizeof(apc_cache_header_t));
@@ -695,8 +695,7 @@ static void apc_cache_wlocked_real_expunge(apc_cache_t* cache) {
 /* {{{ apc_cache_clear */
 PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 {
-	/* check there is a cache and it is not busy */
-	if (!cache || apc_cache_busy(cache)) {
+	if (!cache) {
 		return;
 	}
 
@@ -705,18 +704,12 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 		return;
 	}
 
-	/* set busy */
-	cache->header->state |= APC_CACHE_ST_BUSY;
-
 	/* expunge cache */
 	apc_cache_wlocked_real_expunge(cache);
 
 	/* set info */
 	cache->header->stime = apc_time();
 	cache->header->nexpunges = 0;
-
-	/* unset busy */
-	cache->header->state &= ~APC_CACHE_ST_BUSY;
 
 	/* unlock header */
 	APC_WUNLOCK(cache->header);
@@ -730,9 +723,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	size_t suitable = 0L;
 	size_t available = 0L;
 
-
-	/* check there is a cache, and it is not busy */
-	if(!cache || apc_cache_busy(cache)) {
+	if(!cache) {
 		return;
 	}
 
@@ -740,9 +731,6 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	if (!APC_WLOCK(cache->header)) {
 		return;
 	}
-
-	/* update state in header */
-	cache->header->state |= APC_CACHE_ST_BUSY;
 
 	/* make suitable selection */
 	suitable = (cache->smart > 0L) ? (size_t) (cache->smart * size) : (size_t) (cache->sma->size/2);
@@ -789,9 +777,6 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 		}
 	}
 
-	/* we are done */
-	cache->header->state &= ~APC_CACHE_ST_BUSY;
-
 	/* unlock header */
 	APC_WUNLOCK(cache->header);
 }
@@ -802,8 +787,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *
 {
 	apc_cache_entry_t *entry;
 
-	/* check we are able to deal with the request */
-	if (!cache || apc_cache_busy(cache)) {
+	if (!cache) {
 		return NULL;
 	}
 
@@ -821,8 +805,7 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 	apc_cache_entry_t *entry;
 	zend_bool retval = 0;
 
-	/* check we are able to deal with the request */
-	if (!cache || apc_cache_busy(cache)) {
+	if (!cache) {
 		return 0;
 	}
 
@@ -848,8 +831,7 @@ PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, ti
 {
 	apc_cache_entry_t *entry;
 
-	if (apc_cache_busy(cache)) {
-		/* cache cleanup in progress */
+	if (!cache) {
 		return 0;
 	}
 
@@ -872,8 +854,7 @@ PHP_APCU_API zend_bool apc_cache_update(
 	zend_ulong h, s;
 	time_t t = apc_time();
 
-	if (apc_cache_busy(cache)) {
-		/* cannot service request right now */
+	if (!cache) {
 		return 0;
 	}
 
@@ -1144,13 +1125,6 @@ PHP_APCU_API zval *apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *st
 	return stat;
 }
 
-/* {{{ apc_cache_busy */
-PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache)
-{
-	return (cache->header->state & APC_CACHE_ST_BUSY);
-}
-/* }}} */
-
 /* {{{ apc_cache_defense */
 PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, time_t t)
 {
@@ -1205,7 +1179,7 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name) {
 PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value) {/*{{{*/
 	apc_cache_entry_t *entry = NULL;
 
-	if(!cache || apc_cache_busy(cache)) {
+	if (!cache) {
 		return;
 	}
 
