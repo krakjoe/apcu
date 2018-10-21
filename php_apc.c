@@ -647,7 +647,7 @@ PHP_FUNCTION(apcu_fetch) {
 	}
 
 	if (Z_TYPE_P(key) == IS_STRING) {
-		if (apc_cache_fetch(apc_user_cache, Z_STR_P(key), t, &return_value)) {
+		if (apc_cache_fetch(apc_user_cache, Z_STR_P(key), t, return_value)) {
 			if (success) {
 				ZVAL_TRUE(success);
 			}
@@ -659,11 +659,10 @@ PHP_FUNCTION(apcu_fetch) {
 		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(key), hentry) {
 			ZVAL_DEREF(hentry);
 			if (Z_TYPE_P(hentry) == IS_STRING) {
-				zval result_entry,
-					*iresult = &result_entry;
-				ZVAL_UNDEF(iresult);
+				zval result_entry;
+				ZVAL_UNDEF(&result_entry);
 
-				if (apc_cache_fetch(apc_user_cache, Z_STR_P(hentry), t, &iresult)) {
+				if (apc_cache_fetch(apc_user_cache, Z_STR_P(hentry), t, &result_entry)) {
 					zend_symtable_update(Z_ARRVAL_P(return_value), Z_STR_P(hentry), &result_entry);
 				}
 			} else {

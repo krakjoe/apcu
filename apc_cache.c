@@ -804,7 +804,7 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_find(apc_cache_t* cache, zend_string *
 /* }}} */
 
 /* {{{ apc_cache_fetch */
-PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval **dst)
+PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval *dst)
 {
 	apc_cache_entry_t *entry;
 	zend_bool retval = 0;
@@ -822,7 +822,7 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 	}
 
 	php_apc_try {
-		retval = apc_cache_entry_fetch_zval(cache, entry, *dst);
+		retval = apc_cache_entry_fetch_zval(cache, entry, dst);
 	} php_apc_finally {
 		apc_cache_entry_release(cache, entry);
 	} php_apc_end_try();

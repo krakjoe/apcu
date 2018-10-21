@@ -140,7 +140,7 @@ PHP_FUNCTION(apcue_get)
 
 	{
 		/* perform lookup */
-		if (!apc_cache_fetch(apcue_cache, key, klen, time(0), &return_value TSRMLS_CC)) {
+		if (!apc_cache_fetch(apcue_cache, key, klen, time(0), return_value TSRMLS_CC)) {
 			/* entry not found */
 		}
 	}
