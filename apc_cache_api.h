@@ -164,7 +164,7 @@ PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *
  * apc_cache_fetch fetches an entry from the cache directly into dst
  *
  */
-PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval **dst);
+PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval *dst);
 
 /*
  * apc_cache_exists searches for a cache entry by its hashed identifier,
