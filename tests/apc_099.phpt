@@ -11,7 +11,7 @@ apc.enable_cli=1
 apcu_store('a', 'value');
 var_export(apcu_delete(['a', 'b', 'c', 0]));
 --EXPECTF--
-Warning: apcu_delete(): apc_delete() expects a string, array of strings, or APCIterator instance. in %s on line 4
+Warning: apcu_delete(): apc_delete() expects a string, array of strings, or APCIterator instance in %s on line 4
 array (
   0 => 'b',
   1 => 'c',

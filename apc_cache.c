@@ -935,7 +935,7 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 	zend_ulong h, s;
 
 	if (!cache) {
-		return 1;
+		return 0;
 	}
 
 	/* calculate hash and slot */
@@ -943,7 +943,7 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 
 	/* lock cache */
 	if (!APC_WLOCK(cache->header)) {
-		return 1;
+		return 0;
 	}
 
 	/* find head */
