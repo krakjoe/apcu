@@ -1003,6 +1003,12 @@ static inline void array_add_long(zval *array, zend_string *key, zend_long lval)
 	zend_hash_add_new(Z_ARRVAL_P(array), key, &zv);
 }
 
+static inline void array_add_double(zval *array, zend_string *key, double dval) {
+	zval zv;
+	ZVAL_DOUBLE(&zv, dval);
+	zend_hash_add_new(Z_ARRVAL_P(array), key, &zv);
+}
+
 /* {{{ apc_cache_link_info */
 static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_entry_t *p)
 {
@@ -1013,10 +1019,7 @@ static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_entry_t *p)
 	zend_hash_add_new(Z_ARRVAL(link), apc_str_info, &zv);
 
 	array_add_long(&link, apc_str_ttl, p->ttl);
-
-	ZVAL_DOUBLE(&zv, (double) p->nhits);
-	zend_hash_add_new(Z_ARRVAL(link), apc_str_num_hits, &zv);
-
+	array_add_double(&link, apc_str_num_hits, (double) p->nhits);
 	array_add_long(&link, apc_str_mtime, p->mtime);
 	array_add_long(&link, apc_str_creation_time, p->ctime);
 	array_add_long(&link, apc_str_deletion_time, p->dtime);
@@ -1046,14 +1049,14 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 	php_apc_try {
 		array_init(info);
 		add_assoc_long(info, "num_slots", cache->nslots);
-		add_assoc_long(info, "ttl", cache->ttl);
-		add_assoc_double(info, "num_hits", (double)cache->header->nhits);
-		add_assoc_double(info, "num_misses", (double)cache->header->nmisses);
-		add_assoc_double(info, "num_inserts", (double)cache->header->ninserts);
+		array_add_long(info, apc_str_ttl, cache->ttl);
+		array_add_double(info, apc_str_num_hits, (double) cache->header->nhits);
+		add_assoc_double(info, "num_misses", (double) cache->header->nmisses);
+		add_assoc_double(info, "num_inserts", (double) cache->header->ninserts);
 		add_assoc_long(info,   "num_entries", cache->header->nentries);
-		add_assoc_double(info, "expunges", (double)cache->header->nexpunges);
+		add_assoc_double(info, "expunges", (double) cache->header->nexpunges);
 		add_assoc_long(info, "start_time", cache->header->stime);
-		add_assoc_double(info, "mem_size", (double)cache->header->mem_size);
+		array_add_double(info, apc_str_mem_size, (double) cache->header->mem_size);
 
 #if APC_MMAP
 		add_assoc_stringl(info, "memory_type", "mmap", sizeof("mmap")-1);
