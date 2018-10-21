@@ -20,31 +20,14 @@
 #include "php_apc.h"
 #include "apc_iterator.h"
 #include "apc_cache.h"
+#include "apc_strings.h"
 
 #include "ext/standard/md5.h"
 #include "SAPI.h"
 #include "zend_interfaces.h"
 
-#define APC_STRINGS \
-	X(user) \
-	X(type) \
-	X(key) \
-	X(value) \
-	X(num_hits) \
-	X(mtime) \
-	X(creation_time) \
-	X(deletion_time) \
-	X(access_time) \
-	X(ref_count) \
-	X(mem_size) \
-	X(ttl)
-
 static zend_class_entry *apc_iterator_ce;
 zend_object_handlers apc_iterator_object_handlers;
-
-#define X(str) static zend_string *apc_str_ ## str;
-	APC_STRINGS
-#undef X
 
 zend_class_entry* apc_iterator_get_ce(void) {
 	return apc_iterator_ce;
@@ -628,21 +611,11 @@ int apc_iterator_init(int module_number) {
 	apc_iterator_object_handlers.free_obj = apc_iterator_free;
 	apc_iterator_object_handlers.offset = XtOffsetOf(apc_iterator_t, obj);
 
-#define X(str) \
-	apc_str_ ## str = zend_new_interned_string( \
-		zend_string_init(#str, sizeof(#str) - 1, 1));
-	APC_STRINGS
-#undef X
-
 	return SUCCESS;
 }
 /* }}} */
 
 int apc_iterator_shutdown(int module_number) {
-#define X(str) zend_string_release(apc_str_ ## str);
-	APC_STRINGS
-#undef X
-
 	return SUCCESS;
 }
 

@@ -34,6 +34,7 @@
 #include "apc_iterator.h"
 #include "apc_sma.h"
 #include "apc_lock.h"
+#include "apc_strings.h"
 #include "php_globals.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
@@ -77,6 +78,10 @@ apc_cache_t* apc_user_cache = NULL;
 
 /* External APC SMA */
 apc_sma_t apc_sma;
+
+#define X(str) zend_string *apc_str_ ## str;
+	APC_STRINGS
+#undef X
 
 /* Global init functions */
 static void php_apc_init_globals(zend_apcu_globals* apcu_globals)
@@ -214,6 +219,12 @@ static PHP_MINIT_FUNCTION(apcu)
 
 	REGISTER_INI_ENTRIES();
 
+#define X(str) \
+	apc_str_ ## str = zend_new_interned_string( \
+		zend_string_init(#str, sizeof(#str) - 1, 1));
+	APC_STRINGS
+#undef X
+
 	/* locks initialized regardless of settings */
 	apc_lock_init();
 
@@ -273,6 +284,10 @@ static PHP_MINIT_FUNCTION(apcu)
 /* {{{ PHP_MSHUTDOWN_FUNCTION(apcu) */
 static PHP_MSHUTDOWN_FUNCTION(apcu)
 {
+#define X(str) zend_string_release(apc_str_ ## str);
+	APC_STRINGS
+#undef X
+
 	/* locks shutdown regardless of settings */
 	apc_lock_cleanup();
 
