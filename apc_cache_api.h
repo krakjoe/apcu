@@ -201,7 +201,7 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 /*
  fetches information about the key provided
 */
-PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *stat);
+PHP_APCU_API void apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *stat);
 
 /*
 * apc_cache_defense: guard against slamming a key

@@ -107,13 +107,13 @@ static int make_prime(int n)
 }
 /* }}} */
 
-static void free_entry(apc_cache_t *cache, apc_cache_entry_t *entry) {
+static inline void free_entry(apc_cache_t *cache, apc_cache_entry_t *entry) {
 	apc_sma_free(cache->sma, entry);
 }
 
 /* {{{ apc_cache_hash_slot
  Note: These calculations can and should be done outside of a lock */
-static void apc_cache_hash_slot(
+static inline void apc_cache_hash_slot(
 		apc_cache_t* cache, zend_string *key, zend_ulong* hash, zend_ulong* slot) {
 	*hash = ZSTR_HASH(key);
 	*slot = *hash % cache->nslots;
@@ -486,6 +486,10 @@ PHP_APCU_API zend_bool apc_cache_store(
 	time_t t = apc_time();
 	zend_bool ret = 0;
 
+	if (!cache) {
+		return 0;
+	}
+
 	/* run cache defense */
 	if (apc_cache_defense(cache, key, t)) {
 		return 0;
@@ -723,7 +727,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	size_t suitable = 0L;
 	size_t available = 0L;
 
-	if(!cache) {
+	if (!cache) {
 		return;
 	}
 
@@ -783,7 +787,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 /* }}} */
 
 /* {{{ apc_cache_find */
-PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *key, time_t t)
+PHP_APCU_API apc_cache_entry_t *apc_cache_find(apc_cache_t* cache, zend_string *key, time_t t)
 {
 	apc_cache_entry_t *entry;
 
@@ -1088,8 +1092,13 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 /*
  fetches information about the key provided
 */
-PHP_APCU_API zval *apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *stat) {
+PHP_APCU_API void apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *stat) {
 	zend_ulong h, s;
+
+	ZVAL_FALSE(stat);
+	if (!cache) {
+		return;
+	}
 
 	/* calculate hash and slot */
 	apc_cache_hash_slot(cache, key, &h, &s);
@@ -1121,8 +1130,6 @@ PHP_APCU_API zval *apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *st
 	} php_apc_finally {
 		APC_RUNLOCK(cache->header);
 	} php_apc_end_try();
-
-	return stat;
 }
 
 /* {{{ apc_cache_defense */
