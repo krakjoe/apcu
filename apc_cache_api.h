@@ -61,10 +61,6 @@ struct apc_cache_entry_t {
 };
 /* }}} */
 
-/* {{{ state constants */
-#define APC_CACHE_ST_NONE  0
-#define APC_CACHE_ST_BUSY  0x00000001 /* }}} */
-
 /* {{{ struct definition: apc_cache_header_t
    Any values that must be shared among processes should go in here. */
 typedef struct _apc_cache_header_t {
@@ -206,18 +202,6 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
  fetches information about the key provided
 */
 PHP_APCU_API zval* apc_cache_stat(apc_cache_t* cache, zend_string *key, zval *stat);
-
-/*
-* apc_cache_busy returns true while the cache is busy
-*
-* a cache is considered busy when any of the following occur:
-*  a) the cache becomes busy when the allocator beneath it is running out of resources
-*  b) a clear of the cache was requested
-*  c) garbage collection is in progress
-*
-* Note: garbage collection can be invoked by the SMA and is invoked on insert
-*/
-PHP_APCU_API zend_bool apc_cache_busy(apc_cache_t* cache);
 
 /*
 * apc_cache_defense: guard against slamming a key
