@@ -853,63 +853,32 @@ PHP_APCU_API zend_bool apc_cache_update(
 		apc_cache_t *cache, zend_string *key, apc_cache_updater_t updater, void *data,
 		zend_bool insert_if_not_found, zend_long ttl)
 {
-	apc_cache_entry_t **entry;
-
+	apc_cache_entry_t *entry;
 	zend_bool retval = 0;
-	zend_ulong h, s;
 	time_t t = apc_time();
 
 	if (!cache) {
 		return 0;
 	}
 
-	/* calculate hash */
-	apc_cache_hash_slot(cache, key, &h, &s);
-
 retry_update:
 	if (!APC_WLOCK(cache->header)) {
 		return 0;
 	}
 
-	php_apc_try {
-		/* find head */
-		entry = &cache->slots[s];
-
-		while (*entry) {
-			/* check for a match by hash and identifier */
-			if (apc_entry_key_equals(*entry, key, h) &&
-				!apc_cache_entry_hard_expired(*entry, t)
-			) {
-				/* attempt to perform update */
-				switch (Z_TYPE((*entry)->val)) {
-					case IS_ARRAY:
-					case IS_OBJECT:
-						if (cache->serializer) {
-							retval = 0;
-							break;
-						}
-						/* break intentionally omitted */
-
-					default:
-						/* executing update */
-						retval = updater(cache, *entry, data);
-						/* set modified time */
-						(*entry)->mtime = t;
-						break;
-				}
-
-				APC_WUNLOCK(cache->header);
-				php_apc_try_finish();
-				return retval;
-			}
-
-			/* set next entry */
-			entry = &(*entry)->next;
+	entry = apc_cache_rlocked_find_nostat(cache, key, t);
+	if (entry) {
+		/* Only allow changes to simple values */
+		if (Z_TYPE(entry->val) < IS_STRING) {
+			retval = updater(cache, entry, data);
+			entry->mtime = t;
 		}
-	} php_apc_finally {
-		APC_WUNLOCK(cache->header);
-	} php_apc_end_try();
 
+		APC_WUNLOCK(cache->header);
+		return retval;
+	}
+
+	APC_WUNLOCK(cache->header);
 	if (insert_if_not_found) {
 		/* Failed to find matching entry. Add key with value 0 and run the updater again. */
 		zval val;
