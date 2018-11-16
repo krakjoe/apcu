@@ -98,13 +98,16 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 # ifdef _WIN64
 #  define ATOMIC_INC(a) InterlockedIncrement64(&a)
 #  define ATOMIC_DEC(a) InterlockedDecrement64(&a)
+#  define ATOMIC_CAS(a, old, new) (InterlockedCompareExchange64(&a, new, old) == old)
 # else
 #  define ATOMIC_INC(a) InterlockedIncrement(&a)
 #  define ATOMIC_DEC(a) InterlockedDecrement(&a)
+#  define ATOMIC_CAS(a, old, new) (InterlockedCompareExchange(&a, new, old) == old)
 # endif
 #else
 # define ATOMIC_INC(a) __sync_add_and_fetch(&a, 1)
 # define ATOMIC_DEC(a) __sync_sub_and_fetch(&a, 1)
+# define ATOMIC_CAS(a, old, new) __sync_bool_compare_and_swap(&a, old, new)
 #endif
 
 #endif

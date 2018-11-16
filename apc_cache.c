@@ -898,6 +898,53 @@ retry_update:
 }
 /* }}} */
 
+/* {{{ apc_cache_atomic_update_long */
+PHP_APCU_API zend_bool apc_cache_atomic_update_long(
+		apc_cache_t *cache, zend_string *key, apc_cache_atomic_updater_t updater, void *data,
+		zend_bool insert_if_not_found, zend_long ttl)
+{
+	apc_cache_entry_t *entry;
+	zend_bool retval = 0;
+	time_t t = apc_time();
+
+	if (!cache) {
+		return 0;
+	}
+
+retry_update:
+	APC_RLOCK(cache->header);
+	entry = apc_cache_rlocked_find_nostat(cache, key, t);
+	if (entry) {
+		/* Only supports integers */
+		if (Z_TYPE(entry->val) == IS_LONG) {
+			retval = updater(cache, &Z_LVAL(entry->val), data);
+			entry->mtime = t;
+		}
+
+		APC_RUNLOCK(cache->header);
+		return retval;
+	}
+
+	APC_RUNLOCK(cache->header);
+	if (insert_if_not_found) {
+		/* Failed to find matching entry. Add key with value 0 and run the updater again. */
+		zval val;
+		ZVAL_LONG(&val, 0);
+
+		/* We do not check the return value of the exclusive-store (add), as the entry might have
+		 * been added between the cache unlock and the store call. In this case we just want to
+		 * update the entry created by a different process. */
+		apc_cache_store(cache, key, &val, ttl, 1);
+
+		/* Only attempt to perform insertion once. */
+		insert_if_not_found = 0;
+		goto retry_update;
+	}
+
+	return 0;
+}
+/* }}} */
+
 /* {{{ apc_cache_delete */
 PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 {

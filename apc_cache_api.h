@@ -90,6 +90,9 @@ typedef struct _apc_cache_t {
 /* {{{ typedef: apc_cache_updater_t */
 typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void* data); /* }}} */
 
+/* {{{ typedef: apc_cache_atomic_updater_t */
+typedef zend_bool (*apc_cache_atomic_updater_t)(apc_cache_t*, zend_long*, void* data); /* }}} */
+
 /*
  * apc_cache_create creates the shared memory cache.
  *
@@ -143,10 +146,19 @@ PHP_APCU_API zend_bool apc_cache_store(
         apc_cache_t* cache, zend_string *key, const zval *val,
         const int32_t ttl, const zend_bool exclusive);
 /*
-* apc_cache_update updates an entry in place, this is used for inc/dec/cas
-*/
+ * apc_cache_update updates an entry in place. The updater function must not bailout.
+ * The update is performed under write-lock and doesn't have to be atomic.
+ */
 PHP_APCU_API zend_bool apc_cache_update(
 		apc_cache_t *cache, zend_string *key, apc_cache_updater_t updater, void *data,
+		zend_bool insert_if_not_found, zend_long ttl);
+
+/*
+ * apc_cache_atomic_update_long updates an integer entry in place. The updater function must
+ * perform the update atomically, as the update is performed under read-lock.
+ */
+PHP_APCU_API zend_bool apc_cache_atomic_update_long(
+		apc_cache_t *cache, zend_string *key, apc_cache_atomic_updater_t updater, void *data,
 		zend_bool insert_if_not_found, zend_long ttl);
 
 /*

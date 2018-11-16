@@ -607,19 +607,11 @@ PHP_FUNCTION(apcu_dec) {
 /* }}} */
 
 /* {{{ php_cas_updater */
-static zend_bool php_cas_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
-	zend_long* vals = ((zend_long*)data);
+static zend_bool php_cas_updater(apc_cache_t *cache, zend_long *entry, void *data) {
+	zend_long *vals = (zend_long *) data;
 	zend_long old = vals[0];
 	zend_long new = vals[1];
-
-	if (Z_TYPE(entry->val) == IS_LONG) {
-		if (Z_LVAL(entry->val) == old) {
-			Z_LVAL(entry->val) = new;
-			return 1;
-		}
-	}
-
-	return 0;
+	return ATOMIC_CAS(*entry, old, new);
 }
 /* }}} */
 
@@ -633,7 +625,12 @@ PHP_FUNCTION(apcu_cas) {
 		return;
 	}
 
-	RETURN_BOOL(php_apc_update(key, php_cas_updater, &vals, 0, 0));
+	if (APCG(serializer_name)) {
+		/* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
+		apc_cache_serializer(apc_user_cache, APCG(serializer_name));
+	}
+
+	RETURN_BOOL(apc_cache_atomic_update_long(apc_user_cache, key, php_cas_updater, &vals, 0, 0));
 }
 /* }}} */
 
