@@ -513,7 +513,6 @@ static zend_reference *apc_unpersist_ref(
 static zend_array *apc_unpersist_ht(
 		apc_unpersist_context_t *ctxt, const HashTable *orig_ht) {
 	HashTable *ht = emalloc(sizeof(HashTable));
-	uint32_t idx;
 
 	apc_unpersist_add_already_copied(ctxt, orig_ht, ht);
 	memcpy(ht, orig_ht, sizeof(HashTable));
