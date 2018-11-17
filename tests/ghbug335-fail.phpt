@@ -6,7 +6,7 @@ require_once(dirname(__FILE__) . '/skipif.inc');
 if (!extension_loaded('pcntl')) {
   die('skip pcntl required');
 }
-die('Test disabled as it does not work on Travis-CI.');
+die('skip Test disabled as it does not work on Travis-CI.');
 ?>
 --INI--
 apc.enabled=1
