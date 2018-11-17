@@ -1120,12 +1120,9 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 
 		/* for copy of locking key struct */
 		apc_cache_slam_key_t *last = &cache->header->lastkey;
-
-		apc_cache_owner_t owner;
+		pid_t owner_pid = getpid();
 #ifdef ZTS
-		owner = TSRMLS_CACHE;
-#else
-		owner = getpid();
+		void ***owner_thread = TSRMLS_CACHE;
 #endif
 
 		/* check the hash and length match */
@@ -1133,16 +1130,24 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 		if (last->hash == ZSTR_HASH(key) &&
 			last->len == ZSTR_LEN(key) &&
 			last->mtime == t &&
-			last->owner != owner) {
-				/* potential cache slam */
-				return 1;
+			(last->owner_pid != owner_pid
+#if ZTS
+			 || last->owner_thread != owner_thread
+#endif
+			)
+		) {
+			/* potential cache slam */
+			return 1;
 		}
 
 		/* sets enough information for an educated guess, but is not exact */
 		last->hash = ZSTR_HASH(key);
 		last->len = ZSTR_LEN(key);
 		last->mtime = t;
-		last->owner = owner;
+		last->owner_pid = owner_pid;
+#ifdef ZTS
+		last->owner_thread = owner_thread;
+#endif
 	}
 
 	return 0;
