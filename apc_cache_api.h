@@ -29,19 +29,15 @@
 #ifndef APC_CACHE_API_H
 #define APC_CACHE_API_H
 
-/* {{{ used for slam defense to determine the context which created any key */
-#ifdef ZTS
-typedef void*** apc_cache_owner_t;
-#else
-typedef pid_t apc_cache_owner_t;
-#endif /* }}} */
-
 typedef struct apc_cache_slam_key_t apc_cache_slam_key_t;
 struct apc_cache_slam_key_t {
 	zend_ulong hash;         /* hash of the key */
 	size_t len;              /* length of the key */
 	time_t mtime;            /* creation time of this key */
-	apc_cache_owner_t owner; /* the context that created this key */
+	pid_t owner_pid;         /* the pid that created this key */
+#ifdef ZTS
+	void ***owner_thread;    /* TSRMLS cache of thread that created this key */
+#endif
 };
 
 /* {{{ struct definition: apc_cache_entry_t */

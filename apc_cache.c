@@ -1115,44 +1115,42 @@ PHP_APCU_API void apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *sta
 /* {{{ apc_cache_defense */
 PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, time_t t)
 {
-	zend_bool result = 0;
-
 	/* only continue if slam defense is enabled */
 	if (cache->defend) {
 
 		/* for copy of locking key struct */
 		apc_cache_slam_key_t *last = &cache->header->lastkey;
-
-		if (!last->hash) {
-			return 0;
-		}
-
-		/* check the hash and length match */
-		if (last->hash == ZSTR_HASH(key) && last->len == ZSTR_LEN(key)) {
-			apc_cache_owner_t owner;
+		pid_t owner_pid = getpid();
 #ifdef ZTS
-			owner = TSRMLS_CACHE;
-#else
-			owner = getpid();
+		void ***owner_thread = TSRMLS_CACHE;
 #endif
 
-			/* check the time (last second considered slam) and context */
-			if (last->mtime == t && last->owner != owner) {
-				/* potential cache slam */
-				apc_debug(
-					"Potential cache slam averted for key '%s'", ZSTR_VAL(key));
-				result = 1;
-			} else {
-				/* sets enough information for an educated guess, but is not exact */
-				last->hash = ZSTR_HASH(key);
-				last->len = ZSTR_LEN(key);
-				last->mtime = t;
-				last->owner = owner;
-			}
+		/* check the hash and length match */
+		/* check the time (last second considered slam) and context */
+		if (last->hash == ZSTR_HASH(key) &&
+			last->len == ZSTR_LEN(key) &&
+			last->mtime == t &&
+			(last->owner_pid != owner_pid
+#if ZTS
+			 || last->owner_thread != owner_thread
+#endif
+			)
+		) {
+			/* potential cache slam */
+			return 1;
 		}
+
+		/* sets enough information for an educated guess, but is not exact */
+		last->hash = ZSTR_HASH(key);
+		last->len = ZSTR_LEN(key);
+		last->mtime = t;
+		last->owner_pid = owner_pid;
+#ifdef ZTS
+		last->owner_thread = owner_thread;
+#endif
 	}
 
-	return result;
+	return 0;
 }
 /* }}} */
 
