@@ -3,7 +3,7 @@ GH Bug #335: Test that APCu stampede protection can be disabled
 --SKIPIF--
 <?php
 require_once(dirname(__FILE__) . '/skipif.inc');
-if (!extension_loaded('pcntl') {
+if (!extension_loaded('pcntl')) {
   die('skip pcntl required');
 }
 ?>
