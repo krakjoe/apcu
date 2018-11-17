@@ -31,7 +31,7 @@
  <date>2018-07-09</date>
  <version>
   <release>5.1.13dev</release>
-  <api>5.1.12</api>
+  <api>5.1.13</api>
  </version>
  <stability>
   <release>stable</release>
@@ -39,7 +39,16 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+- Reimplement persistence logic using precise allocation rather than memory pools. This reduces
+memory usage of cache entries, especially for small values, and improves performance of persisting
+and unpersisting values.
+- Fixed GH #335: Stampede protection is broken.
+- Fixed GH #328: Segfault in apcu_key_info() if APCu is disabled.
+- Generally make the behavior of functions if APCu is disabled more consistent.
+- Fixed PHP bug #72980: Empty strings are now consistently allowed as cache keys.
+- Optimized apcu_key_info() and apcu_cache_info() by using interned strings.
+- Fix build against PHP master (PHP 7.4).
+- Many changes to internal C APIs.
  </notes>
  <contents>
   <dir name="/">
