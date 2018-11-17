@@ -30,7 +30,7 @@ if ($pid) {
             echo "Stampede protection works\n";
             break;
         }
-        $ret = apcu_store("baz", "bar");
+        apcu_store("baz", "bar");
     }
 
     if ($ret) {
@@ -42,6 +42,7 @@ if ($pid) {
     // child
     for ($i = 0; $i < 10000; $i++) {
       apcu_store("foo", "child");
+      usleep(100);
     }
     exit(0);
 }
