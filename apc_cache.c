@@ -1135,8 +1135,6 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 			last->mtime == t &&
 			last->owner != owner) {
 				/* potential cache slam */
-				apc_debug(
-					"Potential cache slam averted for key '%s'", ZSTR_VAL(key));
 				return 1;
 		}
 
