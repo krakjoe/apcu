@@ -19,23 +19,30 @@ apcu_store("baz", "bar");
 
 $pid = pcntl_fork();
 if ($pid) {
-    // parent
-    while (apcu_fetch("foo") !== "child") {
-      usleep(0);
+    for ($i = 0; $i < 100; $i++) {
+        // parent
+        while (apcu_fetch("foo") !== "child") {
+            // wait
+        }
+
+        $ret = apcu_store("foo", "parent");
+        if ($ret === false) {
+            echo "Stampede protection works\n";
+            break;
+        }
+        $ret = apcu_store("baz", "bar");
     }
 
-    $ret = apcu_store("foo", "bar");
-    if ($ret === false) {
-        echo "Stampede protection works\n";
-    } else {
-        echo "Stampede protection doesn't work\n";
+    if ($ret) {
+      echo "Stampede protection doesn't work\n";
     }
 
     pcntl_wait($status);
 } else {
-    usleep(500);
     // child
-    apcu_store("foo", "child");
+    for ($i = 0; $i < 10000; $i++) {
+      apcu_store("foo", "child");
+    }
     exit(0);
 }
 
