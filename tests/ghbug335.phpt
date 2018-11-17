@@ -12,8 +12,8 @@ apc.enable_cli=1
 $pid = pcntl_fork();
 if ($pid) {
     // parent
-    $ret1 = apcu_store("foo", "bar");
     pcntl_wait($pid);
+    $ret1 = apcu_store("foo", "bar");
     $ret2 = apcu_store("foo", "bar");
     if ($ret1 === false || $ret2 === false) {
         echo "Stampede protection works\n";
@@ -22,7 +22,10 @@ if ($pid) {
     }
 } else {
     // child
-    apcu_store("foo", "bar");
+    for ($i = 0; $i < 1000; $i++) {
+      apcu_store("foo", "bar");
+    }
+    exit(0);
 }
 
 ?>
