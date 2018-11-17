@@ -14,12 +14,15 @@ apc.enable_cli=1
 <?php
 
 // Reset slam detection.
+apcu_store("foo", "parent");
 apcu_store("baz", "bar");
 
 $pid = pcntl_fork();
 if ($pid) {
     // parent
-    pcntl_wait($status);
+    while (apcu_fetch("foo") !== "child") {
+      usleep(0);
+    }
 
     $ret = apcu_store("foo", "bar");
     if ($ret === false) {
@@ -27,9 +30,12 @@ if ($pid) {
     } else {
         echo "Stampede protection doesn't work\n";
     }
+
+    pcntl_wait($status);
 } else {
+    usleep(500);
     // child
-    apcu_store("foo", "bar");
+    apcu_store("foo", "child");
     exit(0);
 }
 
