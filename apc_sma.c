@@ -432,8 +432,8 @@ restart:
 		}
 		if (off != -1) {
 			void* p = (void *)(SMA_ADDR(sma, i) + off);
-			WUNLOCK(&SMA_LCK(sma, i));
 			sma->last = i;
+			WUNLOCK(&SMA_LCK(sma, i));
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
 			VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
