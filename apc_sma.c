@@ -59,6 +59,11 @@ struct sma_header_t {
 #define SMA_RO(sma, i)   ((char*)(sma->segs[i]).roaddr)
 #define SMA_LCK(sma, i)  ((SMA_HDR(sma, i))->sma_lock)
 
+#define SMA_CREATE_LOCK  CREATE_LOCK
+#define SMA_DESTROY_LOCK DESTROY_LOCK
+#define SMA_LOCK(sma, i) WLOCK(&SMA_LCK(sma, i))
+#define SMA_UNLOCK(sma, i) WUNLOCK(&SMA_LCK(sma, i))
+
 #if 0
 /* global counter for identifying blocks
  * Technically it is possible to do the same
@@ -322,7 +327,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 		shmaddr = sma->segs[i].shmaddr;
 
 		header = (sma_header_t*) shmaddr;
-		CREATE_LOCK(&header->sma_lock);
+		SMA_CREATE_LOCK(&header->sma_lock);
 		header->segsize = sma->size;
 		header->avail = sma->size - ALIGNWORD(sizeof(sma_header_t)) - ALIGNWORD(sizeof(block_t)) - ALIGNWORD(sizeof(block_t));
 
@@ -362,7 +367,7 @@ PHP_APCU_API void apc_sma_cleanup(apc_sma_t* sma) {
 	assert(sma->initialized);
 
 	for (i = 0; i < sma->num; i++) {
-		DESTROY_LOCK(&SMA_LCK(sma, i));
+		SMA_DESTROY_LOCK(&SMA_LCK(sma, i));
 #if APC_MMAP
 		apc_unmap(&sma->segs[i]);
 #else
@@ -383,7 +388,7 @@ PHP_APCU_API void* apc_sma_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fr
 restart:
 	assert(sma->initialized);
 
-	if (!WLOCK(&SMA_LCK(sma, last))) {
+	if (!SMA_LOCK(sma, last)) {
 		return NULL;
 	}
 
@@ -391,9 +396,9 @@ restart:
 
 	if (off == -1) {
 		/* retry failed allocation after we expunge */
-		WUNLOCK(&SMA_LCK(sma, last));
+		SMA_UNLOCK(sma, last);
 		sma->expunge(*(sma->data), n+fragment);
-		if (!WLOCK(&SMA_LCK(sma, last))) {
+		if (!SMA_LOCK(sma, last)) {
 			return NULL;
 		}
 		off = sma_allocate(SMA_HDR(sma, last), n, fragment, allocated);
@@ -401,30 +406,30 @@ restart:
 
 	if (off != -1) {
 		void* p = (void *)(SMA_ADDR(sma, last) + off);
-		WUNLOCK(&SMA_LCK(sma, last));
+		SMA_UNLOCK(sma, last);
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
 		VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
 		return p;
 	}
 
-	WUNLOCK(&SMA_LCK(sma, last));
+	SMA_UNLOCK(sma, last);
 
 	for (i = 0; i < sma->num; i++) {
 		if (i == last) {
 			continue;
 		}
 
-		if (!WLOCK(&SMA_LCK(sma, i))) {
+		if (!SMA_LOCK(sma, i)) {
 			return NULL;
 		}
 
 		off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
 		if (off == -1) {
 			/* retry failed allocation after we expunge */
-			WUNLOCK(&SMA_LCK(sma, i));
+			SMA_UNLOCK(sma, i);
 			sma->expunge(*(sma->data), n+fragment);
-			if (!WLOCK(&SMA_LCK(sma, i))) {
+			if (!SMA_LOCK(sma, i)) {
 				return NULL;
 			}
 			off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
@@ -432,13 +437,13 @@ restart:
 		if (off != -1) {
 			void* p = (void *)(SMA_ADDR(sma, i) + off);
 			sma->last = i;
-			WUNLOCK(&SMA_LCK(sma, i));
+			SMA_UNLOCK(sma, i);
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
 			VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
 			return p;
 		}
-		WUNLOCK(&SMA_LCK(sma, i));
+		SMA_UNLOCK(sma, i);
 	}
 
 	/* I've tried being nice, but now you're just asking for it */
@@ -477,12 +482,12 @@ PHP_APCU_API void apc_sma_free(apc_sma_t* sma, void* p) {
 	for (i = 0; i < sma->num; i++) {
 		offset = (size_t)((char *)p - SMA_ADDR(sma, i));
 		if (p >= (void*)SMA_ADDR(sma, i) && offset < sma->size) {
-			if (!WLOCK(&SMA_LCK(sma, i))) {
+			if (!SMA_LOCK(sma, i)) {
 				return;
 			}
 
 			sma_deallocate(SMA_HDR(sma, i), offset);
-			WUNLOCK(&SMA_LCK(sma, i));
+			SMA_UNLOCK(sma, i);
 #ifdef VALGRIND_FREELIKE_BLOCK
 			VALGRIND_FREELIKE_BLOCK(p, 0);
 #endif
@@ -576,7 +581,7 @@ PHP_APCU_API apc_sma_info_t* apc_sma_info(apc_sma_t* sma, zend_bool limited) {
 
 	/* For each segment */
 	for (i = 0; i < sma->num; i++) {
-		RLOCK(&SMA_LCK(sma, i));
+		SMA_LOCK(sma, i);
 		shmaddr = SMA_ADDR(sma, i);
 		prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
 
@@ -596,7 +601,7 @@ PHP_APCU_API apc_sma_info_t* apc_sma_info(apc_sma_t* sma, zend_bool limited) {
 
 			prv = cur;
 		}
-		RUNLOCK(&SMA_LCK(sma, i));
+		SMA_UNLOCK(sma, i);
 	}
 
 	return info;
