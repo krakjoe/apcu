@@ -135,7 +135,7 @@ if test "$PHP_APCU" != "no"; then
     LIBS="$orig_LIBS"
   fi
   
-  if test "$PHP_APCU_RWLOCKS" = "no"; then
+  if test "$PHP_APCU" != "no"; then
     orig_LIBS="$LIBS"
 	  LIBS="$LIBS -lpthread"
 	  AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -172,6 +172,7 @@ if test "$PHP_APCU" != "no"; then
 				  PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 				  AC_MSG_WARN([APCu has access to mutexes])
+				  AC_DEFINE(APC_HAS_PTHREAD_MUTEX, 1, [ ])
 			  ],[ dnl -Failure-
 				  AC_MSG_WARN([It doesn't appear that pthread mutexes are supported on your system])
     			PHP_APCU_MUTEX=no
@@ -225,7 +226,7 @@ if test "$PHP_APCU" != "no"; then
   		[AC_DEFINE([HAVE_VALGRIND_MEMCHECK_H],1, [enable valgrind memchecks])])
   ])
 
-  apc_sources="apc.c apc_lock.c php_apc.c \
+  apc_sources="apc.c apc_lock.c apc_mutex.c php_apc.c \
                  apc_cache.c \
                  apc_mmap.c \
                  apc_shm.c \
@@ -240,7 +241,7 @@ if test "$PHP_APCU" != "no"; then
   PHP_SUBST(APCU_SHARED_LIBADD)
   PHP_SUBST(APCU_CFLAGS)
   PHP_SUBST(PHP_LDFLAGS)
-  PHP_INSTALL_HEADERS(ext/apcu, [php_apc.h apc.h apc_api.h apc_arginfo.h apc_cache.h apc_cache_api.h apc_globals.h apc_iterator.h apc_lock.h apc_lock_api.h apc_sma.h apc_sma_api.h apc_serializer.h apc_stack.h])
+  PHP_INSTALL_HEADERS(ext/apcu, [php_apc.h apc.h apc_api.h apc_arginfo.h apc_cache.h apc_cache_api.h apc_globals.h apc_iterator.h apc_lock.h apc_mutex.h apc_lock_api.h apc_sma.h apc_sma_api.h apc_serializer.h apc_stack.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
 fi
 

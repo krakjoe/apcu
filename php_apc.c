@@ -34,6 +34,7 @@
 #include "apc_iterator.h"
 #include "apc_sma.h"
 #include "apc_lock.h"
+#include "apc_mutex.h"
 #include "apc_strings.h"
 #include "php_globals.h"
 #include "php_ini.h"
@@ -227,6 +228,7 @@ static PHP_MINIT_FUNCTION(apcu)
 
 	/* locks initialized regardless of settings */
 	apc_lock_init();
+	APC_MUTEX_INIT();
 
 	/* Disable APC in cli mode unless overridden by apc.enable_cli */
 	if (!APCG(enable_cli) && !strcmp(sapi_module.name, "cli")) {
@@ -290,6 +292,7 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 
 	/* locks shutdown regardless of settings */
 	apc_lock_cleanup();
+	APC_MUTEX_CLEANUP();
 
 	/* only shut down if APC is enabled */
 	if (APCG(enabled)) {

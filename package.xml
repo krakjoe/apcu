@@ -123,6 +123,8 @@
    <file name="apc_lock.h" role="src" />
    <file name="apc_mmap.c" role="src" />
    <file name="apc_mmap.h" role="src" />
+   <file name="apc_mutex.c" role="src" />
+   <file name="apc_mutex.h" role="src" />
    <file name="apc_persist.c" role="src" />
    <file name="apc.php" role="src" />
    <file name="apc_php.h" role="src" />
