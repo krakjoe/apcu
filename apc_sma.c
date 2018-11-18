@@ -29,7 +29,7 @@
 #include "apc_sma.h"
 #include "apc.h"
 #include "apc_globals.h"
-#include "apc_lock.h"
+#include "apc_mutex.h"
 #include "apc_shm.h"
 #include "apc_cache.h"
 
@@ -49,7 +49,7 @@ enum {
 
 typedef struct sma_header_t sma_header_t;
 struct sma_header_t {
-	apc_lock_t sma_lock;    /* segment lock */
+	apc_mutex_t sma_lock;    /* segment lock */
 	size_t segsize;         /* size of entire segment */
 	size_t avail;           /* bytes available (not necessarily contiguous) */
 };
@@ -59,10 +59,10 @@ struct sma_header_t {
 #define SMA_RO(sma, i)   ((char*)(sma->segs[i]).roaddr)
 #define SMA_LCK(sma, i)  ((SMA_HDR(sma, i))->sma_lock)
 
-#define SMA_CREATE_LOCK  CREATE_LOCK
-#define SMA_DESTROY_LOCK DESTROY_LOCK
-#define SMA_LOCK(sma, i) WLOCK(&SMA_LCK(sma, i))
-#define SMA_UNLOCK(sma, i) WUNLOCK(&SMA_LCK(sma, i))
+#define SMA_CREATE_LOCK  APC_CREATE_MUTEX
+#define SMA_DESTROY_LOCK APC_DESTROY_MUTEX
+#define SMA_LOCK(sma, i) APC_MUTEX_LOCK(&SMA_LCK(sma, i))
+#define SMA_UNLOCK(sma, i) APC_MUTEX_UNLOCK(&SMA_LCK(sma, i))
 
 #if 0
 /* global counter for identifying blocks
