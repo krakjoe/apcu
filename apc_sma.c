@@ -377,41 +377,41 @@ PHP_APCU_API void apc_sma_cleanup(apc_sma_t* sma) {
 PHP_APCU_API void* apc_sma_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, zend_ulong* allocated) {
 	size_t off;
 	uint i;
-	int nuked = 0;
+	zend_bool nuked = 0;
+	int32_t last = sma->last;
 
 restart:
 	assert(sma->initialized);
 
-	if (!WLOCK(&SMA_LCK(sma, sma->last))) {
+	if (!WLOCK(&SMA_LCK(sma, last))) {
 		return NULL;
 	}
 
-	off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
+	off = sma_allocate(SMA_HDR(sma, last), n, fragment, allocated);
 
 	if (off == -1) {
 		/* retry failed allocation after we expunge */
-		WUNLOCK(&SMA_LCK(sma, sma->last));
-		sma->expunge(
-			*(sma->data), (n+fragment));
-		if (!WLOCK(&SMA_LCK(sma, sma->last))) {
+		WUNLOCK(&SMA_LCK(sma, last));
+		sma->expunge(*(sma->data), n+fragment);
+		if (!WLOCK(&SMA_LCK(sma, last))) {
 			return NULL;
 		}
-		off = sma_allocate(SMA_HDR(sma, sma->last), n, fragment, allocated);
+		off = sma_allocate(SMA_HDR(sma, last), n, fragment, allocated);
 	}
 
 	if (off != -1) {
-		void* p = (void *)(SMA_ADDR(sma, sma->last) + off);
-		WUNLOCK(&SMA_LCK(sma, sma->last));
+		void* p = (void *)(SMA_ADDR(sma, last) + off);
+		WUNLOCK(&SMA_LCK(sma, last));
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
 		VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
 		return p;
 	}
 
-	WUNLOCK(&SMA_LCK(sma, sma->last));
+	WUNLOCK(&SMA_LCK(sma, last));
 
 	for (i = 0; i < sma->num; i++) {
-		if (i == sma->last) {
+		if (i == last) {
 			continue;
 		}
 
@@ -423,8 +423,7 @@ restart:
 		if (off == -1) {
 			/* retry failed allocation after we expunge */
 			WUNLOCK(&SMA_LCK(sma, i));
-			sma->expunge(
-				*(sma->data), (n+fragment));
+			sma->expunge(*(sma->data), n+fragment);
 			if (!WLOCK(&SMA_LCK(sma, i))) {
 				return NULL;
 			}
