@@ -367,7 +367,8 @@ PHP_APCU_API void apc_sma_cleanup(apc_sma_t* sma) {
 	assert(sma->initialized);
 
 	for (i = 0; i < sma->num; i++) {
-		SMA_DESTROY_LOCK(&SMA_LCK(sma, i));
+		// Disabled until the lock is removed from shared memory.
+		//SMA_DESTROY_LOCK(&SMA_LCK(sma, i));
 #if APC_MMAP
 		apc_unmap(&sma->segs[i]);
 #else
