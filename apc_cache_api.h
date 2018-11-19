@@ -125,11 +125,11 @@ PHP_APCU_API apc_cache_t* apc_cache_create(
 PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char* path);
 
 /*
- * apc_cache_destroy releases any OS resources associated with a cache object.
- * Under apache, this function can be safely called by the child processes
- * when they exit.
+ * apc_cache_detach detaches from the shared memory cache and cleans up
+ * local allocations. Under apache, this function can be safely called by
+ * the child processes when they exit.
  */
-PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache);
+PHP_APCU_API void apc_cache_detach(apc_cache_t* cache);
 
 /*
  * apc_cache_clear empties a cache. This can safely be called at any time.

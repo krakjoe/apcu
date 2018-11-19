@@ -297,11 +297,9 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 	/* only shut down if APC is enabled */
 	if (APCG(enabled)) {
 		if (APCG(initialized)) {
-
-			/* destroy cache pointer */
-			apc_cache_destroy(apc_user_cache);
-			/* cleanup shared memory */
-			apc_sma_cleanup(&apc_sma);
+			/* Detach cache and shared memory allocator from shared memory. */
+			apc_cache_detach(apc_user_cache);
+			apc_sma_detach(&apc_sma);
 
 			APCG(initialized) = 0;
 		}

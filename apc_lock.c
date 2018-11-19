@@ -114,7 +114,7 @@ PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock) {
 }
 
 PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock) {
-	/* nothing */
+	pthread_rwlock_destroy(lock);
 }
 
 #elif defined(APC_LOCK_RECURSIVE)
@@ -173,7 +173,7 @@ PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock) {
 }
 
 PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock) {
-	/* nothing */
+	pthread_mutex_destroy(lock);
 }
 
 #elif defined(APC_SPIN_LOCK)

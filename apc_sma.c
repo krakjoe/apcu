@@ -361,21 +361,22 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 	}
 }
 
-PHP_APCU_API void apc_sma_cleanup(apc_sma_t* sma) {
+PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
+	/* Important: This function should not clean up anything that's in shared memory,
+	 * only detach our process-local use of it. In particular locks cannot be destroyed
+	 * here. */
 	uint i;
 
 	assert(sma->initialized);
+	sma->initialized = 0;
 
 	for (i = 0; i < sma->num; i++) {
-		// Disabled until the lock is removed from shared memory.
-		//SMA_DESTROY_LOCK(&SMA_LCK(sma, i));
 #if APC_MMAP
 		apc_unmap(&sma->segs[i]);
 #else
 		apc_shm_detach(&sma->segs[i]);
 #endif
 	}
-	sma->initialized = 0;
 
 	free(sma->segs);
 }
