@@ -52,12 +52,12 @@ static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context);
 extern apc_cache_t* apc_user_cache;
 
 /* {{{ apc_core_unmap
- *  Coredump signal handler, unmaps shm and calls previously installed handlers
+ *  Coredump signal handler, detached from shm and calls previously installed handlers
  */
 static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 {
 	if (apc_user_cache) {
-		apc_sma_cleanup(apc_user_cache->sma);
+		apc_sma_detach(apc_user_cache->sma);
 	}
 	apc_rehandle_signal(signo, siginfo, context);
 

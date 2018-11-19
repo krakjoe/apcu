@@ -87,9 +87,9 @@ PHP_APCU_API void apc_sma_init(
 		int32_t num, zend_ulong size, char *mask);
 
 /*
-* apc_sma_api_cleanup will free the sma allocator
-*/
-PHP_APCU_API void apc_sma_cleanup(apc_sma_t* sma);
+ * apc_sma_detach will detach from shared memory and cleanup local allocations.
+ */
+PHP_APCU_API void apc_sma_detach(apc_sma_t* sma);
 
 /*
 * apc_smap_api_malloc will allocate a block from the sma of the given size

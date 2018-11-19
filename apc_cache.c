@@ -649,20 +649,17 @@ PHP_APCU_API void apc_cache_entry_release(apc_cache_t *cache, apc_cache_entry_t 
 }
 /* }}} */
 
-/* {{{ apc_cache_destroy */
-PHP_APCU_API void apc_cache_destroy(apc_cache_t* cache)
+/* {{{ apc_cache_detach */
+PHP_APCU_API void apc_cache_detach(apc_cache_t *cache)
 {
+	/* Important: This function should not clean up anything that's in shared memory,
+	 * only detach our process-local use of it. In particular locks cannot be destroyed
+	 * here. */
+
 	if (!cache) {
 		return;
 	}
 
-	/* destroy lock */
-	DESTROY_LOCK(&cache->header->lock);
-
-	/* XXX this is definitely a leak, but freeing this causes all the apache
-		children to freeze. It might be because the segment is shared between
-		several processes. To figure out is how to free this safely. */
-	/*apc_sma_free(cache->shmaddr);*/
 	free(cache);
 }
 /* }}} */
