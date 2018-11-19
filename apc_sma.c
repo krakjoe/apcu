@@ -465,11 +465,6 @@ PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, zend_ulong n)
 	return apc_sma_malloc_ex(sma, n, MINBLOCKSIZE, &allocated);
 }
 
-PHP_APCU_API void* apc_sma_realloc(apc_sma_t* sma, void* p, zend_ulong n) {
-	apc_sma_free(sma, p);
-	return apc_sma_malloc(sma, n);
-}
-
 PHP_APCU_API void apc_sma_free(apc_sma_t* sma, void* p) {
 	uint i;
 	size_t offset;
