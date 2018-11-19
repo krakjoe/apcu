@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2018-07-09</date>
+ <date>2018-11-19</date>
  <version>
-  <release>5.1.13dev</release>
+  <release>5.1.13</release>
   <api>5.1.13</api>
  </version>
  <stability>
@@ -79,9 +79,12 @@ and unpersisting values.
     <file name="apc_020.phpt" role="test" />
     <file name="apc_021.phpt" role="test" />
     <file name="apc_022.phpt" role="test" />
+    <file name="apc_023.phpt" role="test" />
+    <file name="apc_024.phpt" role="test" />
     <file name="apc_099.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
     <file name="apc54_018.phpt" role="test" />
+    <file name="apc_disabled.phpt" role="test" />
     <file name="apc_entry_001.phpt" role="test" />
     <file name="apc_entry_002.phpt" role="test" />
     <file name="apc_entry_003.phpt" role="test" />
@@ -96,6 +99,8 @@ and unpersisting values.
     <file name="ghbug185.phpt" role="test" />
     <file name="ghbug247.phpt" role="test" />
     <file name="ghbug248.phpt" role="test" />
+    <file name="ghbug335-fail.phpt" role="test" />
+    <file name="ghbug335.phpt" role="test" />
     <file name="iterator_001.phpt" role="test" />
     <file name="iterator_002.phpt" role="test" />
     <file name="iterator_003.phpt" role="test" />
@@ -106,6 +111,7 @@ and unpersisting values.
     <file name="iterator_008.phpt" role="test" />
     <file name="iterator_009.phpt" role="test" />
     <file name="iterator_010.phpt" role="test" />
+    <file name="not_enough_shm.phpt" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />
     <file name="data/abc.data" role="test" />
@@ -126,11 +132,9 @@ and unpersisting values.
    <file name="apc_lock.h" role="src" />
    <file name="apc_mmap.c" role="src" />
    <file name="apc_mmap.h" role="src" />
+   <file name="apc_persist.c" role="src" />
    <file name="apc.php" role="src" />
    <file name="apc_php.h" role="src" />
-   <file name="apc_pool_api.h" role="src" />
-   <file name="apc_pool.c" role="src" />
-   <file name="apc_pool.h" role="src" />
    <file name="apc_shm.c" role="src" />
    <file name="apc_shm.h" role="src" />
    <file name="apc_signal.c" role="src" />
@@ -140,6 +144,7 @@ and unpersisting values.
    <file name="apc_sma.h" role="src" />
    <file name="apc_stack.c" role="src" />
    <file name="apc_stack.h" role="src" />
+   <file name="apc_strings.h" role="src" />
    <file name="apc_windows_srwlock_kernel.c" role="src" />
    <file name="apc_windows_srwlock_kernel.h" role="src" />
    <file name="pgsql_s_lock.h" role="src" />
@@ -155,7 +160,6 @@ and unpersisting values.
    <file name="php_apc.h" role="src" />
    <file name="README.md" role="doc" />
    <file name="TECHNOTES.txt" role="doc" />
-   <file name="TODO" role="doc" />
   </dir>
  </contents>
  <dependencies>
