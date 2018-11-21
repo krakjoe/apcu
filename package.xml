@@ -30,7 +30,7 @@
  </lead>
  <date>2018-11-21</date>
  <version>
-  <release>5.1.14</release>
+  <release>5.1.15dev</release>
   <api>5.1.14</api>
  </version>
  <stability>
@@ -39,10 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Fixed GH #347: Disable slam defense by default.
-- Fix potential issue with destruction of locks. This does not affect Linux, but might affect Windows and BSD.
-- Use mutex instead of rwlock for shared memory allocator (if pthreads mutex available).
-- Require only read-lock for apcu_cas(), by using atomic compare-and-swap.
+-
  </notes>
  <contents>
   <dir name="/">
@@ -171,6 +168,24 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2018-11-21</date>
+   <version>
+    <release>5.1.14</release>
+    <api>5.1.14</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Fixed GH #347: Disable slam defense by default.
+- Fix potential issue with destruction of locks. This does not affect Linux, but might affect Windows and BSD.
+- Use mutex instead of rwlock for shared memory allocator (if pthreads mutex available).
+- Require only read-lock for apcu_cas(), by using atomic compare-and-swap.
+   </notes>
+  </release>
   <release>
    <date>2018-11-19</date>
    <version>
