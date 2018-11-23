@@ -472,6 +472,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 		array_init(return_value);
 
 		ZEND_HASH_FOREACH_KEY_VAL(hash, hkey_idx, hkey, hentry) {
+			ZVAL_DEREF(hentry);
 			if (hkey) {
 				if (!apc_cache_store(apc_user_cache, hkey, hentry, (uint32_t) ttl, exclusive)) {
 					zend_hash_add_new(Z_ARRVAL_P(return_value), hkey, &fail_zv);

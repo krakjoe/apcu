@@ -23,6 +23,11 @@
 # define GC_SET_REFCOUNT(ref, rc) (GC_REFCOUNT(ref) = (rc))
 # define GC_ADDREF(ref) GC_REFCOUNT(ref)++
 # define GC_SET_PERSISTENT_TYPE(ref, type) (GC_TYPE_INFO(ref) = type)
+# if PHP_VERSION_ID < 70200
+#  define GC_ARRAY IS_ARRAY
+# else
+#  define GC_ARRAY (IS_ARRAY | (GC_COLLECTABLE << GC_FLAGS_SHIFT))
+# endif
 #else
 # define GC_SET_PERSISTENT_TYPE(ref, type) \
 	(GC_TYPE_INFO(ref) = type | (GC_PERSISTENT << GC_FLAGS_SHIFT))
@@ -291,7 +296,7 @@ static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTa
 	apc_persist_add_already_allocated(ctxt, orig_ht, ht);
 
 	GC_SET_REFCOUNT(ht, 1);
-	GC_SET_PERSISTENT_TYPE(ht, IS_ARRAY);
+	GC_SET_PERSISTENT_TYPE(ht, GC_ARRAY);
 
 	/* Immutable arrays from opcache may lack a dtor and the apply protection flag. */
 	ht->pDestructor = ZVAL_PTR_DTOR;
@@ -396,10 +401,12 @@ apc_cache_entry_t *apc_persist(
 
 	apc_persist_init_context(&ctxt, serializer);
 
-	/* If we're serializing an array or reference using the default serializer, we will have
+	/* The top-level value should never be a reference */
+	ZEND_ASSERT(Z_TYPE(orig_entry->val) != IS_REFERENCE);
+
+	/* If we're serializing an array using the default serializer, we will have
 	 * to keep track of potentially repeated refcounted structures. */
-	if (!serializer && (Z_TYPE(orig_entry->val) == IS_ARRAY ||
-	                    Z_TYPE(orig_entry->val) == IS_REFERENCE)) {
+	if (!serializer && Z_TYPE(orig_entry->val) == IS_ARRAY) {
 		ctxt.memoization_needed = 1;
 		zend_hash_init(&ctxt.already_counted, 0, NULL, NULL, 0);
 		zend_hash_init(&ctxt.already_allocated, 0, NULL, NULL, 0);
@@ -516,6 +523,7 @@ static zend_array *apc_unpersist_ht(
 
 	apc_unpersist_add_already_copied(ctxt, orig_ht, ht);
 	memcpy(ht, orig_ht, sizeof(HashTable));
+	GC_TYPE_INFO(ht) = GC_ARRAY;
 
 	if (ht->nNumUsed == 0) {
 		HT_SET_DATA_ADDR(ht, &uninitialized_bucket);
@@ -586,7 +594,8 @@ zend_bool apc_unpersist(zval *dst, const zval *value, apc_serializer_t *serializ
 	}
 
 	ctxt.memoization_needed = 0;
-	if (Z_TYPE_P(value) == IS_ARRAY || Z_TYPE_P(value) == IS_REFERENCE) {
+	ZEND_ASSERT(Z_TYPE_P(value) != IS_REFERENCE);
+	if (Z_TYPE_P(value) == IS_ARRAY) {
 		ctxt.memoization_needed = 1;
 		zend_hash_init(&ctxt.already_copied, 0, NULL, NULL, 0);
 	}
