@@ -7,6 +7,10 @@ php:
     - 7.3
     - nightly
 
+addons:
+    apt:
+        packages: valgrind
+
 script:
     - phpize
     - ./configure --enable-apcu-debug
@@ -23,4 +27,6 @@ script:
     - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=php -P --show-diff --set-timeout 120
     - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=default -d opcache.enable_cli=1 -P --show-diff --set-timeout 120
     - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=php -d opcache.enable_cli=1 -P --show-diff --set-timeout 120
+    # Run under valgrind with default configuration
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -m -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -P --show-diff --set-timeout 120
 
