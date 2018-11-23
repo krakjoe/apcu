@@ -721,13 +721,17 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 /* {{{ apc_cache_default_expunge */
 PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 {
-	time_t t = apc_time();
+	time_t t;
 	size_t suitable = 0L;
 	size_t available = 0L;
 
 	if (!cache) {
 		return;
 	}
+
+	/* apc_time() depends on globals, don't read it if there's no cache. This may happen if SHM
+	 * is too small and the initial cache creation during MINIT triggers an expunge. */
+	t = apc_time();
 
 	/* get the lock for header */
 	if (!APC_WLOCK(cache->header)) {
