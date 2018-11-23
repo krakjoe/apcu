@@ -11,16 +11,16 @@ script:
     - phpize
     - ./configure --enable-apcu-debug
     - make
-    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=default -p `phpenv which php` --show-diff --set-timeout 120
-    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=php -p `phpenv which php` --show-diff --set-timeout 120
-    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=default -d opcache.enable_cli=1 -p `phpenv which php` --show-diff --set-timeout 120
-    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=php -d opcache.enable_cli=1 -p `phpenv which php` --show-diff --set-timeout 120
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=default -P --show-diff --set-timeout 120
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=php -P --show-diff --set-timeout 120
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=default -d opcache.enable_cli=1 -P --show-diff --set-timeout 120
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=php -d opcache.enable_cli=1 -P --show-diff --set-timeout 120
     - phpize --clean
     - phpize
     - ./configure --enable-apcu-debug --disable-apcu-rwlocks
     - make
-    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=default -p `phpenv which php` --show-diff --set-timeout 120
-    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=php -p `phpenv which php` --show-diff --set-timeout 120
-    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=default -d opcache.enable_cli=1 -p `phpenv which php` --show-diff --set-timeout 120
-    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=php -d opcache.enable_cli=1 -p `phpenv which php` --show-diff --set-timeout 120
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=default -P --show-diff --set-timeout 120
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=php -P --show-diff --set-timeout 120
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=default -d opcache.enable_cli=1 -P --show-diff --set-timeout 120
+    - REPORT_EXIT_STATUS=1 php -n run-tests.php -n -d extension_dir=./modules/ -d extension=apcu.so -d apc.enable_cli=1 -d apc.serializer=php -d opcache.enable_cli=1 -P --show-diff --set-timeout 120
 
