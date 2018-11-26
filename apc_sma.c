@@ -532,27 +532,27 @@ PHP_APCU_API void* apc_sma_protect(apc_sma_t* sma, void *p) { return p; }
 PHP_APCU_API void* apc_sma_unprotect(apc_sma_t* sma, void *p) { return p; }
 #endif
 
-PHP_APCU_API apc_sma_info_t* apc_sma_info(apc_sma_t* sma, zend_bool limited) {
-	apc_sma_info_t* info;
-	apc_sma_link_t** link;
+PHP_APCU_API apc_sma_info_t *apc_sma_info(apc_sma_t* sma, zend_bool limited) {
+	apc_sma_info_t *info;
+	apc_sma_link_t **link;
 	uint i;
-	char* shmaddr;
-	block_t* prv;
+	char *shmaddr;
+	block_t *prv;
 
 	if (!sma->initialized) {
 		return NULL;
 	}
 
-	info = (apc_sma_info_t*) pemalloc(sizeof(apc_sma_info_t), 1);
+	info = emalloc(sizeof(apc_sma_info_t));
 	info->num_seg = sma->num;
 	info->seg_size = sma->size - (ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t)) + ALIGNWORD(sizeof(block_t)));
 
-	info->list = pemalloc(info->num_seg * sizeof(apc_sma_link_t*), 1);
+	info->list = emalloc(info->num_seg * sizeof(apc_sma_link_t *));
 	for (i = 0; i < sma->num; i++) {
 		info->list[i] = NULL;
 	}
 
-	if(limited) {
+	if (limited) {
 		return info;
 	}
 
@@ -566,11 +566,11 @@ PHP_APCU_API apc_sma_info_t* apc_sma_info(apc_sma_t* sma, zend_bool limited) {
 
 		/* For each block in this segment */
 		while (BLOCKAT(prv->fnext)->fnext != 0) {
-			block_t* cur = BLOCKAT(prv->fnext);
+			block_t *cur = BLOCKAT(prv->fnext);
 
 			CHECK_CANARY(cur);
 
-			*link = pemalloc(sizeof(apc_sma_link_t), 1);
+			*link = emalloc(sizeof(apc_sma_link_t));
 			(*link)->size = cur->size;
 			(*link)->offset = prv->fnext;
 			(*link)->next = NULL;
@@ -584,19 +584,19 @@ PHP_APCU_API apc_sma_info_t* apc_sma_info(apc_sma_t* sma, zend_bool limited) {
 	return info;
 }
 
-PHP_APCU_API void apc_sma_free_info(apc_sma_t* sma, apc_sma_info_t* info) {
+PHP_APCU_API void apc_sma_free_info(apc_sma_t *sma, apc_sma_info_t *info) {
 	int i;
 
 	for (i = 0; i < info->num_seg; i++) {
-		apc_sma_link_t* p = info->list[i];
+		apc_sma_link_t *p = info->list[i];
 		while (p) {
-			apc_sma_link_t* q = p;
+			apc_sma_link_t *q = p;
 			p = p->next;
-			free(q);
+			efree(q);
 		}
 	}
-	free(info->list);
-	free(info);
+	efree(info->list);
+	efree(info);
 }
 
 PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma) {

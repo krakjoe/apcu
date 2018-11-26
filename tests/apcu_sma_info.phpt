@@ -3,6 +3,7 @@ Basic apcu_sma_info() test
 --INI--
 apc.enabled=1
 apc.enable_cli=1
+apc.shm_segments=1
 --FILE--
 <?php
 
@@ -14,7 +15,7 @@ var_dump(apcu_sma_info());
 --EXPECTF--
 array(3) {
   ["num_seg"]=>
-  int(%d)
+  int(1)
   ["seg_size"]=>
   float(%s)
   ["avail_mem"]=>
@@ -22,7 +23,7 @@ array(3) {
 }
 array(4) {
   ["num_seg"]=>
-  int(%d)
+  int(1)
   ["seg_size"]=>
   float(%s)
   ["avail_mem"]=>
