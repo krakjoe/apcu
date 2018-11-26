@@ -397,16 +397,6 @@ restart:
 
 	off = sma_allocate(SMA_HDR(sma, last), n, fragment, allocated);
 
-	if (off == -1) {
-		/* retry failed allocation after we expunge */
-		SMA_UNLOCK(sma, last);
-		sma->expunge(*(sma->data), n+fragment);
-		if (!SMA_LOCK(sma, last)) {
-			return NULL;
-		}
-		off = sma_allocate(SMA_HDR(sma, last), n, fragment, allocated);
-	}
-
 	if (off != -1) {
 		void* p = (void *)(SMA_ADDR(sma, last) + off);
 		SMA_UNLOCK(sma, last);
@@ -428,15 +418,6 @@ restart:
 		}
 
 		off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
-		if (off == -1) {
-			/* retry failed allocation after we expunge */
-			SMA_UNLOCK(sma, i);
-			sma->expunge(*(sma->data), n+fragment);
-			if (!SMA_LOCK(sma, i)) {
-				return NULL;
-			}
-			off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
-		}
 		if (off != -1) {
 			void* p = (void *)(SMA_ADDR(sma, i) + off);
 			sma->last = i;
@@ -449,14 +430,12 @@ restart:
 		SMA_UNLOCK(sma, i);
 	}
 
-	/* I've tried being nice, but now you're just asking for it */
-	if(!nuked) {
-		sma->expunge(*(sma->data), (n+fragment));
+	/* Expunge cache in hope of freeing up memory, but only once */
+	if (!nuked) {
+		sma->expunge(*sma->data, n+fragment);
 		nuked = 1;
 		goto restart;
 	}
-
-	/* now, I've truly and well given up */
 
 	return NULL;
 }
