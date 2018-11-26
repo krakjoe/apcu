@@ -58,11 +58,11 @@ struct apc_sma_info_t {
 };
 /* }}} */
 
-typedef void (*apc_sma_expunge_f)(void* pointer, zend_ulong size); /* }}} */
+typedef void (*apc_sma_expunge_f)(void *pointer, size_t size); /* }}} */
 
 /* {{{ struct definition: apc_sma_t */
 typedef struct _apc_sma_t {
-	zend_bool  initialized;        /* flag to indicate this sma has been initialized */
+	zend_bool initialized;         /* flag to indicate this sma has been initialized */
 
 	/* callback */
 	apc_sma_expunge_f expunge;     /* expunge */
@@ -70,11 +70,11 @@ typedef struct _apc_sma_t {
 
 	/* info */
 	int32_t  num;                  /* number of segments */
-	zend_ulong size;               /* segment size */
+	size_t size;                   /* segment size */
 	int32_t  last;                 /* last segment */
 
 	/* segments */
-	apc_segment_t* segs;           /* segments */
+	apc_segment_t *segs;           /* segments */
 } apc_sma_t; /* }}} */
 
 /*
@@ -94,14 +94,14 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma);
 /*
 * apc_smap_api_malloc will allocate a block from the sma of the given size
 */
-PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, zend_ulong size);
+PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t size);
 
 /*
  * apc_sma_api_malloc_ex will allocate a block from the sma of the given size and
  * provide the size of the actual allocation.
  */
 PHP_APCU_API void *apc_sma_malloc_ex(
-		apc_sma_t *sma, zend_ulong size, zend_ulong *allocated);
+		apc_sma_t *sma, size_t size, size_t *allocated);
 
 /*
 * apc_sma_api_free will free p (which should be a pointer to a block allocated from sma)
@@ -131,7 +131,7 @@ PHP_APCU_API void apc_sma_free_info(apc_sma_t* sma, apc_sma_info_t* info);
 /*
 * apc_sma_api_get_avail_mem will return the amount of memory available left to sma
 */
-PHP_APCU_API zend_ulong apc_sma_get_avail_mem(apc_sma_t* sma);
+PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma);
 
 /*
 * apc_sma_api_get_avail_size will return true if at least size bytes are available to the sma

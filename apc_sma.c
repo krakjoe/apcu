@@ -113,14 +113,14 @@ struct block_t {
 /* }}} */
 
 /* {{{ sma_allocate: tries to allocate at least size bytes in a segment */
-static APC_HOTSPOT size_t sma_allocate(sma_header_t* header, zend_ulong size, zend_ulong fragment, zend_ulong *allocated)
+static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t fragment, size_t *allocated)
 {
 	void* shmaddr;          /* header of shared memory segment */
 	block_t* prv;           /* block prior to working block */
 	block_t* cur;           /* working block in list */
 	block_t* prvnextfit;    /* block before next fit */
 	size_t realsize;        /* actual size of block needed, including header */
-	const size_t block_size = ALIGNWORD(sizeof(struct block_t));
+	size_t block_size = ALIGNWORD(sizeof(struct block_t));
 
 	realsize = ALIGNWORD(size + block_size);
 
@@ -271,7 +271,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 /* }}} */
 
 /* {{{ APC SMA API */
-PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, int32_t num, zend_ulong size, char *mask) {
+PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, int32_t num, size_t size, char *mask) {
 	uint i;
 
 	if (sma->initialized) {
@@ -381,8 +381,8 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
 	free(sma->segs);
 }
 
-PHP_APCU_API void *apc_sma_malloc_ex(apc_sma_t *sma, zend_ulong n, zend_ulong *allocated) {
-	zend_ulong fragment = MINBLOCKSIZE;
+PHP_APCU_API void *apc_sma_malloc_ex(apc_sma_t *sma, size_t n, size_t *allocated) {
+	size_t fragment = MINBLOCKSIZE;
 	size_t off;
 	uint i;
 	zend_bool nuked = 0;
@@ -461,9 +461,9 @@ restart:
 	return NULL;
 }
 
-PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, zend_ulong n)
+PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t n)
 {
-	zend_ulong allocated;
+	size_t allocated;
 	return apc_sma_malloc_ex(sma, n, &allocated);
 }
 
@@ -620,7 +620,7 @@ PHP_APCU_API void apc_sma_free_info(apc_sma_t* sma, apc_sma_info_t* info) {
 	free(info);
 }
 
-PHP_APCU_API zend_ulong apc_sma_get_avail_mem(apc_sma_t* sma) {
+PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma) {
 	size_t avail_mem = 0;
 	uint i;
 
