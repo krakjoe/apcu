@@ -108,9 +108,48 @@ struct block_t {
 	#define RESET_CANARY(v)
 #endif
 
-/* {{{ MINBLOCKSIZE */
 #define MINBLOCKSIZE (ALIGNWORD(1) + ALIGNWORD(sizeof(block_t)))
-/* }}} */
+
+/* How many extra blocks to check for a better fit */
+#define BEST_FIT_LIMIT 3
+
+static inline block_t *find_block(sma_header_t *header, size_t realsize) {
+	void *shmaddr = header;
+	block_t *cur, *prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+	block_t *found = NULL;
+	uint32_t i;
+	CHECK_CANARY(prv);
+
+	while (prv->fnext) {
+		cur = BLOCKAT(prv->fnext);
+		CHECK_CANARY(cur);
+
+		/* Found a suitable block */
+		if (cur->size >= realsize) {
+			found = cur;
+			break;
+		}
+
+		prv = cur;
+	}
+
+	if (found) {
+		/* Try to find a smaller block that also fits */
+		prv = cur;
+		for (i = 0; i < BEST_FIT_LIMIT && prv->fnext; i++) {
+			cur = BLOCKAT(prv->fnext);
+			CHECK_CANARY(cur);
+
+			if (cur->size >= realsize && cur->size < found->size) {
+				found = cur;
+			}
+
+			prv = cur;
+		}
+	}
+
+	return found;
+}
 
 /* {{{ sma_allocate: tries to allocate at least size bytes in a segment */
 static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t fragment, size_t *allocated)
@@ -118,7 +157,6 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 	void* shmaddr;          /* header of shared memory segment */
 	block_t* prv;           /* block prior to working block */
 	block_t* cur;           /* working block in list */
-	block_t* prvnextfit;    /* block before next fit */
 	size_t realsize;        /* actual size of block needed, including header */
 	size_t block_size = ALIGNWORD(sizeof(struct block_t));
 
@@ -134,37 +172,16 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 		return -1;
 	}
 
-	prvnextfit = 0;     /* initially null (no fit) */
-	prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
-
-	CHECK_CANARY(prv);
-
-	while (prv->fnext != 0) {
-		cur = BLOCKAT(prv->fnext);
-
-		CHECK_CANARY(cur);
-
-		/* If it can fit realsize bytes in cur block, stop searching */
-		if (cur->size >= realsize) {
-			prvnextfit = prv;
-			break;
-		}
-		prv = cur;
-	}
-
-	if (prvnextfit == 0) {
+	cur = find_block(header, realsize);
+	if (!cur) {
+		/* No suitable block found */
 		return -1;
 	}
-
-	prv = prvnextfit;
-	cur = BLOCKAT(prv->fnext);
-
-	CHECK_CANARY(prv);
-	CHECK_CANARY(cur);
 
 	if (cur->size == realsize || (cur->size > realsize && cur->size < (realsize + (MINBLOCKSIZE + fragment)))) {
 		/* cur is big enough for realsize, but too small to split - unlink it */
 		*(allocated) = cur->size - block_size;
+		prv = BLOCKAT(cur->fprev);
 		prv->fnext = cur->fnext;
 		BLOCKAT(cur->fnext)->fprev = OFFSET(prv);
 		NEXT_SBLOCK(cur)->prev_size = 0;  /* block is alloc'd */
