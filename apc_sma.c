@@ -381,7 +381,8 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
 	free(sma->segs);
 }
 
-PHP_APCU_API void* apc_sma_malloc_ex(apc_sma_t* sma, zend_ulong n, zend_ulong fragment, zend_ulong* allocated) {
+PHP_APCU_API void *apc_sma_malloc_ex(apc_sma_t *sma, zend_ulong n, zend_ulong *allocated) {
+	zend_ulong fragment = MINBLOCKSIZE;
 	size_t off;
 	uint i;
 	zend_bool nuked = 0;
@@ -463,7 +464,7 @@ restart:
 PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, zend_ulong n)
 {
 	zend_ulong allocated;
-	return apc_sma_malloc_ex(sma, n, MINBLOCKSIZE, &allocated);
+	return apc_sma_malloc_ex(sma, n, &allocated);
 }
 
 PHP_APCU_API void apc_sma_free(apc_sma_t* sma, void* p) {

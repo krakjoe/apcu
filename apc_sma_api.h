@@ -97,10 +97,11 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma);
 PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, zend_ulong size);
 
 /*
-* apc_sma_api_malloc_ex will allocate a block from the sma of the given size
-*/
-PHP_APCU_API void* apc_sma_malloc_ex(
-		apc_sma_t* sma, zend_ulong size, zend_ulong fragment, zend_ulong* allocated);
+ * apc_sma_api_malloc_ex will allocate a block from the sma of the given size and
+ * provide the size of the actual allocation.
+ */
+PHP_APCU_API void *apc_sma_malloc_ex(
+		apc_sma_t *sma, zend_ulong size, zend_ulong *allocated);
 
 /*
 * apc_sma_api_free will free p (which should be a pointer to a block allocated from sma)
