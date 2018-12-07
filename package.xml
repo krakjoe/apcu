@@ -30,7 +30,7 @@
  </lead>
  <date>2018-12-07</date>
  <version>
-  <release>5.1.15</release>
+  <release>5.1.16dev</release>
   <api>5.1.15</api>
  </version>
  <stability>
@@ -39,9 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Restore apc.serializer=php as the default, as the "default" serializer still/again has issues.
-- Fix possible issues in persistence of arrays with the "default" serializer.
-- Attempt to reduce shared memory fragementation.
+-
  </notes>
  <contents>
   <dir name="/">
@@ -173,6 +171,23 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2018-12-07</date>
+   <version>
+    <release>5.1.15</release>
+    <api>5.1.15</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Restore apc.serializer=php as the default, as the "default" serializer still/again has issues.
+- Fix possible issues in persistence of arrays with the "default" serializer.
+- Attempt to reduce shared memory fragementation.
+   </notes>
+  </release>
   <release>
    <date>2018-11-21</date>
    <version>
