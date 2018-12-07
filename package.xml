@@ -82,6 +82,8 @@
     <file name="apc_entry_002.phpt" role="test" />
     <file name="apc_entry_003.phpt" role="test" />
     <file name="apc_inc_perf.phpt" role="test" />
+    <file name="apc_store_reference.phpt" role="test" />
+    <file name="apcu_sma_info.phpt" role="test" />
     <file name="bug63224.phpt" role="test" />
     <file name="bug76145.phpt" role="test" />
     <file name="get_included_files_inc1.inc" role="test" />
@@ -107,6 +109,7 @@
     <file name="not_enough_shm.phpt" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />
+    <file name="sma001.phpt" role="test" />
     <file name="data/abc.data" role="test" />
     <file name="bad/abc.data" role="test" />
    </dir>
