@@ -185,7 +185,7 @@
    <notes>
 - Restore apc.serializer=php as the default, as the "default" serializer still/again has issues.
 - Fix possible issues in persistence of arrays with the "default" serializer.
-- Attempt to reduce shared memory fragementation.
+- Attempt to reduce shared memory fragmentation.
    </notes>
   </release>
   <release>
