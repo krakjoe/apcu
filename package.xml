@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2018-11-21</date>
+ <date>2018-12-07</date>
  <version>
-  <release>5.1.15dev</release>
+  <release>5.1.15</release>
   <api>5.1.15</api>
  </version>
  <stability>
