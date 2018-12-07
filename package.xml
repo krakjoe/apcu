@@ -31,7 +31,7 @@
  <date>2018-11-21</date>
  <version>
   <release>5.1.15dev</release>
-  <api>5.1.14</api>
+  <api>5.1.15</api>
  </version>
  <stability>
   <release>stable</release>
@@ -39,7 +39,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+- Restore apc.serializer=php as the default, as the "default" serializer still/again has issues.
+- Fix possible issues in persistence of arrays with the "default" serializer.
+- Attempt to reduce shared memory fragementation.
  </notes>
  <contents>
   <dir name="/">
