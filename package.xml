@@ -30,7 +30,7 @@
  </lead>
  <date>2018-12-16</date>
  <version>
-  <release>5.1.16</release>
+  <release>5.1.17dev</release>
   <api>5.1.15</api>
  </version>
  <stability>
@@ -39,7 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Fix build on OSX.
+-
  </notes>
  <contents>
   <dir name="/">
@@ -171,6 +171,21 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2018-12-16</date>
+   <version>
+    <release>5.1.16</release>
+    <api>5.1.15</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Fix build on OSX.
+   </notes>
+  </release>
   <release>
    <date>2018-12-07</date>
    <version>
