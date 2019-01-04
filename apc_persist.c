@@ -306,7 +306,11 @@ static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTa
 
 	ht->u.flags |= HASH_FLAG_STATIC_KEYS;
 	if (ht->nNumUsed == 0) {
+#if PHP_VERSION_ID >= 70400
+		ht->u.flags = HASH_FLAG_UNINITIALIZED;
+#else
 		ht->u.flags &= ~(HASH_FLAG_INITIALIZED|HASH_FLAG_PACKED);
+#endif
 		ht->nNextFreeElement = 0;
 		ht->nTableMask = HT_MIN_MASK;
 		HT_SET_DATA_ADDR(ht, &uninitialized_bucket);
