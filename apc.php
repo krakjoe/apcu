@@ -1045,7 +1045,12 @@ EOB;
 				echo '</tr>';
 				if ($sh == $MYREQUEST["SH"]) {
 					echo '<tr>';
-					echo '<td colspan="7"><pre>'.htmlentities(print_r(apcu_fetch($entry['info']), 1)).'</pre></td>';
+					$raw_entry = apcu_fetch($entry['info']);
+                                        if(extension_loaded('igbinary')) {
+                                                $entry = @igbinary_unserialize($raw_entry);
+                                        }
+                                        $entry = $entry?:unserialize($raw_entry);
+					echo '<td colspan="7"><pre>'.htmlentities(print_r($entry, 1)).'</pre></td>';
 					echo '</tr>';
 				}
 				$i++;
