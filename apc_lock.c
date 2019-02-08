@@ -156,6 +156,7 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 
 PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
 	pthread_mutex_lock(lock);
+	return 1;
 }
 
 static inline zend_bool apc_lock_wlock_impl(apc_lock_t *lock) {
