@@ -281,6 +281,9 @@ static zend_reference *apc_persist_copy_ref(
 
 	GC_SET_REFCOUNT(ref, 1);
 	GC_SET_PERSISTENT_TYPE(ref, IS_REFERENCE);
+#if PHP_VERSION_ID >= 70400
+	ref->sources.ptr = NULL;
+#endif
 
 	ZVAL_COPY_VALUE(&ref->val, &orig_ref->val);
 	apc_persist_copy_zval(ctxt, &ref->val);
@@ -515,6 +518,9 @@ static zend_reference *apc_unpersist_ref(
 
 	GC_SET_REFCOUNT(ref, 1);
 	GC_TYPE_INFO(ref) = IS_REFERENCE;
+#if PHP_VERSION_ID >= 70400
+	ref->sources.ptr = NULL;
+#endif
 
 	ZVAL_COPY_VALUE(&ref->val, &orig_ref->val);
 	apc_unpersist_zval(ctxt, &ref->val);
