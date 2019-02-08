@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2018-12-16</date>
+ <date>2019-02-08</date>
  <version>
-  <release>5.1.17dev</release>
+  <release>5.1.17</release>
   <api>5.1.15</api>
  </version>
  <stability>
@@ -108,6 +108,7 @@
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />
     <file name="sma001.phpt" role="test" />
+    <file name="typed_prop.phpt" role="test" />
     <file name="data/abc.data" role="test" />
     <file name="bad/abc.data" role="test" />
    </dir>
@@ -150,6 +151,7 @@
    <file name="LICENSE" role="doc" />
    <file name="Makefile.frag" role="src" />
    <file name="NOTICE" role="doc" />
+   <file name="php74_shim.h" role="src" />
    <file name="php_apc.c" role="src" />
    <file name="php_apc.h" role="src" />
    <file name="README.md" role="doc" />
