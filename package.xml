@@ -39,7 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+- Fixed compatibility with PHP 7.4 and PHP 8.0.
  </notes>
  <contents>
   <dir name="/">
