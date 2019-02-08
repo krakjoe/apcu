@@ -44,6 +44,7 @@
 #include "ext/standard/md5.h"
 #include "ext/standard/php_var.h"
 #include "apc_arginfo.h"
+#include "php74_shim.h"
 
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
@@ -548,22 +549,16 @@ PHP_FUNCTION(apcu_inc) {
 		return;
 	}
 
-	if (success) {
-		ZVAL_DEREF(success);
-		zval_ptr_dtor(success);
-	}
-
 	ZVAL_LONG(&args.step, step);
-
 	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
 		if (success) {
-			ZVAL_TRUE(success);
+			ZEND_TRY_ASSIGN_TRUE(success);
 		}
 		RETURN_ZVAL(&args.rval, 0, 0);
 	}
 
 	if (success) {
-		ZVAL_FALSE(success);
+		ZEND_TRY_ASSIGN_FALSE(success);
 	}
 
 	RETURN_FALSE;
@@ -582,23 +577,18 @@ PHP_FUNCTION(apcu_dec) {
 		return;
 	}
 
-	if (success) {
-		ZVAL_DEREF(success);
-		zval_ptr_dtor(success);
-	}
-
 	ZVAL_LONG(&args.step, 0 - step);
 
 	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
 		if (success) {
-			ZVAL_TRUE(success);
+			ZEND_TRY_ASSIGN_TRUE(success);
 		}
 
 		RETURN_ZVAL(&args.rval, 0, 0);
 	}
 
 	if (success) {
-		ZVAL_FALSE(success);
+		ZEND_TRY_ASSIGN_FALSE(success);
 	}
 
 	RETURN_FALSE;
@@ -639,6 +629,7 @@ PHP_FUNCTION(apcu_fetch) {
 	zval *key;
 	zval *success = NULL;
 	time_t t;
+	int result;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z|z", &key, &success) == FAILURE) {
 		return;
@@ -646,22 +637,12 @@ PHP_FUNCTION(apcu_fetch) {
 
 	t = apc_time();
 
-	if (success) {
-		ZVAL_DEREF(success);
-		zval_ptr_dtor(success);
-		ZVAL_FALSE(success);
-	}
-
 	if (Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
 		convert_to_string(key);
 	}
 
 	if (Z_TYPE_P(key) == IS_STRING) {
-		if (apc_cache_fetch(apc_user_cache, Z_STR_P(key), t, return_value)) {
-			if (success) {
-				ZVAL_TRUE(success);
-			}
-		} else { RETVAL_FALSE; }
+		result = apc_cache_fetch(apc_user_cache, Z_STR_P(key), t, return_value);
 	} else if (Z_TYPE_P(key) == IS_ARRAY) {
 		zval *hentry;
 
@@ -679,12 +660,16 @@ PHP_FUNCTION(apcu_fetch) {
 				apc_warning("apc_fetch() expects a string or array of strings.");
 			}
 		} ZEND_HASH_FOREACH_END();
-
-		if (success) {
-			ZVAL_TRUE(success);
-		}
+		result = 1;
 	} else {
 		apc_warning("apc_fetch() expects a string or array of strings.");
+		result = 0;
+	}
+
+	if (success) {
+		ZEND_TRY_ASSIGN_BOOL(success, result);
+	}
+	if (!result) {
 		RETURN_FALSE;
 	}
 }
