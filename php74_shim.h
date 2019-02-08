@@ -91,13 +91,13 @@
  * or NULL if the initialization failed. */
 static zend_always_inline zval *zend_try_array_init(zval *zv) {
 	ZVAL_DEREF(zv);
-	ZVAL_ARR(zv, zend_new_array(0));
+	array_init(zv);
 	return zv;
 }
 
-static zend_always_inline zval *zend_try_array_init_size(zval *zv, size_t size) {
+static zend_always_inline zval *zend_try_array_init_size(zval *zv, uint32_t size) {
 	ZVAL_DEREF(zv);
-	ZVAL_ARR(zv, zend_new_array(size));
+	array_init_size(zv, size);
 	return zv;
 }
 
