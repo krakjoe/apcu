@@ -98,13 +98,6 @@ static apc_iterator_item_t* apc_iterator_item_ctor(
 }
 /* }}} */
 
-/* {{{ apc_iterator_clone */
-static zend_object* apc_iterator_clone(zval *zobject) {
-	apc_error(APC_ITERATOR_NAME " object cannot be cloned");
-	return NULL;
-}
-/* }}} */
-
 /* {{{ apc_iterator_item_dtor */
 static void apc_iterator_item_dtor(apc_iterator_item_t *item) {
 	zend_string_release(item->key);
@@ -607,7 +600,7 @@ int apc_iterator_init(int module_number) {
 
 	memcpy(&apc_iterator_object_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 
-	apc_iterator_object_handlers.clone_obj = apc_iterator_clone;
+	apc_iterator_object_handlers.clone_obj = NULL;
 	apc_iterator_object_handlers.free_obj = apc_iterator_free;
 	apc_iterator_object_handlers.offset = XtOffsetOf(apc_iterator_t, obj);
 
