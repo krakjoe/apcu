@@ -281,8 +281,8 @@ PHP_APCU_API void apc_lock_cleanup() {
 
 PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 	char lock_path[] = "/tmp/.apc.XXXXXX";
-	mktemp(lock_path);
-	*lock = open(lock_path, O_RDWR|O_CREAT, 0666);
+
+	*lock = mkstemp(lock_path);
 	if (*lock > 0) {
 		unlink(lock_path);
 		return 1;

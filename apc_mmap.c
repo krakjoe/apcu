@@ -80,30 +80,6 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 #ifdef APC_MEMPROTECT
 		remap = 0; /* cannot remap */
 #endif
-	} else if(strstr(file_mask,".shm")) {
-		/*
-		 * If the filemask contains .shm we try to do a POSIX-compliant shared memory
-		 * backed mmap which should avoid synchs on some platforms.  At least on
-		 * FreeBSD this implies MAP_NOSYNC and on Linux it is equivalent of mmap'ing
-		 * a file in a mounted shmfs.  For this to work on Linux you need to make sure
-		 * you actually have shmfs mounted.  Also on Linux, make sure the file_mask you
-		 * pass in has a leading / and no other /'s.  eg.  /apc.shm.XXXXXX
-		 * On FreeBSD these are mapped onto the regular filesystem so you can put whatever
-		 * path you want here.
-		 */
-		if(!mktemp(file_mask)) {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: mktemp on %s failed", file_mask);
-		}
-		fd = shm_open(file_mask, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR);
-		if(fd == -1) {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: shm_open on %s failed", file_mask);
-		}
-		if (ftruncate(fd, size) < 0) {
-			close(fd);
-			shm_unlink(file_mask);
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: ftruncate failed");
-		}
-		shm_unlink(file_mask);
 	} else {
 		/*
 		 * Otherwise we do a normal filesystem mmap
