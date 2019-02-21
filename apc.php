@@ -642,6 +642,7 @@ div.info table th {
 	padding:0.1em 1em 0.1em 1em;
 	}
 div.info table th a.sortable { color:black; }
+div.info table tr:first-child {position: sticky; top: 0; }
 div.info table tr.tr-0 { background:rgb(238,238,238); }
 div.info table tr.tr-1 { background:rgb(221,221,221); }
 div.info table td { padding:0.3em 1em 0.3em 1em; }
