@@ -112,11 +112,11 @@ if (empty($_REQUEST)) {
 // check parameter syntax
 foreach($vardom as $var => $dom) {
 	if (!isset($_REQUEST[$var])) {
-		$MYREQUEST[$var]=NULL;
+		$MYREQUEST[$var]=null;
 	} else if (!is_array($_REQUEST[$var]) && preg_match($dom.'D',$_REQUEST[$var])) {
 		$MYREQUEST[$var]=$_REQUEST[$var];
 	} else {
-		$MYREQUEST[$var]=$_REQUEST[$var]=NULL;
+		$MYREQUEST[$var]=$_REQUEST[$var]=null;
 	}
 }
 
@@ -1084,8 +1084,8 @@ case OB_VERSION_CHECK:
 		</tr>
 EOB;
 	if (defined('PROXY')) {
-		$ctxt = stream_context_create( array( 'http' => array( 'proxy' => PROXY, 'request_fulluri' => True ) ) );
-		$rss = @file_get_contents("http://pecl.php.net/feeds/pkg_apcu.rss", False, $ctxt);
+		$ctxt = stream_context_create( array( 'http' => array( 'proxy' => PROXY, 'request_fulluri' => true ) ) );
+		$rss = @file_get_contents("http://pecl.php.net/feeds/pkg_apcu.rss", false, $ctxt);
 	} else {
 		$rss = @file_get_contents("http://pecl.php.net/feeds/pkg_apcu.rss");
 	}
