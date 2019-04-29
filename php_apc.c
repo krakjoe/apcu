@@ -552,13 +552,13 @@ PHP_FUNCTION(apcu_inc) {
 	ZVAL_LONG(&args.step, step);
 	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
 		if (success) {
-			ZEND_TRY_ASSIGN_TRUE(success);
+			ZEND_TRY_ASSIGN_REF_TRUE(success);
 		}
 		RETURN_ZVAL(&args.rval, 0, 0);
 	}
 
 	if (success) {
-		ZEND_TRY_ASSIGN_FALSE(success);
+		ZEND_TRY_ASSIGN_REF_FALSE(success);
 	}
 
 	RETURN_FALSE;
@@ -581,14 +581,14 @@ PHP_FUNCTION(apcu_dec) {
 
 	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
 		if (success) {
-			ZEND_TRY_ASSIGN_TRUE(success);
+			ZEND_TRY_ASSIGN_REF_TRUE(success);
 		}
 
 		RETURN_ZVAL(&args.rval, 0, 0);
 	}
 
 	if (success) {
-		ZEND_TRY_ASSIGN_FALSE(success);
+		ZEND_TRY_ASSIGN_REF_FALSE(success);
 	}
 
 	RETURN_FALSE;
@@ -667,7 +667,7 @@ PHP_FUNCTION(apcu_fetch) {
 	}
 
 	if (success) {
-		ZEND_TRY_ASSIGN_BOOL(success, result);
+		ZEND_TRY_ASSIGN_REF_BOOL(success, result);
 	}
 	if (!result) {
 		RETURN_FALSE;
