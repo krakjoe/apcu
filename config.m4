@@ -88,6 +88,7 @@ if test "$PHP_APCU" != "no"; then
   if test "$PHP_APCU_RWLOCKS" != "no"; then
 	    orig_LIBS="$LIBS"
 	    LIBS="$LIBS -lpthread"
+        AC_MSG_CHECKING([for pthread rwlocks])
 	    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 			    #include <sys/types.h>
 			    #include <pthread.h>
@@ -123,9 +124,9 @@ if test "$PHP_APCU" != "no"; then
 			    PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
 			    AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
-			    AC_MSG_WARN([APCu has access to native rwlocks])
+			    AC_MSG_RESULT([yes])
 		    ],[ dnl -Failure-
-			    AC_MSG_WARN([It doesn't appear that pthread rwlocks are supported on your system])
+			    AC_MSG_RESULT([no])
     			PHP_APCU_RWLOCKS=no
 		    ],[
 			    APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
@@ -138,6 +139,7 @@ if test "$PHP_APCU" != "no"; then
   if test "$PHP_APCU" != "no"; then
     orig_LIBS="$LIBS"
 	  LIBS="$LIBS -lpthread"
+      AC_MSG_CHECKING([for pthread mutexes])
 	  AC_RUN_IFELSE([AC_LANG_SOURCE([[
 				  #include <sys/types.h>
 				  #include <pthread.h>
@@ -171,10 +173,10 @@ if test "$PHP_APCU" != "no"; then
 				  APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
 				  PHP_ADD_LIBRARY(pthread)
 				  PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
-				  AC_MSG_WARN([APCu has access to mutexes])
+				  AC_MSG_RESULT([yes])
 				  AC_DEFINE(APC_HAS_PTHREAD_MUTEX, 1, [ ])
 			  ],[ dnl -Failure-
-				  AC_MSG_WARN([It doesn't appear that pthread mutexes are supported on your system])
+				  AC_MSG_RESULT([no])
     			PHP_APCU_MUTEX=no
 			  ],[
 				  APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
