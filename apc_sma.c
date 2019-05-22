@@ -289,7 +289,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 
 /* {{{ APC SMA API */
 PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, int32_t num, size_t size, char *mask) {
-	uint i;
+	int32_t i;
 
 	if (sma->initialized) {
 		return;
@@ -382,7 +382,7 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
 	/* Important: This function should not clean up anything that's in shared memory,
 	 * only detach our process-local use of it. In particular locks cannot be destroyed
 	 * here. */
-	uint i;
+	int32_t i;
 
 	assert(sma->initialized);
 	sma->initialized = 0;
@@ -401,7 +401,7 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
 PHP_APCU_API void *apc_sma_malloc_ex(apc_sma_t *sma, size_t n, size_t *allocated) {
 	size_t fragment = MINBLOCKSIZE;
 	size_t off;
-	uint i;
+	int32_t i;
 	zend_bool nuked = 0;
 	int32_t last = sma->last;
 
@@ -464,7 +464,7 @@ PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t n)
 }
 
 PHP_APCU_API void apc_sma_free(apc_sma_t* sma, void* p) {
-	uint i;
+	int32_t i;
 	size_t offset;
 
 	if (p == NULL) {
@@ -552,7 +552,7 @@ PHP_APCU_API void* apc_sma_unprotect(apc_sma_t* sma, void *p) { return p; }
 PHP_APCU_API apc_sma_info_t *apc_sma_info(apc_sma_t* sma, zend_bool limited) {
 	apc_sma_info_t *info;
 	apc_sma_link_t **link;
-	uint i;
+	int32_t i;
 	char *shmaddr;
 	block_t *prv;
 
@@ -618,7 +618,7 @@ PHP_APCU_API void apc_sma_free_info(apc_sma_t *sma, apc_sma_info_t *info) {
 
 PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma) {
 	size_t avail_mem = 0;
-	uint i;
+	int32_t i;
 
 	for (i = 0; i < sma->num; i++) {
 		sma_header_t* header = SMA_HDR(sma, i);
@@ -628,7 +628,7 @@ PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma) {
 }
 
 PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
-	uint i;
+	int32_t i;
 
 	for (i = 0; i < sma->num; i++) {
 		sma_header_t* header = SMA_HDR(sma, i);

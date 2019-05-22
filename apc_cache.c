@@ -577,7 +577,7 @@ static int apc_load_data(apc_cache_t* cache, const char *data_file)
 {
 	char *p;
 	char key[MAXPATHLEN] = {0,};
-	unsigned int key_len;
+	size_t key_len;
 	zval data;
 
 	p = strrchr(data_file, DEFAULT_SLASH);
@@ -1095,7 +1095,7 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 					j++;
 				}
 				if (j != 0) {
-					add_index_long(&slots, (ulong)i, j);
+					add_index_long(&slots, (zend_ulong)i, j);
 				}
 			}
 
