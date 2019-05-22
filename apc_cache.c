@@ -1095,7 +1095,7 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 					j++;
 				}
 				if (j != 0) {
-					add_index_long(&slots, (unsigned long)i, j);
+					add_index_long(&slots, (zend_ulong)i, j);
 				}
 			}
 
