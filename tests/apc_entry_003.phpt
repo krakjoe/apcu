@@ -8,8 +8,9 @@ apc.enable_cli=1
 --FILE--
 <?php
 $value = apcu_entry("test", function($key) {
-    (string) new stdClass;
+    // Fatal error
+    class X implements Y {}
 });
 ?>
 --EXPECTF--
-%s fatal error: Object of class stdClass could not be converted to string in %s on line %d
+Fatal error: Interface 'Y' not found in %s on line %d
