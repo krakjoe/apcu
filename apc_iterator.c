@@ -121,14 +121,12 @@ static void apc_iterator_free(zend_object *object) {
 
 	apc_stack_destroy(iterator->stack);
 
-#ifdef ITERATOR_PCRE
 	if (iterator->regex) {
 		zend_string_release(iterator->regex);
-# if PHP_VERSION_ID >= 70300
+#if PHP_VERSION_ID >= 70300
 		pcre2_match_data_free(iterator->re_match_data);
-# endif
-	}
 #endif
+	}
 
 	if (iterator->search_hash) {
 		zend_hash_destroy(iterator->search_hash);
@@ -164,21 +162,19 @@ zend_object* apc_iterator_create(zend_class_entry *ce) {
 static int apc_iterator_search_match(apc_iterator_t *iterator, apc_cache_entry_t *entry) {
 	int rval = 1;
 
-#ifdef ITERATOR_PCRE
 	if (iterator->regex) {
-# if PHP_VERSION_ID >= 70300
+#if PHP_VERSION_ID >= 70300
 		rval = pcre2_match(
 			php_pcre_pce_re(iterator->pce),
 			(PCRE2_SPTR) ZSTR_VAL(entry->key), ZSTR_LEN(entry->key),
 			0, 0, iterator->re_match_data, php_pcre_mctx()) >= 0;
-# else
+#else
 		rval = pcre_exec(
 			iterator->pce->re, iterator->pce->extra,
 			ZSTR_VAL(entry->key), ZSTR_LEN(entry->key),
 			0, 0, NULL, 0) >= 0;
-# endif
-	}
 #endif
+	}
 
 	if (iterator->search_hash) {
 		rval = zend_hash_exists(iterator->search_hash, entry->key);
@@ -336,7 +332,6 @@ void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long for
 	iterator->regex = NULL;
 	iterator->search_hash = NULL;
 	if (search && Z_TYPE_P(search) == IS_STRING && Z_STRLEN_P(search)) {
-#ifdef ITERATOR_PCRE
 		iterator->regex = zend_string_copy(Z_STR_P(search));
 		iterator->pce = pcre_get_compiled_regex_cache(iterator->regex);
 
@@ -346,12 +341,9 @@ void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long for
 			iterator->regex = NULL;
 		}
 
-# if PHP_VERSION_ID >= 70300
+#if PHP_VERSION_ID >= 70300
 		iterator->re_match_data = pcre2_match_data_create_from_pattern(
 			php_pcre_pce_re(iterator->pce), php_pcre_gctx());
-# endif
-#else
-		apc_error("Regular expressions support is not enabled, please enable PCRE for " APC_ITERATOR_NAME " regex support.");
 #endif
 	} else if (search && Z_TYPE_P(search) == IS_ARRAY) {
 		iterator->search_hash = apc_flip_hash(Z_ARRVAL_P(search));

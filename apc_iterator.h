@@ -23,12 +23,8 @@
 #include "apc.h"
 #include "apc_stack.h"
 
-#if HAVE_PCRE || HAVE_BUNDLED_PCRE
-#   include "ext/pcre/php_pcre.h"
-#   include "zend_smart_str.h"
-#   define ITERATOR_PCRE 1
-#endif
-
+#include "ext/pcre/php_pcre.h"
+#include "zend_smart_str.h"
 
 #define APC_ITERATOR_NAME "APCuIterator"
 
@@ -62,11 +58,9 @@ typedef struct _apc_iterator_t {
 	zend_long chunk_size;         /* number of entries to pull down per fetch */
 	apc_stack_t *stack;      /* stack of entries pulled from cache */
 	int stack_idx;           /* index into the current stack */
-#ifdef ITERATOR_PCRE
 	pcre_cache_entry *pce;     /* regex filter on entry identifiers */
-# if PHP_VERSION_ID >= 70300
+#if PHP_VERSION_ID >= 70300
 	pcre2_match_data *re_match_data; /* match data for regex */
-# endif
 #endif
 	zend_string *regex;
 	HashTable *search_hash;  /* hash of keys to iterate over */
