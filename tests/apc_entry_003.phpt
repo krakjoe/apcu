@@ -9,8 +9,8 @@ apc.enable_cli=1
 <?php
 $value = apcu_entry("test", function($key) {
     // Fatal error
-    class X implements Y {}
+    class X { use T; }
 });
 ?>
 --EXPECTF--
-Fatal error: Interface 'Y' not found in %s on line %d
+Fatal error: Trait 'T' not found in %s on line %d
