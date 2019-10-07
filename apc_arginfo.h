@@ -21,7 +21,7 @@
 
 /* {{{ arginfo */
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_store, 0, 0, 2)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_store, 0, 0, 1)
 	ZEND_ARG_INFO(0, key)
 	ZEND_ARG_INFO(0, var)
 	ZEND_ARG_INFO(0, ttl)
