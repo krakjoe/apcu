@@ -432,7 +432,7 @@ PHP_FUNCTION(apcu_sma_info)
 
 /* {{{ php_apc_update  */
 zend_bool php_apc_update(
-		zend_string *key, apc_cache_updater_t updater, void *data,
+		zend_string *key, apc_cache_atomic_updater_t updater, void *data,
 		zend_bool insert_if_not_found, time_t ttl)
 {
 	if (APCG(serializer_name)) {
@@ -440,7 +440,7 @@ zend_bool php_apc_update(
 		apc_cache_serializer(apc_user_cache, APCG(serializer_name));
 	}
 
-	return apc_cache_update(apc_user_cache, key, updater, data, insert_if_not_found, ttl);
+	return apc_cache_atomic_update_long(apc_user_cache, key, updater, data, insert_if_not_found, ttl);
 }
 /* }}} */
 
@@ -521,20 +521,14 @@ PHP_FUNCTION(apcu_add) {
 /* {{{ php_inc_updater */
 
 struct php_inc_updater_args {
-	zval step;
-	zval rval;
+	zend_long step;
+	zend_long rval;
 };
 
-static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
-	struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
-
-	if (Z_TYPE(entry->val) == IS_LONG) {
-		fast_long_add_function(&entry->val, &entry->val, &args->step);
-		ZVAL_COPY_VALUE(&args->rval, &entry->val);
-		return 1;
-	}
-
-	return 0;
+static zend_bool php_inc_updater(apc_cache_t *cache, zend_long *entry, void *data) {
+	struct php_inc_updater_args *args = (struct php_inc_updater_args *) data;
+	args->rval = ATOMIC_ADD(*entry, args->step);
+	return 1;
 }
 
 /* {{{ proto long apcu_inc(string key [, long step [, bool& success [, long ttl]]])
@@ -549,12 +543,12 @@ PHP_FUNCTION(apcu_inc) {
 		return;
 	}
 
-	ZVAL_LONG(&args.step, step);
+	args.step = step;
 	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
 		if (success) {
 			ZEND_TRY_ASSIGN_REF_TRUE(success);
 		}
-		RETURN_ZVAL(&args.rval, 0, 0);
+		RETURN_LONG(args.rval);
 	}
 
 	if (success) {
@@ -577,14 +571,13 @@ PHP_FUNCTION(apcu_dec) {
 		return;
 	}
 
-	ZVAL_LONG(&args.step, 0 - step);
-
+	args.step = 0 - step;
 	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
 		if (success) {
 			ZEND_TRY_ASSIGN_REF_TRUE(success);
 		}
 
-		RETURN_ZVAL(&args.rval, 0, 0);
+		RETURN_LONG(args.rval);
 	}
 
 	if (success) {
