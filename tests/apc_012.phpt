@@ -1,5 +1,5 @@
 --TEST--
-APC: integer overflow consistency
+APC: Atomic inc + dec wrap around on overflow
 --SKIPIF--
 <?php require_once(dirname(__FILE__) . '/skipif.inc'); ?>
 --INI--
@@ -7,30 +7,29 @@ apc.enabled=1
 apc.enable_cli=1
 --FILE--
 <?php
-$key="testkey";
-$i=PHP_INT_MAX;
-apcu_store($key, $i);
-var_dump($j=apcu_fetch($key));
-var_dump($i==$j);
+$key = "testkey";
 
-apcu_inc($key, 1);
-$i++;
-var_dump($j=apcu_fetch($key));
-var_dump($i==$j);
+apcu_store($key, PHP_INT_MAX);
+var_dump($i = apcu_inc($key, 1));
+var_dump($j = apcu_fetch($key));
+var_dump($i == $j);
+var_dump($j == PHP_INT_MIN);
 
-$i=PHP_INT_MIN;
-apcu_store($key, $i);
-apcu_dec($key, 1);
-$i--;
-var_dump($j=apcu_fetch($key));
-var_dump($i==$j);
+apcu_store($key, PHP_INT_MIN);
+var_dump($i = apcu_dec($key, 1));
+var_dump($j = apcu_fetch($key));
+var_dump($i == $j);
+var_dump($j == PHP_INT_MAX);
+
 ?>
 ===DONE===
 --EXPECTF--
-int(%d)
+int(%i)
+int(%i)
 bool(true)
-float(%s)
 bool(true)
-float(%s)
+int(%i)
+int(%i)
+bool(true)
 bool(true)
 ===DONE===
