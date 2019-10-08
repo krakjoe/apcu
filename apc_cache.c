@@ -901,11 +901,11 @@ retry_update:
 
 /* {{{ apc_cache_atomic_update_long */
 PHP_APCU_API zend_bool apc_cache_atomic_update_long(
-		apc_cache_t *cache, zend_string *key, apc_cache_atomic_updater_t updater, void *data,
-		zend_bool insert_if_not_found, zend_long ttl)
+		apc_cache_t *cache, zend_string *key,
+		apc_cache_atomic_updater_t updater, apc_cache_updater_t fallback_updater,
+		void *data, zend_bool insert_if_not_found, zend_long ttl)
 {
 	apc_cache_entry_t *entry;
-	zend_bool retval = 0;
 	time_t t = apc_time();
 
 	if (!cache) {
@@ -916,14 +916,19 @@ retry_update:
 	APC_RLOCK(cache->header);
 	entry = apc_cache_rlocked_find_nostat(cache, key, t);
 	if (entry) {
-		/* Only supports integers */
-		if (Z_TYPE(entry->val) == IS_LONG) {
-			retval = updater(cache, &Z_LVAL(entry->val), data);
+		if (Z_TYPE(entry->val) == IS_LONG &&
+				updater(cache, &Z_LVAL(entry->val), data)) {
 			entry->mtime = t;
+			APC_RUNLOCK(cache->header);
+			return 1;
 		}
 
+		/* Atomic update failed, fall back to normal update */
 		APC_RUNLOCK(cache->header);
-		return retval;
+		if (fallback_updater) {
+			return apc_cache_update(cache, key, fallback_updater, data, insert_if_not_found, ttl);
+		}
+		return 0;
 	}
 
 	APC_RUNLOCK(cache->header);

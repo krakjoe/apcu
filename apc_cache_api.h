@@ -155,11 +155,13 @@ PHP_APCU_API zend_bool apc_cache_update(
 
 /*
  * apc_cache_atomic_update_long updates an integer entry in place. The updater function must
- * perform the update atomically, as the update is performed under read-lock.
+ * perform the update atomically, as the update is performed under read-lock. If the atomic
+ * update fails, a non-atomic update will be performed as fallback.
  */
 PHP_APCU_API zend_bool apc_cache_atomic_update_long(
-		apc_cache_t *cache, zend_string *key, apc_cache_atomic_updater_t updater, void *data,
-		zend_bool insert_if_not_found, zend_long ttl);
+		apc_cache_t *cache, zend_string *key,
+		apc_cache_atomic_updater_t updater, apc_cache_updater_t fallback_updater,
+		void *data, zend_bool insert_if_not_found, zend_long ttl);
 
 /*
  * apc_cache_find searches for a cache entry by its hashed identifier,

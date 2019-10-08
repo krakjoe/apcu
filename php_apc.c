@@ -432,7 +432,8 @@ PHP_FUNCTION(apcu_sma_info)
 
 /* {{{ php_apc_update  */
 zend_bool php_apc_update(
-		zend_string *key, apc_cache_updater_t updater, void *data,
+		zend_string *key, apc_cache_atomic_updater_t atomic_updater,
+		apc_cache_updater_t updater, void *data,
 		zend_bool insert_if_not_found, time_t ttl)
 {
 	if (APCG(serializer_name)) {
@@ -440,7 +441,8 @@ zend_bool php_apc_update(
 		apc_cache_serializer(apc_user_cache, APCG(serializer_name));
 	}
 
-	return apc_cache_update(apc_user_cache, key, updater, data, insert_if_not_found, ttl);
+	return apc_cache_atomic_update_long(
+		apc_user_cache, key, atomic_updater, updater, data, insert_if_not_found, ttl);
 }
 /* }}} */
 
@@ -525,6 +527,31 @@ struct php_inc_updater_args {
 	zval rval;
 };
 
+#define MAX_CAS_ATTEMPTS 10
+
+static zend_bool php_inc_atomic_updater(apc_cache_t* cache, zend_long* entry, void* data) {
+	struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
+	zval zv;
+	size_t i;
+
+	for (i = 0; i < MAX_CAS_ATTEMPTS; i++) {
+		zend_long old = *entry;
+		ZVAL_LONG(&zv, old);
+		fast_long_add_function(&zv, &zv, &args->step);
+		if (UNEXPECTED(Z_TYPE(zv) != IS_LONG)) {
+			/* Overflow to double */
+			return 0;
+		}
+
+		if (ATOMIC_CAS(*entry, old, Z_LVAL(zv))) {
+			ZVAL_COPY(&args->rval, &zv);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static zend_bool php_inc_updater(apc_cache_t* cache, apc_cache_entry_t* entry, void* data) {
 	struct php_inc_updater_args *args = (struct php_inc_updater_args*) data;
 
@@ -550,7 +577,7 @@ PHP_FUNCTION(apcu_inc) {
 	}
 
 	ZVAL_LONG(&args.step, step);
-	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
+	if (php_apc_update(key, php_inc_atomic_updater, php_inc_updater, &args, 1, ttl)) {
 		if (success) {
 			ZEND_TRY_ASSIGN_REF_TRUE(success);
 		}
@@ -579,7 +606,7 @@ PHP_FUNCTION(apcu_dec) {
 
 	ZVAL_LONG(&args.step, 0 - step);
 
-	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
+	if (php_apc_update(key, php_inc_atomic_updater, php_inc_updater, &args, 1, ttl)) {
 		if (success) {
 			ZEND_TRY_ASSIGN_REF_TRUE(success);
 		}
@@ -619,7 +646,8 @@ PHP_FUNCTION(apcu_cas) {
 		apc_cache_serializer(apc_user_cache, APCG(serializer_name));
 	}
 
-	RETURN_BOOL(apc_cache_atomic_update_long(apc_user_cache, key, php_cas_updater, &vals, 0, 0));
+	RETURN_BOOL(apc_cache_atomic_update_long(
+			apc_user_cache, key, php_cas_updater, NULL, &vals, 0, 0));
 }
 /* }}} */
 
