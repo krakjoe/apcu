@@ -30,7 +30,7 @@
  </lead>
  <date>2019-10-28</date>
  <version>
-  <release>5.1.18</release>
+  <release>5.1.19dev</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,11 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Implement apcu_inc() and apcu_dec() using atomic operations. This means that these functions no longer have to acquire a write lock. These functions will now wraparound on overflow, instead of saturating to a floating point value.
-- Make table header in apc.php sticky.
-- Fix compile warnings related to mktemp() usage.
-- Fix compatibility with PHP 8.0.
-- Fix required number of arguments for apcu_store() returned by Reflection.
+- 
  </notes>
  <contents>
   <dir name="/">
@@ -177,6 +173,25 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2019-10-28</date>
+   <version>
+    <release>5.1.18</release>
+    <api>5.1.18</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Implement apcu_inc() and apcu_dec() using atomic operations. This means that these functions no longer have to acquire a write lock. These functions will now wraparound on overflow, instead of saturating to a floating point value.
+- Make table header in apc.php sticky.
+- Fix compile warnings related to mktemp() usage.
+- Fix compatibility with PHP 8.0.
+- Fix required number of arguments for apcu_store() returned by Reflection.
+   </notes>
+  </release>
   <release>
    <date>2019-02-08</date>
    <version>
