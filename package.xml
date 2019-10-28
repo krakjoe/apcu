@@ -28,10 +28,10 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2019-02-08</date>
+ <date>2019-10-28</date>
  <version>
-  <release>5.1.18dev</release>
-  <api>5.1.15</api>
+  <release>5.1.18</release>
+  <api>5.1.18</api>
  </version>
  <stability>
   <release>stable</release>
