@@ -475,12 +475,14 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 		ZEND_HASH_FOREACH_KEY_VAL(hash, hkey_idx, hkey, hentry) {
 			ZVAL_DEREF(hentry);
 			if (hkey) {
-				if (!apc_cache_store(apc_user_cache, hkey, hentry, (uint32_t) ttl, exclusive)) {
-					zend_hash_add_new(Z_ARRVAL_P(return_value), hkey, &fail_zv);
-				}
+				zend_string_addref(hkey);
 			} else {
-				zend_hash_index_add_new(Z_ARRVAL_P(return_value), hkey_idx, &fail_zv);
+				hkey = zend_long_to_str(hkey_idx);
 			}
+			if (!apc_cache_store(apc_user_cache, hkey, hentry, (uint32_t) ttl, exclusive)) {
+				zend_symtable_add_new(Z_ARRVAL_P(return_value), hkey, &fail_zv);
+			}
+			zend_string_release(hkey);
 		} ZEND_HASH_FOREACH_END();
 		return;
 	} else if (Z_TYPE_P(key) == IS_STRING) {
