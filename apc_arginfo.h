@@ -71,6 +71,10 @@ ZEND_BEGIN_ARG_INFO(arginfo_apcu_exists, 0)
 	ZEND_ARG_INFO(0, keys)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO(arginfo_apcu_exists_any, 1)
+	ZEND_ARG_INFO(0, keys)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_apcu_entry, 0, 0, 2)
 	ZEND_ARG_INFO(0, key)
 	ZEND_ARG_TYPE_INFO(0, generator, IS_CALLABLE, 0)
