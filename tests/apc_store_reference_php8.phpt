@@ -5,7 +5,7 @@ apc.enabled=1
 apc.enable_cli=1
 apc.serializer=default
 --SKIPIF--
-<?php if (PHP_VERSION_ID >= 80000) die('skip Requires PHP < 8.0.0'); ?>
+<?php if (PHP_VERSION_ID < 80000) die('skip Requires PHP >= 8.0.0'); ?>
 --FILE--
 <?php
 
@@ -22,8 +22,5 @@ var_dump($result);
 --EXPECT--
 array(1) {
   [0]=>
-  array(1) {
-    [0]=>
-    *RECURSION*
-  }
+  *RECURSION*
 }
