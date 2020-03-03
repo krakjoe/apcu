@@ -800,7 +800,7 @@ zend_function_entry apcu_functions[] = {
 	PHP_FE(apcu_exists,             arginfo_apcu_exists)
 	PHP_FE(apcu_entry,				arginfo_apcu_entry)
 #ifdef APC_DEBUG
-	PHP_FE(apcu_inc_request_time,   NULL)
+	PHP_FE(apcu_inc_request_time,   arginfo_apcu_inc_request_time)
 #endif
 	PHP_FE_END
 };
