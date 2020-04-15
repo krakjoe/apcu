@@ -234,8 +234,8 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 	block_t* nxt;       /* the block after cur */
 	size_t size;        /* size of deallocated block */
 
+	assert(offset >= ALIGNWORD(sizeof(struct block_t)));
 	offset -= ALIGNWORD(sizeof(struct block_t));
-	assert(offset >= 0);
 
 	/* find position of new block in free list */
 	cur = BLOCKAT(offset);
