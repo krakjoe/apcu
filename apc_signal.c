@@ -113,7 +113,7 @@ static void apc_rehandle_signal(int signo, siginfo_t *siginfo, void *context)
  */
 static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*))
 {
-	struct sigaction sa = {{0}};
+	struct sigaction sa;
 	apc_signal_entry_t p_sig = {0};
 
 	if (sigaction(signo, NULL, &sa) == 0) {
