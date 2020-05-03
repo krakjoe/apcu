@@ -1,6 +1,11 @@
-language: php
+git:
+  quiet: true
 
-matrix:
+dist: xenial
+language: php
+os: linux
+
+jobs:
     include:
         - php: 7.0
           env: USE_VALGRIND=1
@@ -9,7 +14,7 @@ matrix:
         - php: 7.2
           env: USE_VALGRIND=1
         - php: 7.3
-        - php: 7.4snapshot
+        - php: 7.4
         - php: nightly
 
 addons:
