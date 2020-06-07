@@ -1,3 +1,5 @@
+$ErrorActionPreference = "Stop"
+
 $ts_part = ''
 if ($env:TS -eq '0') {
     $ts_part += '-nts'
@@ -20,3 +22,6 @@ Add-Content $task "call configure --enable-apcu --with-prefix=c:\build-cache\$dn
 Add-Content $task "nmake /nologo test TESTS=-q 2>&1"
 Add-Content $task "exit %errorlevel%"
 & "c:\build-cache\php-sdk-$env:BIN_SDK_VER\phpsdk-$env:VC-$env:ARCH.bat" -t $task
+if (-not $?) {
+    throw "tests failed with errorlevel $LastExitCode"
+}

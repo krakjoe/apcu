@@ -1,3 +1,5 @@
+$ErrorActionPreference = "Stop"
+
 if (-not (Test-Path 'c:\build-cache')) {
     [void](New-Item 'c:\build-cache' -ItemType 'directory')
 }
