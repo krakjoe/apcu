@@ -1,3 +1,5 @@
+$ErrorActionPreference = "Stop"
+
 $ts_part = ''
 if ($env:TS -eq '0') {
     $ts_part += '-nts'
@@ -13,7 +15,9 @@ $dname0 = "php-$env:PHP_VER-devel-$env:VC-$env:ARCH"
 $dname1 = "php-$env:PHP_VER$ts_part-devel-$env:VC-$env:ARCH"
 if (-not (Test-Path "c:\build-cache\$dname1")) {
     Expand-Archive "c:\build-cache\$bname" "c:\build-cache"
-    Move-Item "c:\build-cache\$dname0" "c:\build-cache\$dname1"
+    if ($dname0 -ne $dname1) {
+        Move-Item "c:\build-cache\$dname0" "c:\build-cache\$dname1"
+    }
 }
 
 Set-Location 'c:\projects\apcu'
@@ -25,3 +29,6 @@ Add-Content $task "call configure --enable-apcu --enable-debug-pack 2>&1"
 Add-Content $task "nmake /nologo 2>&1"
 Add-Content $task "exit %errorlevel%"
 & "c:\build-cache\php-sdk-$env:BIN_SDK_VER\phpsdk-$env:VC-$env:ARCH.bat" -t $task
+if (-not $?) {
+    throw "build failed with errorlevel $LastExitCode"
+}
