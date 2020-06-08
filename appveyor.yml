@@ -2,86 +2,86 @@ version: "{branch}.build.{build}"
 skip_tags: true
 
 branches:
-        only:
-                - master
+  only:
+    - master
 
 clone_folder:  c:\projects\apcu
 
 install:
-        ps: .appveyor\install.ps1
+  ps: .appveyor\install.ps1
 
 cache:
-        c:\build-cache -> appveyor.yml, .appveyor\install.ps1
+  c:\build-cache -> appveyor.yml, .appveyor\install.ps1
 
 environment:
-        BIN_SDK_VER: 2.1.1
-        matrix:
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                  ARCH: x64
-                  VC: vc14
-                  PHP_VER: 7.0.27
-                  TS: 0
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                  ARCH: x64
-                  VC: vc14
-                  PHP_VER: 7.0.27
-                  TS: 1
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                  ARCH: x86
-                  VC: vc14
-                  PHP_VER: 7.0.27
-                  TS: 0
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                  ARCH: x86
-                  VC: vc14
-                  PHP_VER: 7.0.27
-                  TS: 1
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                  ARCH: x64
-                  VC: vc14
-                  PHP_VER: 7.1.14
-                  TS: 0
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                  ARCH: x64
-                  VC: vc14
-                  PHP_VER: 7.1.14
-                  TS: 1
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                  ARCH: x86
-                  VC: vc14
-                  PHP_VER: 7.1.14
-                  TS: 0
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-                  ARCH: x86
-                  VC: vc14
-                  PHP_VER: 7.1.14
-                  TS: 1
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-                  ARCH: x64
-                  VC: vc15
-                  PHP_VER: 7.2.2
-                  TS: 0
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-                  ARCH: x64
-                  VC: vc15
-                  PHP_VER: 7.2.2
-                  TS: 1
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-                  ARCH: x86
-                  VC: vc15
-                  PHP_VER: 7.2.2
-                  TS: 0
-                - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-                  ARCH: x86
-                  VC: vc15
-                  PHP_VER: 7.2.2
-                  TS: 1
+  BIN_SDK_VER: 2.1.2
+  matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x64
+      VC: vc15
+      PHP_VER: 7.2
+      TS: 0
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x64
+      VC: vc15
+      PHP_VER: 7.2
+      TS: 1
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x86
+      VC: vc15
+      PHP_VER: 7.2
+      TS: 0
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x86
+      VC: vc15
+      PHP_VER: 7.2
+      TS: 1
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x64
+      VC: vc15
+      PHP_VER: 7.3
+      TS: 0
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x64
+      VC: vc15
+      PHP_VER: 7.3
+      TS: 1
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x86
+      VC: vc15
+      PHP_VER: 7.3
+      TS: 0
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x86
+      VC: vc15
+      PHP_VER: 7.3
+      TS: 1
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x64
+      VC: vc15
+      PHP_VER: 7.4
+      TS: 0
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x64
+      VC: vc15
+      PHP_VER: 7.4
+      TS: 1
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x86
+      VC: vc15
+      PHP_VER: 7.4
+      TS: 0
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      ARCH: x86
+      VC: vc15
+      PHP_VER: 7.4
+      TS: 1
 
 build_script:
-        ps: .appveyor\build.ps1
+  ps: .appveyor\build.ps1
 
 after_build:
-        ps: .appveyor\package.ps1
+  ps: .appveyor\package.ps1
 
 test_script:
-        ps: .appveyor\test.ps1
+  ps: .appveyor\test.ps1
