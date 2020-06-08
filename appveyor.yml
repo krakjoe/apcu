@@ -14,8 +14,18 @@ cache:
   c:\build-cache -> appveyor.yml, .appveyor\install.ps1
 
 environment:
-  BIN_SDK_VER: 2.1.2
+  BIN_SDK_VER: 2.2.0
   matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      ARCH: x64
+      VC: vc14
+      PHP_VER: 7.0
+      TS: 0
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      ARCH: x64
+      VC: vc14
+      PHP_VER: 7.1
+      TS: 0
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       ARCH: x64
       VC: vc15
