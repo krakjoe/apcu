@@ -1,27 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$ts_part = ''
-if ($env:TS -eq '0') {
-    $ts_part += '-nts'
-}
-$bname = "php-devel-pack-$env:PHP_VER$ts_part-Win32-$env:VC-$env:ARCH.zip"
-if (-not (Test-Path "c:\build-cache\$bname")) {
-    Invoke-WebRequest "http://windows.php.net/downloads/releases/archives/$bname" -OutFile "c:\build-cache\$bname"
-    if (-not (Test-Path "c:\build-cache\$bname")) {
-        Invoke-WebRequest "http://windows.php.net/downloads/releases/$bname" -OutFile "c:\build-cache\$bname"
-    }
-}
-$dname0 = "php-$env:PHP_VER-devel-$env:VC-$env:ARCH"
-$dname1 = "php-$env:PHP_VER$ts_part-devel-$env:VC-$env:ARCH"
-if (-not (Test-Path "c:\build-cache\$dname1")) {
-    Expand-Archive "c:\build-cache\$bname" "c:\build-cache"
-    if ($dname0 -ne $dname1) {
-        Move-Item "c:\build-cache\$dname0" "c:\build-cache\$dname1"
-    }
-}
-
 Set-Location 'c:\projects\apcu'
-$env:PATH = "c:\build-cache\$dname1;$env:PATH"
 
 $task = New-Item 'task.bat' -Force
 Add-Content $task "call phpize 2>&1"
@@ -32,3 +11,21 @@ Add-Content $task "exit %errorlevel%"
 if (-not $?) {
     throw "build failed with errorlevel $LastExitCode"
 }
+
+$source = ''
+if ($env:ARCH -eq 'x64') {
+    $source += 'x64\'
+}
+$source += 'Release';
+if ($env:TS -eq '1') {
+    $source += '_TS'
+}
+
+$file = Get-Command php | Select-Object -ExpandProperty Definition
+$dest = (Get-Item $file).Directory.FullName
+
+Copy-Item "$source\php_apcu.dll" "$dest\ext\php_apcu.dll"
+
+$ini = New-Item "$dest\php.ini" -Force
+Add-Content $ini "extension_dir=$dest\ext"
+Add-Content $ini 'extension=php_apcu.dll'
