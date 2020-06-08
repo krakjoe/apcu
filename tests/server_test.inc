@@ -44,6 +44,7 @@ function server_start_one($host, $port, $code = 'echo "Hello world";', $php_opts
 			$cmd .= " {$router}";
 		}
 
+		$descriptorspec[2] = array('pipe', 'w');
 		$handle = proc_open(addslashes($cmd), $descriptorspec, $pipes, $doc_root, NULL, array("bypass_shell" => true,  "suppress_errors" => true));
 	} else {
 		$cmd = "exec {$php_executable} -n $php_args -t {$doc_root} -S $host:$port";
