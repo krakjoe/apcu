@@ -62,7 +62,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
 
 	char *serializer_name;       /* the serializer config option */
 
-	volatile zend_bool recursion;
+	volatile unsigned recursion;
 ZEND_END_MODULE_GLOBALS(apcu)
 
 /* (the following is defined in php_apc.c) */
