@@ -13,4 +13,4 @@ $value = apcu_entry("test", function($key) {
 });
 ?>
 --EXPECTF--
-Fatal error: Trait 'T' not found in %s on line %d
+Fatal error: %s
