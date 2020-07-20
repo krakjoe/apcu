@@ -502,6 +502,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 /* {{{ proto bool apcu_enabled(void)
 	returns true when apcu is usable in the current environment */
 PHP_FUNCTION(apcu_enabled) {
+	ZEND_PARSE_PARAMETERS_NONE();
 	RETURN_BOOL(APCG(enabled));
 }
 /* }}} */
