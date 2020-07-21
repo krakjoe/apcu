@@ -297,7 +297,8 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long format, zend_long chunk_size, zend_long list)
 {
 	if (!APCG(enabled)) {
-		apc_error("APC must be enabled to use " APC_ITERATOR_NAME);
+		zend_throw_error(NULL, "APC must be enabled to use " APC_ITERATOR_NAME);
+		return;
 	}
 
 	if (chunk_size < 0) {

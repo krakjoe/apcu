@@ -40,6 +40,13 @@ var_dump(apcu_cas("key", 10, 20));
 echo "\nentry\n";
 var_dump(apcu_entry("key", function() { return 42; }));
 
+echo "\niterator\n";
+try {
+    new APCUIterator;
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+
 ?>
 --EXPECTF--
 enabled
@@ -91,3 +98,6 @@ bool(false)
 
 entry
 NULL
+
+iterator
+APC must be enabled to use APCuIterator
