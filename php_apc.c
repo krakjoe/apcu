@@ -70,6 +70,7 @@ PHP_FUNCTION(apcu_inc);
 PHP_FUNCTION(apcu_dec);
 PHP_FUNCTION(apcu_cas);
 PHP_FUNCTION(apcu_exists);
+PHP_FUNCTION(apcu_exists_any);
 /* }}} */
 
 /* {{{ ZEND_DECLARE_MODULE_GLOBALS(apcu) */
@@ -715,6 +716,40 @@ PHP_FUNCTION(apcu_exists) {
 }
 /* }}} */
 
+/* {{{ proto mixed apcu_exists_any(array keys)
+ */
+PHP_FUNCTION(apcu_exists_any) {
+	zval *key;
+	time_t t;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z", &key) == FAILURE) {
+		RETURN_FALSE;
+	}
+
+	t = apc_time();
+
+	if (Z_TYPE_P(key) != IS_ARRAY) {
+		apc_warning("apcu_exists_any() expects an array of strings.");
+		RETURN_FALSE;
+	}
+
+	zval *hentry=NULL;
+
+	ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(key), hentry) {
+		ZVAL_DEREF(hentry);
+		if (Z_TYPE_P(hentry) == IS_STRING) {
+			if (apc_cache_exists(apc_user_cache, Z_STR_P(hentry), t)) {
+				RETURN_TRUE;
+			}
+		} else {
+			apc_warning("apcu_exists_any() expects an array of strings.");
+		}
+	} ZEND_HASH_FOREACH_END();
+
+	RETURN_FALSE;
+}
+/* }}} */
+
 /* {{{ proto mixed apcu_delete(mixed keys)
  */
 PHP_FUNCTION(apcu_delete) {
@@ -801,6 +836,7 @@ zend_function_entry apcu_functions[] = {
 	PHP_FE(apcu_dec,                arginfo_apcu_inc)
 	PHP_FE(apcu_cas,                arginfo_apcu_cas)
 	PHP_FE(apcu_exists,             arginfo_apcu_exists)
+	PHP_FE(apcu_exists_any,         arginfo_apcu_exists_any)
 	PHP_FE(apcu_entry,				arginfo_apcu_entry)
 #ifdef APC_DEBUG
 	PHP_FE(apcu_inc_request_time,   arginfo_apcu_inc_request_time)
