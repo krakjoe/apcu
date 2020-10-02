@@ -9,6 +9,9 @@ APC: Bug #61742 preload_path does not work due to incorrect string length (varia
 	if(PHP_ZTS === 1) {
 		die('skip PHP non-ZTS only');
 	}
+?>
+--CONFLICTS--
+server
 --FILE--
 <?php
 include "server_test.inc";

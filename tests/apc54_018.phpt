@@ -6,6 +6,8 @@ require_once(dirname(__FILE__) . '/skipif.inc');
 if (PHP_OS == "WINNT") die("skip not on windows");
 if (getenv('USE_ZEND_ALLOC') === '0') die("skip not for valgrind");
 ?>
+--CONFLICTS--
+server
 --FILE--
 <?php
 include "server_test.inc";

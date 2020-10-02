@@ -5,6 +5,9 @@ APC: Bug #63224 error in __sleep whit reference to other classes
 require_once(dirname(__FILE__) . '/skipif.inc'); 
 if (!extension_loaded("session")) die("skip session extension missing");
 if (getenv('USE_ZEND_ALLOC') === '0') die("skip not for valgrind");
+?>
+--CONFLICTS--
+server
 --FILE--
 <?php
 include "server_test.inc";

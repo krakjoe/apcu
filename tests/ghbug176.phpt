@@ -9,6 +9,9 @@ APC: GH Bug #176 preload_path segfaults with bad data
 	if(PHP_ZTS === 1) {
 		die('skip PHP non-ZTS only');
 	}
+?>
+--CONFLICTS--
+server
 --FILE--
 <?php
 include "server_test.inc";
