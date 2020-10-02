@@ -1209,15 +1209,10 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name) {
 	}
 } /* }}} */
 
-PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value) {/*{{{*/
+PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value) {/*{{{*/
 	apc_cache_entry_t *entry = NULL;
 
 	if (!cache) {
-		return;
-	}
-
-	if (!key || Z_TYPE_P(key) != IS_STRING) {
-		/* only strings, for now */
 		return;
 	}
 
@@ -1235,11 +1230,11 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 #endif
 
 	php_apc_try {
-		entry = apc_cache_rlocked_find_incref(cache, Z_STR_P(key), now);
+		entry = apc_cache_rlocked_find_incref(cache, key, now);
 		if (!entry) {
 			int result;
 			zval params[1];
-			ZVAL_COPY(&params[0], key);
+			ZVAL_STR_COPY(&params[0], key);
 
 			fci->retval = return_value;
 			fci->param_count = 1;
@@ -1251,7 +1246,7 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info
 
 			if (result == SUCCESS && !EG(exception)) {
 				apc_cache_store_internal(
-					cache, Z_STR_P(key), return_value, (uint32_t) ttl, 1);
+					cache, key, return_value, (uint32_t) ttl, 1);
 			}
 		} else {
 			apc_cache_entry_fetch_zval(cache, entry, return_value);

@@ -269,7 +269,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size);
 *
 * @see https://github.com/krakjoe/apcu/issues/142
 */
-PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zval *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value);
+PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value);
 
 #endif
 

@@ -43,7 +43,11 @@
 #include "ext/standard/flock_compat.h"
 #include "ext/standard/md5.h"
 #include "ext/standard/php_var.h"
-#include "apc_arginfo.h"
+#if PHP_VERSION_ID >= 80000
+# include "php_apc_arginfo.h"
+#else
+# include "php_apc_legacy_arginfo.h"
+#endif
 #include "php74_shim.h"
 
 #ifdef HAVE_SYS_FILE_H
@@ -56,21 +60,6 @@
 #if HAVE_SIGACTION
 #include "apc_signal.h"
 #endif
-
-/* {{{ PHP_FUNCTION declarations */
-PHP_FUNCTION(apcu_cache_info);
-PHP_FUNCTION(apcu_clear_cache);
-PHP_FUNCTION(apcu_sma_info);
-PHP_FUNCTION(apcu_key_info);
-PHP_FUNCTION(apcu_store);
-PHP_FUNCTION(apcu_fetch);
-PHP_FUNCTION(apcu_delete);
-PHP_FUNCTION(apcu_add);
-PHP_FUNCTION(apcu_inc);
-PHP_FUNCTION(apcu_dec);
-PHP_FUNCTION(apcu_cas);
-PHP_FUNCTION(apcu_exists);
-/* }}} */
 
 /* {{{ ZEND_DECLARE_MODULE_GLOBALS(apcu) */
 ZEND_DECLARE_MODULE_GLOBALS(apcu)
@@ -461,6 +450,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 		apc_cache_serializer(apc_user_cache, APCG(serializer_name));
 	}
 
+	/* TODO: Port to array|string for PHP 8? */
 	if (Z_TYPE_P(key) == IS_ARRAY) {
 		zval *hentry;
 		zend_string *hkey;
@@ -639,6 +629,7 @@ PHP_FUNCTION(apcu_fetch) {
 		convert_to_string(key);
 	}
 
+	/* TODO: Port to array|string for PHP 8? */
 	if (Z_TYPE_P(key) == IS_STRING) {
 		result = apc_cache_fetch(apc_user_cache, Z_STR_P(key), t, return_value);
 	} else if (Z_TYPE_P(key) == IS_ARRAY) {
@@ -689,6 +680,7 @@ PHP_FUNCTION(apcu_exists) {
 		convert_to_string(key);
 	}
 
+	/* TODO: Port to array|string for PHP 8? */
 	if (Z_TYPE_P(key) == IS_STRING) {
 		RETURN_BOOL(apc_cache_exists(apc_user_cache, Z_STR_P(key), t));
 	} else if (Z_TYPE_P(key) == IS_ARRAY) {
@@ -750,13 +742,13 @@ PHP_FUNCTION(apcu_delete) {
 }
 
 PHP_FUNCTION(apcu_entry) {
-	zval *key = NULL;
+	zend_string *key;
 	zend_fcall_info fci = empty_fcall_info;
 	zend_fcall_info_cache fcc = empty_fcall_info_cache;
 	zend_long ttl = 0L;
 	zend_long now = apc_time();
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "zf|l", &key, &fci, &fcc, &ttl) != SUCCESS) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "Sf|l", &key, &fci, &fcc, &ttl) != SUCCESS) {
 		return;
 	}
 
@@ -786,35 +778,12 @@ PHP_FUNCTION(apcu_inc_request_time) {
 }
 #endif
 
-/* {{{ apcu_functions[] */
-zend_function_entry apcu_functions[] = {
-	PHP_FE(apcu_cache_info,         arginfo_apcu_cache_info)
-	PHP_FE(apcu_clear_cache,        arginfo_apcu_clear_cache)
-	PHP_FE(apcu_sma_info,           arginfo_apcu_sma_info)
-	PHP_FE(apcu_key_info,           arginfo_apcu_key_info)
-	PHP_FE(apcu_enabled,            arginfo_apcu_enabled)
-	PHP_FE(apcu_store,              arginfo_apcu_store)
-	PHP_FE(apcu_fetch,              arginfo_apcu_fetch)
-	PHP_FE(apcu_delete,             arginfo_apcu_delete)
-	PHP_FE(apcu_add,                arginfo_apcu_store)
-	PHP_FE(apcu_inc,                arginfo_apcu_inc)
-	PHP_FE(apcu_dec,                arginfo_apcu_inc)
-	PHP_FE(apcu_cas,                arginfo_apcu_cas)
-	PHP_FE(apcu_exists,             arginfo_apcu_exists)
-	PHP_FE(apcu_entry,				arginfo_apcu_entry)
-#ifdef APC_DEBUG
-	PHP_FE(apcu_inc_request_time,   arginfo_apcu_inc_request_time)
-#endif
-	PHP_FE_END
-};
-/* }}} */
-
 /* {{{ module definition structure */
 
 zend_module_entry apcu_module_entry = {
 	STANDARD_MODULE_HEADER,
 	PHP_APCU_EXTNAME,
-	apcu_functions,
+	ext_functions,
 	PHP_MINIT(apcu),
 	PHP_MSHUTDOWN(apcu),
 	PHP_RINIT(apcu),
