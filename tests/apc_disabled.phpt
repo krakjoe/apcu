@@ -100,4 +100,4 @@ entry
 NULL
 
 iterator
-APC must be enabled to use APCuIterator
+APC must be enabled to use APCUIterator

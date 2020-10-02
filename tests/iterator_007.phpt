@@ -11,25 +11,59 @@ class foobar extends APCuIterator {
 	public function __construct() {}
 }
 $obj = new foobar;
-var_dump(
-	$obj->rewind(),
-	$obj->current(),
-	$obj->key(),
-	$obj->next(),
-	$obj->valid(),
-	$obj->getTotalHits(),
-	$obj->getTotalSize(),
-	$obj->getTotalCount(),
-	apcu_delete($obj)
-);
+try {
+    $obj->rewind();
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    $obj->current();
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    $obj->key();
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    $obj->next();
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    $obj->valid();
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    $obj->getTotalHits();
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    $obj->getTotalSize();
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    $obj->getTotalCount();
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    apcu_delete($obj);
+} catch (Error $e) {
+    echo $e->getMessage(), "\n";
+}
 ?>
 --EXPECT--
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-bool(false)
-bool(false)
+Trying to use uninitialized APCUIterator
+Trying to use uninitialized APCUIterator
+Trying to use uninitialized APCUIterator
+Trying to use uninitialized APCUIterator
+Trying to use uninitialized APCUIterator
+Trying to use uninitialized APCUIterator
+Trying to use uninitialized APCUIterator
+Trying to use uninitialized APCUIterator
+Trying to use uninitialized APCUIterator

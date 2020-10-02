@@ -35,7 +35,7 @@ function apcu_fetch($key, &$success = null): mixed {}
 /** @param array|string $key */
 function apcu_exists($key): array|bool {}
 
-/** @param array|string $key */
+/** @param APCUIterator|array|string $key */
 function apcu_delete($key): array|bool {}
 
 function apcu_entry(string $key, callable $callback, int $ttl = 0): mixed {}

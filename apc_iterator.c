@@ -21,6 +21,11 @@
 #include "apc_iterator.h"
 #include "apc_cache.h"
 #include "apc_strings.h"
+#if PHP_VERSION_ID >= 80000
+# include "apc_iterator_arginfo.h"
+#else
+# include "apc_iterator_legacy_arginfo.h"
+#endif
 
 #include "ext/standard/md5.h"
 #include "SAPI.h"
@@ -32,6 +37,12 @@ zend_object_handlers apc_iterator_object_handlers;
 zend_class_entry* apc_iterator_get_ce(void) {
 	return apc_iterator_ce;
 }
+
+#define ENSURE_INITIALIZED(iterator) \
+	if (!(iterator)->initialized) { \
+		zend_throw_error(NULL, "Trying to use uninitialized APCUIterator"); \
+		return; \
+	}
 
 /* {{{ apc_iterator_item */
 static apc_iterator_item_t* apc_iterator_item_ctor(
@@ -297,17 +308,17 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long format, zend_long chunk_size, zend_long list)
 {
 	if (!APCG(enabled)) {
-		zend_throw_error(NULL, "APC must be enabled to use " APC_ITERATOR_NAME);
+		zend_throw_error(NULL, "APC must be enabled to use APCUIterator");
 		return;
 	}
 
 	if (chunk_size < 0) {
-		apc_error(APC_ITERATOR_NAME " chunk size must be 0 or greater");
+		apc_error("APCUIterator chunk size must be 0 or greater");
 		return;
 	}
 
 	if (format > APC_ITER_ALL) {
-		apc_error(APC_ITERATOR_NAME " format is invalid");
+		apc_error("APCUIterator format is invalid");
 		return;
 	}
 
@@ -316,7 +327,7 @@ void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long for
 	} else if (list == APC_LIST_DELETED) {
 		iterator->fetch = apc_iterator_fetch_deleted;
 	} else {
-		apc_warning(APC_ITERATOR_NAME " invalid list type");
+		apc_warning("APCUIterator invalid list type");
 		return;
 	}
 
@@ -352,52 +363,43 @@ void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long for
 	iterator->initialized = 1;
 }
 
-/* {{{ proto object APCuIterator::__construct([ mixed search [, long format [, long chunk_size [, long list ]]]]) */
-PHP_METHOD(apc_iterator, __construct) {
+PHP_METHOD(APCUIterator, __construct) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 	zend_long format = APC_ITER_ALL;
-	zend_long chunk_size=0;
+	zend_long chunk_size = 0;
 	zval *search = NULL;
 	zend_long list = APC_LIST_ACTIVE;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|zlll", &search, &format, &chunk_size, &list) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|z!lll", &search, &format, &chunk_size, &list) == FAILURE) {
 		return;
 	}
 
 	apc_iterator_obj_init(iterator, search, format, chunk_size, list);
 }
-/* }}} */
 
-/* {{{ proto APCuIterator::rewind() */
-PHP_METHOD(apc_iterator, rewind) {
+PHP_METHOD(APCUIterator, rewind) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
 
-	if (iterator->initialized == 0) {
-		RETURN_FALSE;
-	}
+	ENSURE_INITIALIZED(iterator);
 
 	iterator->slot_idx = 0;
 	iterator->stack_idx = 0;
 	iterator->key_idx = 0;
 	iterator->fetch(iterator);
 }
-/* }}} */
 
-/* {{{ proto boolean APCuIterator::valid() */
-PHP_METHOD(apc_iterator, valid) {
+PHP_METHOD(APCUIterator, valid) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
 
-	if (iterator->initialized == 0) {
-		RETURN_FALSE;
-	}
+	ENSURE_INITIALIZED(iterator);
 
 	if (apc_stack_size(iterator->stack) == iterator->stack_idx) {
 		iterator->fetch(iterator);
@@ -405,10 +407,8 @@ PHP_METHOD(apc_iterator, valid) {
 
 	RETURN_BOOL(apc_stack_size(iterator->stack) == 0 ? 0 : 1);
 }
-/* }}} */
 
-/* {{{ proto mixed APCuIterator::current() */
-PHP_METHOD(apc_iterator, current) {
+PHP_METHOD(APCUIterator, current) {
 	apc_iterator_item_t *item;
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
@@ -416,9 +416,7 @@ PHP_METHOD(apc_iterator, current) {
 		return;
 	}
 
-	if (iterator->initialized == 0) {
-		RETURN_FALSE;
-	}
+	ENSURE_INITIALIZED(iterator);
 
 	if (apc_stack_size(iterator->stack) == iterator->stack_idx) {
 		if (iterator->fetch(iterator) == 0) {
@@ -429,10 +427,8 @@ PHP_METHOD(apc_iterator, current) {
 	item = apc_stack_get(iterator->stack, iterator->stack_idx);
 	ZVAL_COPY(return_value, &item->value);
 }
-/* }}} */
 
-/* {{{ proto string APCuIterator::key() */
-PHP_METHOD(apc_iterator, key) {
+PHP_METHOD(APCUIterator, key) {
 	apc_iterator_item_t *item;
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
@@ -440,7 +436,8 @@ PHP_METHOD(apc_iterator, key) {
 		return;
 	}
 
-	if (iterator->initialized == 0 || apc_stack_size(iterator->stack) == 0) {
+	ENSURE_INITIALIZED(iterator);
+	if (apc_stack_size(iterator->stack) == 0) {
 		RETURN_FALSE;
 	}
 
@@ -458,38 +455,31 @@ PHP_METHOD(apc_iterator, key) {
 		RETURN_LONG(iterator->key_idx);
 	}
 }
-/* }}} */
 
-/* {{{ proto APCuIterator::next() */
-PHP_METHOD(apc_iterator, next) {
+PHP_METHOD(APCUIterator, next) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
 
-	if (iterator->initialized == 0 || apc_stack_size(iterator->stack) == 0) {
-		RETURN_FALSE;
+	ENSURE_INITIALIZED(iterator);
+	if (apc_stack_size(iterator->stack) == 0) {
+		return;
 	}
 
 	iterator->stack_idx++;
 	iterator->key_idx++;
-
-	RETURN_TRUE;
 }
-/* }}} */
 
-/* {{{ proto long APCuIterator::getTotalHits() */
-PHP_METHOD(apc_iterator, getTotalHits) {
+PHP_METHOD(APCUIterator, getTotalHits) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
 
-	if (iterator->initialized == 0) {
-		RETURN_FALSE;
-	}
+	ENSURE_INITIALIZED(iterator);
 
 	if (iterator->totals_flag == 0) {
 		apc_iterator_totals(iterator);
@@ -499,17 +489,14 @@ PHP_METHOD(apc_iterator, getTotalHits) {
 }
 /* }}} */
 
-/* {{{ proto long APCuIterator::getTotalSize() */
-PHP_METHOD(apc_iterator, getTotalSize) {
+PHP_METHOD(APCUIterator, getTotalSize) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
 
-	if (iterator->initialized == 0) {
-		RETURN_FALSE;
-	}
+	ENSURE_INITIALIZED(iterator);
 
 	if (iterator->totals_flag == 0) {
 		apc_iterator_totals(iterator);
@@ -517,19 +504,15 @@ PHP_METHOD(apc_iterator, getTotalSize) {
 
 	RETURN_LONG(iterator->size);
 }
-/* }}} */
 
-/* {{{ proto long APCuIterator::getTotalCount() */
-PHP_METHOD(apc_iterator, getTotalCount) {
+PHP_METHOD(APCUIterator, getTotalCount) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
 
-	if (iterator->initialized == 0) {
-		RETURN_FALSE;
-	}
+	ENSURE_INITIALIZED(iterator);
 
 	if (iterator->totals_flag == 0) {
 		apc_iterator_totals(iterator);
@@ -537,40 +520,12 @@ PHP_METHOD(apc_iterator, getTotalCount) {
 
 	RETURN_LONG(iterator->count);
 }
-/* }}} */
-
-/* {{{ arginfo */
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator___construct, 0, 0, 0)
-	ZEND_ARG_INFO(0, search)
-	ZEND_ARG_INFO(0, format)
-	ZEND_ARG_INFO(0, chunk_size)
-	ZEND_ARG_INFO(0, list)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_apc_iterator_void, 0, 0, 0)
-ZEND_END_ARG_INFO()
-/* }}} */
-
-/* {{{ apc_iterator_functions */
-static zend_function_entry apc_iterator_functions[] = {
-	PHP_ME(apc_iterator, __construct, arginfo_apc_iterator___construct, ZEND_ACC_PUBLIC)
-	PHP_ME(apc_iterator, rewind, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-	PHP_ME(apc_iterator, current, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-	PHP_ME(apc_iterator, key, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-	PHP_ME(apc_iterator, next, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-	PHP_ME(apc_iterator, valid, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-	PHP_ME(apc_iterator, getTotalHits, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-	PHP_ME(apc_iterator, getTotalSize, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-	PHP_ME(apc_iterator, getTotalCount, arginfo_apc_iterator_void, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
-/* }}} */
 
 /* {{{ apc_iterator_init */
 int apc_iterator_init(int module_number) {
 	zend_class_entry ce;
 
-	INIT_CLASS_ENTRY(ce, APC_ITERATOR_NAME, apc_iterator_functions);
+	INIT_CLASS_ENTRY(ce, "APCUIterator", class_APCUIterator_methods);
 	apc_iterator_ce = zend_register_internal_class(&ce);
 	apc_iterator_ce->create_object = apc_iterator_create;
 	zend_class_implements(apc_iterator_ce, 1, zend_ce_iterator);
@@ -612,12 +567,13 @@ int apc_iterator_delete(zval *zobj) {
 	apc_iterator_item_t *item;
 
 	if (!ce || !instanceof_function(ce, apc_iterator_ce)) {
-		apc_error("apc_delete object argument must be instance of " APC_ITERATOR_NAME ".");
+		apc_error("apc_delete object argument must be instance of APCUIterator.");
 		return 0;
 	}
 	iterator = apc_iterator_fetch(zobj);
 
 	if (iterator->initialized == 0) {
+		zend_throw_error(NULL, "Trying to use uninitialized APCUIterator");
 		return 0;
 	}
 

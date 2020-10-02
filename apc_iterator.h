@@ -26,8 +26,6 @@
 #include "ext/pcre/php_pcre.h"
 #include "zend_smart_str.h"
 
-#define APC_ITERATOR_NAME "APCuIterator"
-
 #define APC_DEFAULT_CHUNK_SIZE 100
 
 #define APC_LIST_ACTIVE   0x1
