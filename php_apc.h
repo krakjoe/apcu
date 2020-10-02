@@ -36,18 +36,6 @@
 #define PHP_APCU_VERSION "5.1.19-dev"
 #define PHP_APCU_EXTNAME "apcu"
 
-PHP_APCU_API PHP_FUNCTION(apcu_add);
-PHP_APCU_API PHP_FUNCTION(apcu_delete);
-PHP_APCU_API PHP_FUNCTION(apcu_exists);
-PHP_APCU_API PHP_FUNCTION(apcu_fetch);
-PHP_APCU_API PHP_FUNCTION(apcu_store);
-PHP_APCU_API PHP_FUNCTION(apcu_inc);
-PHP_APCU_API PHP_FUNCTION(apcu_dec);
-PHP_APCU_API PHP_FUNCTION(apcu_cas);
-PHP_APCU_API PHP_FUNCTION(apcu_enabled);
-PHP_APCU_API PHP_FUNCTION(apcu_sma_info);
-PHP_APCU_API PHP_FUNCTION(apcu_entry);
-
 PHP_APCU_API zend_bool apc_is_enabled(void);
 
 extern zend_module_entry apcu_module_entry;
