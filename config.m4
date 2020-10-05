@@ -92,7 +92,8 @@ if test "$PHP_APCU" != "no"; then
 	    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 			    #include <sys/types.h>
 			    #include <pthread.h>
-          main() {
+                #include <stdio.h>
+          int main() {
 			      pthread_rwlock_t rwlock;
 			      pthread_rwlockattr_t attr;	
 
@@ -143,7 +144,8 @@ if test "$PHP_APCU" != "no"; then
 	  AC_RUN_IFELSE([AC_LANG_SOURCE([[
 				  #include <sys/types.h>
 				  #include <pthread.h>
-          main() {
+                  #include <stdio.h>
+          int main() {
 				    pthread_mutex_t mutex;
 				    pthread_mutexattr_t attr;	
 
