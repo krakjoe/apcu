@@ -1,5 +1,5 @@
 /* This is a generated file, edit the .stub.php file instead.
- * Stub hash: 13306daad75939972450a1934b844ad94d76442d */
+ * Stub hash: ef03298f36215c95f4047776d95f0f3dc8c17458 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_apcu_clear_cache, 0, 0, _IS_BOOL, 0)
 ZEND_END_ARG_INFO()
@@ -63,22 +63,22 @@ ZEND_END_ARG_INFO()
 #endif
 
 
-ZEND_FUNCTION(apcu_clear_cache);
-ZEND_FUNCTION(apcu_cache_info);
-ZEND_FUNCTION(apcu_key_info);
-ZEND_FUNCTION(apcu_sma_info);
-ZEND_FUNCTION(apcu_enabled);
-ZEND_FUNCTION(apcu_store);
-ZEND_FUNCTION(apcu_add);
-ZEND_FUNCTION(apcu_inc);
-ZEND_FUNCTION(apcu_dec);
-ZEND_FUNCTION(apcu_cas);
-ZEND_FUNCTION(apcu_fetch);
-ZEND_FUNCTION(apcu_exists);
-ZEND_FUNCTION(apcu_delete);
-ZEND_FUNCTION(apcu_entry);
+PHP_APCU_API ZEND_FUNCTION(apcu_clear_cache);
+PHP_APCU_API ZEND_FUNCTION(apcu_cache_info);
+PHP_APCU_API ZEND_FUNCTION(apcu_key_info);
+PHP_APCU_API ZEND_FUNCTION(apcu_sma_info);
+PHP_APCU_API ZEND_FUNCTION(apcu_enabled);
+PHP_APCU_API ZEND_FUNCTION(apcu_store);
+PHP_APCU_API ZEND_FUNCTION(apcu_add);
+PHP_APCU_API ZEND_FUNCTION(apcu_inc);
+PHP_APCU_API ZEND_FUNCTION(apcu_dec);
+PHP_APCU_API ZEND_FUNCTION(apcu_cas);
+PHP_APCU_API ZEND_FUNCTION(apcu_fetch);
+PHP_APCU_API ZEND_FUNCTION(apcu_exists);
+PHP_APCU_API ZEND_FUNCTION(apcu_delete);
+PHP_APCU_API ZEND_FUNCTION(apcu_entry);
 #if defined(APC_DEBUG)
-ZEND_FUNCTION(apcu_inc_request_time);
+PHP_APCU_API ZEND_FUNCTION(apcu_inc_request_time);
 #endif
 
 
