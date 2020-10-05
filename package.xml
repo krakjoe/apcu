@@ -30,7 +30,7 @@
  </lead>
  <date>2020-10-05</date>
  <version>
-  <release>5.1.19</release>
+  <release>5.1.20dev</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,9 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Fixed apcu_store() with integer keys (#388).
-- Made apc.use_request_time=0 the default (#391).
-- Made apcu compatible with PHP 8.0.
+-
  </notes>
  <contents>
   <dir name="/">
@@ -183,6 +181,23 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2020-10-05</date>
+   <version>
+    <release>5.1.19</release>
+    <api>5.1.18</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Fixed apcu_store() with integer keys (#388).
+- Made apc.use_request_time=0 the default (#391).
+- Made apcu compatible with PHP 8.0.
+   </notes>
+  </release>
   <release>
    <date>2019-10-28</date>
    <version>
