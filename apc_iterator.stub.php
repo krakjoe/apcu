@@ -1,6 +1,9 @@
 <?php
 
-/** @generate-function-entries */
+/**
+ * @generate-function-entries
+ * @generate-legacy-arginfo
+ */
 
 class APCUIterator implements Iterator {
     /** @param array|string|null $search */

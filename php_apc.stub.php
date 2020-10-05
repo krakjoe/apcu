@@ -1,6 +1,9 @@
 <?php
 
-/** @generate-function-entries PHP_APCU_API */
+/**
+ * @generate-function-entries PHP_APCU_API
+ * @generate-legacy-arginfo
+ */
 
 function apcu_clear_cache(): bool {}
 
