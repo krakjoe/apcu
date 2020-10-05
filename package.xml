@@ -39,7 +39,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- 
+- Fixed apcu_store() with integer keys (#388).
+- Made apc.use_request_time=0 the default (#391).
+- Made apcu compatible with PHP 8.0.
  </notes>
  <contents>
   <dir name="/">
