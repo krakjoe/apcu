@@ -759,7 +759,9 @@ case OB_HOST_STATS:
 	$apcversion = phpversion('apcu');
 	$phpversion = phpversion();
 	$number_vars = $cache['num_entries'];
-    $size_vars = bsize($cache['mem_size']);
+	$size_vars = bsize($cache['mem_size']);
+	$num_hits_and_misses = $cache['num_hits'] + $cache['num_misses'];
+	$num_hits_and_misses = 0 >= $num_hits_and_misses ? 1 : $num_hits_and_misses;
 	$i=0;
 	echo <<< EOB
 		<div class="info div1"><h2>General Cache Information</h2>
@@ -836,11 +838,11 @@ EOB;
 			: "",
 		'<tr>',
 		'<td class=td-0><span class="green box">&nbsp;</span>Free: ',bsize($mem_avail).sprintf(" (%.1f%%)",$mem_avail*100/$mem_size),"</td>\n",
-		'<td class=td-1><span class="green box">&nbsp;</span>Hits: ',$cache['num_hits'].@sprintf(" (%.1f%%)",$cache['num_hits']*100/($cache['num_hits']+$cache['num_misses'])),"</td>\n",
+		'<td class=td-1><span class="green box">&nbsp;</span>Hits: ',$cache['num_hits'].@sprintf(" (%.1f%%)",$cache['num_hits']*100/$num_hits_and_misses),"</td>\n",
 		'</tr>',
 		'<tr>',
 		'<td class=td-0><span class="red box">&nbsp;</span>Used: ',bsize($mem_used).sprintf(" (%.1f%%)",$mem_used *100/$mem_size),"</td>\n",
-		'<td class=td-1><span class="red box">&nbsp;</span>Misses: ',$cache['num_misses'].@sprintf(" (%.1f%%)",$cache['num_misses']*100/($cache['num_hits']+$cache['num_misses'])),"</td>\n";
+		'<td class=td-1><span class="red box">&nbsp;</span>Misses: ',$cache['num_misses'].@sprintf(" (%.1f%%)",$cache['num_misses']*100/$num_hits_and_misses),"</td>\n";
 	echo <<< EOB
 		</tr>
 		</tbody></table>
