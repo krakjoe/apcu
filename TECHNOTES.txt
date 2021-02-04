@@ -48,9 +48,9 @@ form of a quick-start guide to start hacking on APC.
 
    apc_sma_malloc, apc_sma_realloc, apc_sma_strdup and apc_sma_free 
    behave to the caller just like malloc, realloc, strdup and free, they are 
-   generated from macros in apc_sma_api.h
+   generated from macros in apc_sma.h
 
-	Note:   apc_sma_api.h is formatted and designed such that the SMA APCu 
+	Note:   apc_sma.h is formatted and designed such that the SMA APCu 
 			uses can be used by third parties in their own extensions without
 			interfering with, or consuming the resources of APCu itself
 

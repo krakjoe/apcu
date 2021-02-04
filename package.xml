@@ -120,7 +120,6 @@
    <file name="php_apc_arginfo.h" role="src" />
    <file name="php_apc_legacy_arginfo.h" role="src" />
    <file name="apc.c" role="src" />
-   <file name="apc_cache_api.h" role="src" />
    <file name="apc_cache.c" role="src" />
    <file name="apc_cache.h" role="src" />
    <file name="apc_globals.h" role="src" />
@@ -130,7 +129,6 @@
    <file name="apc_iterator.stub.php" role="src" />
    <file name="apc_iterator_arginfo.h" role="src" />
    <file name="apc_iterator_legacy_arginfo.h" role="src" />
-   <file name="apc_lock_api.h" role="src" />
    <file name="apc_lock.c" role="src" />
    <file name="apc_lock.h" role="src" />
    <file name="apc_mmap.c" role="src" />
@@ -144,7 +142,6 @@
    <file name="apc_shm.h" role="src" />
    <file name="apc_signal.c" role="src" />
    <file name="apc_signal.h" role="src" />
-   <file name="apc_sma_api.h" role="src" />
    <file name="apc_sma.c" role="src" />
    <file name="apc_sma.h" role="src" />
    <file name="apc_stack.c" role="src" />
