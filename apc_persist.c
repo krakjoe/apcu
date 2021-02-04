@@ -200,6 +200,9 @@ static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *
 		case IS_REFERENCE:
 			ADD_SIZE(sizeof(zend_reference));
 			return apc_persist_calc_zval(ctxt, Z_REFVAL_P(zv));
+		case IS_OBJECT:
+			ctxt->use_serialization = 1;
+			return 0;
 		case IS_RESOURCE:
 			apc_warning("Cannot store resources in apcu cache");
 			return 0;
