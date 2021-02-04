@@ -257,10 +257,15 @@ static zend_string *apc_persist_copy_cstr(
 	return str;
 }
 
-static zend_string *apc_persist_copy_zstr(
+static zend_string *apc_persist_copy_zstr_no_add(
 		apc_persist_context_t *ctxt, const zend_string *orig_str) {
-	zend_string *str = apc_persist_copy_cstr(
+	return apc_persist_copy_cstr(
 		ctxt, ZSTR_VAL(orig_str), ZSTR_LEN(orig_str), ZSTR_H(orig_str));
+}
+
+static inline zend_string *apc_persist_copy_zstr(
+		apc_persist_context_t *ctxt, const zend_string *orig_str) {
+	zend_string *str = apc_persist_copy_zstr_no_add(ctxt, orig_str);
 	apc_persist_add_already_allocated(ctxt, orig_str, str);
 	return str;
 }
@@ -323,7 +328,7 @@ static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTa
 		}
 
 		if (p->key) {
-			p->key = apc_persist_copy_zstr(ctxt, p->key);
+			p->key = apc_persist_copy_zstr_no_add(ctxt, p->key);
 			ht->u.flags &= ~HASH_FLAG_STATIC_KEYS;
 		} else if ((zend_long) p->h >= (zend_long) ht->nNextFreeElement) {
 			ht->nNextFreeElement = p->h + 1;
@@ -379,7 +384,7 @@ static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv) {
 static apc_cache_entry_t *apc_persist_copy(
 		apc_persist_context_t *ctxt, const apc_cache_entry_t *orig_entry) {
 	apc_cache_entry_t *entry = COPY(orig_entry, sizeof(apc_cache_entry_t));
-	entry->key = apc_persist_copy_zstr(ctxt, entry->key);
+	entry->key = apc_persist_copy_zstr_no_add(ctxt, entry->key);
 	apc_persist_copy_zval(ctxt, &entry->val);
 	return entry;
 }
