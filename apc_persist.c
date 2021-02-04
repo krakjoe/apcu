@@ -33,6 +33,10 @@
 	(GC_TYPE_INFO(ref) = type | (GC_PERSISTENT << GC_FLAGS_SHIFT))
 #endif
 
+#if PHP_VERSION_ID < 80000
+# define GC_REFERENCE IS_REFERENCE
+#endif
+
 /*
  * PERSIST: Copy from request memory to SHM.
  */
@@ -280,7 +284,7 @@ static zend_reference *apc_persist_copy_ref(
 	apc_persist_add_already_allocated(ctxt, orig_ref, ref);
 
 	GC_SET_REFCOUNT(ref, 1);
-	GC_SET_PERSISTENT_TYPE(ref, IS_REFERENCE);
+	GC_SET_PERSISTENT_TYPE(ref, GC_REFERENCE);
 #if PHP_VERSION_ID >= 70400
 	ref->sources.ptr = NULL;
 #endif
@@ -517,7 +521,7 @@ static zend_reference *apc_unpersist_ref(
 	apc_unpersist_add_already_copied(ctxt, orig_ref, ref);
 
 	GC_SET_REFCOUNT(ref, 1);
-	GC_TYPE_INFO(ref) = IS_REFERENCE;
+	GC_TYPE_INFO(ref) = GC_REFERENCE;
 #if PHP_VERSION_ID >= 70400
 	ref->sources.ptr = NULL;
 #endif
