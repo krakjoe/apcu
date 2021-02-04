@@ -34,34 +34,34 @@ debug_zval_dump($x);
 
 ?>
 ===DONE===
---EXPECT--
+--EXPECTF--
 array(9) refcount(2){
   [0]=>
-  string(1) "a" refcount(1)
+  string(1) "a" %s
   [1]=>
   &array(1) refcount(1){
     [0]=>
-    string(1) "c" refcount(1)
+    string(1) "c" %s
   }
   [2]=>
   &array(1) refcount(1){
     [0]=>
-    string(1) "c" refcount(1)
+    string(1) "c" %s
   }
   [3]=>
-  &string(1) "d" refcount(1)
+  &string(1) "d" %s
   [4]=>
-  &string(1) "d" refcount(1)
+  &string(1) "d" %s
   [5]=>
-  &string(1) "d" refcount(1)
+  &string(1) "d" %s
   [6]=>
-  string(1) "e" refcount(1)
+  string(1) "e" %s
   [7]=>
-  string(1) "e" refcount(1)
+  string(1) "e" %s
   [8]=>
   &array(2) refcount(1){
     [0]=>
-    string(1) "f" refcount(1)
+    string(1) "f" %s
     [1]=>
     *RECURSION*
   }
