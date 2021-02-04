@@ -48,8 +48,8 @@ typedef struct _apc_persist_context_t {
 	size_t size;
 	/* Whether or not we may have to memoize refcounted addresses */
 	zend_bool memoization_needed;
-	/* Whether to force serialization of the top-level value */
-	zend_bool force_serialization;
+	/* Whether to serialize the top-level value */
+	zend_bool use_serialization;
 	/* Serialized object/array string, in case there can only be one */
 	unsigned char *serialized_str;
 	size_t serialized_str_len;
@@ -69,8 +69,7 @@ typedef struct _apc_persist_context_t {
 #define ALLOC(sz) apc_persist_alloc(ctxt, sz)
 #define COPY(val, sz) apc_persist_alloc_copy(ctxt, val, sz)
 
-static zend_bool apc_persist_calc_zval(
-		apc_persist_context_t *ctxt, const zval *zv, zend_bool top_level);
+static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *zv);
 static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv);
 
 static inline void apc_persist_copy_zval(apc_persist_context_t *ctxt, zval *zv) {
@@ -86,7 +85,7 @@ void apc_persist_init_context(apc_persist_context_t *ctxt, apc_serializer_t *ser
 	ctxt->serializer = serializer;
 	ctxt->size = 0;
 	ctxt->memoization_needed = 0;
-	ctxt->force_serialization = 0;
+	ctxt->use_serialization = 0;
 	ctxt->serialized_str = NULL;
 	ctxt->serialized_str_len = 0;
 	ctxt->alloc = NULL;
@@ -135,7 +134,7 @@ static zend_bool apc_persist_calc_ht(apc_persist_context_t *ctxt, const HashTabl
 		/* This can only happen if $GLOBALS is placed in the cache.
 		 * Don't bother with this edge-case, fall back to serialization. */
 		if (Z_TYPE(p->val) == IS_INDIRECT) {
-			ctxt->force_serialization = 1;
+			ctxt->use_serialization = 1;
 			return 0;
 		}
 
@@ -146,7 +145,7 @@ static zend_bool apc_persist_calc_ht(apc_persist_context_t *ctxt, const HashTabl
 		if (p->key) {
 			ADD_SIZE_STR(ZSTR_LEN(p->key));
 		}
-		if (!apc_persist_calc_zval(ctxt, &p->val, 0)) {
+		if (!apc_persist_calc_zval(ctxt, &p->val)) {
 			return 0;
 		}
 	}
@@ -178,14 +177,13 @@ static zend_bool apc_persist_calc_serialize(apc_persist_context_t *ctxt, const z
 	return 1;
 }
 
-static zend_bool apc_persist_calc_zval(
-		apc_persist_context_t *ctxt, const zval *zv, zend_bool top_level) {
+static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *zv) {
 	if (Z_TYPE_P(zv) < IS_STRING) {
 		/* No data apart from the zval itself */
 		return 1;
 	}
 
-	if (ctxt->force_serialization) {
+	if (ctxt->use_serialization) {
 		return apc_persist_calc_serialize(ctxt, zv);
 	}
 
@@ -198,32 +196,21 @@ static zend_bool apc_persist_calc_zval(
 			ADD_SIZE_STR(Z_STRLEN_P(zv));
 			return 1;
 		case IS_ARRAY:
-			if (!ctxt->serializer) {
-				return apc_persist_calc_ht(ctxt, Z_ARRVAL_P(zv));
-			}
-			/* break missing intentionally */
-		case IS_OBJECT:
-			if (!top_level) {
-				ctxt->force_serialization = 1;
-				return 0;
-			}
-			return apc_persist_calc_serialize(ctxt, zv);
+			return apc_persist_calc_ht(ctxt, Z_ARRVAL_P(zv));
 		case IS_REFERENCE:
 			ADD_SIZE(sizeof(zend_reference));
-			return apc_persist_calc_zval(ctxt, Z_REFVAL_P(zv), 0);
+			return apc_persist_calc_zval(ctxt, Z_REFVAL_P(zv));
 		case IS_RESOURCE:
 			apc_warning("Cannot store resources in apcu cache");
 			return 0;
-		default:
-			ZEND_ASSERT(0);
-			return 0;
+		EMPTY_SWITCH_DEFAULT_CASE()
 	}
 }
 
 static zend_bool apc_persist_calc(apc_persist_context_t *ctxt, const apc_cache_entry_t *entry) {
 	ADD_SIZE(sizeof(apc_cache_entry_t));
 	ADD_SIZE_STR(ZSTR_LEN(entry->key));
-	return apc_persist_calc_zval(ctxt, &entry->val, 1);
+	return apc_persist_calc_zval(ctxt, &entry->val);
 }
 
 static inline void *apc_persist_get_already_allocated(apc_persist_context_t *ctxt, void *ptr) {
@@ -366,7 +353,7 @@ static void apc_persist_copy_serialize(
 static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv) {
 	void *ptr;
 
-	if (ctxt->force_serialization) {
+	if (ctxt->use_serialization) {
 		apc_persist_copy_serialize(ctxt, zv);
 		return;
 	}
@@ -378,22 +365,14 @@ static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv) {
 			ZVAL_STR(zv, ptr);
 			return;
 		case IS_ARRAY:
-			if (!ctxt->serializer) {
-				if (!ptr) ptr = apc_persist_copy_ht(ctxt, Z_ARRVAL_P(zv));
-				ZVAL_ARR(zv, ptr);
-				return;
-			}
-			/* break missing intentionally */
-		case IS_OBJECT:
-			apc_persist_copy_serialize(ctxt, zv);
+			if (!ptr) ptr = apc_persist_copy_ht(ctxt, Z_ARRVAL_P(zv));
+			ZVAL_ARR(zv, ptr);
 			return;
 		case IS_REFERENCE:
 			if (!ptr) ptr = apc_persist_copy_ref(ctxt, Z_REF_P(zv));
 			ZVAL_REF(zv, ptr);
 			return;
-		default:
-			ZEND_ASSERT(0);
-			return;
+		EMPTY_SWITCH_DEFAULT_CASE()
 	}
 }
 
@@ -423,16 +402,23 @@ apc_cache_entry_t *apc_persist(
 		zend_hash_init(&ctxt.already_allocated, 0, NULL, NULL, 0);
 	}
 
+	/* Objects are always serialized, and arrays when a serializer is set.
+	 * Other cases are detected during apc_persist_calc(). */
+	if (Z_TYPE(orig_entry->val) == IS_OBJECT
+			|| (serializer && Z_TYPE(orig_entry->val) == IS_ARRAY)) {
+		ctxt.use_serialization = 1;
+	}
+
 	if (!apc_persist_calc(&ctxt, orig_entry)) {
-		if (!ctxt.force_serialization) {
+		if (!ctxt.use_serialization) {
 			apc_persist_destroy_context(&ctxt);
 			return NULL;
 		}
 
-		/* Try again with forced serialization */
+		/* Try again with serialization */
 		apc_persist_destroy_context(&ctxt);
 		apc_persist_init_context(&ctxt, serializer);
-		ctxt.force_serialization = 1;
+		ctxt.use_serialization = 1;
 		if (!apc_persist_calc(&ctxt, orig_entry)) {
 			apc_persist_destroy_context(&ctxt);
 			return NULL;
