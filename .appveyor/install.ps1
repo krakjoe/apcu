@@ -19,6 +19,7 @@ if (-not (Test-Path 'c:\build-cache\$dname1')) {
 $releases = @{
     '7.0' = '7.0.33';
     '7.1' = '7.1.33';
+    '7.2' = '7.2.34';
 }
 if ($releases.ContainsKey($env:PHP_VER)) {
     $phpversion = $releases.$env:PHP_VER;
