@@ -37,7 +37,7 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 	return NULL != apc_windows_cs_create(lock);
 }
 
-PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
+static inline zend_bool apc_lock_rlock_impl(apc_lock_t *lock) {
 	apc_windows_cs_rdlock(lock);
 	return 1;
 }
@@ -94,9 +94,8 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 	return pthread_rwlock_init(lock, &apc_lock_attr) == SUCCESS;
 }
 
-PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
-	pthread_rwlock_rdlock(lock);
-	return 1;
+static inline zend_bool apc_lock_rlock_impl(apc_lock_t *lock) {
+	return pthread_rwlock_rdlock(lock) == 0;
 }
 
 static inline zend_bool apc_lock_wlock_impl(apc_lock_t *lock) {
@@ -154,9 +153,8 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 	return 1;
 }
 
-PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
-	pthread_mutex_lock(lock);
-	return 1;
+static inline zend_bool apc_lock_rlock_impl(apc_lock_t *lock) {
+	return pthread_mutex_lock(lock) == 0;
 }
 
 static inline zend_bool apc_lock_wlock_impl(apc_lock_t *lock) {
@@ -227,7 +225,7 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 	lock->state = 0;
 }
 
-PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
+static inline zend_bool apc_lock_rlock_impl(apc_lock_t *lock) {
 	apc_lock_get(lock);
 	return 1;
 }
@@ -291,7 +289,7 @@ PHP_APCU_API zend_bool apc_lock_create(apc_lock_t *lock) {
 	}
 }
 
-PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
+static inline zend_bool apc_lock_rlock_impl(apc_lock_t *lock) {
 	apc_fcntl_call((*lock), F_SETLKW, F_RDLCK, 0, SEEK_SET, 0);
 	return 1;
 }
@@ -327,5 +325,16 @@ PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock) {
 
 	HANDLE_UNBLOCK_INTERRUPTIONS();
 	apc_warning("Failed to acquire write lock");
+	return 0;
+}
+
+PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock) {
+	HANDLE_BLOCK_INTERRUPTIONS();
+	if (apc_lock_rlock_impl(lock)) {
+		return 1;
+	}
+
+	HANDLE_UNBLOCK_INTERRUPTIONS();
+	apc_warning("Failed to acquire read lock");
 	return 0;
 }

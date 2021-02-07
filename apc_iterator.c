@@ -218,7 +218,10 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator) {
 		apc_iterator_item_dtor(apc_stack_pop(iterator->stack));
 	}
 
-	APC_RLOCK(apc_user_cache->header);
+	if (!APC_RLOCK(apc_user_cache->header)) {
+		return count;
+	}
+
 	php_apc_try {
 		while (count <= iterator->chunk_size && iterator->slot_idx < apc_user_cache->nslots) {
 			apc_cache_entry_t *entry = apc_user_cache->slots[iterator->slot_idx];
@@ -250,7 +253,10 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 	int count = 0;
 	apc_iterator_item_t *item;
 
-	APC_RLOCK(apc_user_cache->header);
+	if (!APC_RLOCK(apc_user_cache->header)) {
+		return count;
+	}
+
 	php_apc_try {
 		apc_cache_entry_t *entry = apc_user_cache->header->gc;
 		while (entry && count <= iterator->slot_idx) {
@@ -283,7 +289,10 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 	time_t t = apc_time();
 	int i;
 
-	APC_RLOCK(apc_user_cache->header);
+	if (!APC_RLOCK(apc_user_cache->header)) {
+		return;
+	}
+
 	php_apc_try {
 		for (i=0; i < apc_user_cache->nslots; i++) {
 			apc_cache_entry_t *entry = apc_user_cache->slots[i];

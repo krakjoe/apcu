@@ -797,7 +797,10 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_find(apc_cache_t* cache, zend_string *
 		return NULL;
 	}
 
-	APC_RLOCK(cache->header);
+	if (!APC_RLOCK(cache->header)) {
+		return NULL;
+	}
+
 	entry = apc_cache_rlocked_find_incref(cache, key, t);
 	APC_RUNLOCK(cache->header);
 
@@ -815,7 +818,10 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 		return 0;
 	}
 
-	APC_RLOCK(cache->header);
+	if (!APC_RLOCK(cache->header)) {
+		return 0;
+	}
+
 	entry = apc_cache_rlocked_find_incref(cache, key, t);
 	APC_RUNLOCK(cache->header);
 
@@ -841,7 +847,10 @@ PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, ti
 		return 0;
 	}
 
-	APC_RLOCK(cache->header);
+	if (!APC_RLOCK(cache->header)) {
+		return 0;
+	}
+
 	entry = apc_cache_rlocked_find_nostat(cache, key, t);
 	APC_RUNLOCK(cache->header);
 
@@ -913,7 +922,10 @@ PHP_APCU_API zend_bool apc_cache_atomic_update_long(
 	}
 
 retry_update:
-	APC_RLOCK(cache->header);
+	if (!APC_RLOCK(cache->header)) {
+		return 0;
+	}
+
 	entry = apc_cache_rlocked_find_nostat(cache, key, t);
 	if (entry) {
 		/* Only supports integers */
@@ -1057,12 +1069,15 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 	apc_cache_entry_t *p;
 	zend_ulong i, j;
 
+	ZVAL_NULL(info);
 	if (!cache) {
-		ZVAL_NULL(info);
 		return 0;
 	}
 
-	APC_RLOCK(cache->header);
+	if (!APC_RLOCK(cache->header)) {
+		return 0;
+	}
+
 	php_apc_try {
 		array_init(info);
 		add_assoc_long(info, "num_slots", cache->nslots);
@@ -1133,7 +1148,10 @@ PHP_APCU_API void apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *sta
 	/* calculate hash and slot */
 	apc_cache_hash_slot(cache, key, &h, &s);
 
-	APC_RLOCK(cache->header);
+	if (!APC_RLOCK(cache->header)) {
+		return;
+	}
+
 	php_apc_try {
 		/* find head */
 		apc_cache_entry_t *entry = cache->slots[s];
