@@ -33,8 +33,6 @@
 #define APC_GLOBALS_H
 
 #include "apc.h"
-#include "apc_cache.h"
-#include "apc_stack.h"
 
 ZEND_BEGIN_MODULE_GLOBALS(apcu)
 	/* configuration parameters */
@@ -62,7 +60,8 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
 
 	char *serializer_name;       /* the serializer config option */
 
-	volatile unsigned recursion;
+	/* Nesting level of apcu_entry calls. */
+	unsigned int entry_level;
 ZEND_END_MODULE_GLOBALS(apcu)
 
 /* (the following is defined in php_apc.c) */
@@ -74,7 +73,8 @@ ZEND_EXTERN_MODULE_GLOBALS(apcu)
 # define APCG(v) (apcu_globals.v)
 #endif
 
-extern apc_cache_t* apc_user_cache;
+extern struct _apc_cache_t* apc_user_cache;
+
 #endif
 
 /*

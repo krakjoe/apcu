@@ -218,7 +218,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator) {
 		apc_iterator_item_dtor(apc_stack_pop(iterator->stack));
 	}
 
-	if (!APC_RLOCK(apc_user_cache->header)) {
+	if (!apc_cache_rlock(apc_user_cache)) {
 		return count;
 	}
 
@@ -241,7 +241,7 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator) {
 		}
 	} php_apc_finally {
 		iterator->stack_idx = 0;
-		APC_RUNLOCK(apc_user_cache->header)
+		apc_cache_runlock(apc_user_cache);
 	} php_apc_end_try();
 
 	return count;
@@ -253,7 +253,7 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 	int count = 0;
 	apc_iterator_item_t *item;
 
-	if (!APC_RLOCK(apc_user_cache->header)) {
+	if (!apc_cache_rlock(apc_user_cache)) {
 		return count;
 	}
 
@@ -277,7 +277,7 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 	} php_apc_finally {
 		iterator->slot_idx += count;
 		iterator->stack_idx = 0;
-		APC_RUNLOCK(apc_user_cache->header);
+		apc_cache_runlock(apc_user_cache);
 	} php_apc_end_try();
 
 	return count;
@@ -289,7 +289,7 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 	time_t t = apc_time();
 	int i;
 
-	if (!APC_RLOCK(apc_user_cache->header)) {
+	if (!apc_cache_rlock(apc_user_cache)) {
 		return;
 	}
 
@@ -309,7 +309,7 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 		}
 	} php_apc_finally {
 		iterator->totals_flag = 1;
-		APC_RUNLOCK(apc_user_cache->header);
+		apc_cache_runlock(apc_user_cache);
 	} php_apc_end_try();
 }
 /* }}} */

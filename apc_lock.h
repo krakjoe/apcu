@@ -93,12 +93,6 @@ PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
 #define RUNLOCK(lock)         { apc_lock_runlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
 /* }}} */
 
-/* {{{ object locking macros */
-#define APC_WLOCK(o)          WLOCK(&(o)->lock)
-#define APC_WUNLOCK(o)        WUNLOCK(&(o)->lock)
-#define APC_RLOCK(o)          RLOCK(&(o)->lock)
-#define APC_RUNLOCK(o)        RUNLOCK(&(o)->lock) /* }}} */
-
 /* atomic operations */
 #ifdef PHP_WIN32
 # ifdef _WIN64

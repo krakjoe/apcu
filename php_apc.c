@@ -84,7 +84,7 @@ static void php_apc_init_globals(zend_apcu_globals* apcu_globals)
 	apcu_globals->coredump_unmap = 0;
 	apcu_globals->use_request_time = 0;
 	apcu_globals->serializer_name = NULL;
-	apcu_globals->recursion = 0;
+	apcu_globals->entry_level = 0;
 }
 /* }}} */
 

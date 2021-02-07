@@ -504,7 +504,7 @@ PHP_APCU_API zend_bool apc_cache_store(
 	}
 
 	/* execute an insertion */
-	if (!APC_WLOCK(cache->header)) {
+	if (!apc_cache_wlock(cache)) {
 		free_entry(cache, entry);
 		return 0;
 	}
@@ -512,7 +512,7 @@ PHP_APCU_API zend_bool apc_cache_store(
 	php_apc_try {
 		ret = apc_cache_wlocked_insert(cache, entry, exclusive);
 	} php_apc_finally {
-		APC_WUNLOCK(cache->header);
+		apc_cache_wunlock(cache);
 	} php_apc_end_try();
 
 	if (!ret) {
@@ -701,8 +701,7 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 		return;
 	}
 
-	/* lock header */
-	if (!APC_WLOCK(cache->header)) {
+	if (!apc_cache_wlock(cache)) {
 		return;
 	}
 
@@ -713,8 +712,7 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 	cache->header->stime = apc_time();
 	cache->header->nexpunges = 0;
 
-	/* unlock header */
-	APC_WUNLOCK(cache->header);
+	apc_cache_wunlock(cache);
 }
 /* }}} */
 
@@ -734,7 +732,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	t = apc_time();
 
 	/* get the lock for header */
-	if (!APC_WLOCK(cache->header)) {
+	if (!apc_cache_wlock(cache)) {
 		return;
 	}
 
@@ -783,8 +781,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 		}
 	}
 
-	/* unlock header */
-	APC_WUNLOCK(cache->header);
+	apc_cache_wunlock(cache);
 }
 /* }}} */
 
@@ -797,12 +794,12 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_find(apc_cache_t* cache, zend_string *
 		return NULL;
 	}
 
-	if (!APC_RLOCK(cache->header)) {
+	if (!apc_cache_rlock(cache)) {
 		return NULL;
 	}
 
 	entry = apc_cache_rlocked_find_incref(cache, key, t);
-	APC_RUNLOCK(cache->header);
+	apc_cache_runlock(cache);
 
 	return entry;
 }
@@ -818,12 +815,12 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 		return 0;
 	}
 
-	if (!APC_RLOCK(cache->header)) {
+	if (!apc_cache_rlock(cache)) {
 		return 0;
 	}
 
 	entry = apc_cache_rlocked_find_incref(cache, key, t);
-	APC_RUNLOCK(cache->header);
+	apc_cache_runlock(cache);
 
 	if (!entry) {
 		return 0;
@@ -847,12 +844,12 @@ PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, ti
 		return 0;
 	}
 
-	if (!APC_RLOCK(cache->header)) {
+	if (!apc_cache_rlock(cache)) {
 		return 0;
 	}
 
 	entry = apc_cache_rlocked_find_nostat(cache, key, t);
-	APC_RUNLOCK(cache->header);
+	apc_cache_runlock(cache);
 
 	return entry != NULL;
 }
@@ -872,7 +869,7 @@ PHP_APCU_API zend_bool apc_cache_update(
 	}
 
 retry_update:
-	if (!APC_WLOCK(cache->header)) {
+	if (!apc_cache_wlock(cache)) {
 		return 0;
 	}
 
@@ -884,11 +881,11 @@ retry_update:
 			entry->mtime = t;
 		}
 
-		APC_WUNLOCK(cache->header);
+		apc_cache_wunlock(cache);
 		return retval;
 	}
 
-	APC_WUNLOCK(cache->header);
+	apc_cache_wunlock(cache);
 	if (insert_if_not_found) {
 		/* Failed to find matching entry. Add key with value 0 and run the updater again. */
 		zval val;
@@ -922,7 +919,7 @@ PHP_APCU_API zend_bool apc_cache_atomic_update_long(
 	}
 
 retry_update:
-	if (!APC_RLOCK(cache->header)) {
+	if (!apc_cache_rlock(cache)) {
 		return 0;
 	}
 
@@ -934,11 +931,11 @@ retry_update:
 			entry->mtime = t;
 		}
 
-		APC_RUNLOCK(cache->header);
+		apc_cache_runlock(cache);
 		return retval;
 	}
 
-	APC_RUNLOCK(cache->header);
+	apc_cache_runlock(cache);
 	if (insert_if_not_found) {
 		/* Failed to find matching entry. Add key with value 0 and run the updater again. */
 		zval val;
@@ -971,8 +968,7 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 	/* calculate hash and slot */
 	apc_cache_hash_slot(cache, key, &h, &s);
 
-	/* lock cache */
-	if (!APC_WLOCK(cache->header)) {
+	if (!apc_cache_wlock(cache)) {
 		return 0;
 	}
 
@@ -985,16 +981,14 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 			/* executing removal */
 			apc_cache_wlocked_remove_entry(cache, entry);
 
-			/* unlock header */
-			APC_WUNLOCK(cache->header);
+			apc_cache_wunlock(cache);
 			return 1;
 		}
 
 		entry = &(*entry)->next;
 	}
 
-	/* unlock header */
-	APC_WUNLOCK(cache->header);
+	apc_cache_wunlock(cache);
 	return 0;
 }
 /* }}} */
@@ -1074,7 +1068,7 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 		return 0;
 	}
 
-	if (!APC_RLOCK(cache->header)) {
+	if (!apc_cache_rlock(cache)) {
 		return 0;
 	}
 
@@ -1127,7 +1121,7 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 			add_assoc_zval(info, "slot_distribution", &slots);
 		}
 	} php_apc_finally {
-		APC_RUNLOCK(cache->header);
+		apc_cache_runlock(cache);
 	} php_apc_end_try();
 
 	return 1;
@@ -1148,7 +1142,7 @@ PHP_APCU_API void apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *sta
 	/* calculate hash and slot */
 	apc_cache_hash_slot(cache, key, &h, &s);
 
-	if (!APC_RLOCK(cache->header)) {
+	if (!apc_cache_rlock(cache)) {
 		return;
 	}
 
@@ -1174,7 +1168,7 @@ PHP_APCU_API void apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *sta
 			entry = entry->next;
 		}
 	} php_apc_finally {
-		APC_RUNLOCK(cache->header);
+		apc_cache_runlock(cache);
 	} php_apc_end_try();
 }
 
@@ -1234,19 +1228,11 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fca
 		return;
 	}
 
-#ifndef APC_LOCK_RECURSIVE
-	if (APCG(recursion)++ == 0) {
-		if (!APC_WLOCK(cache->header)) {
-			APCG(recursion)--;
-			return;
-		}
-	}
-#else
-	if (!APC_WLOCK(cache->header)) {
+	if (!apc_cache_wlock(cache)) {
 		return;
 	}
-#endif
 
+	APCG(entry_level)++;
 	php_apc_try {
 		entry = apc_cache_rlocked_find_incref(cache, key, now);
 		if (!entry) {
@@ -1271,14 +1257,8 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fca
 			apc_cache_entry_release(cache, entry);
 		}
 	} php_apc_finally {
-#ifndef APC_LOCK_RECURSIVE
-		if (--APCG(recursion) == 0) {
-			APC_WUNLOCK(cache->header);
-		}
-#else
-		APC_WUNLOCK(cache->header);
-#endif
-
+		APCG(entry_level)--;
+		apc_cache_wunlock(cache);
 	} php_apc_end_try();
 }
 /*}}}*/

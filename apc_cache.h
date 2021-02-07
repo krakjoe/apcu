@@ -32,6 +32,7 @@
 #include "apc.h"
 #include "apc_sma.h"
 #include "apc_lock.h"
+#include "apc_globals.h"
 #include "TSRM.h"
 
 typedef struct apc_cache_slam_key_t apc_cache_slam_key_t;
@@ -275,6 +276,43 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size);
 * @see https://github.com/krakjoe/apcu/issues/142
 */
 PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value);
+
+/* apcu_entry() holds a write lock on the cache while executing user code.
+ * That code may call other apcu_* functions, which also try to acquire a
+ * read or write lock, which would deadlock. As such, don't try to acquire a
+ * lock if the current thread is inside apcu_entry().
+ *
+ * Whether the current thread is inside apcu_entry() is tracked by APCG(entry_level).
+ * This breaks the self-contained apc_cache_t abstraction, but is currently
+ * necessary because the entry_level needs to be tracked per-thread, while
+ * apc_cache_t is a per-process structure.
+ */
+
+static inline zend_bool apc_cache_wlock(apc_cache_t *cache) {
+	if (!APCG(entry_level)) {
+		return WLOCK(&cache->header->lock);
+	}
+	return 1;
+}
+
+static inline void apc_cache_wunlock(apc_cache_t *cache) {
+	if (!APCG(entry_level)) {
+		WUNLOCK(&cache->header->lock);
+	}
+}
+
+static inline zend_bool apc_cache_rlock(apc_cache_t *cache) {
+	if (!APCG(entry_level)) {
+		return RLOCK(&cache->header->lock);
+	}
+	return 1;
+}
+
+static inline void apc_cache_runlock(apc_cache_t *cache) {
+	if (!APCG(entry_level)) {
+		RUNLOCK(&cache->header->lock);
+	}
+}
 
 #endif
 

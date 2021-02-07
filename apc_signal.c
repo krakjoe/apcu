@@ -39,6 +39,7 @@
 #include "apc_globals.h"
 #include "apc_sma.h"
 #include "apc_signal.h"
+#include "apc_cache.h"
 
 static apc_signal_info_t apc_signal_info = {0};
 
