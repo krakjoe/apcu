@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2020-10-05</date>
+ <date>2021-03-04</date>
  <version>
-  <release>5.1.20dev</release>
+  <release>5.1.20</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -85,10 +85,13 @@
     <file name="apc_entry_001.phpt" role="test" />
     <file name="apc_entry_002.phpt" role="test" />
     <file name="apc_entry_003.phpt" role="test" />
+    <file name="apc_entry_recursion.phpt" role="test" />
     <file name="apc_inc_perf.phpt" role="test" />
     <file name="apc_store_array_int_keys.phpt" role="test" />
+    <file name="apc_store_array_with_refs.phpt" role="test" />
     <file name="apc_store_reference.phpt" role="test" />
     <file name="apc_store_reference_php8.phpt" role="test" />
+    <file name="apc_store_string_reuse.phpt" role="test" />
     <file name="apcu_sma_info.phpt" role="test" />
     <file name="bug63224.phpt" role="test" />
     <file name="bug76145.phpt" role="test" />
