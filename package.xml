@@ -39,7 +39,13 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+- Fix deadlocks when other apcu_* functions are used inside apcu_entry(). It should now be safe to use any functions inside the apcu_entry() callback.
+- Fix division by zero exception in apc.php.
+- Fix handling of references in PHP 8 if "default" serializer is used (which is not the default).
+- Fix string reuse handling if "default" serializer is used (which is not the default).
+- Check for failures when acquiring read locks to report problems earlier (write locks were already checked previously).
+- Adjust tests for current PHP 8.1 development branch.
+- Remove *_api.h headers. Use apc_cache.h instead of apc_cache_api.h etc.
  </notes>
  <contents>
   <dir name="/">
