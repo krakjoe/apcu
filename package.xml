@@ -30,7 +30,7 @@
  </lead>
  <date>2021-03-04</date>
  <version>
-  <release>5.1.20</release>
+  <release>5.1.21dev</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,13 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Fix deadlocks when other apcu_* functions are used inside apcu_entry(). It should now be safe to use any functions inside the apcu_entry() callback.
-- Fix division by zero exception in apc.php.
-- Fix handling of references in PHP 8 if "default" serializer is used (which is not the default).
-- Fix string reuse handling if "default" serializer is used (which is not the default).
-- Check for failures when acquiring read locks to report problems earlier (write locks were already checked previously).
-- Adjust tests for current PHP 8.1 development branch.
-- Remove *_api.h headers. Use apc_cache.h instead of apc_cache_api.h etc.
+-
  </notes>
  <contents>
   <dir name="/">
@@ -187,6 +181,27 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2021-03-04</date>
+   <version>
+    <release>5.1.20</release>
+    <api>5.1.18</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Fix deadlocks when other apcu_* functions are used inside apcu_entry(). It should now be safe to use any functions inside the apcu_entry() callback.
+- Fix division by zero exception in apc.php.
+- Fix handling of references in PHP 8 if "default" serializer is used (which is not the default).
+- Fix string reuse handling if "default" serializer is used (which is not the default).
+- Check for failures when acquiring read locks to report problems earlier (write locks were already checked previously).
+- Adjust tests for current PHP 8.1 development branch.
+- Remove *_api.h headers. Use apc_cache.h instead of apc_cache_api.h etc.
+   </notes>
+  </release>
   <release>
    <date>2020-10-05</date>
    <version>
