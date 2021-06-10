@@ -2,8 +2,8 @@
 APC: apcu_store/fetch with objects
 --SKIPIF--
 <?php
-require_once(dirname(__FILE__) . '/skipif.inc');
-if (PHP_VERSION_ID < 80100) die("skip For PHP >= 8.1");
+require_once(dirname(__FILE__) . '/skipif.inc'); 
+if (PHP_VERSION_ID >= 80100) die("skip For PHP < 8.1");
 ?>
 --INI--
 apc.enabled=1
@@ -69,42 +69,42 @@ object(foo)#%d (1) {
   bool(true)
 }
 object(baz)#%d (6) {
+  ["pri":"baz":private]=>
+  string(3) "baz"
   ["pub"]=>
   string(3) "bar"
   ["pro":protected]=>
   string(3) "bar"
   ["pri":"bar":private]=>
   string(3) "bar"
-  ["pri":"baz":private]=>
-  string(3) "baz"
   ["bar"]=>
   bool(true)
   ["baz"]=>
   bool(true)
 }
 object(baz)#%d (6) {
+  ["pri":"baz":private]=>
+  string(3) "baz"
   ["pub"]=>
   string(3) "bar"
   ["pro":protected]=>
   string(3) "bar"
   ["pri":"bar":private]=>
   string(3) "mod"
-  ["pri":"baz":private]=>
-  string(3) "baz"
   ["bar"]=>
   bool(true)
   ["baz"]=>
   bool(true)
 }
 object(baz)#%d (6) {
+  ["pri":"baz":private]=>
+  string(3) "baz"
   ["pub"]=>
   string(3) "bar"
   ["pro":protected]=>
   string(3) "bar"
   ["pri":"bar":private]=>
   string(3) "mod"
-  ["pri":"baz":private]=>
-  string(3) "baz"
   ["bar"]=>
   bool(true)
   ["baz"]=>

@@ -3,6 +3,7 @@ Bug #76145: Data corruption reading from APCu while unserializing
 --INI--
 apc.enabled=1
 apc.enable_cli=1
+error_reporting=E_ALL&~E_DEPRECATED
 --FILE--
 <?php
 

@@ -4,6 +4,7 @@ APC: apcu_store/fetch reference test
 <?php
 require_once(dirname(__FILE__) . '/skipif.inc');
 if (PHP_VERSION_ID < 70300) die('skip Only for PHP >= 7.3');
+if (PHP_VERSION_ID >= 80100) die('skip Only for PHP < 8.1');
 ?>
 --INI--
 apc.enabled=1
