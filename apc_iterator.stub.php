@@ -13,27 +13,19 @@ class APCUIterator implements Iterator {
         int $chunk_size = 0,
         int $list = APC_LIST_ACTIVE);
 
-    /** @return void */
-    public function rewind();
+    public function rewind(): void;
 
-    /** @return void */
-    public function next();
+    public function next(): void;
 
-    /** @return bool */
-    public function valid();
+    public function valid(): bool;
 
-    /** @return string|int|false */
-    public function key();
+    public function key(): string|int;
 
-    /** @return mixed */
-    public function current();
+    public function current(): mixed;
 
-    /** @return int */
-    public function getTotalHits();
+    public function getTotalHits(): int;
 
-    /** @return int */
-    public function getTotalSize();
+    public function getTotalSize(): int;
 
-    /** @return int */
-    public function getTotalCount();
+    public function getTotalCount(): int;
 }

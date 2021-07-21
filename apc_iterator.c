@@ -429,7 +429,8 @@ PHP_METHOD(APCUIterator, current) {
 
 	if (apc_stack_size(iterator->stack) == iterator->stack_idx) {
 		if (iterator->fetch(iterator) == 0) {
-			RETURN_FALSE;
+			zend_throw_error(NULL, "Cannot call current() on invalid iterator");
+			return;
 		}
 	}
 
@@ -446,13 +447,10 @@ PHP_METHOD(APCUIterator, key) {
 	}
 
 	ENSURE_INITIALIZED(iterator);
-	if (apc_stack_size(iterator->stack) == 0) {
-		RETURN_FALSE;
-	}
-
 	if (apc_stack_size(iterator->stack) == iterator->stack_idx) {
 		if (iterator->fetch(iterator) == 0) {
-			RETURN_FALSE;
+			zend_throw_error(NULL, "Cannot call key() on invalid iterator");
+			return;
 		}
 	}
 
