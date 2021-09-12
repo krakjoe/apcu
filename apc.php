@@ -517,6 +517,7 @@ body,p,td,th,input,submit { font-size:0.8em;font-family:arial,helvetica,sans-ser
 td { vertical-align:top }
 a { color:black; font-weight:none; text-decoration:none; }
 a:hover { text-decoration:underline; }
+a.entry-info:hover { text-decoration:none; }
 div.content { padding:1em 1em 1em 1em; position:absolute; width:97%; z-index:100; }
 
 
@@ -1020,9 +1021,15 @@ EOB;
 			if(empty($MYREQUEST['SEARCH_REGEX']) || preg_match($MYREQUEST['SEARCH_REGEX'], $entry[$fieldname]) != 0) {
 				$sh=md5($entry["info"]);
 				$field_value = htmlentities(strip_tags($entry[$fieldname],''), ENT_QUOTES, 'UTF-8');
+				if ($sh == $MYREQUEST["SH"]) {
+					$shstr = "";
+				} else {
+					$shstr = "&SH=" . $sh;
+				}
+				$href = "$MY_SELF&OB=" . $MYREQUEST['OB'] . (!empty($MYREQUEST['SEARCH']) ? "&SEARCH=" . urlencode($MYREQUEST['SEARCH']) : '') . $shstr . "#key-" . $sh;
 				echo
 					'<tr id="key-'. $sh .'" class=tr-',$i%2,'>',
-					"<td class=td-0><a href=\"$MY_SELF&OB=",$MYREQUEST['OB'],(!empty($MYREQUEST['SEARCH']) ? "&SEARCH=" . urlencode($MYREQUEST['SEARCH']) : ''),"&SH=",$sh,"#key-". $sh ."\">",$field_value,'</a></td>',
+					"<td class=td-0><a href=\"$href\">",$field_value,'</a></td>',
 					'<td class="td-n center">',$entry['num_hits'],'</td>',
 					'<td class="td-n right">',$entry['mem_size'],'</td>',
 					'<td class="td-n center">',date(DATE_FORMAT,$entry['access_time']),'</td>',
@@ -1048,7 +1055,7 @@ EOB;
 				echo '</tr>';
 				if ($sh == $MYREQUEST["SH"]) {
 					echo '<tr>';
-					echo '<td colspan="7"><pre>'.htmlentities(print_r(apcu_fetch($entry['info']), 1)).'</pre></td>';
+					echo '<td colspan="7"><a class="entry-info" href="'.$href.'"><pre>'.htmlentities(print_r(apcu_fetch($entry['info']), 1)).'</pre></a></td>';
 					echo '</tr>';
 				}
 				$i++;
