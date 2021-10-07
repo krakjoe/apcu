@@ -30,7 +30,7 @@
  </lead>
  <date>2021-10-07</date>
  <version>
-  <release>5.1.21</release>
+  <release>5.1.22dev</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,8 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Fixed compatibility with PHP 8.1 by adding return types to APCUIterator.
-- APCUIterator::current() and ::key() can no longer be called on an invalid iterator.
+-
  </notes>
  <contents>
   <dir name="/">
@@ -184,6 +183,22 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2021-10-07</date>
+   <version>
+    <release>5.1.21</release>
+    <api>5.1.18</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Fixed compatibility with PHP 8.1 by adding return types to APCUIterator.
+- APCUIterator::current() and ::key() can no longer be called on an invalid iterator.
+   </notes>
+  </release>
   <release>
    <date>2021-03-04</date>
    <version>
