@@ -39,7 +39,8 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+- Fixed compatibility with PHP 8.1 by adding return types to APCUIterator.
+- APCUIterator::current() and ::key() can no longer be called on an invalid iterator.
  </notes>
  <contents>
   <dir name="/">
