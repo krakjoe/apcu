@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2021-03-04</date>
+ <date>2021-10-07</date>
  <version>
-  <release>5.1.21dev</release>
+  <release>5.1.21</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -50,12 +50,14 @@
     <file name="apc_001.phpt" role="test" />
     <file name="apc_002.phpt" role="test" />
     <file name="apc_003b.phpt" role="test" />
+    <file name="apc_003b_legacy.phpt" role="test" />
     <file name="apc_004.phpt" role="test" />
     <file name="apc_005.phpt" role="test" />
     <file name="apc_005b.phpt" role="test" />
     <file name="apc_005c.phpt" role="test" />
     <file name="apc_006.phpt" role="test" />
     <file name="apc_006_php73.phpt" role="test" />
+    <file name="apc_006_php81.phpt" role="test" />
     <file name="apc_007.phpt" role="test" />
     <file name="apc_008.phpt" role="test" />
     <file name="apc_010.phpt" role="test" />
@@ -110,6 +112,7 @@
     <file name="iterator_008.phpt" role="test" />
     <file name="iterator_009.phpt" role="test" />
     <file name="iterator_010.phpt" role="test" />
+    <file name="iterator_011.phpt" role="test" />
     <file name="not_enough_shm.phpt" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />
