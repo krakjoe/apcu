@@ -21,9 +21,15 @@ $releases = @{
     '7.1' = '7.1.33';
     '7.2' = '7.2.34';
 }
+$qa = @{
+    '8.1' = '8.1.0RC5';
+}
 if ($releases.ContainsKey($env:PHP_VER)) {
     $phpversion = $releases.$env:PHP_VER;
     $base_url = 'http://windows.php.net/downloads/releases/archives';
+} elseif ($qa.ContainsKey($env:PHP_VER)) {
+    $phpversion = $qa.$env:PHP_VER;
+    $base_url = 'http://windows.php.net/downloads/qa';
 } else {
     $releases = Invoke-WebRequest https://windows.php.net/downloads/releases/releases.json | ConvertFrom-Json
     $phpversion = $releases.$env:PHP_VER.version
