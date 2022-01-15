@@ -5,8 +5,8 @@ AC_MSG_CHECKING(if APCu should be allowed to use rwlocks)
 AC_ARG_ENABLE(apcu-rwlocks,
 [  --disable-apcu-rwlocks  Disable rwlocks in APCu],
 [
-  PHP_APCU_RWLOCKS=no
-  AC_MSG_RESULT(no)
+  PHP_APCU_RWLOCKS=$enableval
+  AC_MSG_RESULT($enableval)
 ],
 [
   PHP_APCU_RWLOCKS=yes
