@@ -228,48 +228,53 @@ if (isset($MYREQUEST['IMG']))
 
 	function fill_arc($im, $centerX, $centerY, $diameter, $start, $end, $color1,$color2,$text='',$placeindex=0) {
 		$r=$diameter/2;
-		$w=deg2rad((360+$start+($end-$start)/2)%360);
-
+		$w=deg2rad(round(360+$start+($end-$start)/2)%360);
 
 		if (function_exists("imagefilledarc")) {
 			// exists only if GD 2.0.1 is available
-			imagefilledarc($im, $centerX+1, $centerY+1, $diameter, $diameter, $start, $end, $color1, IMG_ARC_PIE);
-			imagefilledarc($im, $centerX, $centerY, $diameter, $diameter, $start, $end, $color2, IMG_ARC_PIE);
-			imagefilledarc($im, $centerX, $centerY, $diameter, $diameter, $start, $end, $color1, IMG_ARC_NOFILL|IMG_ARC_EDGED);
+			imagefilledarc($im, $centerX+1, $centerY+1, $diameter, $diameter, round($start), round($end), $color1, IMG_ARC_PIE);
+			imagefilledarc($im, $centerX, $centerY, $diameter, $diameter, round($start), round($end), $color2, IMG_ARC_PIE);
+			imagefilledarc($im, $centerX, $centerY, $diameter, $diameter, round($start), round($end), $color1, IMG_ARC_NOFILL|IMG_ARC_EDGED);
 		} else {
-			imagearc($im, $centerX, $centerY, $diameter, $diameter, $start, $end, $color2);
-			imageline($im, $centerX, $centerY, $centerX + cos(deg2rad($start)) * $r, $centerY + sin(deg2rad($start)) * $r, $color2);
-			imageline($im, $centerX, $centerY, $centerX + cos(deg2rad($start+1)) * $r, $centerY + sin(deg2rad($start)) * $r, $color2);
-			imageline($im, $centerX, $centerY, $centerX + cos(deg2rad($end-1))   * $r, $centerY + sin(deg2rad($end))   * $r, $color2);
-			imageline($im, $centerX, $centerY, $centerX + cos(deg2rad($end))   * $r, $centerY + sin(deg2rad($end))   * $r, $color2);
-			imagefill($im,$centerX + $r*cos($w)/2, $centerY + $r*sin($w)/2, $color2);
+			imagearc($im, $centerX, $centerY, $diameter, $diameter, round($start), round($end), $color2);
+			imageline($im, $centerX, $centerY, $centerX + round(cos(deg2rad($start)) * $r), $centerY + round(sin(deg2rad($start)) * $r), $color2);
+			imageline($im, $centerX, $centerY, $centerX + round(cos(deg2rad($start+1)) * $r), $centerY + round(sin(deg2rad($start)) * $r), $color2);
+			imageline($im, $centerX, $centerY, $centerX + round(cos(deg2rad($end-1)) * $r), $centerY + round(sin(deg2rad($end)) * $r), $color2);
+			imageline($im, $centerX, $centerY, $centerX + round(cos(deg2rad($end)) * $r), $centerY + round(sin(deg2rad($end)) * $r), $color2);
+			imagefill($im,$centerX + round($r*cos($w)/2), $centerY + round($r*sin($w)/2), $color2);
 		}
 		if ($text) {
 			if ($placeindex>0) {
-				imageline($im,$centerX + $r*cos($w)/2, $centerY + $r*sin($w)/2,$diameter, $placeindex*12,$color1);
+				imageline($im,$centerX + round($r*cos($w)/2), $centerY + round($r*sin($w)/2),$diameter, $placeindex*12,$color1);
 				imagestring($im,4,$diameter, $placeindex*12,$text,$color1);
 
 			} else {
-				imagestring($im,4,$centerX + $r*cos($w)/2, $centerY + $r*sin($w)/2,$text,$color1);
+				imagestring($im,4,$centerX + round($r*cos($w)/2), $centerY + round($r*sin($w)/2),$text,$color1);
 			}
 		}
 	}
 
 	function text_arc($im, $centerX, $centerY, $diameter, $start, $end, $color1,$text,$placeindex=0) {
 		$r=$diameter/2;
-		$w=deg2rad((360+$start+($end-$start)/2)%360);
+		$w=deg2rad((360+round($start)+round(($end-$start)/2))%360);
 
 		if ($placeindex>0) {
-			imageline($im,$centerX + $r*cos($w)/2, $centerY + $r*sin($w)/2,$diameter, $placeindex*12,$color1);
+			imageline($im,$centerX + round($r*cos($w)/2), $centerY + round($r*sin($w)/2),$diameter, $placeindex*12,$color1);
 			imagestring($im,4,$diameter, $placeindex*12,$text,$color1);
 
 		} else {
-			imagestring($im,4,$centerX + $r*cos($w)/2, $centerY + $r*sin($w)/2,$text,$color1);
+			imagestring($im,4,$centerX + round($r*cos($w)/2), $centerY + round($r*sin($w)/2),$text,$color1);
 		}
 	}
 
 	function fill_box($im, $x, $y, $w, $h, $color1, $color2,$text='',$placeindex='') {
 		global $col_black;
+
+		$x = round($x);
+		$y = round($y);
+		$w = round($w);
+		$h = round($h);
+
 		$x1=$x+$w-1;
 		$y1=$y+$h-1;
 
@@ -285,7 +290,7 @@ if (isset($MYREQUEST['IMG']))
 					$px=5;
 					$py=$placeindex*12+6;
 					imagefilledrectangle($im, $px+90, $py+3, $px+90-4, $py-3, $color2);
-					imageline($im,$x,$y+$h/2,$px+90,$py,$color2);
+					imageline($im,$x,$y+round($h/2),$px+90,$py,$color2);
 					imagestring($im,2,$px,$py-6,$text,$color1);
 
 				} else {
@@ -297,7 +302,7 @@ if (isset($MYREQUEST['IMG']))
 						$py=($placeindex%15)*12+6;
 					}
 					imagefilledrectangle($im, $px, $py+3, $px-4, $py-3, $color2);
-					imageline($im,$x+$w,$y+$h/2,$px,$py,$color2);
+					imageline($im,$x+$w,$y+round($h/2),$px,$py,$color2);
 					imagestring($im,2,$px+2,$py-6,$text,$color1);
 				}
 			} else {
@@ -807,7 +812,7 @@ EOB;
 
 	$j = 0;
 	foreach (ini_get_all('apcu') as $k => $v) {
-		echo "<tr class=tr-$j><td class=td-0>",$k,"</td><td>",str_replace(',',',<br />',$v['local_value']),"</td></tr>\n";
+		echo "<tr class=tr-$j><td class=td-0>",$k,"</td><td>",str_replace(',',',<br />',$v['local_value'] ?? ''),"</td></tr>\n";
 		$j = 1 - $j;
 	}
 
