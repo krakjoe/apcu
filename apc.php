@@ -707,7 +707,7 @@ input {
 <body>
 <div class="head">
 	<h1 class="apc">
-		<div class="logo"><span class="logo"><a href="http://pecl.php.net/package/APCu">APCu</a></span></div>
+		<div class="logo"><span class="logo"><a href="https://pecl.php.net/package/APCu">APCu</a></span></div>
 		<div class="nameinfo">User Cache</div>
 	</h1>
 	<div class="login">
@@ -1094,9 +1094,9 @@ case OB_VERSION_CHECK:
 EOB;
 	if (defined('PROXY')) {
 		$ctxt = stream_context_create( array( 'http' => array( 'proxy' => PROXY, 'request_fulluri' => true ) ) );
-		$rss = @file_get_contents("http://pecl.php.net/feeds/pkg_apcu.rss", false, $ctxt);
+		$rss = @file_get_contents("https://pecl.php.net/feeds/pkg_apcu.rss", false, $ctxt);
 	} else {
-		$rss = @file_get_contents("http://pecl.php.net/feeds/pkg_apcu.rss");
+		$rss = @file_get_contents("https://pecl.php.net/feeds/pkg_apcu.rss");
 	}
 	if (!$rss) {
 		echo '<tr class="td-last center"><td>Unable to fetch version information.</td></tr>';
@@ -1110,8 +1110,8 @@ EOB;
 			$i = 3;
 		} else {
 			echo '<div class="failed">You are running an older version of APCu ('.$apcversion.'),
-				newer version '.$match[1].' is available at <a href="http://pecl.php.net/package/APCu/'.$match[1].'">
-				http://pecl.php.net/package/APCu/'.$match[1].'</a>
+				newer version '.$match[1].' is available at <a href="https://pecl.php.net/package/APCu/'.$match[1].'">
+				https://pecl.php.net/package/APCu/'.$match[1].'</a>
 				</div>';
 			$i = -1;
 		}
@@ -1130,7 +1130,7 @@ EOB;
 				break;
 			}
 			$changes = $changelog[$j + 1];
-			echo "<b><a href=\"http://pecl.php.net/package/APCu/$ver\">".htmlspecialchars($v, ENT_QUOTES, 'UTF-8')."</a></b><br><blockquote>";
+			echo "<b><a href=\"https://pecl.php.net/package/APCu/$ver\">".htmlspecialchars($v, ENT_QUOTES, 'UTF-8')."</a></b><br><blockquote>";
 			echo nl2br(htmlspecialchars($changes, ENT_QUOTES, 'UTF-8'))."</blockquote>";
 		}
 		echo '</td></tr>';
