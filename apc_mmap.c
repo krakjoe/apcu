@@ -111,6 +111,12 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 		zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. Is your apc.shm_size too large?", size);
 	}
 
+#ifdef MADV_HUGEPAGE
+	/* enable transparent huge pages to reduce TLB misses (Linux
+	   only) */
+	madvise(segment.shmaddr, size, MADV_HUGEPAGE);
+#endif
+
 	if (fd != -1) close(fd);
 
 	return segment;
