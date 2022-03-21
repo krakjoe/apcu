@@ -23,14 +23,20 @@
 
  */
 
-#ifndef APC_TIME_H
-#define APC_TIME_H
+#include "apc_time.h"
+#include "apc_globals.h"
+#include "SAPI.h"
 
-#include <time.h>
-
-time_t apc_time(void);
-
-#endif
+time_t apc_time(void)
+{
+	if (APCG(use_request_time)) {
+		if (!APCG(request_time))
+			APCG(request_time) = (time_t) sapi_get_request_time();
+		return APCG(request_time);
+	} else {
+		return time(0);
+	}
+}
 
 /*
  * Local variables:

@@ -237,6 +237,7 @@ if test "$PHP_APCU" != "no"; then
                  apc_sma.c \
                  apc_stack.c \
                  apc_signal.c \
+                 apc_time.c \
                  apc_iterator.c \
                  apc_persist.c"
 							   
