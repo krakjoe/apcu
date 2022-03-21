@@ -21,6 +21,7 @@
 #include "apc_iterator.h"
 #include "apc_cache.h"
 #include "apc_strings.h"
+#include "apc_time.h"
 #if PHP_VERSION_ID >= 80000
 # include "apc_iterator_arginfo.h"
 #else
