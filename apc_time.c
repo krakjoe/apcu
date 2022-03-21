@@ -34,7 +34,13 @@ time_t apc_time(void)
 			APCG(request_time) = (time_t) sapi_get_request_time();
 		return APCG(request_time);
 	} else {
+#ifdef HAVE_CLOCK_GETTIME
+		struct timespec ts;
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		return ts.tv_sec;
+#else
 		return time(0);
+#endif
 	}
 }
 
