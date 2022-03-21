@@ -36,6 +36,7 @@
 #include "apc_lock.h"
 #include "apc_mutex.h"
 #include "apc_strings.h"
+#include "apc_time.h"
 #include "php_globals.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"

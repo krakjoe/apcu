@@ -32,6 +32,7 @@
 #include "apc_sma.h"
 #include "apc_globals.h"
 #include "apc_strings.h"
+#include "apc_time.h"
 #include "php_scandir.h"
 #include "SAPI.h"
 #include "TSRM.h"
