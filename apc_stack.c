@@ -30,11 +30,11 @@
 
 struct apc_stack_t {
 	void** data;
-	int capacity;
-	int size;
+	size_t capacity;
+	size_t size;
 };
 
-apc_stack_t* apc_stack_create(int size_hint)
+apc_stack_t* apc_stack_create(size_t size_hint)
 {
 	apc_stack_t* stack = emalloc(sizeof(apc_stack_t));
 
@@ -81,7 +81,7 @@ void* apc_stack_top(apc_stack_t* stack)
 	return stack->data[stack->size-1];
 }
 
-void* apc_stack_get(apc_stack_t* stack, int n)
+void* apc_stack_get(apc_stack_t* stack, size_t n)
 {
 	assert(stack != NULL && stack->size > n);
 	return stack->data[n];
