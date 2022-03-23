@@ -86,7 +86,7 @@ typedef struct _apc_cache_t {
 	apc_cache_entry_t** slots;    /* array of cache slots (stored in SHM) */
 	apc_sma_t* sma;               /* shared memory allocator */
 	apc_serializer_t* serializer; /* serializer */
-	zend_long nslots;            /* number of slots in cache */
+	size_t nslots;                /* number of slots in cache */
 	zend_long gc_ttl;            /* maximum time on GC list for a entry */
 	zend_long ttl;               /* if slot is needed and entry's access time is older than this ttl, remove it */
 	zend_long smart;             /* smart parameter for gc */

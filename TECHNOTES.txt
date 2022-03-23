@@ -172,7 +172,7 @@ form of a quick-start guide to start hacking on APC.
         apc_cache_slot_t** slots;     /* array of cache slots (stored in SHM) */
         apc_sma_t* sma;               /* set during creation of cache */
         apc_serializer_t* serializer; /* serializer */
-        zend_ulong nslots;            /* number of slots in cache */
+        size_t nslots;                /* number of slots in cache */
         zend_ulong gc_ttl;            /* maximum time on GC list for a slot */
         zend_ulong ttl;               /* if slot is needed and entry's access time is older than this ttl, remove it */
         zend_ulong smart;             /* smart parameter for gc */
