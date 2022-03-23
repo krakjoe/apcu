@@ -34,13 +34,13 @@
 #define T apc_stack_t*
 typedef struct apc_stack_t apc_stack_t; /* opaque stack type */
 
-extern T apc_stack_create(int size_hint);
+extern T apc_stack_create(size_t size_hint);
 extern void apc_stack_destroy(T stack);
 extern void apc_stack_clear(T stack);
 extern void apc_stack_push(T stack, void* item);
 extern void* apc_stack_pop(T stack);
 extern void* apc_stack_top(T stack);
-extern void* apc_stack_get(T stack, int n);
+extern void* apc_stack_get(T stack, size_t n);
 extern int apc_stack_size(T stack);
 
 #undef T
