@@ -671,14 +671,10 @@ static void apc_cache_wlocked_real_expunge(apc_cache_t* cache) {
 	cache->header->nexpunges++;
 
 	/* expunge */
-	{
-		zend_ulong i;
-
-		for (i = 0; i < cache->nslots; i++) {
-			apc_cache_entry_t **entry = &cache->slots[i];
-			while (*entry) {
-				apc_cache_wlocked_remove_entry(cache, entry);
-			}
+	for (zend_ulong i = 0; i < cache->nslots; i++) {
+		apc_cache_entry_t **entry = &cache->slots[i];
+		while (*entry) {
+			apc_cache_wlocked_remove_entry(cache, entry);
 		}
 	}
 
