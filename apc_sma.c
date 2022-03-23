@@ -169,13 +169,13 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 	shmaddr = header;
 
 	if (header->avail < realsize) {
-		return -1;
+		return SIZE_MAX;
 	}
 
 	cur = find_block(header, realsize);
 	if (!cur) {
 		/* No suitable block found */
-		return -1;
+		return SIZE_MAX;
 	}
 
 	if (cur->size == realsize || (cur->size > realsize && cur->size < (realsize + (MINBLOCKSIZE + fragment)))) {
@@ -414,7 +414,7 @@ restart:
 
 	off = sma_allocate(SMA_HDR(sma, last), n, fragment, allocated);
 
-	if (off != -1) {
+	if (off != SIZE_MAX) {
 		void* p = (void *)(SMA_ADDR(sma, last) + off);
 		SMA_UNLOCK(sma, last);
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
@@ -435,7 +435,7 @@ restart:
 		}
 
 		off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
-		if (off != -1) {
+		if (off != SIZE_MAX) {
 			void* p = (void *)(SMA_ADDR(sma, i) + off);
 			sma->last = i;
 			SMA_UNLOCK(sma, i);
