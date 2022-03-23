@@ -50,10 +50,10 @@
 typedef struct _apc_iterator_t {
 	short int initialized;   /* sanity check in case __construct failed */
 	zend_long format;             /* format bitmask of the return values ie: key, value, info */
-	int (*fetch)(struct _apc_iterator_t *iterator);
+	size_t (*fetch)(struct _apc_iterator_t *iterator);
 							 /* fetch callback to fetch items from cache slots or lists */
-	zend_long slot_idx;           /* index to the slot array or linked list */
-	zend_long chunk_size;         /* number of entries to pull down per fetch */
+	size_t slot_idx;           /* index to the slot array or linked list */
+	size_t chunk_size;         /* number of entries to pull down per fetch */
 	apc_stack_t *stack;      /* stack of entries pulled from cache */
 	int stack_idx;           /* index into the current stack */
 	pcre_cache_entry *pce;     /* regex filter on entry identifiers */
@@ -85,7 +85,7 @@ PHP_APCU_API void apc_iterator_obj_init(
 	apc_iterator_t *iterator,
 	zval *search,
 	zend_long format,
-	zend_long chunk_size,
+	size_t chunk_size,
 	zend_long list);
 PHP_APCU_API zend_class_entry* apc_iterator_get_ce(void);
 PHP_APCU_API int apc_iterator_init(int module_number);

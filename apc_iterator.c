@@ -210,8 +210,8 @@ static int apc_iterator_check_expiry(apc_cache_t* cache, apc_cache_entry_t *entr
 /* }}} */
 
 /* {{{ apc_iterator_fetch_active */
-static int apc_iterator_fetch_active(apc_iterator_t *iterator) {
-	int count = 0;
+static size_t apc_iterator_fetch_active(apc_iterator_t *iterator) {
+	size_t count = 0;
 	apc_iterator_item_t *item;
 	time_t t = apc_time();
 
@@ -250,8 +250,8 @@ static int apc_iterator_fetch_active(apc_iterator_t *iterator) {
 /* }}} */
 
 /* {{{ apc_iterator_fetch_deleted */
-static int apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
-	int count = 0;
+static size_t apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
+	size_t count = 0;
 	apc_iterator_item_t *item;
 
 	if (!apc_cache_rlock(apc_user_cache)) {
@@ -288,14 +288,13 @@ static int apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 /* {{{ apc_iterator_totals */
 static void apc_iterator_totals(apc_iterator_t *iterator) {
 	time_t t = apc_time();
-	int i;
 
 	if (!apc_cache_rlock(apc_user_cache)) {
 		return;
 	}
 
 	php_apc_try {
-		for (i=0; i < apc_user_cache->nslots; i++) {
+		for (size_t i=0; i < apc_user_cache->nslots; i++) {
 			apc_cache_entry_t *entry = apc_user_cache->slots[i];
 			while (entry) {
 				if (apc_iterator_check_expiry(apc_user_cache, entry, t)) {
@@ -315,15 +314,10 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 }
 /* }}} */
 
-void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long format, zend_long chunk_size, zend_long list)
+void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long format, size_t chunk_size, zend_long list)
 {
 	if (!APCG(enabled)) {
 		zend_throw_error(NULL, "APC must be enabled to use APCUIterator");
-		return;
-	}
-
-	if (chunk_size < 0) {
-		apc_error("APCUIterator chunk size must be 0 or greater");
 		return;
 	}
 
@@ -381,6 +375,11 @@ PHP_METHOD(APCUIterator, __construct) {
 	zend_long list = APC_LIST_ACTIVE;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|z!lll", &search, &format, &chunk_size, &list) == FAILURE) {
+		return;
+	}
+
+	if (chunk_size < 0) {
+		apc_error("APCUIterator chunk size must be 0 or greater");
 		return;
 	}
 
