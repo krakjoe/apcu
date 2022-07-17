@@ -7,9 +7,9 @@ jobs:
         shell: cmd
     strategy:
       matrix:
-          version: ["8.1"]
+          version: ["7.2", "7.3", "7.4", "8.0", "8.1", "8.2"]
           arch: [x64]
-          ts: [ts]
+          ts: [nts, ts]
     runs-on: windows-latest
     steps:
       - name: Checkout apcu
