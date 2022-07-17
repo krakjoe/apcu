@@ -93,13 +93,14 @@ static void php_apc_init_globals(zend_apcu_globals* apcu_globals)
 
 static PHP_INI_MH(OnUpdateShmSegments) /* {{{ */
 {
+	zend_long shm_segments = ZEND_STRTOL(new_value->val, NULL, 10);
 #if APC_MMAP
-	if (zend_atoi(new_value->val, new_value->len)!=1) {
+	if (shm_segments != 1) {
 		php_error_docref(NULL, E_WARNING, "apc.shm_segments setting ignored in MMAP mode");
 	}
 	APCG(shm_segments) = 1;
 #else
-	APCG(shm_segments) = zend_atoi(new_value->val, new_value->len);
+	APCG(shm_segments) = shm_segments;
 #endif
 	return SUCCESS;
 }
@@ -107,7 +108,11 @@ static PHP_INI_MH(OnUpdateShmSegments) /* {{{ */
 
 static PHP_INI_MH(OnUpdateShmSize) /* {{{ */
 {
+#if PHP_VERSION_ID >= 80200
+	zend_long s = zend_ini_parse_quantity_warn(new_value, entry->name);
+#else
 	zend_long s = zend_atol(new_value->val, new_value->len);
+#endif
 
 	if (s <= 0) {
 		return FAILURE;
