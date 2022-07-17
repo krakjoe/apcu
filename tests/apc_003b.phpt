@@ -11,6 +11,7 @@ apc.enable_cli=1
 --FILE--
 <?php
 
+#[AllowDynamicProperties]
 class foo { }
 $foo = new foo;
 var_dump($foo);
@@ -21,6 +22,7 @@ var_dump($bar);
 $bar->a = true;
 var_dump($bar);
 
+#[AllowDynamicProperties]
 class bar extends foo
 {
 	public    $pub = 'bar';

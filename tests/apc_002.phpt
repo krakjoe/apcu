@@ -8,6 +8,7 @@ apc.enable_cli=1
 --FILE--
 <?php
 
+#[AllowDynamicProperties]
 class foo { }
 $foo = new foo;
 var_dump($foo);
