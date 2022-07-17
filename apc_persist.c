@@ -127,26 +127,39 @@ static zend_bool apc_persist_calc_ht(apc_persist_context_t *ctxt, const HashTabl
 
 	/* TODO Too sparse hashtables could be compacted here */
 	ADD_SIZE(HT_USED_SIZE(ht));
-	for (idx = 0; idx < ht->nNumUsed; idx++) {
-		Bucket *p = ht->arData + idx;
-		if (Z_TYPE(p->val) == IS_UNDEF) continue;
-
-		/* This can only happen if $GLOBALS is placed in the cache.
-		 * Don't bother with this edge-case, fall back to serialization. */
-		if (Z_TYPE(p->val) == IS_INDIRECT) {
-			ctxt->use_serialization = 1;
-			return 0;
+#if PHP_VERSION_ID >= 80200
+	if (HT_IS_PACKED(ht)) {
+		for (idx = 0; idx < ht->nNumUsed; idx++) {
+			zval *val = ht->arPacked + idx;
+			ZEND_ASSERT(Z_TYPE_P(val) != IS_INDIRECT && "INDIRECT in packed array?");
+			if (!apc_persist_calc_zval(ctxt, val)) {
+				return 0;
+			}
 		}
+	} else
+#endif
+	{
+		for (idx = 0; idx < ht->nNumUsed; idx++) {
+			Bucket *p = ht->arData + idx;
+			if (Z_TYPE(p->val) == IS_UNDEF) continue;
 
-		/* TODO These strings can be reused
-		if (p->key && !apc_persist_calc_is_handled(ctxt, (zend_refcounted *) p->key)) {
-			ADD_SIZE_STR(ZSTR_LEN(p->key));
-		}*/
-		if (p->key) {
-			ADD_SIZE_STR(ZSTR_LEN(p->key));
-		}
-		if (!apc_persist_calc_zval(ctxt, &p->val)) {
-			return 0;
+			/* This can only happen if $GLOBALS is placed in the cache.
+			 * Don't bother with this edge-case, fall back to serialization. */
+			if (Z_TYPE(p->val) == IS_INDIRECT) {
+				ctxt->use_serialization = 1;
+				return 0;
+			}
+
+			/* TODO These strings can be reused
+			if (p->key && !apc_persist_calc_is_handled(ctxt, (zend_refcounted *) p->key)) {
+				ADD_SIZE_STR(ZSTR_LEN(p->key));
+			}*/
+			if (p->key) {
+				ADD_SIZE_STR(ZSTR_LEN(p->key));
+			}
+			if (!apc_persist_calc_zval(ctxt, &p->val)) {
+				return 0;
+			}
 		}
 	}
 
@@ -322,22 +335,42 @@ static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTa
 	ht->nNextFreeElement = 0;
 	ht->nInternalPointer = HT_INVALID_IDX;
 	HT_SET_DATA_ADDR(ht, COPY(HT_GET_DATA_ADDR(ht), HT_USED_SIZE(ht)));
-	for (idx = 0; idx < ht->nNumUsed; idx++) {
-		Bucket *p = ht->arData + idx;
-		if (Z_TYPE(p->val) == IS_UNDEF) continue;
+#if PHP_VERSION_ID >= 80200
+	if (HT_IS_PACKED(ht)) {
+		for (idx = 0; idx < ht->nNumUsed; idx++) {
+			zval *val = ht->arPacked + idx;
+			if (Z_TYPE_P(val) == IS_UNDEF) continue;
 
-		if (ht->nInternalPointer == HT_INVALID_IDX) {
-			ht->nInternalPointer = idx;
+			if (ht->nInternalPointer == HT_INVALID_IDX) {
+				ht->nInternalPointer = idx;
+			}
+
+			if ((zend_long) idx >= (zend_long) ht->nNextFreeElement) {
+				ht->nNextFreeElement = idx + 1;
+			}
+
+			apc_persist_copy_zval(ctxt, val);
 		}
+	} else
+#endif
+	{
+		for (idx = 0; idx < ht->nNumUsed; idx++) {
+			Bucket *p = ht->arData + idx;
+			if (Z_TYPE(p->val) == IS_UNDEF) continue;
 
-		if (p->key) {
-			p->key = apc_persist_copy_zstr_no_add(ctxt, p->key);
-			ht->u.flags &= ~HASH_FLAG_STATIC_KEYS;
-		} else if ((zend_long) p->h >= (zend_long) ht->nNextFreeElement) {
-			ht->nNextFreeElement = p->h + 1;
+			if (ht->nInternalPointer == HT_INVALID_IDX) {
+				ht->nInternalPointer = idx;
+			}
+
+			if (p->key) {
+				p->key = apc_persist_copy_zstr_no_add(ctxt, p->key);
+				ht->u.flags &= ~HASH_FLAG_STATIC_KEYS;
+			} else if ((zend_long) p->h >= (zend_long) ht->nNextFreeElement) {
+				ht->nNextFreeElement = p->h + 1;
+			}
+
+			apc_persist_copy_zval(ctxt, &p->val);
 		}
-
-		apc_persist_copy_zval(ctxt, &p->val);
 	}
 
 	return ht;
@@ -541,6 +574,15 @@ static zend_array *apc_unpersist_ht(
 	HT_SET_DATA_ADDR(ht, emalloc(HT_SIZE(ht)));
 	memcpy(HT_GET_DATA_ADDR(ht), HT_GET_DATA_ADDR(orig_ht), HT_HASH_SIZE(ht->nTableMask));
 
+#if PHP_VERSION_ID >= 80200
+	if (HT_IS_PACKED(ht)) {
+		zval *p = ht->arPacked, *q = orig_ht->arPacked, *p_end = p + ht->nNumUsed;
+		for (; p < p_end; p++, q++) {
+			*p = *q;
+			apc_unpersist_zval(ctxt, p);
+		}
+	} else
+#endif
 	if (ht->u.flags & HASH_FLAG_STATIC_KEYS) {
 		Bucket *p = ht->arData, *q = orig_ht->arData, *p_end = p + ht->nNumUsed;
 		for (; p < p_end; p++, q++) {
