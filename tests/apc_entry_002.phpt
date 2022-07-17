@@ -15,6 +15,6 @@ $value = apcu_entry("test", function($key){
 Fatal error: Uncaught Exception: test in %s:3
 Stack trace:
 #0 [internal function]: {closure}('test')
-#1 %s(4): apcu_entry('test', Object(Closure))
+#1 %s(%d): apcu_entry('test', Object(Closure))
 #2 {main}
   thrown in %s on line 3
