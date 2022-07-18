@@ -1,6 +1,26 @@
 name: Build and Test
 on: [push, pull_request]
 jobs:
+  ubuntu:
+    strategy:
+      matrix:
+          version: ["7.2", "7.3", "7.4", "8.0", "8.1", "8.2"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout apcu
+        uses: actions/checkout@v2
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{matrix.version}}
+      - name: phize
+        run: phpize
+      - name: configure
+        run: ./configure --enable-apcu
+      - name: make
+        run: make
+      - name: test
+        run: make test TESTS=tests
   windows:
     defaults:
       run:
