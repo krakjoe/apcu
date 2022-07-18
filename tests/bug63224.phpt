@@ -57,6 +57,7 @@ $args = array(
 	'apc.enabled=1',
 	'apc.cache_by_default=1',
 	'apc.enable_cli=1',
+    'session.gc_probability=0',
 );
 
 server_start($file, $args);
