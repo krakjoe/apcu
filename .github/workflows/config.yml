@@ -4,7 +4,7 @@ jobs:
   ubuntu:
     strategy:
       matrix:
-          version: ["7.2", "7.3", "7.4", "8.0", "8.1", "8.2"]
+          version: ["7.0", "7.1", "7.2", "7.3", "7.4", "8.0", "8.1", "8.2"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout apcu
@@ -13,14 +13,14 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{matrix.version}}
-      - name: phize
+      - name: phpize
         run: phpize
       - name: configure
         run: ./configure --enable-apcu
       - name: make
         run: make
       - name: test
-        run: make test TESTS=tests
+        run: make test TESTS="--show-diff tests"
   windows:
     defaults:
       run:
@@ -53,4 +53,4 @@ jobs:
       - name: make
         run: nmake
       - name: test
-        run: nmake test TESTS=tests
+        run: nmake test TESTS="--show-diff tests"
