@@ -53,8 +53,24 @@ jobs:
       - name: phpize
         run: phpize
       - name: configure
-        run: configure --enable-apcu --with-prefix=${{steps.setup-php.outputs.prefix}}
+        run: configure --enable-apcu --enable-debug-pack --with-prefix=${{steps.setup-php.outputs.prefix}}
       - name: make
         run: nmake
       - name: test
         run: nmake test TESTS="--show-diff tests"
+      - name: package
+        run: |
+          md .install
+          copy LICENSE .install
+          if exist x64 (
+            if exist x64\Release (set prefix=x64\Release) else set prefix=x64\Release_TS
+          ) else (
+            if exist Release (set prefix=Release) else set prefix=Release_TS
+          )
+          copy %prefix%\php_apcu.dll .install
+          copy %prefix%\php_apcu.pdb .install
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: apcu-${{matrix.version}}-${{matrix.arch}}-${{matrix.ts}}
+          path: .install
