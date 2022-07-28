@@ -72,8 +72,8 @@ typedef apc_windows_cs_rwlock_t apc_lock_t;
 	apc_lock_cleanup destroys those attributes
   This saves us from having to create and destroy attributes for
   every lock we use at runtime */
-PHP_APCU_API zend_bool apc_lock_init();
-PHP_APCU_API void      apc_lock_cleanup();
+PHP_APCU_API zend_bool apc_lock_init(void);
+PHP_APCU_API void      apc_lock_cleanup(void);
 /*
   The following functions should be self explanitory:
 */

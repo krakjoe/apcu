@@ -34,8 +34,8 @@ typedef struct apc_signal_info_t {
 	apc_signal_entry_t **prev;      /* Previous signal handlers */
 } apc_signal_info_t;
 
-void apc_set_signals();
-void apc_shutdown_signals();
+void apc_set_signals(void);
+void apc_shutdown_signals(void);
 
 #endif
 

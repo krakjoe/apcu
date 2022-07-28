@@ -124,7 +124,7 @@ PHP_APCU_API int _apc_register_serializer(
 
 /* {{{ apc_get_serializers
  fetches the list of serializers */
-PHP_APCU_API apc_serializer_t* apc_get_serializers(); /* }}} */
+PHP_APCU_API apc_serializer_t* apc_get_serializers(void); /* }}} */
 
 /* {{{ apc_find_serializer
  finds a previously registered serializer by name */

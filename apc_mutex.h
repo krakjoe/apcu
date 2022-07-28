@@ -27,8 +27,8 @@
 
 typedef pthread_mutex_t apc_mutex_t;
 
-PHP_APCU_API zend_bool apc_mutex_init();
-PHP_APCU_API void apc_mutex_cleanup();
+PHP_APCU_API zend_bool apc_mutex_init(void);
+PHP_APCU_API void apc_mutex_cleanup(void);
 PHP_APCU_API zend_bool apc_mutex_create(apc_mutex_t *lock);
 PHP_APCU_API zend_bool apc_mutex_lock(apc_mutex_t *lock);
 PHP_APCU_API zend_bool apc_mutex_unlock(apc_mutex_t *lock);
