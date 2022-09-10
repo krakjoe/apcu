@@ -134,9 +134,9 @@ PHP_FUNCTION(apcue_get)
 	char*      key = NULL;
 	zend_uint  klen = 0L;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &key, &klen) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_STRING(key, klen)
+	ZEND_PARSE_PARAMETERS_END();
 
 	{
 		/* perform lookup */
@@ -155,10 +155,13 @@ PHP_FUNCTION(apcue_set)
 	zend_uint  klen = 0L;
     long       ttl = 0L;
     zval*      pzval = NULL;
-	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz|l", &key, &klen, &pzval, &ttl) == FAILURE) {
-		return;
-	}
+
+	ZEND_PARSE_PARAMETERS_START(2, 3)
+		Z_PARAM_STRING(key, klen)
+		Z_PARAM_ZVAL(pzval)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(ttl)
+	ZEND_PARSE_PARAMETERS_END();
 
 	/* perform store */
 	ZVAL_BOOL(return_value, apc_cache_store(apcue_cache, key, klen, pzval, ttl, 0 TSRMLS_CC));

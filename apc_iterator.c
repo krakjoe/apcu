@@ -374,9 +374,13 @@ PHP_METHOD(APCUIterator, __construct) {
 	zval *search = NULL;
 	zend_long list = APC_LIST_ACTIVE;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|z!lll", &search, &format, &chunk_size, &list) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 4)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_ZVAL_EX(search, 1, 0)
+		Z_PARAM_LONG(format)
+		Z_PARAM_LONG(chunk_size)
+		Z_PARAM_LONG(list)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (chunk_size < 0) {
 		apc_error("APCUIterator chunk size must be 0 or greater");
@@ -389,9 +393,8 @@ PHP_METHOD(APCUIterator, __construct) {
 PHP_METHOD(APCUIterator, rewind) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 0)
+	ZEND_PARSE_PARAMETERS_END();
 
 	ENSURE_INITIALIZED(iterator);
 
@@ -404,9 +407,8 @@ PHP_METHOD(APCUIterator, rewind) {
 PHP_METHOD(APCUIterator, valid) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 0)
+	ZEND_PARSE_PARAMETERS_END();
 
 	ENSURE_INITIALIZED(iterator);
 
@@ -421,9 +423,8 @@ PHP_METHOD(APCUIterator, current) {
 	apc_iterator_item_t *item;
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 0)
+	ZEND_PARSE_PARAMETERS_END();
 
 	ENSURE_INITIALIZED(iterator);
 
@@ -442,9 +443,8 @@ PHP_METHOD(APCUIterator, key) {
 	apc_iterator_item_t *item;
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 0)
+	ZEND_PARSE_PARAMETERS_END();
 
 	ENSURE_INITIALIZED(iterator);
 	if (apc_stack_size(iterator->stack) == iterator->stack_idx) {
@@ -466,9 +466,8 @@ PHP_METHOD(APCUIterator, key) {
 PHP_METHOD(APCUIterator, next) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 0)
+	ZEND_PARSE_PARAMETERS_END();
 
 	ENSURE_INITIALIZED(iterator);
 	if (apc_stack_size(iterator->stack) == 0) {
@@ -482,9 +481,8 @@ PHP_METHOD(APCUIterator, next) {
 PHP_METHOD(APCUIterator, getTotalHits) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 0)
+	ZEND_PARSE_PARAMETERS_END();
 
 	ENSURE_INITIALIZED(iterator);
 
@@ -499,9 +497,8 @@ PHP_METHOD(APCUIterator, getTotalHits) {
 PHP_METHOD(APCUIterator, getTotalSize) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 0)
+	ZEND_PARSE_PARAMETERS_END();
 
 	ENSURE_INITIALIZED(iterator);
 
@@ -515,9 +512,8 @@ PHP_METHOD(APCUIterator, getTotalSize) {
 PHP_METHOD(APCUIterator, getTotalCount) {
 	apc_iterator_t *iterator = apc_iterator_fetch(getThis());
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 0)
+	ZEND_PARSE_PARAMETERS_END();
 
 	ENSURE_INITIALIZED(iterator);
 
