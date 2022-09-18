@@ -39,7 +39,11 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
--
+- PHP 8.2 compatibility
+- PHP 8.1 compatibility in apc.php
+- Fix --enable-apcu-rwlocks configure option
+- Enable transparent huge pages for mmap memory
+- Use monotonic clock for TTL
  </notes>
  <contents>
   <dir name="/">
