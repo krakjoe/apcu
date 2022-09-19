@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2021-10-07</date>
+ <date>2022-09-19</date>
  <version>
-  <release>5.1.22dev</release>
+  <release>5.1.22</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -157,6 +157,8 @@
    <file name="apc_stack.c" role="src" />
    <file name="apc_stack.h" role="src" />
    <file name="apc_strings.h" role="src" />
+   <file name="apc_time.c" role="src" />
+   <file name="apc_time.h" role="src" />
    <file name="apc_windows_srwlock_kernel.c" role="src" />
    <file name="apc_windows_srwlock_kernel.h" role="src" />
    <file name="apc_serializer.h" role="src" />
