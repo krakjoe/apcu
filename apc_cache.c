@@ -670,11 +670,13 @@ PHP_APCU_API void apc_cache_detach(apc_cache_t *cache)
 
 /* {{{ apc_cache_wlocked_real_expunge */
 static void apc_cache_wlocked_real_expunge(apc_cache_t* cache) {
+	size_t i;
+
 	/* increment counter */
 	cache->header->nexpunges++;
 
 	/* expunge */
-	for (size_t i = 0; i < cache->nslots; i++) {
+	for (i = 0; i < cache->nslots; i++) {
 		apc_cache_entry_t **entry = &cache->slots[i];
 		while (*entry) {
 			apc_cache_wlocked_remove_entry(cache, entry);
@@ -754,8 +756,10 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	} else {
 		/* check that expunge is necessary */
 		if (available < suitable) {
+			size_t i;
+
 			/* look for junk */
-			for (size_t i = 0; i < cache->nslots; i++) {
+			for (i = 0; i < cache->nslots; i++) {
 				apc_cache_entry_t **entry = &cache->slots[i];
 				while (*entry) {
 					if (apc_cache_entry_expired(cache, *entry, t)) {
@@ -1090,11 +1094,13 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 #endif
 
 		if (!limited) {
+			size_t i;
+
 			/* For each hashtable slot */
 			array_init(&list);
 			array_init(&slots);
 
-			for (size_t i = 0; i < cache->nslots; i++) {
+			for (i = 0; i < cache->nslots; i++) {
 				p = cache->slots[i];
 				j = 0;
 				for (; p != NULL; p = p->next) {

@@ -294,7 +294,9 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 	}
 
 	php_apc_try {
-		for (size_t i=0; i < apc_user_cache->nslots; i++) {
+		size_t i;
+
+		for (i=0; i < apc_user_cache->nslots; i++) {
 			apc_cache_entry_t *entry = apc_user_cache->slots[i];
 			while (entry) {
 				if (apc_iterator_check_expiry(apc_user_cache, entry, t)) {
