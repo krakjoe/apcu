@@ -39,7 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- 
+- Revert use of monotonic clock for TTL (#451)
  </notes>
  <contents>
   <dir name="/">

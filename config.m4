@@ -200,7 +200,6 @@ if test "$PHP_APCU" != "no"; then
    fi
   fi
 	
-  AC_CHECK_FUNCS(clock_gettime)
   AC_CHECK_FUNCS(sigaction)
   AC_CACHE_CHECK(for union semun, php_cv_semun,
   [
