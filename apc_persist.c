@@ -521,9 +521,14 @@ static zend_bool apc_unpersist_serialized(
 	return 0;
 }
 
+/* Used to reduce hash collisions when using pointers in hash tables. (#175) */
+static zend_ulong apc_shr3(zend_ulong index) {
+    return (index >> 3) | (index << (SIZEOF_ZEND_LONG * 8 - 3));
+}
+
 static inline void *apc_unpersist_get_already_copied(apc_unpersist_context_t *ctxt, void *ptr) {
 	if (ctxt->memoization_needed) {
-		return zend_hash_index_find_ptr(&ctxt->already_copied, (uintptr_t) ptr);
+		return zend_hash_index_find_ptr(&ctxt->already_copied, apc_shr3((zend_ulong)(uintptr_t)ptr));
 	}
 	return NULL;
 }
@@ -531,7 +536,7 @@ static inline void *apc_unpersist_get_already_copied(apc_unpersist_context_t *ct
 static inline void apc_unpersist_add_already_copied(
 		apc_unpersist_context_t *ctxt, const void *old_ptr, void *new_ptr) {
 	if (ctxt->memoization_needed) {
-		zend_hash_index_add_new_ptr(&ctxt->already_copied, (uintptr_t) old_ptr, new_ptr);
+		zend_hash_index_add_new_ptr(&ctxt->already_copied, apc_shr3((zend_ulong)(uintptr_t)old_ptr), new_ptr);
 	}
 }
 
