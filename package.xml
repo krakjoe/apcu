@@ -82,6 +82,7 @@
     <file name="apc_entry_002.phpt" role="test" />
     <file name="apc_entry_003.phpt" role="test" />
     <file name="apc_entry_recursion.phpt" role="test" />
+    <file name="apcu_fetch_empty_array_reference.phpt" role="test" />
     <file name="apc_inc_perf.phpt" role="test" />
     <file name="apc_store_array_int_keys.phpt" role="test" />
     <file name="apc_store_array_with_refs.phpt" role="test" />
@@ -718,7 +719,7 @@ and unpersisting values.
   - Bring back spinlocks, various issues (Joe)
   - Fixed symbol clashing, windows debug mode, again (Anatol)
   - apcu_key_info / apc_cache_stat functions (Joe)
-  
+
    </notes>
   </release>
   <release>

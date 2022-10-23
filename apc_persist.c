@@ -565,11 +565,15 @@ static zend_array *apc_unpersist_ht(
 	apc_unpersist_add_already_copied(ctxt, orig_ht, ht);
 	memcpy(ht, orig_ht, sizeof(HashTable));
 	GC_TYPE_INFO(ht) = GC_ARRAY;
-
+#if PHP_VERSION_ID >= 70300
+	/* Caller used ZVAL_EMPTY_ARRAY and set different zval flags instead */
+	ZEND_ASSERT(ht->nNumOfElements > 0 && ht->nNumUsed > 0);
+#else
 	if (ht->nNumUsed == 0) {
 		HT_SET_DATA_ADDR(ht, &uninitialized_bucket);
 		return ht;
 	}
+#endif
 
 	HT_SET_DATA_ADDR(ht, emalloc(HT_SIZE(ht)));
 	memcpy(HT_GET_DATA_ADDR(ht), HT_GET_DATA_ADDR(orig_ht), HT_HASH_SIZE(ht->nTableMask));
@@ -628,6 +632,12 @@ static void apc_unpersist_zval_impl(apc_unpersist_context_t *ctxt, zval *zv) {
 			Z_REF_P(zv) = apc_unpersist_ref(ctxt, Z_REF_P(zv));
 			return;
 		case IS_ARRAY:
+#if PHP_VERSION_ID >= 70300
+			if (Z_ARR_P(zv)->nNumOfElements == 0) {
+				ZVAL_EMPTY_ARRAY(zv); /* #323 */
+				return;
+			}
+#endif
 			Z_ARR_P(zv) = apc_unpersist_ht(ctxt, Z_ARR_P(zv));
 			return;
 		default:
