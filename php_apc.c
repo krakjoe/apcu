@@ -350,9 +350,10 @@ PHP_FUNCTION(apcu_cache_info)
 {
 	zend_bool limited = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|b", &limited) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0,1)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_BOOL(limited)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!apc_cache_info(return_value, apc_user_cache, limited)) {
 		php_error_docref(NULL, E_WARNING, "No APC info available.  Perhaps APC is not enabled? Check apc.enabled in your ini file");
@@ -366,9 +367,9 @@ PHP_FUNCTION(apcu_key_info)
 {
 	zend_string *key;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S", &key) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_STR(key)
+	ZEND_PARSE_PARAMETERS_END();
 
 	apc_cache_stat(apc_user_cache, key, return_value);
 } /* }}} */
@@ -381,9 +382,10 @@ PHP_FUNCTION(apcu_sma_info)
 	int i;
 	zend_bool limited = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|b", &limited) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_BOOL(limited)
+	ZEND_PARSE_PARAMETERS_END();
 
 	info = apc_sma_info(&apc_sma, limited);
 
@@ -447,9 +449,12 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 	zval *val = NULL;
 	zend_long ttl = 0L;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z|zl", &key, &val, &ttl) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 3)
+		Z_PARAM_ZVAL(key)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_ZVAL(val)
+		Z_PARAM_LONG(ttl)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (APCG(serializer_name)) {
 		/* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
@@ -540,9 +545,13 @@ PHP_FUNCTION(apcu_inc) {
 	zend_long step = 1, ttl = 0;
 	zval *success = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|lzl", &key, &step, &success, &ttl) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 4)
+		Z_PARAM_STR(key)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(step)
+		Z_PARAM_ZVAL(success)
+		Z_PARAM_LONG(ttl)
+	ZEND_PARSE_PARAMETERS_END();
 
 	args.step = step;
 	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
@@ -568,9 +577,13 @@ PHP_FUNCTION(apcu_dec) {
 	zend_long step = 1, ttl = 0;
 	zval *success = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|lzl", &key, &step, &success, &ttl) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 4)
+		Z_PARAM_STR(key)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(step)
+		Z_PARAM_ZVAL(success)
+		Z_PARAM_LONG(ttl)
+	ZEND_PARSE_PARAMETERS_END();
 
 	args.step = 0 - step;
 	if (php_apc_update(key, php_inc_updater, &args, 1, ttl)) {
@@ -604,9 +617,11 @@ PHP_FUNCTION(apcu_cas) {
 	zend_string *key;
 	zend_long vals[2];
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "Sll", &key, &vals[0], &vals[1]) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(3, 3)
+		Z_PARAM_STR(key)
+		Z_PARAM_LONG(vals[0])
+		Z_PARAM_LONG(vals[1])
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (APCG(serializer_name)) {
 		/* Avoid race conditions between MINIT of apc and serializer exts like igbinary */
@@ -625,9 +640,11 @@ PHP_FUNCTION(apcu_fetch) {
 	time_t t;
 	int result;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z|z", &key, &success) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 2)
+		Z_PARAM_ZVAL(key)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_ZVAL(success)
+	ZEND_PARSE_PARAMETERS_END();
 
 	t = apc_time();
 
@@ -676,9 +693,9 @@ PHP_FUNCTION(apcu_exists) {
 	zval *key;
 	time_t t;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z", &key) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_ZVAL(key)
+	ZEND_PARSE_PARAMETERS_END();
 
 	t = apc_time();
 
@@ -718,9 +735,9 @@ PHP_FUNCTION(apcu_exists) {
 PHP_FUNCTION(apcu_delete) {
 	zval *keys;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z", &keys) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_ZVAL(keys)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (Z_TYPE_P(keys) == IS_STRING) {
 		RETURN_BOOL(apc_cache_delete(apc_user_cache, Z_STR_P(keys)));
@@ -754,9 +771,12 @@ PHP_FUNCTION(apcu_entry) {
 	zend_long ttl = 0L;
 	zend_long now = apc_time();
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "Sf|l", &key, &fci, &fcc, &ttl) != SUCCESS) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(2, 3)
+		Z_PARAM_STR(key)
+		Z_PARAM_FUNC(fci, fcc)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(ttl)
+	ZEND_PARSE_PARAMETERS_END();
 
 	apc_cache_entry(apc_user_cache, key, &fci, &fcc, ttl, now, return_value);
 }
@@ -767,9 +787,10 @@ PHP_FUNCTION(apcu_entry) {
 PHP_FUNCTION(apcu_inc_request_time) {
 	zend_long by = 1;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|l", &by) != SUCCESS) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(by)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (!APCG(use_request_time)) {
 		php_error_docref(NULL, E_WARNING,

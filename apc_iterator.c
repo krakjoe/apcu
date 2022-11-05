@@ -376,9 +376,13 @@ PHP_METHOD(APCUIterator, __construct) {
 	zval *search = NULL;
 	zend_long list = APC_LIST_ACTIVE;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|z!lll", &search, &format, &chunk_size, &list) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 4)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_ZVAL_EX(search, 1, 0)
+		Z_PARAM_LONG(format)
+		Z_PARAM_LONG(chunk_size)
+		Z_PARAM_LONG(list)
+	ZEND_PARSE_PARAMETERS_END();
 
 	if (chunk_size < 0) {
 		apc_error("APCUIterator chunk size must be 0 or greater");
