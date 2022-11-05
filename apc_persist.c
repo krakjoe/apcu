@@ -127,10 +127,14 @@ static zend_bool apc_persist_calc_memoize(apc_persist_context_t *ctxt, void *ptr
 static zend_bool apc_persist_calc_ht(apc_persist_context_t *ctxt, const HashTable *ht) {
 	uint32_t idx;
 
-	ADD_SIZE(sizeof(HashTable));
-	if (ht->nNumUsed == 0) {
+	/* In php 7.3+, this points to the immutable zend_empty_array outside of shared memory. */
+	if (ht->nNumOfElements == 0) {
+#if PHP_VERSION_ID < 70300
+		ADD_SIZE(sizeof(HashTable));
+#endif
 		return 1;
 	}
+	ADD_SIZE(sizeof(HashTable));
 
 	/* TODO Too sparse hashtables could be compacted here */
 #if PHP_VERSION_ID >= 80200
@@ -314,6 +318,11 @@ static zend_reference *apc_persist_copy_ref(
 static const uint32_t uninitialized_bucket[-HT_MIN_MASK] = {HT_INVALID_IDX, HT_INVALID_IDX};
 
 static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTable *orig_ht) {
+#if PHP_VERSION_ID >= 70300
+	if (orig_ht->nNumOfElements == 0) {
+		return (HashTable *)&zend_empty_array;
+	}
+#endif
 	HashTable *ht = COPY(orig_ht, sizeof(HashTable));
 	uint32_t idx;
 	apc_persist_add_already_allocated(ctxt, orig_ht, ht);
