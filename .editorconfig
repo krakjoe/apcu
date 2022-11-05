@@ -1,0 +1,19 @@
+; 4 space indentation (no size specified)
+[*]
+charset = utf-8
+indent_style = tab
+indent_size = 4
+[*.{php,c,h,m4,w32,md}]
+trim_trailing_whitespace = true
+[*.{phpt,php}]
+indent_style = space
+[*.xml]
+indent_size = 1
+indent_style = space
+[*.m4]
+indent_size = 2
+indent_style = space
+[*.w32]
+charset = utf-8
+indent_style = tab
+indent_size = 2
