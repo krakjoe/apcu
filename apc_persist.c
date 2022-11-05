@@ -126,9 +126,9 @@ static zend_bool apc_persist_calc_ht(apc_persist_context_t *ctxt, const HashTabl
 	}
 
 	/* TODO Too sparse hashtables could be compacted here */
-	ADD_SIZE(HT_USED_SIZE(ht));
 #if PHP_VERSION_ID >= 80200
 	if (HT_IS_PACKED(ht)) {
+		ADD_SIZE(HT_PACKED_USED_SIZE(ht));
 		for (idx = 0; idx < ht->nNumUsed; idx++) {
 			zval *val = ht->arPacked + idx;
 			ZEND_ASSERT(Z_TYPE_P(val) != IS_INDIRECT && "INDIRECT in packed array?");
@@ -139,6 +139,7 @@ static zend_bool apc_persist_calc_ht(apc_persist_context_t *ctxt, const HashTabl
 	} else
 #endif
 	{
+		ADD_SIZE(HT_USED_SIZE(ht));
 		for (idx = 0; idx < ht->nNumUsed; idx++) {
 			Bucket *p = ht->arData + idx;
 			if (Z_TYPE(p->val) == IS_UNDEF) continue;
@@ -334,9 +335,9 @@ static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTa
 
 	ht->nNextFreeElement = 0;
 	ht->nInternalPointer = HT_INVALID_IDX;
-	HT_SET_DATA_ADDR(ht, COPY(HT_GET_DATA_ADDR(ht), HT_USED_SIZE(ht)));
 #if PHP_VERSION_ID >= 80200
 	if (HT_IS_PACKED(ht)) {
+		HT_SET_DATA_ADDR(ht, COPY(HT_GET_DATA_ADDR(ht), HT_PACKED_USED_SIZE(ht)));
 		for (idx = 0; idx < ht->nNumUsed; idx++) {
 			zval *val = ht->arPacked + idx;
 			if (Z_TYPE_P(val) == IS_UNDEF) continue;
@@ -354,6 +355,7 @@ static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTa
 	} else
 #endif
 	{
+		HT_SET_DATA_ADDR(ht, COPY(HT_GET_DATA_ADDR(ht), HT_USED_SIZE(ht)));
 		for (idx = 0; idx < ht->nNumUsed; idx++) {
 			Bucket *p = ht->arData + idx;
 			if (Z_TYPE(p->val) == IS_UNDEF) continue;
@@ -563,6 +565,16 @@ static zend_reference *apc_unpersist_ref(
 	return ref;
 }
 
+/* Compute the size of the HashTable data to create when unpersisting. */
+static zend_always_inline size_t apc_compute_ht_data_size(const HashTable *ht) {
+#if PHP_VERSION_ID >= 80200
+	if (HT_IS_PACKED(ht)) {
+		return HT_PACKED_SIZE(ht);
+	}
+#endif
+	return HT_SIZE(ht);
+}
+
 static zend_array *apc_unpersist_ht(
 		apc_unpersist_context_t *ctxt, const HashTable *orig_ht) {
 	HashTable *ht = emalloc(sizeof(HashTable));
@@ -580,7 +592,7 @@ static zend_array *apc_unpersist_ht(
 	}
 #endif
 
-	HT_SET_DATA_ADDR(ht, emalloc(HT_SIZE(ht)));
+	HT_SET_DATA_ADDR(ht, emalloc(apc_compute_ht_data_size(ht)));
 	memcpy(HT_GET_DATA_ADDR(ht), HT_GET_DATA_ADDR(orig_ht), HT_HASH_SIZE(ht->nTableMask));
 
 #if PHP_VERSION_ID >= 80200
