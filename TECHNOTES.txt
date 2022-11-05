@@ -1,28 +1,25 @@
-APC Quick-Start Braindump
+APCu Quick-Start Braindump
 
-This is a rapidly written braindump of how APC currently works in the
-form of a quick-start guide to start hacking on APC.
+This is a rapidly written braindump of how APCu currently works in the
+form of a quick-start guide to start hacking on APCu.
 
 1. Install and use APC a bit so you know what it does from the end-user's
    perspective.  
-   user-space functions are all explained here: 
+   user-space functions are all explained here: https://www.php.net/apcu
 
-2. Grab the current APC code from CVS:
+2. Grab the current APC code from https://github.com/krakjoe/apcu
     
-    cvs -d:pserver:cvsread@cvs.php.net:/repository login
-    Password: phpfi
-    cvs -d:pserver:cvsread@cvs.php.net:/repository co pecl/apc
-
-   apc/php_apc.c has most of the code for the user-visible stuff.  It is
+   apcu/php_apc.c has most of the code for the user-visible stuff.  It is
    also a regular PHP extension in the sense that there are MINIT, MINFO, 
    MSHUTDOWN, RSHUTDOWN, etc. functions.  
 
 3. Build it.
 
-   cd pecl/apc
+   cd apcu
    phpize
    ./configure --enable-apcu
    make
+   make test
    cp modules/apcu.so /usr/local/lib/php
    apachectl restart
 
@@ -38,37 +35,37 @@ form of a quick-start guide to start hacking on APC.
 5. The basics of APCu
 
    APCu has three main component parts:
-		1) shared memory allocator
-		2) pooling
-		3) user land cache
-	
+        1) shared memory allocator
+        2) pooling
+        3) user land cache
+
 5.1) APCu SMA
    
    It is a pretty standard memory allocator, now supporting third party extensions.
 
-   apc_sma_malloc, apc_sma_realloc, apc_sma_strdup and apc_sma_free 
-   behave to the caller just like malloc, realloc, strdup and free, they are 
+   apc_sma_malloc, apc_sma_malloc, apc_sma_free, etc
+   behave to the caller just like malloc and free, they are 
    generated from macros in apc_sma.h
 
-	Note:   apc_sma.h is formatted and designed such that the SMA APCu 
-			uses can be used by third parties in their own extensions without
-			interfering with, or consuming the resources of APCu itself
+    Note:   apc_sma.h is formatted and designed such that the SMA APCu 
+            uses can be used by third parties in their own extensions without
+            interfering with, or consuming the resources of APCu itself
 
-	apc_sma is a structure of type apc_sma_t, it is statically allocated at runtime,
-	appropriate handlers are generated and set, and the structure made ready for initialization.
+    apc_sma is a structure of type apc_sma_t, it is statically allocated at runtime,
+    appropriate handlers are generated and set, and the structure made ready for initialization.
 
     MINIT then initializes apc_sma with apc_sma_api_init(). 
     APCu SMA then takes care of mmaping the shared memory. 
     ( which you can obtain in any compilation unit with apc_sma_api_extern(apc_sma) )
-	
-	At this point, we have a completely useless 32MB chunk of memory at our disposal, before
-	it can be used, an apc_cache_header_t is initialized at the beginning of the reigon of
-	mmapp'ed memory.
+
+    At this point, we have a completely useless 32MB chunk of memory at our disposal, before
+    it can be used, an apc_cache_header_t is initialized at the beginning of the region of
+    mmapp'ed memory.
     
     The header serves as a place to store, among other things, statistical information and a lock.
     
     Immediately after the header comes a zero sized block, immediately after that a single
-	block the remaining size of the shared memory.
+    block with a size equal to the remaining size of the shared memory.
 
     At this point, the shared memory looks like this:
 
@@ -81,10 +78,11 @@ form of a quick-start guide to start hacking on APC.
      typedef struct block_t block_t;
      struct block_t {
          size_t size;       /* size of this block */
-         size_t next;       /* offset in segment of next free block */
+         size_t prev_size;  /* size of sequentially previous block, 0 if prev is allocated */
+         size_t fnext;      /* offset in segment of next free block */
+         size_t fprev;      /* offset in segment of prev free block */
+#ifdef APC_SMA_CANARIES
          size_t canary;     /* canary to check for memory overwrites */
-#ifdef APC_SMA_DEBUG
-         int id;         /* identifier for the memory block */
 #endif
      };
 
@@ -98,7 +96,7 @@ form of a quick-start guide to start hacking on APC.
 
      #define OFFSET(block) ((int)(((char*)block) - (char*)shmaddr))
 
-   Allocating a block walks through the linked list of blocks until it finds one that is >= 
+   Allocating a block (`sma_allocate`) walks through the linked list of blocks until it finds one that is >= 
    to the requested size. The first call to allocate will hit the second block.  We then
    chop up that block so it looks like this:
 
@@ -122,36 +120,20 @@ form of a quick-start guide to start hacking on APC.
    The block is put back and then the deallocate code looks at the block before and after to see 
    if the block immediately before and after are free and if so the blocks are combined.  So you never
    have 2 free blocks next to each other, apart from at the front with that
-   0-sized dummy block.  This mostly prevents fragmentation.  I have been
-   toying with the idea of always allocating block at 2^n boundaries to make
-   it more likely that they will be re-used to cut down on fragmentation further.
-   That's what the POWER_OF_TWO_BLOCKSIZE you see in apc_sma.c is all about.
+   0-sized dummy block.  This mostly prevents fragmentation.
+
+   Block start pointers are aligned to the system's word boundary (usually 8 bytes) with the `ALIGNWORD` macro.
   
-5.2) APCu Pooling
-
-   Pooling serves as a means to provide operations with a context: without context, managing memory within
-   APCu would become near impossible, and very error prone.
-
-   Whenever APCu is instructed to undertake an operation that requires relinquishing the owner of some memory
-   a struct of type apc_cache_context_t is passed, among other things, the context contains a pool,
-   the pool provides references to handlers that are appropriate for the current operation.
-
-   For example: To copy data into the shared area, APCu will require the use of allocators that return blocks
-				from shared memory. To copy data out of the shared area and hand over ownership to PHP, normal
-				allocators must be used.
-
-   For more information about pooling, see apc_pool.h/apc_pool.c in the source distribution.
-
-5.3) APCu Cache
+5.2) APCu Cache
 
    The caching functionality of APCu is provided by a modified version of the APC source code
 
    Some simple tweaks have been applied: 
      Locking is written to use the best kind of locking available, and emulate it where it is not to simplify logic.
      Extension of the SMA to support multiple instances, such that additional caches using APCu do not
-		increase contention of the main APCu cache.
+     increase contention of the main APCu cache.
      The possibility to control more finely what happens when resources become low for APCu.
-	 An exposed, coherent, and documented API and example included in the distribution.
+     An exposed, coherent, and documented API and example included in the distribution.
 
    There's probably some of my blood in it, if you look real close ...
 
@@ -169,13 +151,13 @@ form of a quick-start guide to start hacking on APC.
     typedef struct _apc_cache_t {
         void* shmaddr;                /* process (local) address of shared cache */
         apc_cache_header_t* header;   /* cache header (stored in SHM) */
-        apc_cache_slot_t** slots;     /* array of cache slots (stored in SHM) */
-        apc_sma_t* sma;               /* set during creation of cache */
+        apc_cache_entry_t** slots;    /* array of cache slots (stored in SHM) */
+        apc_sma_t* sma;               /* shared memory allocator */
         apc_serializer_t* serializer; /* serializer */
         size_t nslots;                /* number of slots in cache */
-        zend_ulong gc_ttl;            /* maximum time on GC list for a slot */
-        zend_ulong ttl;               /* if slot is needed and entry's access time is older than this ttl, remove it */
-        zend_ulong smart;             /* smart parameter for gc */
+        zend_long gc_ttl;             /* maximum time on GC list for a entry */
+        zend_long ttl;                /* if slot is needed and entry's access time is older than this ttl, remove it */
+        zend_long smart;              /* smart parameter for gc */
         zend_bool defend;             /* defense parameter for runtime */
     } apc_cache_t; /* }}} */
 
@@ -188,16 +170,16 @@ form of a quick-start guide to start hacking on APC.
        Any values that must be shared among processes should go in here. */
     typedef struct _apc_cache_header_t {
         apc_lock_t lock;                 /* header lock */
-        zend_ulong nhits;                /* hit count */
-        zend_ulong nmisses;              /* miss count */
-        zend_ulong ninserts;             /* insert count */
-        zend_ulong nexpunges;            /* expunge count */
-        zend_ulong nentries;             /* entry count */
-    	zend_ulong mem_size;             /* used */
+        zend_long nhits;                 /* hit count */
+        zend_long nmisses;               /* miss count */
+        zend_long ninserts;              /* insert count */
+        zend_long nexpunges;             /* expunge count */
+        zend_long nentries;              /* entry count */
+        zend_long mem_size;              /* used */
         time_t stime;                    /* start time */
-        volatile zend_ushort state;      /* cache state */
-        apc_cache_key_t lastkey;         /* last key inserted (not necessarily without error) */
-        apc_cache_slot_t* gc;            /* gc list */
+        unsigned short state;            /* cache state */
+        apc_cache_slam_key_t lastkey;    /* last key inserted (not necessarily without error) */
+        apc_cache_entry_t *gc;           /* gc list */
     } apc_cache_header_t; /* }}} */
 
    Since this is at the start of the shared memory segment, these values are accessible
@@ -222,17 +204,24 @@ form of a quick-start guide to start hacking on APC.
    The apc_cache_slot_t *next there is a linked list to other slots that happened to hash to the
    same array position.
 
-   apc_cache_insert() shows what happens on a new cache insert.
+   apc_cache_store_internal() shows what happens on a new cache insert.
 
-     slot = &cache->slots[zend_inline_hash_func(key, keylen) % cache->nslots];
+     /* calculate hash and entry */
+     apc_cache_hash_slot(cache, key, &h, &s);
+
+     entry = &cache->slots[s];
 
    cache->slots is our array of slots in the segment.
 
    So, on an insert we find the array position in the slots array by hashing the key provided.
-   If there are currently no other slots there, we just create the slot and stick it into
-   the array:
+   If there are currently no other slots there, we just stick the created `apc_cache_entry_t` into the array.
 
-     *slot = make_slot(cache, key, value, *slot, t TSRMLS_CC)
+     while (*entry) {
+        /* process expired entries and check for entry with matching key */
+     }
+     /* link in new entry */
+     new_entry->next = *entry;
+     *entry = new_entry;
 
    If there are other slots already at this position we walk the link list to get to
    the end.
@@ -258,25 +247,32 @@ form of a quick-start guide to start hacking on APC.
 
     /* {{{ struct definition: apc_cache_key_t */
     typedef struct _apc_cache_key_t {
-        const char *str;		      /* pointer to constant string key */
-        zend_uint len;    		      /* length of data at str */
+        const char *str;              /* pointer to constant string key */
+        zend_uint len;                /* length of data at str */
         zend_ulong h;                 /* pre-computed hash of key */
         time_t mtime;                 /* the mtime of this cached entry */
-	    apc_cache_owner_t owner;      /* the context that created this key */
+        apc_cache_owner_t owner;      /* the context that created this key */
     } apc_cache_key_t; /* }}} */  
 
    To create a apc_cache_key_t structure, call apc_cache_make_key(), see apc_cache.h
-	
+
    Ok, on to the actual cache entry, here is the definition of apc_cache_entry_t:
 
     /* {{{ struct definition: apc_cache_entry_t */
-    typedef struct _apc_cache_entry_t {
-        zval *val;                    /* the zval copied at store time */
-        zend_uint ttl;                /* the ttl on this specific entry */
-        int ref_count;                /* the reference count of this entry */
-        size_t mem_size;              /* memory used */
-        apc_pool *pool;               /* pool which allocated the value */
-    } apc_cache_entry_t;
+    typedef struct apc_cache_entry_t apc_cache_entry_t;
+    struct apc_cache_entry_t {
+        zend_string *key;        /* entry key */
+        zval val;                /* the zval copied at store time */
+        apc_cache_entry_t *next; /* next entry in linked list */
+        zend_long ttl;           /* the ttl on this specific entry */
+        zend_long ref_count;     /* the reference count of this entry */
+        zend_long nhits;         /* number of hits to this entry */
+        time_t ctime;            /* time entry was initialized */
+        time_t mtime;            /* the mtime of this cached entry */
+        time_t dtime;            /* time entry was removed from cache */
+        time_t atime;            /* time entry was last accessed */
+        zend_long mem_size;      /* memory used */
+    };
     /* }}} */
 
    To create an apc_cache_entry_t, call apc_cache_make_entry(), see apc_cache.h
@@ -286,7 +282,48 @@ form of a quick-start guide to start hacking on APC.
    If an insertion of an entry should fail, it falls to the caller of insert to free 
    the pooled resources used to create the entry. 
 
-   
+7. Serializers
+
+   The way data is serialized and unserialized can be found in apc_persist.c.
+   Saving to shared memory (persist) is done using `apc_persist_context_t`.
+   Both the entry key and the entry's zval get persisted into shared memory in a continuous block
+   for the single entry.
+
+    typedef struct _apc_persist_context_t {
+        /* Serializer to use */
+        apc_serializer_t *serializer;
+        /* Computed size of the needed SMA allocation */
+        size_t size;
+        /* Whether or not we may have to memoize refcounted addresses */
+        zend_bool memoization_needed;
+        /* Whether to serialize the top-level value */
+        zend_bool use_serialization;
+        /* Serialized object/array string, in case there can only be one */
+        unsigned char *serialized_str;
+        size_t serialized_str_len;
+        /* Whole SMA allocation */
+        char *alloc;
+        /* Current position in allocation */
+        char *alloc_cur;
+        /* HashTable storing refcounteds for which the size has already been counted. */
+        HashTable already_counted;
+        /* HashTable storing already allocated refcounteds. Pointers to refcounteds are stored. */
+        HashTable already_allocated;
+    } apc_persist_context_t;
+
+   The ini setting `apc.serializer` can be used to customize the `apc_serializer_t *serializer`.
+   This affects which serializer is used for PHP objects or arrays.
+   (for a top level null/bool/int/float/string, serializers are unnecessary and not used)
+
+   - `apc.serializer=php` (default) will use serialize() and unserialize() for serializing arrays/
+     This has lower memory usage than `apc.serializer=default` for most use cases
+   - `apc.serializer=default` is used for arrays that don't contain objects, and will store the array structure in shared memory
+     in a form that allows deduplicating values as well as faster unserialization of small arrays, at the cost of generally having higher memory usage.
+     
+     For arrays that contain objects, it falls back to php's native serialize()/unserialize()
+   - APCu can be configured to use third party serializers if they are compiled with support for apcu.
+     For example, `apc.serializer=igbinary` (https://github.com/igbinary/igbinary) can be used for generally faster unserialization and lower memory usage than apc.serializer=php 
+     (requires that igbinary be configured and compiled after APCu is installed)
 
 If you made it to the end of this, you should have a pretty good idea of where things are in
 the code.  There is much more reading to do in headers ... good luck ...
