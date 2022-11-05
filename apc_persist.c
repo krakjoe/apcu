@@ -72,6 +72,11 @@ typedef struct _apc_persist_context_t {
 static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *zv);
 static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv);
 
+/* Used to reduce hash collisions when using pointers in hash tables. (#175) */
+static inline zend_ulong apc_shr3(zend_ulong index) {
+	return (index >> 3) | (index << (SIZEOF_ZEND_LONG * 8 - 3));
+}
+
 static inline void apc_persist_copy_zval(apc_persist_context_t *ctxt, zval *zv) {
 	/* No data apart from the zval itself */
 	if (Z_TYPE_P(zv) < IS_STRING) {
@@ -104,16 +109,18 @@ void apc_persist_destroy_context(apc_persist_context_t *ctxt) {
 
 static zend_bool apc_persist_calc_memoize(apc_persist_context_t *ctxt, void *ptr) {
 	zval tmp;
+	zend_ulong key;
 	if (!ctxt->memoization_needed) {
 		return 0;
 	}
 
-	if (zend_hash_index_exists(&ctxt->already_counted, (uintptr_t) ptr)) {
+	key = apc_shr3((zend_ulong)(uintptr_t) ptr);
+	if (zend_hash_index_exists(&ctxt->already_counted, key)) {
 		return 1;
 	}
 
 	ZVAL_NULL(&tmp);
-	zend_hash_index_add_new(&ctxt->already_counted, (uintptr_t) ptr, &tmp);
+	zend_hash_index_add_new(&ctxt->already_counted, key, &tmp);
 	return 0;
 }
 
@@ -521,11 +528,6 @@ static zend_bool apc_unpersist_serialized(
 
 	ZVAL_NULL(dst);
 	return 0;
-}
-
-/* Used to reduce hash collisions when using pointers in hash tables. (#175) */
-static zend_ulong apc_shr3(zend_ulong index) {
-    return (index >> 3) | (index << (SIZEOF_ZEND_LONG * 8 - 3));
 }
 
 static inline void *apc_unpersist_get_already_copied(apc_unpersist_context_t *ctxt, void *ptr) {
