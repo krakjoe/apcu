@@ -50,8 +50,8 @@ typedef apc_lock_t apc_mutex_t;
 
 // Fallback to normal locks
 
-#define APC_MUTEX_INIT()          
-#define APC_MUTEX_CLEANUP()       
+#define APC_MUTEX_INIT()
+#define APC_MUTEX_CLEANUP()
 
 #define APC_CREATE_MUTEX(lock)    CREATE_LOCK(lock)
 #define APC_DESTROY_MUTEX(lock)   DESTROY_LOCK(lock)
