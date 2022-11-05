@@ -27,7 +27,7 @@ apcu_inc_request_time(1);
 // Fill the cache
 $i = 0;
 while (apcu_exists("dummy")) {
-    apcu_store("key" . $i, str_repeat('x', 500));
+    apcu_store("key" . $i, str_repeat('x', 100)); // whether this test passes depends on the size of items, because that affects apc_cache_default_expunge needing a full eviction
     $i++;
 }
 
