@@ -40,6 +40,10 @@
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
 - Revert use of monotonic clock for TTL (#451)
+- Fix a crash when serializing packed arrays (e.g. lists) in PHP 8.2+ with `apc.serializer=default`.
+- Reduce memory usage when serializing packed arrays (e.g. lists) in PHP 8.2+ with `apc.serializer=default`.
+- Speed up serializing arrays with `apc.serializer=default`.
+- Reduce memory usage when unserializing instances of the empty array in PHP 7.3+.
  </notes>
  <contents>
   <dir name="/">
@@ -74,6 +78,7 @@
     <file name="apc_022.phpt" role="test" />
     <file name="apc_023.phpt" role="test" />
     <file name="apc_024.phpt" role="test" />
+    <file name="apc_025.phpt" role="test" />
     <file name="apc_099.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
     <file name="apc54_018.phpt" role="test" />
