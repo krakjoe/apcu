@@ -134,10 +134,6 @@ PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name); /* }}} */
 PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS);
 PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS); /* }}} */
 
-/* {{{ eval serializers */
-PHP_APCU_API int APC_SERIALIZER_NAME(eval) (APC_SERIALIZER_ARGS);
-PHP_APCU_API int APC_UNSERIALIZER_NAME(eval) (APC_UNSERIALIZER_ARGS); /* }}} */
-
 #define php_apc_try                        \
 {                                          \
 	JMP_BUF *zb = EG(bailout);             \
