@@ -10,7 +10,7 @@ indent_style = space
 [*.xml]
 indent_size = 1
 indent_style = space
-[*.m4]
+[*.{m4,yml}]
 indent_size = 2
 indent_style = space
 [*.w32]
