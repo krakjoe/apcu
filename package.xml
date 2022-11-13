@@ -48,8 +48,6 @@
  <contents>
   <dir name="/">
    <dir name="tests">
-    <file name="023-2.inc" role="test" />
-    <file name="024.phpt" role="test" />
     <file name="apc_001.phpt" role="test" />
     <file name="apc_002.phpt" role="test" />
     <file name="apc_003b.phpt" role="test" />
