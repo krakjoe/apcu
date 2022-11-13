@@ -43,9 +43,8 @@ form of a quick-start guide to start hacking on APCu.
    
    It is a pretty standard memory allocator, now supporting third party extensions.
 
-   apc_sma_malloc, apc_sma_malloc, apc_sma_free, etc
-   behave to the caller just like malloc and free, they are 
-   generated from macros in apc_sma.h
+   apc_sma_malloc and apc_sma_free behave to the caller just like malloc and free,
+   they are generated from macros in apc_sma.h
 
     Note:   apc_sma.h is formatted and designed such that the SMA APCu 
             uses can be used by third parties in their own extensions without
