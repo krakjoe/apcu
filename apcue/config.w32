@@ -1,9 +1,0 @@
-// vim:ft=javascript
-
-ARG_ENABLE("apcue", "enable apcue support", "no");
-
-if (PHP_APCUE != "no") {
-	EXTENSION("apcue", "apcue.c");
-	ADD_FLAG("CFLAGS_APCUE", " /I.. ");
-}
-
