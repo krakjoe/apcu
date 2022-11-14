@@ -183,7 +183,8 @@ if(!function_exists('apcu_cache_info')) {
   exit;
 }
 
-$cache = apcu_cache_info();
+$limited = $MYREQUEST['OB'] != OB_USER_CACHE;
+$cache = apcu_cache_info($limited);
 
 $mem=apcu_sma_info();
 
@@ -758,10 +759,11 @@ case OB_HOST_STATS:
     $mem_avail= $mem['avail_mem'];
     $mem_used = $mem_size-$mem_avail;
     $seg_size = bsize($mem['seg_size']);
-    $req_rate_user = sprintf("%.2f", $cache['num_hits'] ? (($cache['num_hits']+$cache['num_misses'])/($time-$cache['start_time'])) : 0);
-    $hit_rate_user = sprintf("%.2f", $cache['num_hits'] ? (($cache['num_hits'])/($time-$cache['start_time'])) : 0);
-    $miss_rate_user = sprintf("%.2f", $cache['num_misses'] ? (($cache['num_misses'])/($time-$cache['start_time'])) : 0);
-    $insert_rate_user = sprintf("%.2f", $cache['num_inserts'] ? (($cache['num_inserts'])/($time-$cache['start_time'])) : 0);
+    $elapsed = max($time-$cache['start_time'], 1);
+    $req_rate_user = sprintf("%.2f", $cache['num_hits'] ? (($cache['num_hits']+$cache['num_misses'])/$elapsed) : 0);
+    $hit_rate_user = sprintf("%.2f", $cache['num_hits'] ? (($cache['num_hits'])/$elapsed) : 0);
+    $miss_rate_user = sprintf("%.2f", $cache['num_misses'] ? (($cache['num_misses'])/$elapsed) : 0);
+    $insert_rate_user = sprintf("%.2f", $cache['num_inserts'] ? (($cache['num_inserts'])/$elapsed) : 0);
     $apcversion = phpversion('apcu');
     $phpversion = phpversion();
     $number_vars = $cache['num_entries'];
