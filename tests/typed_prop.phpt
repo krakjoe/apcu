@@ -28,8 +28,8 @@ try {
 var_dump($test->array);
 
 ?>
---EXPECT--
+--EXPECTF--
 bool(true)
-Cannot assign bool to reference held by property Test::$array of type array
+Cannot assign %s to reference held by property Test::$array of type array
 array(0) {
 }
