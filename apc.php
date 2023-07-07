@@ -87,7 +87,7 @@ $vardom=array(
     'SORT1' => '/^[AHSMCDTZ]$/',    // first sort key
     'SORT2' => '/^[DA]$/',          // second sort key
     'AGGR'  => '/^\d+$/',           // aggregation by dir level
-    'SEARCH'    => '~^[a-zA-Z0-9/_.-]*$~'           // aggregation by dir level
+    'SEARCH' => '~^[a-zA-Z0-9/_.\-*\\\]*$~' // search term regex
 );
 
 // cache scope
