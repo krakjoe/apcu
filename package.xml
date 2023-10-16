@@ -44,6 +44,9 @@
 - Reduce memory usage when serializing packed arrays (e.g. lists) in PHP 8.2+ with `apc.serializer=default`.
 - Speed up serializing arrays with `apc.serializer=default`.
 - Reduce memory usage when unserializing instances of the empty array in PHP 7.3+.
+- Removed no longer working apcue extension.
+- Increased limit on maximum number of slots.
+- Made tests compatible with PHP 8.3.
  </notes>
  <contents>
   <dir name="/">
