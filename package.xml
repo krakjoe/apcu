@@ -30,7 +30,7 @@
  </lead>
  <date>2023-11-11</date>
  <version>
-  <release>5.1.23</release>
+  <release>5.1.24dev</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,14 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Revert use of monotonic clock for TTL (#451)
-- Fix a crash when serializing packed arrays (e.g. lists) in PHP 8.2+ with `apc.serializer=default`.
-- Reduce memory usage when serializing packed arrays (e.g. lists) in PHP 8.2+ with `apc.serializer=default`.
-- Speed up serializing arrays with `apc.serializer=default`.
-- Reduce memory usage when unserializing instances of the empty array in PHP 7.3+.
-- Removed no longer working apcue extension.
-- Increased limit on maximum number of slots.
-- Made tests compatible with PHP 8.3.
+- TBD
  </notes>
  <contents>
   <dir name="/">
@@ -192,6 +185,28 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2023-11-11</date>
+   <version>
+    <release>5.1.23</release>
+    <api>5.1.18</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Revert use of monotonic clock for TTL (#451)
+- Fix a crash when serializing packed arrays (e.g. lists) in PHP 8.2+ with `apc.serializer=default`.
+- Reduce memory usage when serializing packed arrays (e.g. lists) in PHP 8.2+ with `apc.serializer=default`.
+- Speed up serializing arrays with `apc.serializer=default`.
+- Reduce memory usage when unserializing instances of the empty array in PHP 7.3+.
+- Removed no longer working apcue extension.
+- Increased limit on maximum number of slots.
+- Made tests compatible with PHP 8.3.
+   </notes>
+  </release>
   <release>
    <date>2022-09-19</date>
    <version>
