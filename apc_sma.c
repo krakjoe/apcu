@@ -163,7 +163,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 	realsize = ALIGNWORD(size + block_size);
 
 	/*
-	 * First, insure that the segment contains at least realsize free bytes,
+	 * First, ensure that the segment contains at least realsize free bytes,
 	 * even if they are not contiguous.
 	 */
 	shmaddr = header;

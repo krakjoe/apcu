@@ -63,8 +63,9 @@ typedef struct _apc_persist_context_t {
 	HashTable already_allocated;
 } apc_persist_context_t;
 
+#define _APC_PERSISTED_ZSTR_STRUCT_SIZE(len) (XtOffsetOf(apc_persisted_zend_string, val) + len + 1)
 #define ADD_SIZE(sz) ctxt->size += ZEND_MM_ALIGNED_SIZE(sz)
-#define ADD_SIZE_STR(len) ADD_SIZE(_ZSTR_STRUCT_SIZE(len))
+#define ADD_SIZE_STR(len) ADD_SIZE(_APC_PERSISTED_ZSTR_STRUCT_SIZE(len))
 
 #define ALLOC(sz) apc_persist_alloc(ctxt, sz)
 #define COPY(val, sz) apc_persist_alloc_copy(ctxt, val, sz)
@@ -237,7 +238,7 @@ static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *
 
 static zend_bool apc_persist_calc(apc_persist_context_t *ctxt, const apc_cache_entry_t *entry) {
 	ADD_SIZE(sizeof(apc_cache_entry_t));
-	ADD_SIZE_STR(ZSTR_LEN(entry->key));
+	ADD_SIZE_STR(ZSTR_LEN(entry->tmp_key));
 	return apc_persist_calc_zval(ctxt, &entry->val);
 }
 
@@ -269,31 +270,27 @@ static inline void *apc_persist_alloc_copy(
 	return ptr;
 }
 
-static zend_string *apc_persist_copy_cstr(
+static apc_persisted_zend_string *apc_persist_copy_cstr(
 		apc_persist_context_t *ctxt, const char *orig_buf, size_t buf_len, zend_ulong hash) {
-	zend_string *str = ALLOC(_ZSTR_STRUCT_SIZE(buf_len));
+	apc_persisted_zend_string *str = ALLOC(_APC_PERSISTED_ZSTR_STRUCT_SIZE(buf_len));
 
-	GC_SET_REFCOUNT(str, 1);
-	GC_SET_PERSISTENT_TYPE(str, IS_STRING);
-
-	ZSTR_H(str) = hash;
-	ZSTR_LEN(str) = buf_len;
-	memcpy(ZSTR_VAL(str), orig_buf, buf_len);
-	ZSTR_VAL(str)[buf_len] = '\0';
-	zend_string_hash_val(str);
+	str->h = hash ? hash : zend_inline_hash_func(orig_buf, buf_len);
+	str->len = buf_len;
+	memcpy(str->val, orig_buf, buf_len);
+	str->val[buf_len] = '\0';
 
 	return str;
 }
 
-static zend_string *apc_persist_copy_zstr_no_add(
+static apc_persisted_zend_string *apc_persist_copy_zstr_no_add(
 		apc_persist_context_t *ctxt, const zend_string *orig_str) {
 	return apc_persist_copy_cstr(
 		ctxt, ZSTR_VAL(orig_str), ZSTR_LEN(orig_str), ZSTR_H(orig_str));
 }
 
-static inline zend_string *apc_persist_copy_zstr(
+static inline apc_persisted_zend_string *apc_persist_copy_zstr(
 		apc_persist_context_t *ctxt, const zend_string *orig_str) {
-	zend_string *str = apc_persist_copy_zstr_no_add(ctxt, orig_str);
+	apc_persisted_zend_string *str = apc_persist_copy_zstr_no_add(ctxt, orig_str);
 	apc_persist_add_already_allocated(ctxt, orig_str, str);
 	return str;
 }
@@ -381,7 +378,7 @@ static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTa
 			}
 
 			if (p->key) {
-				p->key = apc_persist_copy_zstr_no_add(ctxt, p->key);
+				p->key = (zend_string*)apc_persist_copy_zstr_no_add(ctxt, p->key);
 				ht->u.flags &= ~HASH_FLAG_STATIC_KEYS;
 			} else if ((zend_long) p->h >= (zend_long) ht->nNextFreeElement) {
 				ht->nNextFreeElement = p->h + 1;
@@ -396,7 +393,7 @@ static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTa
 
 static void apc_persist_copy_serialize(
 		apc_persist_context_t *ctxt, zval *zv) {
-	zend_string *str;
+	apc_persisted_zend_string *str;
 	zend_uchar orig_type = Z_TYPE_P(zv);
 	ZEND_ASSERT(orig_type == IS_ARRAY || orig_type == IS_OBJECT);
 
@@ -421,7 +418,8 @@ static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv) {
 	switch (Z_TYPE_P(zv)) {
 		case IS_STRING:
 			if (!ptr) ptr = apc_persist_copy_zstr(ctxt, Z_STR_P(zv));
-			ZVAL_STR(zv, ptr);
+			Z_STR_P(zv) = ptr;
+			Z_TYPE_INFO_P(zv) = IS_STRING_EX; /* Never an interned string */
 			return;
 		case IS_ARRAY:
 			if (!ptr) ptr = apc_persist_copy_ht(ctxt, Z_ARRVAL_P(zv));
@@ -438,7 +436,7 @@ static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv) {
 static apc_cache_entry_t *apc_persist_copy(
 		apc_persist_context_t *ctxt, const apc_cache_entry_t *orig_entry) {
 	apc_cache_entry_t *entry = COPY(orig_entry, sizeof(apc_cache_entry_t));
-	entry->key = apc_persist_copy_zstr_no_add(ctxt, entry->key);
+	entry->persisted_key = apc_persist_copy_zstr_no_add(ctxt, entry->tmp_key);
 	apc_persist_copy_zval(ctxt, &entry->val);
 	return entry;
 }
@@ -522,7 +520,7 @@ static inline void apc_unpersist_zval(apc_unpersist_context_t *ctxt, zval *zv) {
 }
 
 static zend_bool apc_unpersist_serialized(
-		zval *dst, zend_string *str, apc_serializer_t *serializer) {
+		zval *dst, apc_persisted_zend_string *str, apc_serializer_t *serializer) {
 	apc_unserialize_t unserialize = APC_UNSERIALIZER_NAME(php);
 	void *config = NULL;
 
@@ -553,7 +551,8 @@ static inline void apc_unpersist_add_already_copied(
 	}
 }
 
-static zend_string *apc_unpersist_zstr(apc_unpersist_context_t *ctxt, const zend_string *orig_str) {
+static zend_string *apc_unpersist_zstr(apc_unpersist_context_t *ctxt, const apc_persisted_zend_string *orig_str) {
+	ZEND_ASSERT(ZSTR_LEN(orig_str) <= 1000000);
 	zend_string *str = zend_string_init(ZSTR_VAL(orig_str), ZSTR_LEN(orig_str), 0);
 	ZSTR_H(str) = ZSTR_H(orig_str);
 	apc_unpersist_add_already_copied(ctxt, orig_str, str);
@@ -633,7 +632,7 @@ static zend_array *apc_unpersist_ht(
 			p->val = q->val;
 			p->h = q->h;
 			if (q->key) {
-				p->key = zend_string_dup(q->key, 0);
+				p->key = apc_create_zend_string_from_persisted((apc_persisted_zend_string *)q->key);
 			} else {
 				p->key = NULL;
 			}
@@ -654,7 +653,8 @@ static void apc_unpersist_zval_impl(apc_unpersist_context_t *ctxt, zval *zv) {
 
 	switch (Z_TYPE_P(zv)) {
 		case IS_STRING:
-			Z_STR_P(zv) = apc_unpersist_zstr(ctxt, Z_STR_P(zv));
+			/* apc_persist_copy_zval will have properly set the flags already */
+			Z_STR_P(zv) = apc_unpersist_zstr(ctxt, (apc_persisted_zend_string *)Z_STR_P(zv));
 			return;
 		case IS_REFERENCE:
 			Z_REF_P(zv) = apc_unpersist_ref(ctxt, Z_REF_P(zv));

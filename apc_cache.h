@@ -34,6 +34,7 @@
 #include "apc_lock.h"
 #include "apc_globals.h"
 #include "TSRM.h"
+#include "Zend/zend_string.h"
 
 typedef struct apc_cache_slam_key_t apc_cache_slam_key_t;
 struct apc_cache_slam_key_t {
@@ -46,10 +47,32 @@ struct apc_cache_slam_key_t {
 #endif
 };
 
+typedef struct _apc_persisted_zend_string {
+	zend_ulong        h;                /* hash value */
+	size_t            len;
+	char              val[1];
+} apc_persisted_zend_string;
+
+/* {{{ apc_create_zend_string_from_persisted */
+static zend_always_inline zend_string *apc_create_zend_string_from_persisted(const apc_persisted_zend_string *str) {
+	const size_t len = str->len;
+	ZEND_ASSERT(str->h != 0);
+	zend_string *ret = zend_string_alloc(len, 0);
+	ZSTR_H(ret) = str->h;
+
+	memcpy(ZSTR_VAL(ret), str->val, len + 1);
+	ZEND_ASSERT(ZSTR_VAL(ret)[len] == '\0');
+	return ret;
+}
+/* }}} */
+
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
-	zend_string *key;        /* entry key */
+	union {
+		zend_string *tmp_key; /* entry key */
+		apc_persisted_zend_string *persisted_key; /* entry key */
+	};
 	zval val;                /* the zval copied at store time */
 	apc_cache_entry_t *next; /* next entry in linked list */
 	zend_long ttl;           /* the ttl on this specific entry */
