@@ -212,8 +212,8 @@ static void apc_cache_wlocked_gc(apc_cache_t* cache)
 				/* good ol' whining */
 				if (dead->ref_count > 0) {
 					apc_debug(
-						"GC cache entry '%s' was on gc-list for %ld seconds",
-						ZSTR_VAL(dead->key), gc_sec
+						"GC cache entry '%s' was on gc-list for %lld seconds",
+						ZSTR_VAL(dead->key), (long long) gc_sec
 					);
 				}
 
@@ -275,7 +275,7 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 	BG(serialize_lock)--;
 	
 	if (!result) {
-		php_error_docref(NULL, E_NOTICE, "Error at offset %ld of %ld bytes", (zend_long)(tmp - buf), (zend_long)buf_len);
+		php_error_docref(NULL, E_NOTICE, "Error at offset %td of %zd bytes", tmp - buf, buf_len);
 		ZVAL_NULL(value);
 		return 0;
 	}
