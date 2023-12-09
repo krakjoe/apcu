@@ -53,7 +53,7 @@ int apc_shm_create(int proj, size_t size)
 
 	oflag = IPC_CREAT | SHM_R | SHM_A;
 	if ((shmid = shmget(key, size, oflag)) < 0) {
-		zend_error_noreturn(E_CORE_ERROR, "apc_shm_create: shmget(%d, %zd, %d) failed: %s. It is possible that the chosen SHM segment size is higher than the operation system allows. Linux has usually a default limit of 32MB per segment.", key, size, oflag, strerror(errno));
+		zend_error_noreturn(E_CORE_ERROR, "apc_shm_create: shmget(%ld, %zd, %d) failed: %s. It is possible that the chosen SHM segment size is higher than the operation system allows. Linux has usually a default limit of 32MB per segment.", (long) key, size, oflag, strerror(errno));
 	}
 
 	return shmid;
