@@ -122,8 +122,7 @@ if test "$PHP_APCU" != "no"; then
           }
         ]])],[ dnl -Success-
           APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
-          PHP_ADD_LIBRARY(pthread)
-          PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
+          PHP_ADD_LIBRARY(pthread,, APCU_SHARED_LIBADD)
           AC_DEFINE(APC_NATIVE_RWLOCK, 1, [ ])
           AC_MSG_RESULT([yes])
         ],[ dnl -Failure-
@@ -131,8 +130,7 @@ if test "$PHP_APCU" != "no"; then
           PHP_APCU_RWLOCKS=no
         ],[
           APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
-          PHP_ADD_LIBRARY(pthread)
-          PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
+          PHP_ADD_LIBRARY(pthread,, APCU_SHARED_LIBADD)
     ])
     LIBS="$orig_LIBS"
   fi
@@ -173,8 +171,7 @@ if test "$PHP_APCU" != "no"; then
         }
         ]])],[ dnl -Success-
           APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
-          PHP_ADD_LIBRARY(pthread)
-          PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
+          PHP_ADD_LIBRARY(pthread,, APCU_SHARED_LIBADD)
           AC_MSG_RESULT([yes])
           AC_DEFINE(APC_HAS_PTHREAD_MUTEX, 1, [ ])
         ],[ dnl -Failure-
@@ -182,8 +179,7 @@ if test "$PHP_APCU" != "no"; then
           PHP_APCU_MUTEX=no
         ],[
           APCU_CFLAGS="-D_GNU_SOURCE -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
-          PHP_ADD_LIBRARY(pthread)
-          PHP_LDFLAGS="$PHP_LDFLAGS -lpthread"
+          PHP_ADD_LIBRARY(pthread,, APCU_SHARED_LIBADD)
     ])
     LIBS="$orig_LIBS"
   fi
@@ -249,7 +245,6 @@ if test "$PHP_APCU" != "no"; then
   PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
   PHP_SUBST(APCU_SHARED_LIBADD)
   PHP_SUBST(APCU_CFLAGS)
-  PHP_SUBST(PHP_LDFLAGS)
   PHP_INSTALL_HEADERS(ext/apcu, [php_apc.h apc.h apc_api.h apc_cache.h apc_globals.h apc_iterator.h apc_lock.h apc_mutex.h apc_sma.h apc_serializer.h apc_stack.h apc_arginfo.h php_apc_legacy_arginfo.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
 fi
