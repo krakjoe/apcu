@@ -60,6 +60,11 @@ struct apc_cache_entry_t {
 	time_t dtime;            /* time entry was removed from cache */
 	time_t atime;            /* time entry was last accessed */
 	zend_long mem_size;      /* memory used */
+#ifdef APC_LRU
+	/* a circularly doubly linked list used for access history */
+	apc_cache_entry_t *hnext; /* entry with a newer access time than this entry */
+	apc_cache_entry_t *hprev; /* entry with an older access time than this entry */
+#endif
 };
 /* }}} */
 
@@ -77,6 +82,9 @@ typedef struct _apc_cache_header_t {
 	unsigned short state;           /* cache state */
 	apc_cache_slam_key_t lastkey;   /* last key inserted (not necessarily without error) */
 	apc_cache_entry_t *gc;          /* gc list */
+#ifdef APC_LRU
+	apc_cache_entry_t *holdest;     /* oldest entry in the access history */
+#endif
 } apc_cache_header_t; /* }}} */
 
 /* {{{ struct definition: apc_cache_t */

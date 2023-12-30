@@ -142,6 +142,13 @@ PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma);
 */
 PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size);
 
+#ifdef APC_LRU
+/*
+ * apc_sma_check_alloc_size will return true if there is a free block that can store the specified size.
+ */
+PHP_APCU_API zend_bool apc_sma_check_alloc_size(apc_sma_t* sma, size_t size);
+#endif
+
 /*
 * apc_sma_api_check_integrity will check the integrity of sma
 */
