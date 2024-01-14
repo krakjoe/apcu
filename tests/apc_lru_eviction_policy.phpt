@@ -60,9 +60,9 @@ apcu_exists('B'); // A->C->B (no effect)
 $keylist .= keylist();
 apcu_store(['D' => $value, 'E' => $value]); // E->D->A
 $keylist .= keylist();
-apcu_entry('A', fn () => $value); // A->E->D
+apcu_entry('A', function ($key) use ($value) { return $value; }); // A->E->D
 $keylist .= keylist();
-apcu_entry('F', fn () => $value); // F->A->E
+apcu_entry('F', function ($key) use ($value) { return $value; }); // F->A->E
 $keylist .= keylist();
 apcu_fetch(['F', 'A']); // A->F->E
 $keylist .= keylist();
