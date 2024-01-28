@@ -810,6 +810,7 @@ PHP_APCU_API void apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 	time_t t;
 	zend_ulong h;
 	size_t s;
+	size_t suitable;
 
 	if (!cache || IS_ACCESS_HISTORY_EMPTIED(cache)) {
 		return;
@@ -821,6 +822,8 @@ PHP_APCU_API void apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 	if (!apc_cache_wlock(cache)) {
 		return;
 	}
+
+	suitable = (cache->smart > 0L) ? (size_t) (cache->smart * size) : size;
 
 	/* gc */
 	apc_cache_wlocked_gc(cache);
@@ -850,7 +853,7 @@ PHP_APCU_API void apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 		}
 
 		/* finish if a sufficient size is found */
-		if (apc_sma_check_alloc_size(cache->sma, size)) {
+		if (apc_sma_check_alloc_size(cache->sma, suitable)) {
 			break;
 		}
 	}

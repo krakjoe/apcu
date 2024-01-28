@@ -125,7 +125,7 @@ typedef zend_bool (*apc_cache_atomic_updater_t)(apc_cache_t*, zend_long*, void* 
  * is needed.  This helps in cleaning up the cache and ensuring that entries
  * hit frequently stay cached and ones not hit very often eventually disappear.
  *
- * for an explanation of smart, see apc_cache_default_expunge
+ * for an explanation of smart, see apc_cache_default_expunge, apc_cache_lru_expunge
  *
  * defend enables/disables slam defense for this particular cache
  */
@@ -276,14 +276,16 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name);
 PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size);
 
 /* {{{ apc_cache_lru_expunge
-* Expunge the oldest entries from the access history until a free block of the requested size becomes available
+* Where smart is not set:
+*  Expunge the oldest entries from the access history until a free block of the requested size becomes available
+* Where smart is not set:
+*  Expunge the oldest entries from the access history until a free block of the requested size * smart becomes available
 *
 * When the access history is updated:
 * - use apcu_store, apcu_add (see apc_cache_wlocked_insert)
 * - use apcu_fetch (see apc_cache_wlocked_find_incref)
 * - use apcu_entry (see apc_cache_entry)
 * - use apcu_inc, apcu_dec, apcu_cas (see apc_cache_atomic_update_long)
-*
 */
 PHP_APCU_API void apc_cache_lru_expunge(apc_cache_t* cache, size_t size);
 
