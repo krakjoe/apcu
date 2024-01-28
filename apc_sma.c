@@ -653,6 +653,7 @@ PHP_APCU_API zend_bool apc_sma_check_alloc_size(apc_sma_t* sma, size_t size) {
 	for (i = 0; i < sma->num; i++) {
 		sma_header_t* header = SMA_HDR(sma, i);
 		if (header->last_fblock_size >= realsize) {
+			sma->last = i;
 			return 1;
 		}
 	}
