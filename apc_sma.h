@@ -62,8 +62,6 @@ struct apc_sma_info_t {
 };
 /* }}} */
 
-typedef void (*apc_sma_expunge_f)(void *pointer, size_t size); /* }}} */
-
 /* {{{ struct definition: apc_sma_t */
 typedef struct _apc_sma_t {
 	zend_bool initialized;         /* flag to indicate this sma has been initialized */
@@ -142,12 +140,17 @@ PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma);
 */
 PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size);
 
-#ifdef APC_LRU
 /*
  * apc_sma_check_alloc_size will return true if there is a free block that can store the specified size.
+ * This function only works with LRU algorithms and only checks the size of the last free block looked at.
+ *
+ * Normally, a full search of the free block should be conducted.
+ * However,
+ * 1) If expunge function is called, it means there is no free block of sufficient size.
+ * 2) In LRU, cache entries are deleted until a free block of sufficient size becomes available.
+ * Therefore, it is sufficient to just look at the size of the block that was freed most recently.
  */
 PHP_APCU_API zend_bool apc_sma_check_alloc_size(apc_sma_t* sma, size_t size);
-#endif
 
 /*
 * apc_sma_api_check_integrity will check the integrity of sma

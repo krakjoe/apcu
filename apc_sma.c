@@ -50,11 +50,9 @@ enum {
 typedef struct sma_header_t sma_header_t;
 struct sma_header_t {
 	apc_mutex_t sma_lock;    /* segment lock */
-	size_t segsize;         /* size of entire segment */
-	size_t avail;           /* bytes available (not necessarily contiguous) */
-#ifdef APC_LRU
+	size_t segsize;          /* size of entire segment */
+	size_t avail;            /* bytes available (not necessarily contiguous) */
 	size_t last_fblock_size; /* size of last accessed free block */
-#endif
 };
 
 #define SMA_HDR(sma, i)  ((sma_header_t*)((sma->segs[i]).shmaddr))
@@ -188,9 +186,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 		prv->fnext = cur->fnext;
 		BLOCKAT(cur->fnext)->fprev = OFFSET(prv);
 		NEXT_SBLOCK(cur)->prev_size = 0;  /* block is alloc'd */
-#ifdef APC_LRU
 		header->last_fblock_size = 0;
-#endif
 	} else {
 		/* nextfit is too big; split it into two smaller blocks */
 		block_t* nxt;      /* the new block (chopped part of cur) */
@@ -203,9 +199,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 		nxt->prev_size = 0;                       /* block is alloc'd */
 		nxt->size = oldsize - realsize;           /* and fix the size */
 		NEXT_SBLOCK(nxt)->prev_size = nxt->size;  /* adjust size */
-#ifdef APC_LRU
 		header->last_fblock_size = nxt->size;
-#endif
 		SET_CANARY(nxt);
 
 		/* replace cur with next in free list */
@@ -284,9 +278,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 	}
 
 	NEXT_SBLOCK(cur)->prev_size = cur->size;
-#ifdef APC_LRU
 	header->last_fblock_size = cur->size;
-#endif
 
 	/* insert new block after prv */
 	prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
@@ -388,9 +380,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 		last->id = -1;
 #endif
 
-#ifdef APC_LRU
 		header->last_fblock_size = empty->size;
-#endif
 	}
 }
 
@@ -465,11 +455,7 @@ restart:
 
 	/* Expunge cache in hope of freeing up memory, but only once */
 	if (!nuked) {
-#ifdef APC_LRU
 		sma->expunge(*sma->data, n);
-#else
-		sma->expunge(*sma->data, n+fragment);
-#endif
 		nuked = 1;
 		goto restart;
 	}
@@ -659,7 +645,6 @@ PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
 	return 0;
 }
 
-#ifdef APC_LRU
 PHP_APCU_API zend_bool apc_sma_check_alloc_size(apc_sma_t* sma, size_t size) {
 	int32_t i;
 	size_t block_size = ALIGNWORD(sizeof(struct block_t));
@@ -673,7 +658,6 @@ PHP_APCU_API zend_bool apc_sma_check_alloc_size(apc_sma_t* sma, size_t size) {
 	}
 	return 0;
 }
-#endif
 
 PHP_APCU_API void apc_sma_check_integrity(apc_sma_t* sma)
 {

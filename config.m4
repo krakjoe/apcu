@@ -60,17 +60,6 @@ AC_ARG_ENABLE(apcu-spinlocks,
 ])
 AC_MSG_RESULT($PHP_APCU_SPINLOCK)
 
-AC_MSG_CHECKING(if APCu should utilize LRU eviction policies)
-AC_ARG_ENABLE(apcu-lru,
-[  --enable-apcu-lru  Use LRU eviction policies],
-[
-AC_DEFINE(APC_LRU, 1, [ ])
-AC_MSG_RESULT(yes)
-],
-[
-AC_MSG_RESULT(no)
-])
-
 if test "$PHP_APCU_RWLOCKS" != "no"; then
   AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_cv_APCU_GCC_ATOMICS, [
 
