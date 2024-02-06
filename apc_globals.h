@@ -59,6 +59,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
 	time_t request_time;         /* cached request time */
 
 	char *serializer_name;       /* the serializer config option */
+	char *eviction_policy;       /* eviction policy */
 
 	/* Nesting level of apcu_entry calls. */
 	unsigned int entry_level;
