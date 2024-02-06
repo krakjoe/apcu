@@ -91,7 +91,7 @@ static apc_eviction_policy_t apc_eviction_policies[APC_MAX_EVICTION_POLICIES] = 
 	{APC_EVICTION_POLICY_DEFAULT, "default", (apc_sma_expunge_f) apc_cache_default_expunge}
 };
 
-/* {{{ apc_eviction_policy_t */
+/* {{{ apc_find_eviction_policy */
 PHP_APCU_API apc_eviction_policy_t* apc_find_eviction_policy(const char* name) {
 	int i;
 	apc_eviction_policy_t *eviction_policy;
