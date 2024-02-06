@@ -839,9 +839,6 @@ PHP_APCU_API void apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 				assert(*entry == *hentry && IS_ENTRY_EXISTED_IN_ACCESS_HISTORY(*hentry));
 				/* update cache->header->holdest on remove entry */
 				apc_cache_wlocked_remove_entry(cache, entry);
-
-				/* increment counter */
-				cache->header->nexpunges++;
 				break;
 			}
 
@@ -860,6 +857,9 @@ PHP_APCU_API void apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 			break;
 		}
 	}
+
+	/* increment counter */
+	cache->header->nexpunges++;
 
 	apc_cache_wunlock(cache);
 }
