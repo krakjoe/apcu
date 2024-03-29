@@ -18,8 +18,7 @@ function apcu_enabled(): bool {}
 /** @param array|string $key */
 function apcu_store($key, mixed $value = UNKNOWN, int $ttl = 0): array|bool {}
 
-/** @param string $key */
-function apcu_set_ttl($key, int $ttl = 0): bool {}
+function apcu_set_ttl(string $key, int $ttl = 0): bool {}
 
 /** @param array|string $key */
 function apcu_add($key, mixed $value = UNKNOWN, int $ttl = 0): array|bool {}
