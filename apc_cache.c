@@ -273,7 +273,7 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 	result = php_var_unserialize(value, &tmp, buf + buf_len, &var_hash);
 	PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
 	BG(serialize_lock)--;
-	
+
 	if (!result) {
 		php_error_docref(NULL, E_NOTICE, "Error at offset %td of %zd bytes", tmp - buf, buf_len);
 		ZVAL_NULL(value);
@@ -537,6 +537,33 @@ PHP_APCU_API zend_bool apc_cache_store(
 	}
 
 	return ret;
+} /* }}} */
+
+/* {{{ apc_cache_set_ttl */
+PHP_APCU_API zend_bool apc_cache_update_ttl(
+		apc_cache_t* cache, zend_string *key, const int32_t ttl) {
+	apc_cache_entry_t *entry;
+	zend_bool retval = 0;
+	time_t t = apc_time();
+
+	if (!cache) {
+		return 0;
+	}
+
+	if (!apc_cache_rlock(cache)) {
+		return 0;
+	}
+
+	entry = apc_cache_rlocked_find_nostat(cache, key, t);
+	if (!entry) {
+		apc_cache_runlock(cache);
+		return 0
+	}
+
+	entry->ttl = ttl;
+
+	apc_cache_runlock(cache);
+	return 1;
 } /* }}} */
 
 #ifndef ZTS

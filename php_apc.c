@@ -517,6 +517,30 @@ PHP_FUNCTION(apcu_store) {
 }
 /* }}} */
 
+/* {{{ proto int apcu_ttl(mixed key [, long ttl ])
+ */
+PHP_FUNCTION(apcu_set_ttl) {
+	zval *key;
+	zend_long ttl = 0L;
+	zval *success = NULL;
+	time_t t;
+
+	ZEND_PARSE_PARAMETERS_START(1, 2)
+		Z_PARAM_STR(key)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(ttl)
+	ZEND_PARSE_PARAMETERS_END();
+
+	t = apc_time();
+
+	if (Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
+		convert_to_string(key);
+	}
+
+	RETURN_BOOL(apc_cache_update_ttl(apc_user_cache, key, ttl));
+}
+/* }}} */
+
 /* {{{ proto int apcu_add(mixed key, mixed var [, long ttl ])
  */
 PHP_FUNCTION(apcu_add) {
