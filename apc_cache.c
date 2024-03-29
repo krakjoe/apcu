@@ -560,6 +560,7 @@ PHP_APCU_API zend_bool apc_cache_update_ttl(
 		return 0;
 	}
 
+	entry->ctime = t;
 	entry->ttl = ttl;
 
 	apc_cache_runlock(cache);

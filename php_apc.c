@@ -517,10 +517,10 @@ PHP_FUNCTION(apcu_store) {
 }
 /* }}} */
 
-/* {{{ proto int apcu_ttl(mixed key [, long ttl ])
+/* {{{ proto bool apc_cache_update_ttl(mixed key [, long ttl ])
  */
 PHP_FUNCTION(apcu_set_ttl) {
-	zval *key;
+	zend_string *key;
 	zend_long ttl = 0L;
 	zval *success = NULL;
 	time_t t;
@@ -532,10 +532,6 @@ PHP_FUNCTION(apcu_set_ttl) {
 	ZEND_PARSE_PARAMETERS_END();
 
 	t = apc_time();
-
-	if (Z_TYPE_P(key) != IS_STRING && Z_TYPE_P(key) != IS_ARRAY) {
-		convert_to_string(key);
-	}
 
 	RETURN_BOOL(apc_cache_update_ttl(apc_user_cache, key, ttl));
 }
