@@ -557,7 +557,7 @@ PHP_APCU_API zend_bool apc_cache_update_ttl(
 	entry = apc_cache_rlocked_find_nostat(cache, key, t);
 	if (!entry) {
 		apc_cache_runlock(cache);
-		return 0
+		return 0;
 	}
 
 	entry->ttl = ttl;
