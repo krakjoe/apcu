@@ -100,7 +100,7 @@ typedef enum apc_eviction_policy_type_t {
 	APC_EVICTION_POLICY_DEFAULT
 } apc_eviction_policy_type_t;
 
-typedef void (*apc_sma_expunge_f)(void *pointer, size_t size); /* }}} */
+typedef zend_bool (*apc_sma_expunge_f)(void *pointer, size_t size); /* }}} */
 
 /* {{{ struct definition: apc_eviction_policy_t */
 typedef struct apc_eviction_policy_t {

@@ -453,9 +453,15 @@ restart:
 		SMA_UNLOCK(sma, i);
 	}
 
-	/* Expunge cache in hope of freeing up memory, but only once */
-	if (!nuked) {
-		sma->expunge(*sma->data, n);
+	/* Continue expunging until the allocation succeeds.
+	 * Note: If another process (thread) tries to malloc between expunge and retry,
+	 * it may cause a memory shortage again and lead to allocation failure. (especially LRU) */
+	if (sma->expunge(*sma->data, n)) {
+		goto restart;
+	} else if (!nuked) {
+		/* Retry once even if it fails.
+		 * Note: When multiple processes (threads) tries to expunge simultaneously,
+		 * expunges other than the first may fail because there are no deletable entries. (especially Default) */
 		nuked = 1;
 		goto restart;
 	}

@@ -272,13 +272,15 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name);
 *   2) If available memory if less than the size requested, run full expunge
 *
 * The TTL of an entry takes precedence over the TTL of a cache
+*
+* Returns true if the cache was expunged, false otherwise
 */
-PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size);
+PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size);
 
 /* {{{ apc_cache_lru_expunge
 * Where smart is not set:
 *  Expunge the oldest entries from the access history until a free block of the requested size becomes available
-* Where smart is not set:
+* Where smart is set:
 *  Expunge the oldest entries from the access history until a free block of the requested size * smart becomes available
 *
 * When the access history is updated:
@@ -286,8 +288,10 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size);
 * - use apcu_fetch (see apc_cache_wlocked_find_incref)
 * - use apcu_entry (see apc_cache_entry)
 * - use apcu_inc, apcu_dec, apcu_cas (see apc_cache_atomic_update_long)
+*
+* Returns true if the cache was expunged, false otherwise
 */
-PHP_APCU_API void apc_cache_lru_expunge(apc_cache_t* cache, size_t size);
+PHP_APCU_API zend_bool apc_cache_lru_expunge(apc_cache_t* cache, size_t size);
 
 /*
 * apc_cache_entry: generate and create or fetch an entry

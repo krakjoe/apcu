@@ -805,7 +805,7 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 /* }}} */
 
 /* {{{ apc_cache_lru_expunge */
-PHP_APCU_API void apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
+PHP_APCU_API zend_bool apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 {
 	time_t t;
 	zend_ulong h;
@@ -813,14 +813,19 @@ PHP_APCU_API void apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 	size_t suitable;
 
 	if (!cache || IS_ACCESS_HISTORY_EMPTIED(cache)) {
-		return;
+		return 0;
+	}
+
+	// check if there is one or more deletable entries in the cache
+	if (cache->header->nentries == 0) {
+		return 0;
 	}
 
 	t = apc_time();
 
 	/* get the lock for header */
 	if (!apc_cache_wlock(cache)) {
-		return;
+		return 0;
 	}
 
 	suitable = (cache->smart > 0L) ? (size_t) (cache->smart * size) : size;
@@ -862,18 +867,26 @@ PHP_APCU_API void apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 	cache->header->nexpunges++;
 
 	apc_cache_wunlock(cache);
+
+	return 1;
 }
 /* }}} */
 
 /* {{{ apc_cache_default_expunge */
-PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
+PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 {
 	time_t t;
 	size_t suitable = 0L;
 	size_t available = 0L;
+	zend_bool expunged = 0;
 
 	if (!cache) {
-		return;
+		return 0;
+	}
+
+	// check if there is one or more deletable entries in the cache
+	if (cache->header->nentries == 0) {
+		return 0;
 	}
 
 	/* apc_time() depends on globals, don't read it if there's no cache. This may happen if SHM
@@ -882,7 +895,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 
 	/* get the lock for header */
 	if (!apc_cache_wlock(cache)) {
-		return;
+		return 0;
 	}
 
 	/* make suitable selection */
@@ -895,14 +908,11 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	available = apc_sma_get_avail_mem(cache->sma);
 
 	/* perform expunge processing */
-	if (!cache->ttl) {
-		/* check it is necessary to expunge */
-		if (available < suitable) {
+	/* check it is necessary to expunge */
+	if (available < suitable) {
+		if (!cache->ttl) {
 			apc_cache_wlocked_real_expunge(cache);
-		}
-	} else {
-		/* check that expunge is necessary */
-		if (available < suitable) {
+		} else {
 			size_t i;
 
 			/* look for junk */
@@ -928,9 +938,12 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 				apc_cache_wlocked_real_expunge(cache);
 			}
 		}
+		expunged = 1;
 	}
 
 	apc_cache_wunlock(cache);
+
+	return expunged;
 }
 /* }}} */
 
