@@ -16,7 +16,7 @@ jobs:
       - name: phpize
         run: phpize
       - name: configure
-        run: ./configure --enable-apcu-debug --enable-pcntl
+        run: ./configure --enable-apcu-debug
       - name: make
         run: make
       - name: test
