@@ -8,6 +8,7 @@ require_once(dirname(__FILE__) . '/skipif.inc');
 apc.enabled=1
 apc.enable_cli=1
 apc.shm_size=1M
+apc.entries_hint=4096
 apc.eviction_policy=lru
 --FILE--
 <?php
