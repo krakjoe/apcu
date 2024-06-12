@@ -867,7 +867,8 @@ PHP_APCU_API zend_bool apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 	}
 
 	/* increment counter */
-	cache->header->nexpunges++;
+	if (expunged)
+		cache->header->nexpunges++;
 
 	apc_cache_wunlock(cache);
 
