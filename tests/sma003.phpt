@@ -1,5 +1,5 @@
 --TEST--
-Test SMA behavior #2
+Test SMA behavior #3
 --SKIPIF--
 <?php
 require_once(dirname(__FILE__) . '/skipif.inc');
@@ -11,11 +11,11 @@ if (!function_exists('pcntl_fork')) {
 apc.enabled=1
 apc.enable_cli=1
 apc.shm_size=32M
-apc.ttl=0
+apc.ttl=3600
 --FILE--
 <?php
 
-// see: apc_sma_malloc_ex of apc_sma.c
+// check infinite loop
 
 $num_of_child = 10;
 $num_of_store = 1000;
@@ -31,10 +31,12 @@ for ($i = 0; $i < $num_of_child; $i++) {
         // child
         for ($j = 0; $j < $num_of_store; $j++) {
             $key = "test$i-$j";
-            $success = apcu_store($key, $value);
-            if (!$success) {
-                die("apcu_store failed\n");
-            }
+            /*
+             * When using TTL, only expired entries may be deleted on default expunge.
+             * In such cases, it may cause an allocation failure when multiple processes try to store simultaneously.
+             * So, failures are ignored.
+             */
+            apcu_store($key, $value);
         }
         exit(0);
     }
