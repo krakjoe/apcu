@@ -811,6 +811,7 @@ PHP_APCU_API zend_bool apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 	zend_ulong h;
 	size_t s;
 	size_t suitable;
+	zend_bool expunged = 0;
 
 	if (!cache || IS_ACCESS_HISTORY_EMPTIED(cache)) {
 		return 0;
@@ -844,12 +845,14 @@ PHP_APCU_API zend_bool apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 				assert(*entry == *hentry && IS_ENTRY_EXISTED_IN_ACCESS_HISTORY(*hentry));
 				/* update cache->header->holdest on remove entry */
 				apc_cache_wlocked_remove_entry(cache, entry);
+				expunged = 1;
 				break;
 			}
 
 			/* clean */
 			if (apc_cache_entry_expired(cache, *entry, t)) {
 				apc_cache_wlocked_remove_entry(cache, entry);
+				expunged = 1;
 				continue;
 			}
 
@@ -868,7 +871,7 @@ PHP_APCU_API zend_bool apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
 
 	apc_cache_wunlock(cache);
 
-	return 1;
+	return expunged;
 }
 /* }}} */
 
@@ -912,6 +915,7 @@ PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size
 	if (available < suitable) {
 		if (!cache->ttl) {
 			apc_cache_wlocked_real_expunge(cache);
+			expunged = 1;
 		} else {
 			size_t i;
 
@@ -921,6 +925,7 @@ PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size
 				while (*entry) {
 					if (apc_cache_entry_expired(cache, *entry, t)) {
 						apc_cache_wlocked_remove_entry(cache, entry);
+						expunged = 1;
 						continue;
 					}
 
@@ -936,9 +941,9 @@ PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size
 			} else {
 				/* with not enough space left in cache, we are forced to expunge */
 				apc_cache_wlocked_real_expunge(cache);
+				expunged = 1;
 			}
 		}
-		expunged = 1;
 	}
 
 	apc_cache_wunlock(cache);
