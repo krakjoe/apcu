@@ -52,13 +52,13 @@ apcu_store([
     'E' => $value,
     'F' => $value,
     'G' => $value,
-]); // G->F->E->F->C->B->A
+]); // G->F->E->D->C->B->A
 echo keylist();
-apcu_inc('A'); // A->G->F->E->F->C->B
+apcu_inc('A'); // A->G->F->E->D->C->B
 echo keylist();
-apcu_dec('B'); // B->A->G->F->E->F->C
+apcu_dec('B'); // B->A->G->F->E->D->C
 echo keylist();
-apcu_cas('C', 3, 5); // C->B->A->G->F->E->F
+apcu_cas('C', 3, 5); // C->B->A->G->F->E->D
 echo keylist();
 apcu_cas('D', 5, 10); // D->C->B->A->G->F->E
 echo keylist();
