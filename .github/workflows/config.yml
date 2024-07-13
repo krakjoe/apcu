@@ -31,10 +31,19 @@ jobs:
         shell: cmd
     strategy:
       matrix:
-          version: ["7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3"]
-          arch: [x64]
-          ts: [nts, ts]
-    runs-on: windows-latest
+        version: ["7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3"]
+        arch: [x64]
+        ts: [nts, ts]
+        os: [windows-2019, windows-2022]
+        exclude:
+          - { os: windows-2019, php: "8.3" }
+          - { os: windows-2019, php: "8.2" }
+          - { os: windows-2019, php: "8.1" }
+          - { os: windows-2019, php: "8.0" }
+          - { os: windows-2022, php: "7.4" }
+          - { os: windows-2022, php: "7.3" }
+          - { os: windows-2022, php: "7.2" }
+    runs-on: ${{matrix.os}}
     steps:
       - name: Checkout apcu
         uses: actions/checkout@v4
