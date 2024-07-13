@@ -36,13 +36,13 @@ jobs:
         ts: [nts, ts]
         os: [windows-2019, windows-2022]
         exclude:
-          - { os: windows-2019, php: "8.3" }
-          - { os: windows-2019, php: "8.2" }
-          - { os: windows-2019, php: "8.1" }
-          - { os: windows-2019, php: "8.0" }
-          - { os: windows-2022, php: "7.4" }
-          - { os: windows-2022, php: "7.3" }
-          - { os: windows-2022, php: "7.2" }
+          - { os: windows-2019, version: "8.3" }
+          - { os: windows-2019, version: "8.2" }
+          - { os: windows-2019, version: "8.1" }
+          - { os: windows-2019, version: "8.0" }
+          - { os: windows-2022, version: "7.4" }
+          - { os: windows-2022, version: "7.3" }
+          - { os: windows-2022, version: "7.2" }
     runs-on: ${{matrix.os}}
     steps:
       - name: Checkout apcu
