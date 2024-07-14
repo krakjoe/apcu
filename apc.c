@@ -82,6 +82,31 @@ HashTable* apc_flip_hash(HashTable *hash) {
 /* }}} */
 
 /*
+* Eviction Policy
+*/
+#define APC_MAX_EVICTION_POLICIES 2
+
+static apc_eviction_policy_t apc_eviction_policies[APC_MAX_EVICTION_POLICIES] = {
+	{APC_EVICTION_POLICY_LRU, "lru", (apc_sma_expunge_f) apc_cache_lru_expunge},
+	{APC_EVICTION_POLICY_DEFAULT, "default", (apc_sma_expunge_f) apc_cache_default_expunge}
+};
+
+/* {{{ apc_find_eviction_policy */
+PHP_APCU_API apc_eviction_policy_t* apc_find_eviction_policy(const char* name) {
+	int i;
+	apc_eviction_policy_t *eviction_policy;
+
+	for(i = 0; i < APC_MAX_EVICTION_POLICIES; i++) {
+		eviction_policy = &apc_eviction_policies[i];
+		if(eviction_policy->name && (strcmp(eviction_policy->name, name) == 0)) {
+			return eviction_policy;
+		}
+	}
+	apc_warning("unknown eviction policy specified. fall back to default.");
+	return eviction_policy; /* default */
+} /* }}} */
+
+/*
 * Serializer API
 */
 #define APC_MAX_SERIALIZERS 16

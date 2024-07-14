@@ -21,10 +21,14 @@ jobs:
         run: make
       - name: test
         run: |
-            make test TESTS="--show-diff -d apc.serializer=default tests"
-            make test TESTS="--show-diff -d apc.serializer=php tests"
-            make test TESTS="--show-diff -d apc.serializer=default -d opcache.enable_cli=1 tests"
-            make test TESTS="--show-diff -d apc.serializer=php -d opcache.enable_cli=1 tests"
+            make test TESTS="--show-diff -d apc.serializer=default -d apc.eviction_policy=default tests"
+            make test TESTS="--show-diff -d apc.serializer=php -d apc.eviction_policy=default tests"
+            make test TESTS="--show-diff -d apc.serializer=default -d opcache.enable_cli=1 -d apc.eviction_policy=default tests"
+            make test TESTS="--show-diff -d apc.serializer=php -d opcache.enable_cli=1 -d apc.eviction_policy=default tests"
+            make test TESTS="--show-diff -d apc.serializer=default -d apc.eviction_policy=lru tests"
+            make test TESTS="--show-diff -d apc.serializer=php -d apc.eviction_policy=lru tests"
+            make test TESTS="--show-diff -d apc.serializer=default -d opcache.enable_cli=1 -d apc.eviction_policy=lru tests"
+            make test TESTS="--show-diff -d apc.serializer=php -d opcache.enable_cli=1 -d apc.eviction_policy=lru tests"
   windows:
     defaults:
       run:

@@ -55,6 +55,12 @@
 # define ATOMIC_INC_RLOCKED(a) ATOMIC_INC(a)
 #endif
 
+/* LRU */
+#define IS_ACCESS_HISTORY_EMPTIED(cache) ((cache)->header->holdest == NULL)
+#define LATEST_ENTRY_OF_ACCESS_HISTORY(cache) ((cache)->header->holdest != NULL ? (cache)->header->holdest->hprev : NULL)
+#define OLDEST_ENTRY_OF_ACCESS_HISTORY(cache) ((cache)->header->holdest)
+#define IS_ENTRY_EXISTED_IN_ACCESS_HISTORY(entry) ((entry)->hnext != NULL && (entry)->hprev != NULL)
+
 /* Defined in apc_persist.c */
 apc_cache_entry_t *apc_persist(
 		apc_sma_t *sma, apc_serializer_t *serializer, const apc_cache_entry_t *orig_entry);
@@ -160,6 +166,36 @@ static zend_bool apc_cache_entry_expired(
 		|| apc_cache_entry_soft_expired(cache, entry, t);
 }
 
+static inline void apc_cache_wlocked_update_access_history(apc_cache_t *cache, apc_cache_entry_t *entry) {
+	assert(cache->ep_type == APC_EVICTION_POLICY_LRU);
+	/* do nothing if the conditions are already met */
+	if (LATEST_ENTRY_OF_ACCESS_HISTORY(cache) == entry) {
+		return;
+	}
+	if (IS_ACCESS_HISTORY_EMPTIED(cache)) {
+		/* there should be no entries existed if history is empty */
+		assert(!IS_ENTRY_EXISTED_IN_ACCESS_HISTORY(entry));
+		entry->hprev = entry;
+		entry->hnext = entry;
+		OLDEST_ENTRY_OF_ACCESS_HISTORY(cache) = entry;
+	} else {
+		/* move entry if it already exists in access history */
+		if (IS_ENTRY_EXISTED_IN_ACCESS_HISTORY(entry)) {
+			/* remove old link */
+			entry->hprev->hnext = entry->hnext;
+			entry->hnext->hprev = entry->hprev;
+			if (OLDEST_ENTRY_OF_ACCESS_HISTORY(cache) == entry) {
+				/* shift to the next oldest entry */
+				OLDEST_ENTRY_OF_ACCESS_HISTORY(cache) = entry->hnext;
+			}
+		}
+		entry->hprev = LATEST_ENTRY_OF_ACCESS_HISTORY(cache);
+		entry->hnext = OLDEST_ENTRY_OF_ACCESS_HISTORY(cache);
+		entry->hnext->hprev = entry;
+		entry->hprev->hnext = entry;
+	}
+}
+
 /* {{{ apc_cache_wlocked_remove_entry  */
 static void apc_cache_wlocked_remove_entry(apc_cache_t *cache, apc_cache_entry_t **entry)
 {
@@ -174,6 +210,21 @@ static void apc_cache_wlocked_remove_entry(apc_cache_t *cache, apc_cache_entry_t
 
 	if (cache->header->nentries)
 		cache->header->nentries--;
+
+	if (cache->ep_type == APC_EVICTION_POLICY_LRU) {
+		assert(IS_ENTRY_EXISTED_IN_ACCESS_HISTORY(dead));
+		if (OLDEST_ENTRY_OF_ACCESS_HISTORY(cache) == LATEST_ENTRY_OF_ACCESS_HISTORY(cache)) {
+			/* reset history because dead is the last entry */
+			OLDEST_ENTRY_OF_ACCESS_HISTORY(cache) = NULL;
+		} else {
+			if (OLDEST_ENTRY_OF_ACCESS_HISTORY(cache) == dead) {
+				/* shift to the next oldest entry */
+				OLDEST_ENTRY_OF_ACCESS_HISTORY(cache) = dead->hnext;
+			}
+			dead->hnext->hprev = dead->hprev;
+			dead->hprev->hnext = dead->hnext;
+		}
+	}
 
 	/* remove if there are no references */
 	if (dead->ref_count <= 0) {
@@ -283,7 +334,10 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 } /* }}} */
 
 /* {{{ apc_cache_create */
-PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, zend_long size_hint, zend_long gc_ttl, zend_long ttl, zend_long smart, zend_bool defend) {
+PHP_APCU_API apc_cache_t* apc_cache_create(
+		apc_sma_t* sma, apc_serializer_t* serializer, zend_long size_hint,
+		zend_long gc_ttl, zend_long ttl, zend_long smart, zend_bool defend,
+		apc_eviction_policy_type_t ep_type) {
 	apc_cache_t* cache;
 	zend_long cache_size;
 	size_t nslots;
@@ -319,6 +373,9 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache->header->stime = time(NULL);
 	cache->header->state = 0;
 
+	/* access history */
+	OLDEST_ENTRY_OF_ACCESS_HISTORY(cache) = NULL;
+
 	/* set cache options */
 	cache->slots = (apc_cache_entry_t **) (((char*) cache->shmaddr) + sizeof(apc_cache_header_t));
 	cache->sma = sma;
@@ -328,6 +385,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache->ttl = ttl;
 	cache->smart = smart;
 	cache->defend = defend;
+	cache->ep_type = ep_type;
 
 	/* header lock */
 	CREATE_LOCK(&cache->header->lock);
@@ -389,6 +447,9 @@ static inline zend_bool apc_cache_wlocked_insert(
 		cache->header->mem_size += new_entry->mem_size;
 		cache->header->nentries++;
 		cache->header->ninserts++;
+
+		if (cache->ep_type == APC_EVICTION_POLICY_LRU)
+			apc_cache_wlocked_update_access_history(cache, new_entry);
 	}
 
 	return 1;
@@ -455,36 +516,19 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find_nostat(
 /* Find entry, updating stat counters and access time */
 static inline apc_cache_entry_t *apc_cache_rlocked_find(
 		apc_cache_t *cache, zend_string *key, time_t t) {
-	apc_cache_entry_t *entry;
-	zend_ulong h;
-	size_t s;
-
-	/* calculate hash and slot */
-	apc_cache_hash_slot(cache, key, &h, &s);
-
-	entry = cache->slots[s];
-	while (entry) {
-		/* check for a matching key by has and identifier */
-		if (apc_entry_key_equals(entry, key, h)) {
-			/* Check to make sure this entry isn't expired by a hard TTL */
-			if (apc_cache_entry_hard_expired(entry, t)) {
-				break;
-			}
-
-			ATOMIC_INC_RLOCKED(cache->header->nhits);
-			ATOMIC_INC_RLOCKED(entry->nhits);
-			entry->atime = t;
-
-			return entry;
-		}
-
-		entry = entry->next;
+	apc_cache_entry_t *entry = apc_cache_rlocked_find_nostat(cache, key, t);
+	if (!entry) {
+		ATOMIC_INC_RLOCKED(cache->header->nmisses);
+		return NULL;
 	}
 
-	ATOMIC_INC_RLOCKED(cache->header->nmisses);
-	return NULL;
+	ATOMIC_INC_RLOCKED(cache->header->nhits);
+	ATOMIC_INC_RLOCKED(entry->nhits);
+	entry->atime = t;
+	return entry;
 }
 
+/* Find entry, updating stat counters, access time and reference count */
 static inline apc_cache_entry_t *apc_cache_rlocked_find_incref(
 		apc_cache_t *cache, zend_string *key, time_t t) {
 	apc_cache_entry_t *entry = apc_cache_rlocked_find(cache, key, t);
@@ -493,6 +537,35 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find_incref(
 	}
 
 	ATOMIC_INC_RLOCKED(entry->ref_count);
+	return entry;
+}
+
+static inline apc_cache_entry_t *apc_cache_wlocked_find(
+		apc_cache_t *cache, zend_string *key, time_t t) {
+	apc_cache_entry_t *entry = apc_cache_rlocked_find_nostat(cache, key, t);
+	if (!entry) {
+		cache->header->nmisses++;
+		return NULL;
+	}
+
+	cache->header->nhits++;
+	entry->nhits++;
+	entry->atime = t;
+
+	if (cache->ep_type == APC_EVICTION_POLICY_LRU)
+		apc_cache_wlocked_update_access_history(cache, entry);
+
+	return entry;
+}
+
+static inline apc_cache_entry_t *apc_cache_wlocked_find_incref(
+		apc_cache_t *cache, zend_string *key, time_t t) {
+	apc_cache_entry_t *entry = apc_cache_wlocked_find(cache, key, t);
+	if (!entry) {
+		return NULL;
+	}
+
+	entry->ref_count++;
 	return entry;
 }
 
@@ -731,15 +804,93 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 }
 /* }}} */
 
+/* {{{ apc_cache_lru_expunge */
+PHP_APCU_API zend_bool apc_cache_lru_expunge(apc_cache_t* cache, size_t size)
+{
+	time_t t;
+	zend_ulong h;
+	size_t s;
+	size_t suitable;
+	zend_bool expunged = 0;
+
+	if (!cache || IS_ACCESS_HISTORY_EMPTIED(cache)) {
+		return 0;
+	}
+
+	// check if there is one or more deletable entries in the cache
+	if (cache->header->nentries == 0) {
+		return 0;
+	}
+
+	t = apc_time();
+
+	/* get the lock for header */
+	if (!apc_cache_wlock(cache)) {
+		return 0;
+	}
+
+	suitable = (cache->smart > 0L) ? (size_t) (cache->smart * size) : size;
+
+	/* gc */
+	apc_cache_wlocked_gc(cache);
+
+	/* lru */
+	apc_cache_entry_t **hentry = &OLDEST_ENTRY_OF_ACCESS_HISTORY(cache);
+	while (*hentry) {
+		apc_cache_hash_slot(cache, (*hentry)->key, &h, &s);
+
+		apc_cache_entry_t **entry = &cache->slots[s];
+		while (*entry) {
+			if (apc_entry_key_equals(*entry, (*hentry)->key, h)) {
+				assert(*entry == *hentry && IS_ENTRY_EXISTED_IN_ACCESS_HISTORY(*hentry));
+				/* update cache->header->holdest on remove entry */
+				apc_cache_wlocked_remove_entry(cache, entry);
+				expunged = 1;
+				break;
+			}
+
+			/* clean */
+			if (apc_cache_entry_expired(cache, *entry, t)) {
+				apc_cache_wlocked_remove_entry(cache, entry);
+				expunged = 1;
+				continue;
+			}
+
+			/* grab next entry */
+			entry = &(*entry)->next;
+		}
+
+		/* finish if a sufficient size is found */
+		if (apc_sma_check_alloc_size(cache->sma, suitable)) {
+			break;
+		}
+	}
+
+	/* increment counter */
+	if (expunged)
+		cache->header->nexpunges++;
+
+	apc_cache_wunlock(cache);
+
+	return expunged;
+}
+/* }}} */
+
 /* {{{ apc_cache_default_expunge */
-PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
+PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 {
 	time_t t;
 	size_t suitable = 0L;
 	size_t available = 0L;
+	zend_bool expunged = 0;
 
 	if (!cache) {
-		return;
+		return 0;
+	}
+
+	// check if there is one or more deletable entries in the cache
+	if (cache->header->nentries == 0) {
+		return 0;
 	}
 
 	/* apc_time() depends on globals, don't read it if there's no cache. This may happen if SHM
@@ -748,7 +899,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 
 	/* get the lock for header */
 	if (!apc_cache_wlock(cache)) {
-		return;
+		return 0;
 	}
 
 	/* make suitable selection */
@@ -761,14 +912,12 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	available = apc_sma_get_avail_mem(cache->sma);
 
 	/* perform expunge processing */
-	if (!cache->ttl) {
-		/* check it is necessary to expunge */
-		if (available < suitable) {
+	/* check it is necessary to expunge */
+	if (available < suitable) {
+		if (!cache->ttl) {
 			apc_cache_wlocked_real_expunge(cache);
-		}
-	} else {
-		/* check that expunge is necessary */
-		if (available < suitable) {
+			expunged = 1;
+		} else {
 			size_t i;
 
 			/* look for junk */
@@ -777,6 +926,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 				while (*entry) {
 					if (apc_cache_entry_expired(cache, *entry, t)) {
 						apc_cache_wlocked_remove_entry(cache, entry);
+						expunged = 1;
 						continue;
 					}
 
@@ -792,11 +942,14 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 			} else {
 				/* with not enough space left in cache, we are forced to expunge */
 				apc_cache_wlocked_real_expunge(cache);
+				expunged = 1;
 			}
 		}
 	}
 
 	apc_cache_wunlock(cache);
+
+	return expunged;
 }
 /* }}} */
 
@@ -809,12 +962,21 @@ PHP_APCU_API apc_cache_entry_t *apc_cache_find(apc_cache_t* cache, zend_string *
 		return NULL;
 	}
 
-	if (!apc_cache_rlock(cache)) {
-		return NULL;
-	}
+	if (cache->ep_type == APC_EVICTION_POLICY_LRU) {
+		if (!apc_cache_wlock(cache)) {
+			return NULL;
+		}
 
-	entry = apc_cache_rlocked_find_incref(cache, key, t);
-	apc_cache_runlock(cache);
+		entry = apc_cache_wlocked_find_incref(cache, key, t);
+		apc_cache_wunlock(cache);
+	} else {
+		if (!apc_cache_rlock(cache)) {
+			return NULL;
+		}
+
+		entry = apc_cache_rlocked_find_incref(cache, key, t);
+		apc_cache_runlock(cache);
+	}
 
 	return entry;
 }
@@ -830,12 +992,21 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 		return 0;
 	}
 
-	if (!apc_cache_rlock(cache)) {
-		return 0;
-	}
+	if (cache->ep_type == APC_EVICTION_POLICY_LRU) {
+		if (!apc_cache_wlock(cache)) {
+			return 0;
+		}
 
-	entry = apc_cache_rlocked_find_incref(cache, key, t);
-	apc_cache_runlock(cache);
+		entry = apc_cache_wlocked_find_incref(cache, key, t);
+		apc_cache_wunlock(cache);
+	} else {
+		if (!apc_cache_rlock(cache)) {
+			return 0;
+		}
+
+		entry = apc_cache_rlocked_find_incref(cache, key, t);
+		apc_cache_runlock(cache);
+	}
 
 	if (!entry) {
 		return 0;
@@ -894,6 +1065,8 @@ retry_update:
 		if (Z_TYPE(entry->val) < IS_STRING) {
 			retval = updater(cache, entry, data);
 			entry->mtime = t;
+			if (cache->ep_type == APC_EVICTION_POLICY_LRU)
+				apc_cache_wlocked_update_access_history(cache, entry);
 		}
 
 		apc_cache_wunlock(cache);
@@ -944,6 +1117,8 @@ retry_update:
 		if (Z_TYPE(entry->val) == IS_LONG) {
 			retval = updater(cache, &Z_LVAL(entry->val), data);
 			entry->mtime = t;
+			if (cache->ep_type == APC_EVICTION_POLICY_LRU)
+				apc_cache_wlocked_update_access_history(cache, entry);
 		}
 
 		apc_cache_runlock(cache);
@@ -1033,6 +1208,10 @@ static void apc_cache_init_entry(
 	entry->mtime = t;
 	entry->atime = t;
 	entry->dtime = 0;
+
+	/* access history of LRU */
+	entry->hnext = NULL;
+	entry->hprev = NULL;
 }
 /* }}} */
 
@@ -1253,7 +1432,10 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fca
 
 	APCG(entry_level)++;
 	php_apc_try {
-		entry = apc_cache_rlocked_find_incref(cache, key, now);
+		if (cache->ep_type == APC_EVICTION_POLICY_LRU)
+			entry = apc_cache_wlocked_find_incref(cache, key, now);
+		else
+			entry = apc_cache_rlocked_find_incref(cache, key, now);
 		if (!entry) {
 			int result;
 			zval params[1];

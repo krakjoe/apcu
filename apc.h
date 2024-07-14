@@ -93,6 +93,28 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 #endif
 
 /*
+* Eviction Policy
+*/
+typedef enum apc_eviction_policy_type_t {
+	APC_EVICTION_POLICY_LRU,
+	APC_EVICTION_POLICY_DEFAULT
+} apc_eviction_policy_type_t;
+
+typedef zend_bool (*apc_sma_expunge_f)(void *pointer, size_t size); /* }}} */
+
+/* {{{ struct definition: apc_eviction_policy_t */
+typedef struct apc_eviction_policy_t {
+	apc_eviction_policy_type_t type;
+	const char *name;
+	apc_sma_expunge_f expunge_f;
+} apc_eviction_policy_t;
+/* }}} */
+
+/* {{{ apc_find_eviction_policy */
+PHP_APCU_API apc_eviction_policy_t *apc_find_eviction_policy(const char* name);
+/* }}} */
+
+/*
 * Serializer API
 */
 #define APC_SERIALIZER_ABI "0"
