@@ -3,7 +3,7 @@ APC: Bug #61742 preload_path does not work due to incorrect string length (varia
 --SKIPIF--
 <?php
 require_once(dirname(__FILE__) . '/skipif.inc');
-if (PHP_ZTS === 1) {
+if (PHP_ZTS) {
     die('skip PHP non-ZTS only');
 }
 ?>
