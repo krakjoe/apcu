@@ -3,7 +3,7 @@ APC: GH Bug #176 preload_path segfaults with bad data
 --SKIPIF--
 <?php
 require_once(dirname(__FILE__) . '/skipif.inc');
-if (PHP_ZTS === 1) {
+if (PHP_ZTS) {
     die('skip PHP non-ZTS only');
 }
 ?>
