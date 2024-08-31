@@ -246,9 +246,8 @@ if test "$PHP_APCU" != "no"; then
                  apc_persist.c"
 
   PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
-  PHP_NEW_EXTENSION(apcu, $apc_sources, $ext_shared,, \\$(APCU_CFLAGS))
+  PHP_NEW_EXTENSION([apcu], [$apc_sources], [$ext_shared],, [$APCU_CFLAGS])
   PHP_SUBST(APCU_SHARED_LIBADD)
-  PHP_SUBST(APCU_CFLAGS)
   PHP_SUBST(PHP_LDFLAGS)
   PHP_INSTALL_HEADERS(ext/apcu, [php_apc.h apc.h apc_api.h apc_cache.h apc_globals.h apc_iterator.h apc_lock.h apc_mutex.h apc_sma.h apc_serializer.h apc_stack.h apc_arginfo.h php_apc_legacy_arginfo.h])
   AC_DEFINE(HAVE_APCU, 1, [ ])
