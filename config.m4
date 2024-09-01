@@ -50,18 +50,12 @@ AC_ARG_ENABLE([apcu-mmap],
 ])
 AC_MSG_RESULT($PHP_APCU_MMAP)
 
-PHP_APCU_SPINLOCK=no
-AC_MSG_CHECKING(if APCu should utilize spinlocks before flocks)
-AC_ARG_ENABLE([apcu-spinlocks],
+PHP_ARG_ENABLE([apcu-spinlocks],
+  [if APCu should utilize spinlocks before flocks],
   [AS_HELP_STRING([--enable-apcu-spinlocks],
     [Use spinlocks before flocks])],
-[ if test "x$enableval" = "xno"; then
-    PHP_APCU_SPINLOCK=no
-  else
-    PHP_APCU_SPINLOCK=yes
-  fi
-])
-AC_MSG_RESULT($PHP_APCU_SPINLOCK)
+  [no],
+  [no])
 
 if test "$PHP_APCU_RWLOCKS" != "no"; then
   AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_cv_APCU_GCC_ATOMICS, [
@@ -193,13 +187,15 @@ if test "$PHP_APCU" != "no"; then
 
   if test "$PHP_APCU_RWLOCKS" = "no"; then
    if test "$PHP_APCU_MUTEX" = "no"; then
-    if test "$PHP_APCU_SPINLOCK" != "no"; then
-      AC_DEFINE(APC_SPIN_LOCK, 1, [ ])
-      AC_MSG_WARN([APCu spin locking enabled])
-    else
-      AC_DEFINE(APC_FCNTL_LOCK, 1, [ ])
-      AC_MSG_WARN([APCu file locking enabled])
-    fi
+      AS_VAR_IF([PHP_APCU_SPINLOCKS], [no], [
+        AC_DEFINE([APC_FCNTL_LOCK], [1],
+          [Define to 1 if APCu file locking is enabled.])
+        AC_MSG_WARN([APCu file locking enabled])
+      ], [
+        AC_DEFINE([APC_SPIN_LOCK], [1],
+          [Define to 1 if APCu spin locking is enabled.])
+        AC_MSG_WARN([APCu spin locking enabled])
+      ])
    fi
   fi
 
