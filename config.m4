@@ -3,18 +3,12 @@ PHP_ARG_ENABLE([apcu],
   [AS_HELP_STRING([--enable-apcu],
     [Enable APCu support])])
 
-AC_MSG_CHECKING(if APCu should be allowed to use rwlocks)
-AC_ARG_ENABLE([apcu-rwlocks],
+PHP_ARG_ENABLE([apcu-rwlocks],
+  [if APCu should be allowed to use rwlocks],
   [AS_HELP_STRING([--disable-apcu-rwlocks],
     [Disable rwlocks in APCu])],
-[
-  PHP_APCU_RWLOCKS=$enableval
-  AC_MSG_RESULT($enableval)
-],
-[
-  PHP_APCU_RWLOCKS=yes
-  AC_MSG_RESULT(yes)
-])
+  [yes],
+  [no])
 
 AC_MSG_CHECKING(if APCu should be built in debug mode)
 AC_ARG_ENABLE([apcu-debug],
@@ -63,23 +57,20 @@ AC_ARG_ENABLE([apcu-spinlocks],
 ])
 AC_MSG_RESULT($PHP_APCU_SPINLOCK)
 
-if test "$PHP_APCU_RWLOCKS" != "no"; then
-  AC_CACHE_CHECK([whether the target compiler supports builtin atomics], PHP_cv_APCU_GCC_ATOMICS, [
-
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
+if test "$PHP_APCU" != "no"; then
+  AS_VAR_IF([PHP_APCU_RWLOCKS], [no], [], [
+    AC_CACHE_CHECK([whether the target compiler supports builtin atomics],
+      [PHP_cv_APCU_GCC_ATOMICS],
+      [AC_LINK_IFELSE([AC_LANG_PROGRAM([], [
         int foo = 0;
         __sync_add_and_fetch(&foo, 1);
         __sync_sub_and_fetch(&foo, 1);
         return 0;
-      ]])],[PHP_cv_APCU_GCC_ATOMICS=yes],[PHP_cv_APCU_GCC_ATOMICS=no])
+      ])], [PHP_cv_APCU_GCC_ATOMICS=yes], [PHP_cv_APCU_GCC_ATOMICS=no])])
+    AS_VAR_IF([PHP_cv_APCU_GCC_ATOMICS], [no],
+      [AC_MSG_FAILURE([Compiler does not support atomics])])
   ])
 
-  if test "x${PHP_cv_APCU_GCC_ATOMICS}" != "xyes"; then
-    AC_MSG_ERROR([Compiler does not support atomics])
-  fi
-fi
-
-if test "$PHP_APCU" != "no"; then
   if test "$PHP_APCU_DEBUG" != "no"; then
     AC_DEFINE(APC_DEBUG, 1, [ ])
   fi
