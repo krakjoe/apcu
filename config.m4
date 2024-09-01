@@ -204,23 +204,6 @@ if test "$PHP_APCU" != "no"; then
   fi
 
   AC_CHECK_FUNCS(sigaction)
-  AC_CACHE_CHECK(for union semun, php_cv_semun,
-  [
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>
-    ]], [[union semun x; x.val=1]])],[
-      php_cv_semun=yes
-    ],[
-      php_cv_semun=no
-    ])
-  ])
-  if test "$php_cv_semun" = "yes"; then
-    AC_DEFINE(HAVE_SEMUN, 1, [ ])
-  else
-    AC_DEFINE(HAVE_SEMUN, 0, [ ])
-  fi
 
   AC_ARG_ENABLE([valgrind-checks],
     [AS_HELP_STRING([--disable-valgrind-checks],
