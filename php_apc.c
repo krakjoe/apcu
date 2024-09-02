@@ -58,7 +58,7 @@
 #include "SAPI.h"
 #include "php_apc.h"
 
-#if HAVE_SIGACTION
+#ifdef HAVE_SIGACTION
 #include "apc_signal.h"
 #endif
 
@@ -300,7 +300,7 @@ static PHP_MSHUTDOWN_FUNCTION(apcu)
 			APCG(initialized) = 0;
 		}
 
-#if HAVE_SIGACTION
+#ifdef HAVE_SIGACTION
 		apc_shutdown_signals();
 #endif
 	}
@@ -325,7 +325,7 @@ static PHP_RINIT_FUNCTION(apcu)
 			apc_cache_serializer(apc_user_cache, APCG(serializer_name));
 		}
 
-#if HAVE_SIGACTION
+#ifdef HAVE_SIGACTION
 		apc_set_signals();
 #endif
 	}

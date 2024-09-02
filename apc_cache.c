@@ -273,7 +273,7 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 	result = php_var_unserialize(value, &tmp, buf + buf_len, &var_hash);
 	PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
 	BG(serialize_lock)--;
-	
+
 	if (!result) {
 		php_error_docref(NULL, E_NOTICE, "Error at offset %td of %zd bytes", tmp - buf, buf_len);
 		ZVAL_NULL(value);
@@ -1210,7 +1210,7 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 			last->len == ZSTR_LEN(key) &&
 			last->mtime == t &&
 			(last->owner_pid != owner_pid
-#if ZTS
+#ifdef ZTS
 			 || last->owner_thread != owner_thread
 #endif
 			)

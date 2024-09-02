@@ -331,7 +331,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 #else
 		{
 			int j = apc_shm_create(i, sma->size);
-#if PHP_WIN32
+#ifdef PHP_WIN32
 			/* TODO remove the line below after 7.1 EOL. */
 			SetLastError(0);
 #endif
