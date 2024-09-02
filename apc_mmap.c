@@ -29,7 +29,7 @@
 #include "apc_mmap.h"
 #include "apc_lock.h"
 
-#if APC_MMAP
+#ifdef APC_MMAP
 
 #include <fcntl.h>
 #include <sys/types.h>

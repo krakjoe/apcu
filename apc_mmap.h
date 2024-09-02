@@ -35,7 +35,7 @@
 
 /* Wrapper functions for shared memory mapped files */
 
-#if APC_MMAP
+#ifdef APC_MMAP
 apc_segment_t apc_mmap(char *file_mask, size_t size);
 void apc_unmap(apc_segment_t* segment);
 #endif

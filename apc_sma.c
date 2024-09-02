@@ -299,7 +299,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 	sma->expunge = expunge;
 	sma->data = data;
 
-#if APC_MMAP
+#ifdef APC_MMAP
 	/*
 	 * I don't think multiple anonymous mmaps makes any sense
 	 * so force sma_numseg to 1 in this case
@@ -324,7 +324,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 		block_t     *first, *empty, *last;
 		void*       shmaddr;
 
-#if APC_MMAP
+#ifdef APC_MMAP
 		sma->segs[i] = apc_mmap(mask, sma->size);
 		if(sma->num != 1)
 			memcpy(&mask[strlen(mask)-6], "XXXXXX", 6);
@@ -388,7 +388,7 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
 	sma->initialized = 0;
 
 	for (i = 0; i < sma->num; i++) {
-#if APC_MMAP
+#ifdef APC_MMAP
 		apc_unmap(&sma->segs[i]);
 #else
 		apc_shm_detach(&sma->segs[i]);

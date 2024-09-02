@@ -44,7 +44,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
 	zend_long ttl;               /* parameter to apc_cache_create */
 	zend_long smart;             /* smart value */
 
-#if APC_MMAP
+#ifdef APC_MMAP
 	char *mmap_file_mask;   /* mktemp-style file-mask to pass to mmap */
 #endif
 

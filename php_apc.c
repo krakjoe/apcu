@@ -94,7 +94,7 @@ static void php_apc_init_globals(zend_apcu_globals* apcu_globals)
 static PHP_INI_MH(OnUpdateShmSegments) /* {{{ */
 {
 	zend_long shm_segments = ZEND_STRTOL(new_value->val, NULL, 10);
-#if APC_MMAP
+#ifdef APC_MMAP
 	if (shm_segments != 1) {
 		php_error_docref(NULL, E_WARNING, "apc.shm_segments setting ignored in MMAP mode");
 	}
@@ -139,7 +139,7 @@ STD_PHP_INI_ENTRY("apc.entries_hint",   "4096", PHP_INI_SYSTEM, OnUpdateLong,   
 STD_PHP_INI_ENTRY("apc.gc_ttl",         "3600", PHP_INI_SYSTEM, OnUpdateLong,              gc_ttl,           zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.ttl",            "0",    PHP_INI_SYSTEM, OnUpdateLong,              ttl,              zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.smart",          "0",    PHP_INI_SYSTEM, OnUpdateLong,              smart,            zend_apcu_globals, apcu_globals)
-#if APC_MMAP
+#ifdef APC_MMAP
 STD_PHP_INI_ENTRY("apc.mmap_file_mask",  NULL,  PHP_INI_SYSTEM, OnUpdateString,            mmap_file_mask,   zend_apcu_globals, apcu_globals)
 #endif
 STD_PHP_INI_BOOLEAN("apc.enable_cli",   "0",    PHP_INI_SYSTEM, OnUpdateBool,              enable_cli,       zend_apcu_globals, apcu_globals)
@@ -168,7 +168,7 @@ static PHP_MINFO_FUNCTION(apcu)
 #else
 	php_info_print_table_row(2, "APCu Debugging", "Disabled");
 #endif
-#if APC_MMAP
+#ifdef APC_MMAP
 	php_info_print_table_row(2, "MMAP Support", "Enabled");
 	php_info_print_table_row(2, "MMAP File Mask", APCG(mmap_file_mask));
 #else
@@ -235,7 +235,7 @@ static PHP_MINIT_FUNCTION(apcu)
 	if (APCG(enabled)) {
 
 		if (!APCG(initialized)) {
-#if APC_MMAP
+#ifdef APC_MMAP
 			char *mmap_file_mask = APCG(mmap_file_mask);
 #else
 			char *mmap_file_mask = NULL;
