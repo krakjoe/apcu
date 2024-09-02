@@ -273,7 +273,7 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 	result = php_var_unserialize(value, &tmp, buf + buf_len, &var_hash);
 	PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
 	BG(serialize_lock)--;
-	
+
 	if (!result) {
 		php_error_docref(NULL, E_NOTICE, "Error at offset %td of %zd bytes", tmp - buf, buf_len);
 		ZVAL_NULL(value);
@@ -1100,7 +1100,7 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 		add_assoc_long(info, "start_time", cache->header->stime);
 		array_add_double(info, apc_str_mem_size, (double) cache->header->mem_size);
 
-#if APC_MMAP
+#ifdef APC_MMAP
 		add_assoc_stringl(info, "memory_type", "mmap", sizeof("mmap")-1);
 #else
 		add_assoc_stringl(info, "memory_type", "IPC shared", sizeof("IPC shared")-1);
