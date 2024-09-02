@@ -34,7 +34,7 @@
 
 #include "apc.h"
 
-#if HAVE_SIGACTION
+#ifdef HAVE_SIGACTION
 #include <signal.h>
 #include "apc_globals.h"
 #include "apc_sma.h"
