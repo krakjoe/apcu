@@ -216,7 +216,12 @@ if test "$PHP_APCU" != "no"; then
                  apc_iterator.c \
                  apc_persist.c"
 
-  PHP_CHECK_LIBRARY(rt, shm_open, [PHP_ADD_LIBRARY(rt,,APCU_SHARED_LIBADD)])
+  LIBS_SAVED=$LIBS; LIBS=
+  AC_SEARCH_LIBS([shm_open], [rt])
+  LIBS=$LIBS_SAVED
+  AS_CASE([$ac_cv_search_shm_open], ["none required"|no], [],
+    [PHP_EVAL_LIBLINE([$ac_cv_search_shm_open], [APCU_SHARED_LIBADD])])
+
   PHP_NEW_EXTENSION([apcu], [$apc_sources], [$ext_shared],, [$APCU_CFLAGS])
   PHP_SUBST(APCU_SHARED_LIBADD)
   PHP_SUBST(PHP_LDFLAGS)
