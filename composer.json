@@ -1,0 +1,46 @@
+{
+    "name": "krakjoe/apcu",
+    "type": "php-ext",
+    "license": "PHP-3.01",
+    "description": "APCu - APC User Cache",
+    "require": {
+        "php": ">= 7.0.0"
+    },
+    "php-ext": {
+        "extension-name": "apcu",
+        "configure-options": [
+            {
+                "name": "enable-apcu",
+                "description": "Enable APCu support"
+            },
+            {
+                "name": "disable-apcu-rwlocks",
+                "description": "Disable rwlocks in APCu"
+            },
+            {
+                "name": "enable-apcu-debug",
+                "description": "Enable APCu debugging"
+            },
+            {
+                "name": "enable-apcu-clear-signal",
+                "description": "Enable SIGUSR1 clearing handler"
+            },
+            {
+                "name": "disable-apcu-mmap",
+                "description": "Disable mmap, falls back on shm"
+            },
+            {
+                "name": "enable-apcu-spinlocks",
+                "description": "Use spinlocks before flocks"
+            },
+            {
+                "name": "disable-valgrind-checks",
+                "description": "Disable Valgrind-based memory checks"
+            },
+            {
+                "name": "enable-coverage",
+                "description": "Include code coverage symbols (DEVELOPERS ONLY!!)"
+            }
+        ]
+    }
+}
