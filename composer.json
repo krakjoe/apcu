@@ -1,5 +1,5 @@
 {
-    "name": "krakjoe/apcu",
+    "name": "apcu/apcu",
     "type": "php-ext",
     "license": "PHP-3.01",
     "description": "APCu - APC User Cache",
