@@ -30,7 +30,7 @@
  </lead>
  <date>2024-09-21</date>
  <version>
-  <release>5.1.24</release>
+  <release>5.1.25-dev</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,9 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- Make compatible with PHP 8.4.
-- apc.php: Preserve search parameter when deleting entry.
-- apc.PHP: Allow arbitrary search regex.
+- TBD
  </notes>
  <contents>
   <dir name="/">
@@ -187,6 +185,23 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2024-09-21</date>
+   <version>
+    <release>5.1.24</release>
+    <api>5.1.18</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+- Make compatible with PHP 8.4.
+- apc.php: Preserve search parameter when deleting entry.
+- apc.php: Allow arbitrary search regex.
+   </notes>
+  </release>
   <release>
    <date>2023-11-11</date>
    <version>
