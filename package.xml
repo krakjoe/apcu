@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2023-11-11</date>
+ <date>2024-09-21</date>
  <version>
-  <release>5.1.24dev</release>
+  <release>5.1.24</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,7 +39,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- TBD
+- Make compatible with PHP 8.4.
+- apc.php: Preserve search parameter when deleting entry.
+- apc.PHP: Allow arbitrary search regex.
  </notes>
  <contents>
   <dir name="/">
