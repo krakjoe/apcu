@@ -50,11 +50,12 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup PHP
         id: setup-php
-        uses: php/setup-php-sdk@8d9e79bdbce494591e33d542377778613cfca59f
+        uses: php/setup-php-sdk@8be2b9c379918263e3ba057707fd14c2af66927c
         with:
           version: ${{matrix.version}}
           arch: ${{matrix.arch}}
           ts: ${{matrix.ts}}
+          cache: true
       - name: Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
         with:
