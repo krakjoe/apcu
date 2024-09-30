@@ -31,7 +31,7 @@ jobs:
         shell: cmd
     strategy:
       matrix:
-        version: ["7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4"]
+        version: ["7.0", "7.1", "7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4"]
         arch: [x64]
         ts: [nts, ts]
         os: [windows-2019, windows-2022]
@@ -44,17 +44,20 @@ jobs:
           - { os: windows-2022, version: "7.4" }
           - { os: windows-2022, version: "7.3" }
           - { os: windows-2022, version: "7.2" }
+          - { os: windows-2022, version: "7.1" }
+          - { os: windows-2022, version: "7.0" }
     runs-on: ${{matrix.os}}
     steps:
       - name: Checkout apcu
         uses: actions/checkout@v4
       - name: Setup PHP
         id: setup-php
-        uses: php/setup-php-sdk@8d9e79bdbce494591e33d542377778613cfca59f
+        uses: php/setup-php-sdk@v0.10
         with:
           version: ${{matrix.version}}
           arch: ${{matrix.arch}}
           ts: ${{matrix.ts}}
+          cache: true
       - name: Enable Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
         with:
