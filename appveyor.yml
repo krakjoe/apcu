@@ -7,5 +7,7 @@ branches:
 
 clone_folder:  c:\projects\apcu
 
+build: off
+
 test_script:
   - echo Dummy
