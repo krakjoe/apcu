@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup PHP
         id: setup-php
-        uses: php/setup-php-sdk@8be2b9c379918263e3ba057707fd14c2af66927c
+        uses: php/setup-php-sdk@v0.10
         with:
           version: ${{matrix.version}}
           arch: ${{matrix.arch}}
