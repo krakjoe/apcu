@@ -1,0 +1,11 @@
+version: "{branch}.build.{build}"
+skip_tags: true
+
+branches:
+  only:
+    - master
+
+clone_folder:  c:\projects\apcu
+
+test_script:
+  - echo Dummy
