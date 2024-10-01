@@ -49,17 +49,19 @@ struct apc_cache_slam_key_t {
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
-	zend_string *key;        /* entry key */
-	zval val;                /* the zval copied at store time */
-	apc_cache_entry_t *next; /* next entry in linked list */
-	zend_long ttl;           /* the ttl on this specific entry */
-	zend_long ref_count;     /* the reference count of this entry */
-	zend_long nhits;         /* number of hits to this entry */
-	time_t ctime;            /* time entry was initialized */
-	time_t mtime;            /* the mtime of this cached entry */
-	time_t dtime;            /* time entry was removed from cache */
-	time_t atime;            /* time entry was last accessed */
-	zend_long mem_size;      /* memory used */
+	zend_string *key;         /* entry key */
+	zval val;                 /* the zval copied at store time */
+	apc_cache_entry_t *next;  /* next entry in linked list */
+	zend_long ttl;            /* the ttl on this specific entry */
+	zend_long ref_count;      /* the reference count of this entry */
+	zend_long nhits;          /* number of hits to this entry */
+	time_t ctime;             /* time entry was initialized */
+	time_t mtime;             /* the mtime of this cached entry */
+	time_t dtime;             /* time entry was removed from cache */
+	time_t atime;             /* time entry was last accessed */
+	zend_long mem_size;       /* memory used */
+	apc_cache_entry_t *hnext; /* LRU: entry with a newer access time than this entry */
+	apc_cache_entry_t *hprev; /* LRU: entry with an older access time than this entry */
 };
 /* }}} */
 
@@ -77,20 +79,22 @@ typedef struct _apc_cache_header_t {
 	unsigned short state;           /* cache state */
 	apc_cache_slam_key_t lastkey;   /* last key inserted (not necessarily without error) */
 	apc_cache_entry_t *gc;          /* gc list */
+	apc_cache_entry_t *holdest;     /* LRU: oldest entry in the access history */
 } apc_cache_header_t; /* }}} */
 
 /* {{{ struct definition: apc_cache_t */
 typedef struct _apc_cache_t {
-	void* shmaddr;                /* process (local) address of shared cache */
-	apc_cache_header_t* header;   /* cache header (stored in SHM) */
-	apc_cache_entry_t** slots;    /* array of cache slots (stored in SHM) */
-	apc_sma_t* sma;               /* shared memory allocator */
-	apc_serializer_t* serializer; /* serializer */
-	size_t nslots;                /* number of slots in cache */
-	zend_long gc_ttl;            /* maximum time on GC list for a entry */
-	zend_long ttl;               /* if slot is needed and entry's access time is older than this ttl, remove it */
-	zend_long smart;             /* smart parameter for gc */
-	zend_bool defend;             /* defense parameter for runtime */
+	void* shmaddr;                      /* process (local) address of shared cache */
+	apc_cache_header_t* header;         /* cache header (stored in SHM) */
+	apc_cache_entry_t** slots;          /* array of cache slots (stored in SHM) */
+	apc_sma_t* sma;                     /* shared memory allocator */
+	apc_serializer_t* serializer;       /* serializer */
+	size_t nslots;                      /* number of slots in cache */
+	zend_long gc_ttl;                   /* maximum time on GC list for a entry */
+	zend_long ttl;                      /* if slot is needed and entry's access time is older than this ttl, remove it */
+	zend_long smart;                    /* smart parameter for gc */
+	zend_bool defend;                   /* defense parameter for runtime */
+	apc_eviction_policy_type_t ep_type; /* type of eviction policy */
 } apc_cache_t; /* }}} */
 
 /* {{{ typedef: apc_cache_updater_t */
@@ -121,13 +125,14 @@ typedef zend_bool (*apc_cache_atomic_updater_t)(apc_cache_t*, zend_long*, void* 
  * is needed.  This helps in cleaning up the cache and ensuring that entries
  * hit frequently stay cached and ones not hit very often eventually disappear.
  *
- * for an explanation of smart, see apc_cache_default_expunge
+ * for an explanation of smart, see apc_cache_default_expunge, apc_cache_lru_expunge
  *
  * defend enables/disables slam defense for this particular cache
  */
 PHP_APCU_API apc_cache_t* apc_cache_create(
         apc_sma_t* sma, apc_serializer_t* serializer, zend_long size_hint,
-        zend_long gc_ttl, zend_long ttl, zend_long smart, zend_bool defend);
+        zend_long gc_ttl, zend_long ttl, zend_long smart, zend_bool defend,
+        apc_eviction_policy_type_t ep_type);
 /*
 * apc_cache_preload preloads the data at path into the specified cache
 */
@@ -267,8 +272,26 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name);
 *   2) If available memory if less than the size requested, run full expunge
 *
 * The TTL of an entry takes precedence over the TTL of a cache
+*
+* Returns true if the cache was expunged, false otherwise
 */
-PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size);
+PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size);
+
+/* {{{ apc_cache_lru_expunge
+* Where smart is not set:
+*  Expunge the oldest entries from the access history until a free block of the requested size becomes available
+* Where smart is set:
+*  Expunge the oldest entries from the access history until a free block of the requested size * smart becomes available
+*
+* When the access history is updated:
+* - use apcu_store, apcu_add (see apc_cache_wlocked_insert)
+* - use apcu_fetch (see apc_cache_wlocked_find_incref)
+* - use apcu_entry (see apc_cache_entry)
+* - use apcu_inc, apcu_dec, apcu_cas (see apc_cache_atomic_update_long)
+*
+* Returns true if the cache was expunged, false otherwise
+*/
+PHP_APCU_API zend_bool apc_cache_lru_expunge(apc_cache_t* cache, size_t size);
 
 /*
 * apc_cache_entry: generate and create or fetch an entry

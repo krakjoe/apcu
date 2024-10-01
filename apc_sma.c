@@ -50,8 +50,9 @@ enum {
 typedef struct sma_header_t sma_header_t;
 struct sma_header_t {
 	apc_mutex_t sma_lock;    /* segment lock */
-	size_t segsize;         /* size of entire segment */
-	size_t avail;           /* bytes available (not necessarily contiguous) */
+	size_t segsize;          /* size of entire segment */
+	size_t avail;            /* bytes available (not necessarily contiguous) */
+	size_t last_fblock_size; /* size of last accessed free block */
 };
 
 #define SMA_HDR(sma, i)  ((sma_header_t*)((sma->segs[i]).shmaddr))
@@ -185,6 +186,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 		prv->fnext = cur->fnext;
 		BLOCKAT(cur->fnext)->fprev = OFFSET(prv);
 		NEXT_SBLOCK(cur)->prev_size = 0;  /* block is alloc'd */
+		header->last_fblock_size = 0;
 	} else {
 		/* nextfit is too big; split it into two smaller blocks */
 		block_t* nxt;      /* the new block (chopped part of cur) */
@@ -197,6 +199,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 		nxt->prev_size = 0;                       /* block is alloc'd */
 		nxt->size = oldsize - realsize;           /* and fix the size */
 		NEXT_SBLOCK(nxt)->prev_size = nxt->size;  /* adjust size */
+		header->last_fblock_size = nxt->size;
 		SET_CANARY(nxt);
 
 		/* replace cur with next in free list */
@@ -275,6 +278,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 	}
 
 	NEXT_SBLOCK(cur)->prev_size = cur->size;
+	header->last_fblock_size = cur->size;
 
 	/* insert new block after prv */
 	prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
@@ -375,6 +379,8 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 #if 0
 		last->id = -1;
 #endif
+
+		header->last_fblock_size = empty->size;
 	}
 }
 
@@ -447,9 +453,15 @@ restart:
 		SMA_UNLOCK(sma, i);
 	}
 
-	/* Expunge cache in hope of freeing up memory, but only once */
-	if (!nuked) {
-		sma->expunge(*sma->data, n+fragment);
+	/* Continue expunging until the allocation succeeds.
+	 * Note: If another process (thread) tries to malloc between expunge and retry,
+	 * it may cause a memory shortage again and lead to allocation failure. (especially LRU) */
+	if (sma->expunge(*sma->data, n)) {
+		goto restart;
+	} else if (!nuked) {
+		/* Retry once even if it fails.
+		 * Note: When multiple processes (threads) tries to expunge simultaneously,
+		 * expunges other than the first may fail because there are no deletable entries. (especially Default) */
 		nuked = 1;
 		goto restart;
 	}
@@ -633,6 +645,21 @@ PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
 	for (i = 0; i < sma->num; i++) {
 		sma_header_t* header = SMA_HDR(sma, i);
 		if (header->avail > size) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+PHP_APCU_API zend_bool apc_sma_check_alloc_size(apc_sma_t* sma, size_t size) {
+	int32_t i;
+	size_t block_size = ALIGNWORD(sizeof(struct block_t));
+	size_t realsize = ALIGNWORD(size + block_size);
+
+	for (i = 0; i < sma->num; i++) {
+		sma_header_t* header = SMA_HDR(sma, i);
+		if (header->last_fblock_size >= realsize) {
+			sma->last = i;
 			return 1;
 		}
 	}

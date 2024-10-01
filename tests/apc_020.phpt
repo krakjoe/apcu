@@ -11,6 +11,7 @@ apc.enable_cli=1
 apc.use_request_time=1
 apc.ttl=1
 apc.shm_size=1M
+apc.eviction_policy=default
 --FILE--
 <?php
 
@@ -27,7 +28,7 @@ apcu_inc_request_time(1);
 // Fill the cache
 $i = 0;
 while (apcu_exists("dummy")) {
-    apcu_store("key" . $i, str_repeat('x', 500));
+    apcu_store("key" . $i, str_repeat('x', 100));
     $i++;
 }
 
