@@ -760,39 +760,31 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	/* get available */
 	available = apc_sma_get_avail_mem(cache->sma);
 
-	/* perform expunge processing */
-	if (!cache->ttl) {
-		/* check it is necessary to expunge */
-		if (available < suitable) {
-			apc_cache_wlocked_real_expunge(cache);
-		}
-	} else {
-		/* check that expunge is necessary */
-		if (available < suitable) {
-			size_t i;
+	/* check that expunge is necessary */
+	if (available < suitable) {
+		size_t i;
 
-			/* look for junk */
-			for (i = 0; i < cache->nslots; i++) {
-				apc_cache_entry_t **entry = &cache->slots[i];
-				while (*entry) {
-					if (apc_cache_entry_expired(cache, *entry, t)) {
-						apc_cache_wlocked_remove_entry(cache, entry);
-						continue;
-					}
-
-					/* grab next entry */
-					entry = &(*entry)->next;
+		/* look for junk */
+		for (i = 0; i < cache->nslots; i++) {
+			apc_cache_entry_t **entry = &cache->slots[i];
+			while (*entry) {
+				if (apc_cache_entry_expired(cache, *entry, t)) {
+					apc_cache_wlocked_remove_entry(cache, entry);
+					continue;
 				}
-			}
 
-			/* if the cache now has space, then reset last key */
-			if (apc_sma_get_avail_size(cache->sma, size)) {
-				/* wipe lastkey */
-				memset(&cache->header->lastkey, 0, sizeof(apc_cache_slam_key_t));
-			} else {
-				/* with not enough space left in cache, we are forced to expunge */
-				apc_cache_wlocked_real_expunge(cache);
+				/* grab next entry */
+				entry = &(*entry)->next;
 			}
+		}
+
+		/* if the cache now has space, then reset last key */
+		if (apc_sma_get_avail_size(cache->sma, size)) {
+			/* wipe lastkey */
+			memset(&cache->header->lastkey, 0, sizeof(apc_cache_slam_key_t));
+		} else {
+			/* with not enough space left in cache, we are forced to expunge */
+			apc_cache_wlocked_real_expunge(cache);
 		}
 	}
 
