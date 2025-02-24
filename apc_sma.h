@@ -138,7 +138,7 @@ PHP_APCU_API void apc_sma_free_info(apc_sma_t* sma, apc_sma_info_t* info);
 PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma);
 
 /*
-* apc_sma_api_get_avail_size will return true if at least size bytes are available to the sma
+* apc_sma_api_get_avail_size will return true if at least size contiguous bytes are available to the sma
 */
 PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size);
 
