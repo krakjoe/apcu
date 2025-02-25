@@ -17,7 +17,7 @@ apc.shm_size=1M
 apcu_store("no_ttl_unaccessed", 12);
 apcu_store("no_ttl_accessed", 24);
 apcu_store("ttl", 42, 3);
-apcu_store("dummy", "xxx");
+apcu_store("dummy", str_repeat('x', 1000));
 
 apcu_inc_request_time(1);
 apcu_fetch("no_ttl_accessed");

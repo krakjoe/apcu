@@ -629,13 +629,37 @@ PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma) {
 
 PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
 	int32_t i;
+	sma_header_t* header;
+	void *shmaddr;
+	block_t *cur, *prv;
 
 	for (i = 0; i < sma->num; i++) {
-		sma_header_t* header = SMA_HDR(sma, i);
-		if (header->avail > size) {
-			return 1;
+		header = SMA_HDR(sma, i);
+
+		/* If total size of available memory is too small, we can skip the contiguous-block check */
+		if (header->avail < size) {
+			continue;
 		}
+
+		SMA_LOCK(sma, i);
+		shmaddr = header;
+		prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+
+		/* Look for a contiguous block of memory */
+		while (prv->fnext) {
+			cur = BLOCKAT(prv->fnext);
+
+			if (cur->size >= size) {
+				SMA_UNLOCK(sma, i);
+				return 1;
+			}
+
+			prv = cur;
+		}
+
+		SMA_UNLOCK(sma, i);
 	}
+
 	return 0;
 }
 
