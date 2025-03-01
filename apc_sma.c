@@ -449,7 +449,7 @@ restart:
 
 	/* Expunge cache in hope of freeing up memory, but only once */
 	if (!nuked) {
-		sma->expunge(*sma->data, n+fragment);
+		sma->expunge(*sma->data, n);
 		nuked = 1;
 		goto restart;
 	}
@@ -629,12 +629,13 @@ PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma) {
 
 PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
 	int32_t i;
+	size_t realsize = ALIGNWORD(size + ALIGNWORD(sizeof(struct block_t)));
 
 	for (i = 0; i < sma->num; i++) {
 		sma_header_t *shmaddr = SMA_HDR(sma, i);
 
 		/* If total size of available memory is too small, we can skip the contiguous-block check */
-		if (shmaddr->avail < size) {
+		if (shmaddr->avail < realsize) {
 			continue;
 		}
 
@@ -645,7 +646,7 @@ PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
 		while (cur->fnext) {
 			cur = BLOCKAT(cur->fnext);
 
-			if (cur->size >= size) {
+			if (cur->size >= realsize) {
 				SMA_UNLOCK(sma, i);
 				return 1;
 			}
