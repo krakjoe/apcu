@@ -201,7 +201,7 @@ if test "$PHP_APCU" != "no"; then
 
   AC_CHECK_FUNCS(sigaction)
 
-  for i in -Wall -Wextra -Wno-unused-parameter; do
+  for i in -Wall -Wextra -Wno-clobbered -Wno-unused-parameter; do
     AX_CHECK_COMPILE_FLAG([$i], [APCU_CFLAGS="$APCU_CFLAGS $i"])
   done
 
