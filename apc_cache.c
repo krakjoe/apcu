@@ -753,11 +753,9 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	/* gc */
 	apc_cache_wlocked_gc(cache);
 
-	/* check that expunge is necessary */
-	if (cache->smart > 0L && apc_sma_get_avail_mem(cache->sma) >= (size_t) (cache->smart * size)) {
-		apc_cache_wunlock(cache);
-		return;
-	}
+	/* smart > 1 increases the probability of a full cache wipe,
+	 * so expunge() is called less often when memory is low. */
+	size = (cache->smart > 0L) ? (size_t) (cache->smart * size) : size;
 
 	/* look for junk */
 	for (i = 0; i < cache->nslots; i++) {
