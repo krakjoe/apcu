@@ -251,20 +251,12 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name);
 
 /* {{{ apc_cache_default_expunge
 * Where smart is not set:
-*  Where no ttl is set on cache:
-*   1) Perform cleanup of stale entries
-*   2) Expunge if available memory is less than sma->size/2
-*  Where ttl is set on cache:
-*   1) Perform cleanup of stale entries
-*   2) If available memory if less than the size requested, run full expunge
+*  1) Perform cleanup of stale entries
+*  2) If available memory is less than the size requested, run full expunge
 *
 * Where smart is set:
-*  Where no ttl is set on cache:
-*   1) Perform cleanup of stale entries
-*   2) Expunge is available memory is less than size * smart
-*  Where ttl is set on cache:
-*   1) Perform cleanup of stale entries
-*   2) If available memory if less than the size requested, run full expunge
+*  1) Perform cleanup of stale entries
+*  2) If available memory is less than the size requested * smart, run full expunge
 *
 * The TTL of an entry takes precedence over the TTL of a cache
 */
