@@ -233,9 +233,8 @@ form of a quick-start guide to start hacking on APCu.
    deletion occurs depends on runtime parameters, see INSTALL for runtime parameter
    configuration details.
 
-   apc_cache_find() simply hashes and returns the entry if it is there.  If it is there
-   but older than the mtime in the entry we are looking for, we delete the one that is
-   there and return indicating we didn't find it.
+   apc_cache_rlocked_find() simply hashes and returns the entry if it is there. If it is there
+   but older than the mtime in the entry we are looking for, we return indicating we didn't find it.
 
    API users are advised to use apc_cache_fetch over find for simplicity, this ensures
    correct operation, fetch sets up the call to find and takes care of copying and releasing
