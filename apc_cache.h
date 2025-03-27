@@ -168,13 +168,6 @@ PHP_APCU_API zend_bool apc_cache_atomic_update_long(
 		zend_bool insert_if_not_found, zend_long ttl);
 
 /*
- * apc_cache_find searches for a cache entry by its hashed identifier,
- * and returns a pointer to the entry if found, NULL otherwise.
- *
- */
-PHP_APCU_API apc_cache_entry_t* apc_cache_find(apc_cache_t* cache, zend_string *key, time_t t);
-
-/*
  * apc_cache_fetch fetches an entry from the cache directly into dst
  *
  */
@@ -198,7 +191,7 @@ PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 
 /*
  * apc_cache_entry_release decrements the reference count associated with a cache
- * entry. Calling apc_cache_find automatically increments the reference count,
+ * entry. Calling apc_cache_rlocked_find_incref automatically increments the reference count,
  * and this function must be called post-execution to return the count to its
  * original value. Failing to do so will prevent the entry from being
  * garbage-collected.
