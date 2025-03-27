@@ -784,26 +784,6 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 }
 /* }}} */
 
-/* {{{ apc_cache_find */
-PHP_APCU_API apc_cache_entry_t *apc_cache_find(apc_cache_t* cache, zend_string *key, time_t t)
-{
-	apc_cache_entry_t *entry;
-
-	if (!cache) {
-		return NULL;
-	}
-
-	if (!apc_cache_rlock(cache)) {
-		return NULL;
-	}
-
-	entry = apc_cache_rlocked_find_incref(cache, key, t);
-	apc_cache_runlock(cache);
-
-	return entry;
-}
-/* }}} */
-
 /* {{{ apc_cache_fetch */
 PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval *dst)
 {
