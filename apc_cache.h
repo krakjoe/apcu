@@ -299,6 +299,8 @@ static inline void apc_cache_runlock(apc_cache_t *cache) {
 	}
 }
 
+#define APC_ENTRY_MIN_ALLOC_SIZE (ZEND_MM_ALIGNED_SIZE(sizeof(apc_cache_entry_t)) + ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(1)))
+
 #endif
 
 /*

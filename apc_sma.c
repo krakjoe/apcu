@@ -152,15 +152,15 @@ static inline block_t *find_block(sma_header_t *header, size_t realsize) {
 }
 
 /* {{{ sma_allocate: tries to allocate at least size bytes in a segment */
-static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t fragment, size_t *allocated)
+static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t min_block_size, size_t *allocated)
 {
 	void* shmaddr;          /* header of shared memory segment */
 	block_t* prv;           /* block prior to working block */
 	block_t* cur;           /* working block in list */
 	size_t realsize;        /* actual size of block needed, including header */
-	size_t block_size = ALIGNWORD(sizeof(struct block_t));
+	size_t block_header_size = ALIGNWORD(sizeof(struct block_t));
 
-	realsize = ALIGNWORD(size + block_size);
+	realsize = ALIGNWORD(size + block_header_size);
 
 	/*
 	 * First, insure that the segment contains at least realsize free bytes,
@@ -178,9 +178,9 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 		return SIZE_MAX;
 	}
 
-	if (cur->size == realsize || (cur->size > realsize && cur->size < (realsize + (MINBLOCKSIZE + fragment)))) {
+	if (cur->size >= realsize && cur->size < (realsize + min_block_size)) {
 		/* cur is big enough for realsize, but too small to split - unlink it */
-		*(allocated) = cur->size - block_size;
+		*(allocated) = cur->size - block_header_size;
 		prv = BLOCKAT(cur->fprev);
 		prv->fnext = cur->fnext;
 		BLOCKAT(cur->fnext)->fprev = OFFSET(prv);
@@ -192,7 +192,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 
 		oldsize = cur->size;
 		cur->size = realsize;
-		*(allocated) = cur->size - block_size;
+		*(allocated) = cur->size - block_header_size;
 		nxt = NEXT_SBLOCK(cur);
 		nxt->prev_size = 0;                       /* block is alloc'd */
 		nxt->size = oldsize - realsize;           /* and fix the size */
@@ -221,7 +221,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 	fprintf(stderr, "allocate(realsize=%d,size=%d,id=%d)\n", (int)(size), (int)(cur->size), cur->id);
 #endif
 
-	return OFFSET(cur) + block_size;
+	return OFFSET(cur) + block_header_size;
 }
 /* }}} */
 
@@ -288,7 +288,7 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 /* }}} */
 
 /* {{{ APC SMA API */
-PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, int32_t num, size_t size, char *mask) {
+PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, int32_t num, size_t size, size_t min_alloc_size, char *mask) {
 	int32_t i;
 
 	if (sma->initialized) {
@@ -298,6 +298,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 	sma->initialized = 1;
 	sma->expunge = expunge;
 	sma->data = data;
+	sma->min_block_size = min_alloc_size > 0 ? ALIGNWORD(min_alloc_size + ALIGNWORD(sizeof(struct block_t))) : MINBLOCKSIZE;
 
 #ifdef APC_MMAP
 	/*
@@ -399,7 +400,6 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
 }
 
 PHP_APCU_API void *apc_sma_malloc_ex(apc_sma_t *sma, size_t n, size_t *allocated) {
-	size_t fragment = MINBLOCKSIZE;
 	size_t off;
 	int32_t i;
 	zend_bool nuked = 0;
@@ -412,7 +412,7 @@ restart:
 		return NULL;
 	}
 
-	off = sma_allocate(SMA_HDR(sma, last), n, fragment, allocated);
+	off = sma_allocate(SMA_HDR(sma, last), n, sma->min_block_size, allocated);
 
 	if (off != SIZE_MAX) {
 		void* p = (void *)(SMA_ADDR(sma, last) + off);
@@ -434,7 +434,7 @@ restart:
 			return NULL;
 		}
 
-		off = sma_allocate(SMA_HDR(sma, i), n, fragment, allocated);
+		off = sma_allocate(SMA_HDR(sma, i), n, sma->min_block_size, allocated);
 		if (off != SIZE_MAX) {
 			void* p = (void *)(SMA_ADDR(sma, i) + off);
 			sma->last = i;
