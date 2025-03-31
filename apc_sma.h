@@ -76,6 +76,7 @@ typedef struct _apc_sma_t {
 	int32_t  num;                  /* number of segments */
 	size_t size;                   /* segment size */
 	int32_t  last;                 /* last segment */
+	size_t min_block_size;         /* expected minimum size of allocated blocks */
 
 	/* segments */
 	apc_segment_t *segs;           /* segments */
@@ -88,7 +89,7 @@ typedef struct _apc_sma_t {
 */
 PHP_APCU_API void apc_sma_init(
 		apc_sma_t* sma, void** data, apc_sma_expunge_f expunge,
-		int32_t num, size_t size, char *mask);
+		int32_t num, size_t size, size_t min_alloc_size, char *mask);
 
 /*
  * apc_sma_detach will detach from shared memory and cleanup local allocations.

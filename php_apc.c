@@ -247,7 +247,7 @@ static PHP_MINIT_FUNCTION(apcu)
 			/* initialize shared memory allocator */
 			apc_sma_init(
 				&apc_sma, (void **) &apc_user_cache, (apc_sma_expunge_f) apc_cache_default_expunge,
-				APCG(shm_segments), APCG(shm_size), mmap_file_mask);
+				APCG(shm_segments), APCG(shm_size), APC_ENTRY_MIN_ALLOC_SIZE, mmap_file_mask);
 
 			REGISTER_LONG_CONSTANT(APC_SERIALIZER_CONSTANT, (zend_long)&_apc_register_serializer, CONST_PERSISTENT | CONST_CS);
 
