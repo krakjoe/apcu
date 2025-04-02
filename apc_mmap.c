@@ -57,9 +57,6 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 
 	int fd = -1;
 	int flags = MAP_SHARED | MAP_NOSYNC;
-#ifdef APC_MEMPROTECT
-	int remap = 1;
-#endif
 
 	/* If no filename was provided, do an anonymous mmap */
 	if(!file_mask || (file_mask && !strlen(file_mask))) {
@@ -68,18 +65,12 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 #else
 		fd = -1;
 		flags = MAP_SHARED | MAP_ANON;
-#ifdef APC_MEMPROTECT
-		remap = 0;
-#endif
 #endif
 	} else if(!strcmp(file_mask,"/dev/zero")) {
 		fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
 		if(fd == -1) {
 			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: open on /dev/zero failed");
 		}
-#ifdef APC_MEMPROTECT
-		remap = 0; /* cannot remap */
-#endif
 	} else {
 		/*
 		 * Otherwise we do a normal filesystem mmap
@@ -98,14 +89,6 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 
 	segment.shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
 	segment.size = size;
-
-#ifdef APC_MEMPROTECT
-	if(remap) {
-		segment.roaddr = (void *)mmap(NULL, size, PROT_READ, flags, fd, 0);
-	} else {
-		segment.roaddr = NULL;
-	}
-#endif
 
 	if ((long)segment.shmaddr == -1) {
 		zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. Is your apc.shm_size too large?", size);
@@ -127,13 +110,6 @@ void apc_unmap(apc_segment_t *segment)
 	if (munmap(segment->shmaddr, segment->size) < 0) {
 		apc_warning("apc_unmap: munmap failed");
 	}
-
-#ifdef APC_MEMPROTECT
-	if (segment->roaddr && munmap(segment->roaddr, segment->size) < 0) {
-		apc_warning("apc_unmap: munmap failed");
-	}
-#endif
-
 }
 
 #endif
