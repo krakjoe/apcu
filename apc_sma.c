@@ -56,7 +56,6 @@ struct sma_header_t {
 
 #define SMA_HDR(sma, i)  ((sma_header_t*)((sma->segs[i]).shmaddr))
 #define SMA_ADDR(sma, i) ((char*)(SMA_HDR(sma, i)))
-#define SMA_RO(sma, i)   ((char*)(sma->segs[i]).roaddr)
 #define SMA_LCK(sma, i)  ((SMA_HDR(sma, i))->sma_lock)
 
 #define SMA_CREATE_LOCK  APC_CREATE_MUTEX
@@ -491,63 +490,6 @@ PHP_APCU_API void apc_sma_free(apc_sma_t* sma, void* p) {
 
 	apc_error("apc_sma_free: could not locate address %p", p);
 }
-
-#ifdef APC_MEMPROTECT
-PHP_APCU_API void* apc_sma_protect(apc_sma_t* sma, void* p) {
-	unsigned int i = 0;
-	size_t offset;
-
-	if (p == NULL) {
-		return NULL;
-	}
-
-	if(SMA_RO(sma, sma->last) == NULL) return p;
-
-	offset = (size_t)((char *)p - SMA_ADDR(sma, sma->last));
-
-	if(p >= (void*)SMA_ADDR(sma, sma->last) && offset < sma->size) {
-		return SMA_RO(sma, sma->last) + offset;
-	}
-
-	for (i = 0; i < sma->num; i++) {
-		offset = (size_t)((char *)p - SMA_ADDR(sma, i));
-		if (p >= (void*)SMA_ADDR(sma, i) && offset < sma->size) {
-			return SMA_RO(sma, i) + offset;
-		}
-	}
-
-	return NULL;
-}
-
-PHP_APCU_API void* apc_sma_unprotect(apc_sma_t* sma, void* p){
-	unsigned int i = 0;
-	size_t offset;
-
-	if (p == NULL) {
-		return NULL;
-	}
-
-	if(SMA_RO(sma, sma->last) == NULL) return p;
-
-	offset = (size_t)((char *)p - SMA_RO(sma, sma->last));
-
-	if(p >= (void*)SMA_RO(sma, sma->last) && offset < sma->size) {
-		return SMA_ADDR(sma, sma->last) + offset;
-	}
-
-	for (i = 0; i < sma->num; i++) {
-		offset = (size_t)((char *)p - SMA_RO(sma, i));
-		if (p >= (void*)SMA_RO(sma, i) && offset < sma->size) {
-			return SMA_ADDR(sma, i) + offset;
-		}
-	}
-
-	return NULL;
-}
-#else
-PHP_APCU_API void* apc_sma_protect(apc_sma_t* sma, void *p) { return p; }
-PHP_APCU_API void* apc_sma_unprotect(apc_sma_t* sma, void *p) { return p; }
-#endif
 
 PHP_APCU_API apc_sma_info_t *apc_sma_info(apc_sma_t* sma, zend_bool limited) {
 	apc_sma_info_t *info;

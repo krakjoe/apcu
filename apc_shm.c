@@ -73,14 +73,6 @@ apc_segment_t apc_shm_attach(int shmid, size_t size)
 		zend_error_noreturn(E_CORE_ERROR, "apc_shm_attach: shmat failed:");
 	}
 
-#ifdef APC_MEMPROTECT
-
-	if ((zend_long)(segment.roaddr = shmat(shmid, 0, SHM_RDONLY)) == -1) {
-		segment.roaddr = NULL;
-	}
-
-#endif
-
 	segment.size = size;
 
 	/*
@@ -96,12 +88,6 @@ void apc_shm_detach(apc_segment_t* segment)
 	if (shmdt(segment->shmaddr) < 0) {
 		apc_warning("apc_shm_detach: shmdt failed:");
 	}
-
-#ifdef APC_MEMPROTECT
-	if (segment->roaddr && shmdt(segment->roaddr) < 0) {
-		apc_warning("apc_shm_detach: shmdt failed:");
-	}
-#endif
 }
 
 /*

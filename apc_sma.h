@@ -39,9 +39,6 @@
 typedef struct _apc_segment_t {
 	size_t size;            /* size of this segment */
 	void* shmaddr;          /* address of shared memory */
-#ifdef APC_MEMPROTECT
-	void* roaddr;           /* read only (mprotect'd) address */
-#endif
 } apc_segment_t; /* }}} */
 
 /* {{{ struct definition: apc_sma_link_t */
@@ -112,16 +109,6 @@ PHP_APCU_API void *apc_sma_malloc_ex(
 * apc_sma_api_free will free p (which should be a pointer to a block allocated from sma)
 */
 PHP_APCU_API void apc_sma_free(apc_sma_t* sma, void* p);
-
-/*
-* apc_sma_api_protect will protect p (which should be a pointer to a block allocated from sma)
-*/
-PHP_APCU_API void* apc_sma_protect(apc_sma_t* sma, void* p);
-
-/*
-* apc_sma_api_protect will uprotect p (which should be a pointer to a block allocated from sma)
-*/
-PHP_APCU_API void* apc_sma_unprotect(apc_sma_t* sma, void *p);
 
 /*
 * apc_sma_api_info returns information about the allocator
