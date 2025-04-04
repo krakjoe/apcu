@@ -325,18 +325,11 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 		void*       shmaddr;
 
 #ifdef APC_MMAP
-		sma->segs[i] = apc_mmap(mask, sma->size);
+		sma->segs[i].shmaddr = apc_mmap(mask, sma->size);
 		if(sma->num != 1)
 			memcpy(&mask[strlen(mask)-6], "XXXXXX", 6);
 #else
-		{
-			int j = apc_shm_create(i, sma->size);
-#ifdef PHP_WIN32
-			/* TODO remove the line below after 7.1 EOL. */
-			SetLastError(0);
-#endif
-			sma->segs[i] = apc_shm_attach(j, sma->size);
-		}
+		sma->segs[i].shmaddr = apc_shm_attach(sma->size);
 #endif
 
 		sma->segs[i].size = sma->size;
@@ -389,9 +382,9 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
 
 	for (i = 0; i < sma->num; i++) {
 #ifdef APC_MMAP
-		apc_unmap(&sma->segs[i]);
+		apc_unmap(sma->segs[i].shmaddr, sma->segs[i].size);
 #else
-		apc_shm_detach(&sma->segs[i]);
+		apc_shm_detach(sma->segs[i].shmaddr);
 #endif
 	}
 

@@ -51,32 +51,29 @@
 # define MAP_ANON MAP_ANONYMOUS
 #endif
 
-apc_segment_t apc_mmap(char *file_mask, size_t size)
+void *apc_mmap(char *file_mask, size_t size)
 {
-	apc_segment_t segment;
-
+	void *shmaddr;
 	int fd = -1;
 	int flags = MAP_SHARED | MAP_NOSYNC;
 
 	/* If no filename was provided, do an anonymous mmap */
-	if(!file_mask || (file_mask && !strlen(file_mask))) {
+	if (!file_mask || (file_mask && !strlen(file_mask))) {
 #if !defined(MAP_ANON)
 		zend_error_noreturn(E_CORE_ERROR, "Anonymous mmap does not appear to be available on this system (MAP_ANON/MAP_ANONYMOUS).  Please see the apc.mmap_file_mask INI option.");
 #else
 		fd = -1;
 		flags = MAP_SHARED | MAP_ANON;
 #endif
-	} else if(!strcmp(file_mask,"/dev/zero")) {
+	} else if (!strcmp(file_mask,"/dev/zero")) {
 		fd = open("/dev/zero", O_RDWR, S_IRUSR | S_IWUSR);
-		if(fd == -1) {
+		if (fd == -1) {
 			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: open on /dev/zero failed");
 		}
 	} else {
-		/*
-		 * Otherwise we do a normal filesystem mmap
-		 */
+		/* Otherwise we do a normal filesystem mmap */
 		fd = mkstemp(file_mask);
-		if(fd == -1) {
+		if (fd == -1) {
 			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: mkstemp on %s failed", file_mask);
 		}
 		if (ftruncate(fd, size) < 0) {
@@ -87,27 +84,25 @@ apc_segment_t apc_mmap(char *file_mask, size_t size)
 		unlink(file_mask);
 	}
 
-	segment.shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
-	segment.size = size;
+	shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
 
-	if ((long)segment.shmaddr == -1) {
+	if ((long)shmaddr == -1) {
 		zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. Is your apc.shm_size too large?", size);
 	}
 
 #ifdef MADV_HUGEPAGE
-	/* enable transparent huge pages to reduce TLB misses (Linux
-	   only) */
-	madvise(segment.shmaddr, size, MADV_HUGEPAGE);
+	/* enable transparent huge pages to reduce TLB misses (Linux only) */
+	madvise(shmaddr, size, MADV_HUGEPAGE);
 #endif
 
 	if (fd != -1) close(fd);
 
-	return segment;
+	return shmaddr;
 }
 
-void apc_unmap(apc_segment_t *segment)
+void apc_unmap(void *shmaddr, size_t size)
 {
-	if (munmap(segment->shmaddr, segment->size) < 0) {
+	if (munmap(shmaddr, size) < 0) {
 		apc_warning("apc_unmap: munmap failed");
 	}
 }
