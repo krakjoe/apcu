@@ -63,14 +63,6 @@ struct sma_header_t {
 #define SMA_LOCK(sma, i) APC_MUTEX_LOCK(&SMA_LCK(sma, i))
 #define SMA_UNLOCK(sma, i) APC_MUTEX_UNLOCK(&SMA_LCK(sma, i))
 
-#if 0
-/* global counter for identifying blocks
- * Technically it is possible to do the same
- * using offsets, but double allocations of the
- * same offset can happen. */
-static volatile size_t block_id = 0;
-#endif
-
 typedef struct block_t block_t;
 struct block_t {
 	size_t size;       /* size of this block */
@@ -79,9 +71,6 @@ struct block_t {
 	size_t fprev;      /* offset in segment of prev free block */
 #ifdef APC_SMA_CANARIES
 	size_t canary;     /* canary to check for memory overwrites */
-#endif
-#if 0
-	size_t id;         /* identifier for the memory block */
 #endif
 };
 
@@ -203,9 +192,6 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 		nxt->fprev = cur->fprev;
 		BLOCKAT(nxt->fnext)->fprev = OFFSET(nxt);
 		BLOCKAT(nxt->fprev)->fnext = OFFSET(nxt);
-#if 0
-		nxt->id = -1;
-#endif
 	}
 
 	cur->fnext = 0;
@@ -214,11 +200,6 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *header, size_t size, size_t
 	header->avail -= cur->size;
 
 	SET_CANARY(cur);
-
-#if 0
-	cur->id = ++block_id;
-	fprintf(stderr, "allocate(realsize=%d,size=%d,id=%d)\n", (int)(size), (int)(cur->size), cur->id);
-#endif
 
 	return OFFSET(cur) + block_header_size;
 }
@@ -265,11 +246,6 @@ static APC_HOTSPOT size_t sma_deallocate(void* shmaddr, size_t offset)
 		cur->size += nxt->size;
 
 		CHECK_CANARY(nxt);
-
-#if 0
-		nxt->id = -1; /* assert this or set it ? */
-#endif
-
 		RESET_CANARY(nxt);
 	}
 
@@ -347,27 +323,20 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 		first->fprev = 0;
 		first->prev_size = 0;
 		SET_CANARY(first);
-#if 0
-		first->id = -1;
-#endif
+
 		empty = BLOCKAT(first->fnext);
 		empty->size = header->avail - ALIGNWORD(sizeof(block_t));
 		empty->fnext = OFFSET(empty) + empty->size;
 		empty->fprev = ALIGNWORD(sizeof(sma_header_t));
 		empty->prev_size = 0;
 		SET_CANARY(empty);
-#if 0
-		empty->id = -1;
-#endif
+
 		last = BLOCKAT(empty->fnext);
 		last->size = 0;
 		last->fnext = 0;
 		last->fprev =  OFFSET(empty);
 		last->prev_size = empty->size;
 		SET_CANARY(last);
-#if 0
-		last->id = -1;
-#endif
 	}
 }
 
