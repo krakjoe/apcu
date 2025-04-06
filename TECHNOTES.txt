@@ -148,7 +148,6 @@ form of a quick-start guide to start hacking on APCu.
 
     /* {{{ struct definition: apc_cache_t */
     typedef struct _apc_cache_t {
-        void* shmaddr;                /* process (local) address of shared cache */
         apc_cache_header_t* header;   /* cache header (stored in SHM) */
         apc_cache_entry_t** slots;    /* array of cache slots (stored in SHM) */
         apc_sma_t* sma;               /* shared memory allocator */
@@ -176,7 +175,6 @@ form of a quick-start guide to start hacking on APCu.
         zend_long nentries;              /* entry count */
         zend_long mem_size;              /* used */
         time_t stime;                    /* start time */
-        unsigned short state;            /* cache state */
         apc_cache_slam_key_t lastkey;    /* last key inserted (not necessarily without error) */
         apc_cache_entry_t *gc;           /* gc list */
     } apc_cache_header_t; /* }}} */

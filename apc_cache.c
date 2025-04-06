@@ -295,32 +295,29 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache = pemalloc(sizeof(apc_cache_t), 1);
 
 	/* calculate cache size for shm allocation */
-	cache_size = sizeof(apc_cache_header_t) + nslots*sizeof(apc_cache_entry_t *);
+	cache_size = sizeof(apc_cache_header_t) + nslots * sizeof(apc_cache_entry_t *);
 
 	/* allocate shm */
-	cache->shmaddr = apc_sma_malloc(sma, cache_size);
+	cache->header = apc_sma_malloc(sma, cache_size);
 
-	if (!cache->shmaddr) {
+	if (!cache->header) {
 		zend_error_noreturn(E_CORE_ERROR, "Unable to allocate " ZEND_LONG_FMT " bytes of shared memory for cache structures. Either apc.shm_size is too small or apc.entries_hint too large", cache_size);
 		return NULL;
 	}
 
 	/* zero cache header and hash slots */
-	memset(cache->shmaddr, 0, cache_size);
+	memset(cache->header, 0, cache_size);
 
-	/* set default header */
-	cache->header = (apc_cache_header_t*) cache->shmaddr;
-
+	/* set header values */
 	cache->header->nhits = 0;
 	cache->header->nmisses = 0;
 	cache->header->nentries = 0;
 	cache->header->nexpunges = 0;
 	cache->header->gc = NULL;
 	cache->header->stime = time(NULL);
-	cache->header->state = 0;
 
 	/* set cache options */
-	cache->slots = (apc_cache_entry_t **) (((char*) cache->shmaddr) + sizeof(apc_cache_header_t));
+	cache->slots = (apc_cache_entry_t **) (((char*) cache->header) + sizeof(apc_cache_header_t));
 	cache->sma = sma;
 	cache->serializer = serializer;
 	cache->nslots = nslots;
