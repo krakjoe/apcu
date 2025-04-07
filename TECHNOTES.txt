@@ -58,12 +58,12 @@ form of a quick-start guide to start hacking on APCu.
     ( which you can obtain in any compilation unit with apc_sma_api_extern(apc_sma) )
 
     At this point, we have a completely useless 32MB chunk of memory at our disposal, before
-    it can be used, an apc_cache_header_t is initialized at the beginning of the region of
+    it can be used, a sma_header_t is initialized at the beginning of the region of
     mmapp'ed memory.
     
-    The header serves as a place to store, among other things, statistical information and a lock.
+    The smaheader serves as a place to store, among other things, statistical information and a lock.
     
-    Immediately after the header comes a zero sized block, immediately after that a single
+    Immediately after the smaheader comes a zero sized block, immediately after that a single
     block with a size equal to the remaining size of the shared memory.
 
     At this point, the shared memory looks like this:
@@ -87,13 +87,13 @@ form of a quick-start guide to start hacking on APCu.
 
    The BLOCKAT macro turns an offset into an actual address for you:
 
-     #define BLOCKAT(offset) ((block_t*)((char *)shmaddr + offset))
+     #define BLOCKAT(offset) ((block_t*)((char *)smaheader + offset))
 
-   where shmaddr = sma->shaddrs[0]
+   where smaheader = sma->shaddrs[0]
 
    And the OFFSET macro goes the other way:
 
-     #define OFFSET(block) ((int)(((char*)block) - (char*)shmaddr))
+     #define OFFSET(block) ((int)(((char*)block) - (char*)smaheader))
 
    Allocating a block (`sma_allocate`) walks through the linked list of blocks until it finds one that is >= 
    to the requested size. The first call to allocate will hit the second block.  We then
@@ -110,7 +110,7 @@ form of a quick-start guide to start hacking on APCu.
      | header | block |------>|         block           |
      +--------+-------+       +-------------------------+
 
-   And header->avail along with block->size of the remaining large
+   And smaheader->avail along with block->size of the remaining large
    block are updated accordingly.  The arrow there representing the
    link which now points to a block with an offset further along in
    the segment.
