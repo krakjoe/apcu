@@ -281,7 +281,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 	sma->num = num > 0 ? num : DEFAULT_NUMSEG;
 #endif
 
-	sma->size = size > 0 ? size : DEFAULT_SEGSIZE;
+	sma->size = ALIGNWORD(size > 0 ? size : DEFAULT_SEGSIZE);
 
 	sma->segs = (apc_segment_t*) pemalloc(sma->num * sizeof(apc_segment_t), 1);
 
