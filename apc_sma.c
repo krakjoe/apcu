@@ -310,7 +310,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 		SET_CANARY(first);
 
 		empty = BLOCKAT(first->fnext);
-		empty->size = smaheader->avail - ALIGNWORD(sizeof(block_t));
+		empty->size = smaheader->avail;
 		empty->fnext = OFFSET(empty) + empty->size;
 		empty->fprev = ALIGNWORD(sizeof(sma_header_t));
 		empty->prev_size = 0;
