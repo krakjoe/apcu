@@ -143,7 +143,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size, siz
 	block_t* prv;           /* block prior to working block */
 	block_t* cur;           /* working block in list */
 	size_t realsize;        /* actual size of block needed, including block header */
-	size_t block_header_size = ALIGNWORD(sizeof(struct block_t));
+	size_t block_header_size = ALIGNWORD(sizeof(block_t));
 
 	realsize = ALIGNWORD(size + block_header_size);
 
@@ -205,8 +205,8 @@ static APC_HOTSPOT size_t sma_deallocate(sma_header_t *smaheader, size_t offset)
 	block_t* nxt;       /* the block after cur */
 	size_t size;        /* size of deallocated block */
 
-	assert(offset >= ALIGNWORD(sizeof(struct block_t)));
-	offset -= ALIGNWORD(sizeof(struct block_t));
+	assert(offset >= ALIGNWORD(sizeof(block_t)));
+	offset -= ALIGNWORD(sizeof(block_t));
 
 	/* find position of new block in free list */
 	cur = BLOCKAT(offset);
@@ -263,7 +263,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 	sma->initialized = 1;
 	sma->expunge = expunge;
 	sma->data = data;
-	sma->min_block_size = min_alloc_size > 0 ? ALIGNWORD(min_alloc_size + ALIGNWORD(sizeof(struct block_t))) : MINBLOCKSIZE;
+	sma->min_block_size = min_alloc_size > 0 ? ALIGNWORD(min_alloc_size + ALIGNWORD(sizeof(block_t))) : MINBLOCKSIZE;
 
 #ifdef APC_MMAP
 	/*
@@ -518,7 +518,7 @@ PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma) {
 
 PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
 	int32_t i;
-	size_t realsize = ALIGNWORD(size + ALIGNWORD(sizeof(struct block_t)));
+	size_t realsize = ALIGNWORD(size + ALIGNWORD(sizeof(block_t)));
 
 	for (i = 0; i < sma->num; i++) {
 		sma_header_t *smaheader = SMA_HDR(sma, i);
