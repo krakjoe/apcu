@@ -138,7 +138,7 @@ static inline block_t *find_block(sma_header_t *smaheader, size_t realsize) {
 }
 
 /* {{{ sma_allocate: tries to allocate at least size bytes in a segment */
-static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size, size_t min_block_size, size_t *allocated)
+static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size, size_t min_block_size)
 {
 	block_t* prv;           /* block prior to working block */
 	block_t* cur;           /* working block in list */
@@ -160,7 +160,6 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size, siz
 
 	if (cur->size >= realsize && cur->size < (realsize + min_block_size)) {
 		/* cur is big enough for realsize, but too small to split - unlink it */
-		*(allocated) = cur->size - block_header_size;
 		prv = BLOCKAT(cur->fprev);
 		prv->fnext = cur->fnext;
 		BLOCKAT(cur->fnext)->fprev = OFFSET(prv);
@@ -172,7 +171,6 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size, siz
 
 		oldsize = cur->size;
 		cur->size = realsize;
-		*(allocated) = cur->size - block_header_size;
 		nxt = NEXT_SBLOCK(cur);
 		nxt->prev_size = 0;                       /* block is alloc'd */
 		nxt->size = oldsize - realsize;           /* and fix the size */
@@ -347,7 +345,7 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
 	free(sma->segs);
 }
 
-PHP_APCU_API void *apc_sma_malloc_ex(apc_sma_t *sma, size_t n, size_t *allocated) {
+PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t n) {
 	size_t off;
 	int32_t i;
 	zend_bool nuked = 0;
@@ -360,7 +358,7 @@ restart:
 		return NULL;
 	}
 
-	off = sma_allocate(SMA_HDR(sma, last), n, sma->min_block_size, allocated);
+	off = sma_allocate(SMA_HDR(sma, last), n, sma->min_block_size);
 
 	if (off != SIZE_MAX) {
 		void* p = (void *)(SMA_ADDR(sma, last) + off);
@@ -382,7 +380,7 @@ restart:
 			return NULL;
 		}
 
-		off = sma_allocate(SMA_HDR(sma, i), n, sma->min_block_size, allocated);
+		off = sma_allocate(SMA_HDR(sma, i), n, sma->min_block_size);
 		if (off != SIZE_MAX) {
 			void* p = (void *)(SMA_ADDR(sma, i) + off);
 			sma->last = i;
@@ -403,12 +401,6 @@ restart:
 	}
 
 	return NULL;
-}
-
-PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t n)
-{
-	size_t allocated;
-	return apc_sma_malloc_ex(sma, n, &allocated);
 }
 
 PHP_APCU_API void apc_sma_free(apc_sma_t* sma, void* p) {
