@@ -63,16 +63,17 @@ form of a quick-start guide to start hacking on APCu.
     
     The smaheader serves as a place to store, among other things, statistical information and a lock.
     
-    Immediately after the smaheader comes a zero sized block, immediately after that a single
-    block with a size equal to the remaining size of the shared memory.
+    Immediately after the smaheader come three blocks. The first and last block are 0-sized
+    and simplify the handling of the linked list. The block between the 0-sized blocks
+    contains the remaining size of the shared memory which is available for allocation.
 
     At this point, the shared memory looks like this:
 
-     +--------+--------+----------------------------------+
-     | header | 0-size |              shared              |
-     +--------+--------+----------------------------------+
+     +--------+--------+-----------------------------------+
+     | header | 0-size |        free-block        | 0-size |
+     +--------+--------+-----------------------------------+
 
-   The blocks are just a simple offset-based linked list (so no pointers):
+   The blocks are just a simple offset-based doubly linked list (so no pointers):
 
      typedef struct block_t block_t;
      struct block_t {
@@ -95,31 +96,31 @@ form of a quick-start guide to start hacking on APCu.
 
      #define OFFSET(block) ((int)(((char*)block) - (char*)smaheader))
 
-   Allocating a block (`sma_allocate`) walks through the linked list of blocks until it finds one that is >= 
-   to the requested size. The first call to allocate will hit the second block.  We then
-   chop up that block so it looks like this:
+   Allocating a block (`sma_allocate`) walks through the doubly linked list of blocks until it
+   finds one that is >= to the requested size. The first call to allocate will hit the second block.
+   We then chop up that block so it looks like this:
 
-     +--------+-------+-------+-------------------------+
-     | header | block | block |         block           |
-     +--------+-------+-------+-------------------------+
+     +--------+--------+-------+------------------+--------+
+     | header | 0-size | block |    free-block    | 0-size |
+     +--------+--------+-------+------------------+--------+
 
-   Then we unlink that block from the linked list so it won't show up
-   as an available block on the next allocate.  So we actually have:
+   Then we unlink that block from the doubly linked list so it won't show up
+   as an available block on the next allocate. So we actually have:
 
-     +--------+-------+       +-------------------------+
-     | header | block |------>|         block           |
-     +--------+-------+       +-------------------------+
+     +--------+--------+       +------------------+--------+
+     | header | 0-size |<----->|    free-block    | 0-size |
+     +--------+--------+       +------------------+--------+
 
    And smaheader->avail along with block->size of the remaining large
-   block are updated accordingly.  The arrow there representing the
+   free block are updated accordingly. The arrow there represents the
    link which now points to a block with an offset further along in
    the segment.
 
-   When the block is freed the steps are basically just reversed.  
+   When the block is freed the steps are basically just reversed.
    The block is put back and then the deallocate code looks at the block before and after to see 
-   if the block immediately before and after are free and if so the blocks are combined.  So you never
-   have 2 free blocks next to each other, apart from at the front with that
-   0-sized dummy block.  This mostly prevents fragmentation.
+   if the block immediately before and after are free and if so the blocks are combined. So you never
+   have 2 free blocks next to each other, apart from the 0-sized dummy blocks.
+   This mostly prevents fragmentation.
 
    Block start pointers are aligned to the system's word boundary (usually 8 bytes) with the `ALIGNWORD` macro.
   
