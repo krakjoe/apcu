@@ -129,9 +129,7 @@ PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size);
 PHP_APCU_API void apc_sma_check_integrity(apc_sma_t* sma); /* }}} */
 
 /* {{{ ALIGNWORD: pad up x, aligned to the system's word boundary */
-typedef union { void* p; int i; long l; double d; void (*f)(void); } apc_word_t;
-#define ALIGNSIZE(x, size) ((size) * (1 + (((x)-1)/(size))))
-#define ALIGNWORD(x) ALIGNSIZE(x, sizeof(apc_word_t))
+#define ALIGNWORD(x) ZEND_MM_ALIGNED_SIZE(x)
 /* }}} */
 
 #endif
