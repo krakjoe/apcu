@@ -73,14 +73,14 @@ form of a quick-start guide to start hacking on APCu.
      | header | 0-size |        free-block        | 0-size |
      +--------+--------+-----------------------------------+
 
-   The blocks are just a simple offset-based doubly linked list (so no pointers):
+   The blocks are just a simple doubly linked list:
 
      typedef struct block_t block_t;
      struct block_t {
-         size_t size;       /* size of this block */
-         size_t prev_size;  /* size of sequentially previous block, 0 if prev is allocated */
-         size_t fnext;      /* offset in segment of next free block */
-         size_t fprev;      /* offset in segment of prev free block */
+         size_t   size;     /* size of this block */
+         block_t *fnext;    /* pointer to next free block in segment */
+         block_t *fprev;    /* pointer to prev free block in segment */
+         block_t *sprev;    /* pointer to sequentially previous block, NULL if prev is allocated */
 #ifdef APC_SMA_CANARIES
          size_t canary;     /* canary to check for memory overwrites */
 #endif
