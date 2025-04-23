@@ -35,17 +35,11 @@
 
 #include "apc.h"
 
-/* {{{ struct definition: apc_segment_t */
-typedef struct _apc_segment_t {
-	size_t size;            /* size of this segment */
-	void* shmaddr;          /* address of shared memory */
-} apc_segment_t; /* }}} */
-
 /* {{{ struct definition: apc_sma_link_t */
 typedef struct apc_sma_link_t apc_sma_link_t;
 struct apc_sma_link_t {
-	zend_long size;              /* size of this free block */
-	zend_long offset;            /* offset in segment of this block */
+	zend_long size;         /* size of this free block */
+	zend_long offset;       /* offset in segment of this block */
 	apc_sma_link_t* next;   /* link to next free block */
 };
 /* }}} */
@@ -53,9 +47,8 @@ struct apc_sma_link_t {
 /* {{{ struct definition: apc_sma_info_t */
 typedef struct apc_sma_info_t apc_sma_info_t;
 struct apc_sma_info_t {
-	int num_seg;            /* number of segments */
-	size_t seg_size;        /* segment size */
-	apc_sma_link_t** list;  /* one list per segment of links */
+	size_t seg_size;       /* segment size */
+	apc_sma_link_t* list;  /* list of free blocks */
 };
 /* }}} */
 
@@ -70,23 +63,18 @@ typedef struct _apc_sma_t {
 	void** data;                   /* expunge data */
 
 	/* info */
-	int32_t  num;                  /* number of segments */
 	size_t size;                   /* segment size */
-	int32_t  last;                 /* last segment */
-	size_t min_block_size;         /* expected minimum size of allocated blocks */
-
-	/* segments */
-	apc_segment_t *segs;           /* segments */
+	void  *shmaddr;                /* address of shm segment */
 } apc_sma_t; /* }}} */
 
 /*
-* apc_sma_api_init will initialize a shared memory allocator with num segments of the given size
+* apc_sma_init will initialize a shared memory allocator with the given size of shared memory
 *
 * should be called once per allocator per process
 */
 PHP_APCU_API void apc_sma_init(
 		apc_sma_t* sma, void** data, apc_sma_expunge_f expunge,
-		int32_t num, size_t size, size_t min_alloc_size, char *mask);
+		size_t size, size_t min_alloc_size, char *mask);
 
 /*
  * apc_sma_detach will detach from shared memory and cleanup local allocations.
