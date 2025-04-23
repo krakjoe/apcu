@@ -3,7 +3,6 @@ Basic apcu_sma_info() test
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.shm_segments=1
 --FILE--
 <?php
 

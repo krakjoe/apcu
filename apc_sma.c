@@ -43,25 +43,23 @@
 # define APC_SMA_CANARIES 1
 #endif
 
-enum {
-	DEFAULT_NUMSEG=1,
-	DEFAULT_SEGSIZE=30*1024*1024 };
-
 typedef struct sma_header_t sma_header_t;
 struct sma_header_t {
-	apc_mutex_t sma_lock;    /* segment lock */
-	size_t segsize;         /* size of entire segment */
+	apc_mutex_t sma_lock;   /* segment lock */
+	size_t min_block_size;  /* expected minimum size of allocated blocks */
 	size_t avail;           /* bytes available (not necessarily contiguous) */
 };
 
-#define SMA_HDR(sma, i)  ((sma_header_t*)((sma->segs[i]).shmaddr))
-#define SMA_ADDR(sma, i) ((char*)(SMA_HDR(sma, i)))
-#define SMA_LCK(sma, i)  ((SMA_HDR(sma, i))->sma_lock)
+#define SMA_DEFAULT_SEGSIZE (30*1024*1024)
+
+#define SMA_HDR(sma)  ((sma_header_t*)sma->shmaddr)
+#define SMA_ADDR(sma) ((char *)sma->shmaddr)
+#define SMA_LCK(sma)  ((SMA_HDR(sma))->sma_lock)
 
 #define SMA_CREATE_LOCK  APC_CREATE_MUTEX
 #define SMA_DESTROY_LOCK APC_DESTROY_MUTEX
-#define SMA_LOCK(sma, i) APC_MUTEX_LOCK(&SMA_LCK(sma, i))
-#define SMA_UNLOCK(sma, i) APC_MUTEX_UNLOCK(&SMA_LCK(sma, i))
+#define SMA_LOCK(sma) APC_MUTEX_LOCK(&SMA_LCK(sma))
+#define SMA_UNLOCK(sma) APC_MUTEX_UNLOCK(&SMA_LCK(sma))
 
 typedef struct block_t block_t;
 struct block_t {
@@ -76,7 +74,7 @@ struct block_t {
 
 /* The macros BLOCKAT and OFFSET are used for convenience throughout this
  * module. Both assume the presence of a variable smaheader that points to the
- * beginning of the shared memory segment in question. */
+ * beginning of the shared memory segment. */
 #define BLOCKAT(offset) ((block_t*)((char *)smaheader + offset))
 #define OFFSET(block) ((size_t)(((char*)block) - (char*)smaheader))
 
@@ -137,8 +135,8 @@ static inline block_t *find_block(sma_header_t *smaheader, size_t realsize) {
 	return found;
 }
 
-/* {{{ sma_allocate: tries to allocate at least size bytes in a segment */
-static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size, size_t min_block_size)
+/* {{{ sma_allocate: tries to allocate at least size bytes of shared memory */
+static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 {
 	block_t* prv;           /* block prior to working block */
 	block_t* cur;           /* working block in list */
@@ -158,14 +156,14 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size, siz
 		return SIZE_MAX;
 	}
 
-	if (cur->size >= realsize && cur->size < (realsize + min_block_size)) {
+	if (cur->size >= realsize && cur->size < (realsize + smaheader->min_block_size)) {
 		/* cur is big enough for realsize, but too small to split - unlink it */
 		prv = BLOCKAT(cur->fprev);
 		prv->fnext = cur->fnext;
 		BLOCKAT(cur->fnext)->fprev = OFFSET(prv);
 		NEXT_SBLOCK(cur)->prev_size = 0;  /* block is alloc'd */
 	} else {
-		/* nextfit is too big; split it into two smaller blocks */
+		/* cur is too big; split it into two smaller blocks */
 		block_t* nxt;      /* the new block (chopped part of cur) */
 		size_t oldsize;    /* size of cur before split */
 
@@ -251,9 +249,7 @@ static APC_HOTSPOT size_t sma_deallocate(sma_header_t *smaheader, size_t offset)
 /* }}} */
 
 /* {{{ APC SMA API */
-PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, int32_t num, size_t size, size_t min_alloc_size, char *mask) {
-	int32_t i;
-
+PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, size_t size, size_t min_alloc_size, char *mask) {
 	if (sma->initialized) {
 		return;
 	}
@@ -261,136 +257,77 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 	sma->initialized = 1;
 	sma->expunge = expunge;
 	sma->data = data;
-	sma->min_block_size = min_alloc_size > 0 ? ALIGNWORD(min_alloc_size + ALIGNWORD(sizeof(block_t))) : MINBLOCKSIZE;
+	sma->size = ALIGNWORD(size > 0 ? size : SMA_DEFAULT_SEGSIZE);
 
 #ifdef APC_MMAP
-	/*
-	 * I don't think multiple anonymous mmaps makes any sense
-	 * so force sma_numseg to 1 in this case
-	 */
-	if(!mask ||
-	   (mask && !strlen(mask)) ||
-	   (mask && !strcmp(mask, "/dev/zero"))) {
-		sma->num = 1;
-	} else {
-		sma->num = num > 0 ? num : DEFAULT_NUMSEG;
-	}
+	sma->shmaddr = apc_mmap(mask, sma->size);
 #else
-	sma->num = num > 0 ? num : DEFAULT_NUMSEG;
+	sma->shmaddr = apc_shm_attach(sma->size);
 #endif
 
-	sma->size = ALIGNWORD(size > 0 ? size : DEFAULT_SEGSIZE);
+	sma_header_t *smaheader = sma->shmaddr;
+	SMA_CREATE_LOCK(&smaheader->sma_lock);
+	smaheader->min_block_size = min_alloc_size > 0 ? ALIGNWORD(min_alloc_size + ALIGNWORD(sizeof(block_t))) : MINBLOCKSIZE;
+	smaheader->avail = sma->size - ALIGNWORD(sizeof(sma_header_t)) - ALIGNWORD(sizeof(block_t)) - ALIGNWORD(sizeof(block_t));
 
-	sma->segs = (apc_segment_t*) pemalloc(sma->num * sizeof(apc_segment_t), 1);
+	block_t *first = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+	first->size = 0;
+	first->fnext = ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t));
+	first->fprev = 0;
+	first->prev_size = 0;
+	SET_CANARY(first);
 
-	for (i = 0; i < sma->num; i++) {
-		sma_header_t *smaheader;
-		block_t      *first, *empty, *last;
+	block_t *empty = BLOCKAT(first->fnext);
+	empty->size = smaheader->avail;
+	empty->fnext = OFFSET(empty) + empty->size;
+	empty->fprev = ALIGNWORD(sizeof(sma_header_t));
+	empty->prev_size = 0;
+	SET_CANARY(empty);
 
-#ifdef APC_MMAP
-		sma->segs[i].shmaddr = apc_mmap(mask, sma->size);
-		if(sma->num != 1)
-			memcpy(&mask[strlen(mask)-6], "XXXXXX", 6);
-#else
-		sma->segs[i].shmaddr = apc_shm_attach(sma->size);
-#endif
-
-		sma->segs[i].size = sma->size;
-
-		smaheader = (sma_header_t *) sma->segs[i].shmaddr;
-		SMA_CREATE_LOCK(&smaheader->sma_lock);
-		smaheader->segsize = sma->size;
-		smaheader->avail = sma->size - ALIGNWORD(sizeof(sma_header_t)) - ALIGNWORD(sizeof(block_t)) - ALIGNWORD(sizeof(block_t));
-
-		first = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
-		first->size = 0;
-		first->fnext = ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t));
-		first->fprev = 0;
-		first->prev_size = 0;
-		SET_CANARY(first);
-
-		empty = BLOCKAT(first->fnext);
-		empty->size = smaheader->avail;
-		empty->fnext = OFFSET(empty) + empty->size;
-		empty->fprev = ALIGNWORD(sizeof(sma_header_t));
-		empty->prev_size = 0;
-		SET_CANARY(empty);
-
-		last = BLOCKAT(empty->fnext);
-		last->size = 0;
-		last->fnext = 0;
-		last->fprev =  OFFSET(empty);
-		last->prev_size = empty->size;
-		SET_CANARY(last);
-	}
+	block_t *last = BLOCKAT(empty->fnext);
+	last->size = 0;
+	last->fnext = 0;
+	last->fprev =  OFFSET(empty);
+	last->prev_size = empty->size;
+	SET_CANARY(last);
 }
 
 PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
 	/* Important: This function should not clean up anything that's in shared memory,
 	 * only detach our process-local use of it. In particular locks cannot be destroyed
 	 * here. */
-	int32_t i;
 
 	assert(sma->initialized);
 	sma->initialized = 0;
 
-	for (i = 0; i < sma->num; i++) {
 #ifdef APC_MMAP
-		apc_unmap(sma->segs[i].shmaddr, sma->segs[i].size);
+	apc_unmap(sma->shmaddr, sma->size);
 #else
-		apc_shm_detach(sma->segs[i].shmaddr);
+	apc_shm_detach(sma->shmaddr);
 #endif
-	}
-
-	free(sma->segs);
 }
 
 PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t n) {
 	size_t off;
-	int32_t i;
 	zend_bool nuked = 0;
-	int32_t last = sma->last;
 
 restart:
 	assert(sma->initialized);
 
-	if (!SMA_LOCK(sma, last)) {
+	if (!SMA_LOCK(sma)) {
 		return NULL;
 	}
 
-	off = sma_allocate(SMA_HDR(sma, last), n, sma->min_block_size);
+	off = sma_allocate(SMA_HDR(sma), n);
+
+	SMA_UNLOCK(sma);
 
 	if (off != SIZE_MAX) {
-		void* p = (void *)(SMA_ADDR(sma, last) + off);
-		SMA_UNLOCK(sma, last);
+		void *p = (void *)(SMA_ADDR(sma) + off);
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
 		VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
 		return p;
-	}
-
-	SMA_UNLOCK(sma, last);
-
-	for (i = 0; i < sma->num; i++) {
-		if (i == last) {
-			continue;
-		}
-
-		if (!SMA_LOCK(sma, i)) {
-			return NULL;
-		}
-
-		off = sma_allocate(SMA_HDR(sma, i), n, sma->min_block_size);
-		if (off != SIZE_MAX) {
-			void* p = (void *)(SMA_ADDR(sma, i) + off);
-			sma->last = i;
-			SMA_UNLOCK(sma, i);
-#ifdef VALGRIND_MALLOCLIKE_BLOCK
-			VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
-#endif
-			return p;
-		}
-		SMA_UNLOCK(sma, i);
 	}
 
 	/* Expunge cache in hope of freeing up memory, but only once */
@@ -404,7 +341,6 @@ restart:
 }
 
 PHP_APCU_API void apc_sma_free(apc_sma_t* sma, void* p) {
-	int32_t i;
 	size_t offset;
 
 	if (p == NULL) {
@@ -413,128 +349,100 @@ PHP_APCU_API void apc_sma_free(apc_sma_t* sma, void* p) {
 
 	assert(sma->initialized);
 
-	for (i = 0; i < sma->num; i++) {
-		offset = (size_t)((char *)p - SMA_ADDR(sma, i));
-		if (p >= (void*)SMA_ADDR(sma, i) && offset < sma->size) {
-			if (!SMA_LOCK(sma, i)) {
-				return;
-			}
-
-			sma_deallocate(SMA_HDR(sma, i), offset);
-			SMA_UNLOCK(sma, i);
-#ifdef VALGRIND_FREELIKE_BLOCK
-			VALGRIND_FREELIKE_BLOCK(p, 0);
-#endif
-			return;
-		}
+	offset = (size_t)((char *)p - SMA_ADDR(sma));
+	if (p < (void *)SMA_ADDR(sma) || offset >= sma->size) {
+		apc_error("apc_sma_free: could not locate address %p", p);
+		return;
 	}
 
-	apc_error("apc_sma_free: could not locate address %p", p);
+	if (!SMA_LOCK(sma)) {
+		return;
+	}
+
+	sma_deallocate(SMA_HDR(sma), offset);
+	SMA_UNLOCK(sma);
+#ifdef VALGRIND_FREELIKE_BLOCK
+	VALGRIND_FREELIKE_BLOCK(p, 0);
+#endif
 }
 
 PHP_APCU_API apc_sma_info_t *apc_sma_info(apc_sma_t* sma, zend_bool limited) {
-	apc_sma_info_t *info;
-	apc_sma_link_t **link;
-	int32_t i;
-	block_t *prv;
 
 	if (!sma->initialized) {
 		return NULL;
 	}
 
-	info = emalloc(sizeof(apc_sma_info_t));
-	info->num_seg = sma->num;
+	apc_sma_info_t *info = emalloc(sizeof(apc_sma_info_t));
 	info->seg_size = sma->size - (ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t)) + ALIGNWORD(sizeof(block_t)));
-
-	info->list = emalloc(info->num_seg * sizeof(apc_sma_link_t *));
-	for (i = 0; i < sma->num; i++) {
-		info->list[i] = NULL;
-	}
+	info->list = NULL;
 
 	if (limited) {
 		return info;
 	}
 
-	/* For each segment */
-	for (i = 0; i < sma->num; i++) {
-		SMA_LOCK(sma, i);
-		sma_header_t *smaheader = (sma_header_t *)SMA_ADDR(sma, i);
-		prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+	SMA_LOCK(sma);
+	sma_header_t *smaheader = SMA_HDR(sma);
+	block_t *prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+	apc_sma_link_t **link = &info->list;
 
-		link = &info->list[i];
+	/* For each free block */
+	while (BLOCKAT(prv->fnext)->fnext != 0) {
+		block_t *cur = BLOCKAT(prv->fnext);
 
-		/* For each block in this segment */
-		while (BLOCKAT(prv->fnext)->fnext != 0) {
-			block_t *cur = BLOCKAT(prv->fnext);
+		CHECK_CANARY(cur);
 
-			CHECK_CANARY(cur);
+		*link = emalloc(sizeof(apc_sma_link_t));
+		(*link)->size = cur->size;
+		(*link)->offset = prv->fnext;
+		(*link)->next = NULL;
+		link = &(*link)->next;
 
-			*link = emalloc(sizeof(apc_sma_link_t));
-			(*link)->size = cur->size;
-			(*link)->offset = prv->fnext;
-			(*link)->next = NULL;
-			link = &(*link)->next;
-
-			prv = cur;
-		}
-		SMA_UNLOCK(sma, i);
+		prv = cur;
 	}
+	SMA_UNLOCK(sma);
 
 	return info;
 }
 
 PHP_APCU_API void apc_sma_free_info(apc_sma_t *sma, apc_sma_info_t *info) {
-	int i;
+	apc_sma_link_t *p = info->list;
 
-	for (i = 0; i < info->num_seg; i++) {
-		apc_sma_link_t *p = info->list[i];
-		while (p) {
-			apc_sma_link_t *q = p;
-			p = p->next;
-			efree(q);
-		}
+	while (p) {
+		apc_sma_link_t *q = p;
+		p = p->next;
+		efree(q);
 	}
-	efree(info->list);
+
 	efree(info);
 }
 
 PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma) {
-	size_t avail_mem = 0;
-	int32_t i;
-
-	for (i = 0; i < sma->num; i++) {
-		avail_mem += SMA_HDR(sma, i)->avail;
-	}
-	return avail_mem;
+	return SMA_HDR(sma)->avail;
 }
 
 PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
-	int32_t i;
 	size_t realsize = ALIGNWORD(size + ALIGNWORD(sizeof(block_t)));
+	sma_header_t *smaheader = SMA_HDR(sma);
 
-	for (i = 0; i < sma->num; i++) {
-		sma_header_t *smaheader = SMA_HDR(sma, i);
-
-		/* If total size of available memory is too small, we can skip the contiguous-block check */
-		if (smaheader->avail < realsize) {
-			continue;
-		}
-
-		SMA_LOCK(sma, i);
-		block_t *cur = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
-
-		/* Look for a contiguous block of memory */
-		while (cur->fnext) {
-			cur = BLOCKAT(cur->fnext);
-
-			if (cur->size >= realsize) {
-				SMA_UNLOCK(sma, i);
-				return 1;
-			}
-		}
-
-		SMA_UNLOCK(sma, i);
+	/* If total size of available memory is too small, we can skip the contiguous-block check */
+	if (smaheader->avail < realsize) {
+		return 0;
 	}
+
+	SMA_LOCK(sma);
+	block_t *cur = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+
+	/* Look for a contiguous block of memory */
+	while (cur->fnext) {
+		cur = BLOCKAT(cur->fnext);
+
+		if (cur->size >= realsize) {
+			SMA_UNLOCK(sma);
+			return 1;
+		}
+	}
+
+	SMA_UNLOCK(sma);
 
 	return 0;
 }

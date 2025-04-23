@@ -91,21 +91,6 @@ static void php_apc_init_globals(zend_apcu_globals* apcu_globals)
 
 /* {{{ PHP_INI */
 
-static PHP_INI_MH(OnUpdateShmSegments) /* {{{ */
-{
-	zend_long shm_segments = ZEND_STRTOL(new_value->val, NULL, 10);
-#ifdef APC_MMAP
-	if (shm_segments != 1) {
-		php_error_docref(NULL, E_WARNING, "apc.shm_segments setting ignored in MMAP mode");
-	}
-	APCG(shm_segments) = 1;
-#else
-	APCG(shm_segments) = shm_segments;
-#endif
-	return SUCCESS;
-}
-/* }}} */
-
 static PHP_INI_MH(OnUpdateShmSize) /* {{{ */
 {
 #if PHP_VERSION_ID >= 80200
@@ -133,7 +118,6 @@ static PHP_INI_MH(OnUpdateShmSize) /* {{{ */
 
 PHP_INI_BEGIN()
 STD_PHP_INI_BOOLEAN("apc.enabled",      "1",    PHP_INI_SYSTEM, OnUpdateBool,              enabled,          zend_apcu_globals, apcu_globals)
-STD_PHP_INI_ENTRY("apc.shm_segments",   "1",    PHP_INI_SYSTEM, OnUpdateShmSegments,       shm_segments,     zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.shm_size",       "32M",  PHP_INI_SYSTEM, OnUpdateShmSize,           shm_size,         zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.entries_hint",   "4096", PHP_INI_SYSTEM, OnUpdateLong,              entries_hint,     zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.gc_ttl",         "3600", PHP_INI_SYSTEM, OnUpdateLong,              gc_ttl,           zend_apcu_globals, apcu_globals)
@@ -247,7 +231,7 @@ static PHP_MINIT_FUNCTION(apcu)
 			/* initialize shared memory allocator */
 			apc_sma_init(
 				&apc_sma, (void **) &apc_user_cache, (apc_sma_expunge_f) apc_cache_default_expunge,
-				APCG(shm_segments), APCG(shm_size), APC_ENTRY_MIN_ALLOC_SIZE, mmap_file_mask);
+				APCG(shm_size), APC_ENTRY_MIN_ALLOC_SIZE, mmap_file_mask);
 
 			REGISTER_LONG_CONSTANT(APC_SERIALIZER_CONSTANT, (zend_long)&_apc_register_serializer, CONST_PERSISTENT | CONST_CS);
 
@@ -377,9 +361,6 @@ PHP_FUNCTION(apcu_key_info)
 /* {{{ proto array apcu_sma_info([bool limited]) */
 PHP_FUNCTION(apcu_sma_info)
 {
-	apc_sma_info_t* info;
-	zval block_lists;
-	int i;
 	zend_bool limited = 0;
 
 	ZEND_PARSE_PARAMETERS_START(0, 1)
@@ -387,15 +368,15 @@ PHP_FUNCTION(apcu_sma_info)
 		Z_PARAM_BOOL(limited)
 	ZEND_PARSE_PARAMETERS_END();
 
-	info = apc_sma_info(&apc_sma, limited);
+	apc_sma_info_t *info = apc_sma_info(&apc_sma, limited);
 
 	if (!info) {
 		php_error_docref(NULL, E_WARNING, "No APC SMA info available.  Perhaps APC is disabled via apc.enabled?");
 		RETURN_FALSE;
 	}
-	array_init(return_value);
 
-	add_assoc_long(return_value, "num_seg", info->num_seg);
+	array_init(return_value);
+	add_assoc_long(return_value, "num_seg", 1);
 	add_assoc_double(return_value, "seg_size", (double)info->seg_size);
 	add_assoc_double(return_value, "avail_mem", (double)apc_sma_get_avail_mem(&apc_sma));
 
@@ -404,24 +385,25 @@ PHP_FUNCTION(apcu_sma_info)
 		return;
 	}
 
-	array_init(&block_lists);
+	/* generate list of free blocks */
+	apc_sma_link_t *p;
+	zval list;
+	array_init(&list);
+	for (p = info->list; p != NULL; p = p->next) {
+		zval link;
 
-	for (i = 0; i < info->num_seg; i++) {
-		apc_sma_link_t* p;
-		zval list;
-
-		array_init(&list);
-		for (p = info->list[i]; p != NULL; p = p->next) {
-			zval link;
-
-			array_init(&link);
-
-			add_assoc_long(&link, "size", p->size);
-			add_assoc_long(&link, "offset", p->offset);
-			add_next_index_zval(&list, &link);
-		}
-		add_next_index_zval(&block_lists, &list);
+		array_init(&link);
+		add_assoc_long(&link, "size", p->size);
+		add_assoc_long(&link, "offset", p->offset);
+		add_next_index_zval(&list, &link);
 	}
+
+	/* Since support for multiple shm segments has been dropped, the "block_lists" array
+	 * only exists to ensure compatibility with existing PHP scripts. */
+	zval block_lists;
+	array_init(&block_lists);
+	add_next_index_zval(&block_lists, &list);
+
 	add_assoc_zval(return_value, "block_lists", &block_lists);
 	apc_sma_free_info(&apc_sma, info);
 }
