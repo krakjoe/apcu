@@ -140,10 +140,10 @@ static inline zend_bool apc_entry_key_equals(const apc_cache_entry_t *entry, zen
 		&& memcmp(ZSTR_VAL(entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0;
 }
 
-/* An entry is hard expired if the creation time if older than the per-entry TTL.
- * Hard expired entries must be treated indentially to non-existent entries. */
+/* An entry is hard expired if the modification time is older than the per-entry TTL.
+ * Hard expired entries must be treated identically to non-existent entries. */
 static zend_bool apc_cache_entry_hard_expired(apc_cache_entry_t *entry, time_t t) {
-	return entry->ttl && (time_t) (entry->ctime + entry->ttl) < t;
+	return entry->ttl && (time_t) (entry->mtime + entry->ttl) < t;
 }
 
 /* An entry is soft expired if no per-entry TTL is set, a global cache TTL is set,
@@ -356,7 +356,7 @@ static inline zend_bool apc_cache_wlocked_insert(
 				/*
 				 * At this point we have found the user cache entry.  If we are doing
 				 * an exclusive insert (apc_add) we are going to bail right away if
-				 * the user entry already exists and is hard expired.
+				 * the user entry already exists and is not hard expired.
 				 */
 				if (exclusive && !apc_cache_entry_hard_expired(*entry, t)) {
 					return 0;
@@ -1169,7 +1169,7 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 		/* check the time (last second considered slam) and context */
 		if (last->hash == ZSTR_HASH(key) &&
 			last->len == ZSTR_LEN(key) &&
-			last->mtime == t &&
+			last->ctime == t &&
 			(last->owner_pid != owner_pid
 #ifdef ZTS
 			 || last->owner_thread != owner_thread
@@ -1183,7 +1183,7 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 		/* sets enough information for an educated guess, but is not exact */
 		last->hash = ZSTR_HASH(key);
 		last->len = ZSTR_LEN(key);
-		last->mtime = t;
+		last->ctime = t;
 		last->owner_pid = owner_pid;
 #ifdef ZTS
 		last->owner_thread = owner_thread;

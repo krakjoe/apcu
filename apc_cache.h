@@ -39,7 +39,7 @@ typedef struct apc_cache_slam_key_t apc_cache_slam_key_t;
 struct apc_cache_slam_key_t {
 	zend_ulong hash;         /* hash of the key */
 	size_t len;              /* length of the key */
-	time_t mtime;            /* creation time of this key */
+	time_t ctime;            /* creation time of this key */
 	pid_t owner_pid;         /* the pid that created this key */
 #ifdef ZTS
 	void ***owner_thread;    /* TSRMLS cache of thread that created this key */
@@ -56,7 +56,7 @@ struct apc_cache_entry_t {
 	zend_long ref_count;     /* the reference count of this entry */
 	zend_long nhits;         /* number of hits to this entry */
 	time_t ctime;            /* time entry was initialized */
-	time_t mtime;            /* the mtime of this cached entry */
+	time_t mtime;            /* time entry was last modified */
 	time_t dtime;            /* time entry was removed from cache */
 	time_t atime;            /* time entry was last accessed */
 	zend_long mem_size;      /* memory used */

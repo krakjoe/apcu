@@ -13,8 +13,8 @@ apc.ttl=1
 --FILE--
 <?php
 
-apcu_store("inc", 0, 3);
-apcu_store("dec", 0, 3);
+apcu_store("inc", 0, 2);
+apcu_store("dec", 0, 2);
 
 echo "T+0:\n";
 
@@ -31,8 +31,8 @@ var_dump(apcu_fetch("inc"));
 var_dump(apcu_dec("dec"));
 var_dump(apcu_fetch("dec"));
 
-apcu_inc_request_time(2);
-echo "T+4\n";
+apcu_inc_request_time(3);
+echo "T+5:\n";
 
 var_dump(apcu_inc("inc"));
 var_dump(apcu_fetch("inc"));
@@ -51,7 +51,7 @@ int(2)
 int(2)
 int(-2)
 int(-2)
-T+4
+T+5:
 int(1)
 int(1)
 int(-1)
