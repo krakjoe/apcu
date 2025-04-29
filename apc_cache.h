@@ -49,7 +49,6 @@ struct apc_cache_slam_key_t {
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
-	zend_string *key;        /* entry key */
 	zval val;                /* the zval copied at store time */
 	apc_cache_entry_t *next; /* next entry in linked list */
 	zend_long ttl;           /* the ttl on this specific entry */
@@ -60,6 +59,7 @@ struct apc_cache_entry_t {
 	time_t dtime;            /* time entry was removed from cache */
 	time_t atime;            /* time entry was last accessed */
 	zend_long mem_size;      /* memory used */
+	zend_string key;         /* entry key (MUST BE THE LAST FIELD OF THE STRUCT!) */
 };
 /* }}} */
 
@@ -297,7 +297,8 @@ static inline void apc_cache_runlock(apc_cache_t *cache) {
 	}
 }
 
-#define APC_ENTRY_MIN_ALLOC_SIZE (ZEND_MM_ALIGNED_SIZE(sizeof(apc_cache_entry_t)) + ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(1)))
+/* APC_ENTRY_SIZE takes into account the trailing key-string + terminating 0-byte */
+#define APC_ENTRY_SIZE(key_len) (ZEND_MM_ALIGNED_SIZE(XtOffsetOf(apc_cache_entry_t, key.val) + key_len + 1))
 
 #endif
 
