@@ -57,7 +57,7 @@
 
 /* Defined in apc_persist.c */
 apc_cache_entry_t *apc_persist(
-		apc_sma_t *sma, apc_serializer_t *serializer, const apc_cache_entry_t *orig_entry);
+		apc_sma_t *sma, apc_serializer_t *serializer, zend_string *key, const zval *val);
 zend_bool apc_unpersist(zval *dst, const zval *value, apc_serializer_t *serializer);
 
 /* {{{ make_prime */
@@ -135,9 +135,9 @@ static inline void apc_cache_hash_slot(
 } /* }}} */
 
 static inline zend_bool apc_entry_key_equals(const apc_cache_entry_t *entry, zend_string *key, zend_ulong hash) {
-	return ZSTR_H(entry->key) == hash
-		&& ZSTR_LEN(entry->key) == ZSTR_LEN(key)
-		&& memcmp(ZSTR_VAL(entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0;
+	return ZSTR_H(&entry->key) == hash
+		&& ZSTR_LEN(&entry->key) == ZSTR_LEN(key)
+		&& memcmp(ZSTR_VAL(&entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0;
 }
 
 /* An entry is hard expired if the creation time if older than the per-entry TTL.
@@ -213,7 +213,7 @@ static void apc_cache_wlocked_gc(apc_cache_t* cache)
 				if (dead->ref_count > 0) {
 					apc_debug(
 						"GC cache entry '%s' was on gc-list for %lld seconds",
-						ZSTR_VAL(dead->key), (long long) gc_sec
+						ZSTR_VAL(&dead->key), (long long) gc_sec
 					);
 				}
 
@@ -334,7 +334,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 
 static inline zend_bool apc_cache_wlocked_insert(
 		apc_cache_t *cache, apc_cache_entry_t *new_entry, zend_bool exclusive) {
-	zend_string *key = new_entry->key;
+	zend_string *key = &new_entry->key;
 	time_t t = new_entry->ctime;
 
 	/* process deleted list  */
@@ -391,26 +391,37 @@ static inline zend_bool apc_cache_wlocked_insert(
 	return 1;
 }
 
-static void apc_cache_init_entry(
-		apc_cache_entry_t *entry, zend_string *key, const zval* val, const int32_t ttl, time_t t);
+static void apc_cache_set_entry_values(apc_cache_entry_t *entry, const int32_t ttl, const time_t t)
+{
+	entry->ttl = ttl;
+	entry->next = NULL;
+	entry->ref_count = 0;
+	entry->mem_size = 0;
+	entry->nhits = 0;
+	entry->ctime = t;
+	entry->mtime = t;
+	entry->atime = t;
+	entry->dtime = 0;
+}
 
 /* TODO This function may lead to a deadlock on expunge */
 static inline zend_bool apc_cache_store_internal(
 		apc_cache_t *cache, zend_string *key, const zval *val,
 		const int32_t ttl, const zend_bool exclusive) {
-	apc_cache_entry_t tmp_entry, *entry;
 	time_t t = apc_time();
 
 	if (apc_cache_defense(cache, key, t)) {
 		return 0;
 	}
 
-	/* initialize the entry for insertion */
-	apc_cache_init_entry(&tmp_entry, key, val, ttl, t);
-	entry = apc_persist(cache->sma, cache->serializer, &tmp_entry);
+	/* create entry in the shared memory */
+	apc_cache_entry_t *entry = apc_persist(cache->sma, cache->serializer, key, val);
 	if (!entry) {
 		return 0;
 	}
+
+	/* init remaining values of the entry */
+	apc_cache_set_entry_values(entry, ttl, t);
 
 	/* execute an insertion */
 	if (!apc_cache_wlocked_insert(cache, entry, exclusive)) {
@@ -497,7 +508,6 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find_incref(
 PHP_APCU_API zend_bool apc_cache_store(
 		apc_cache_t* cache, zend_string *key, const zval *val,
 		const int32_t ttl, const zend_bool exclusive) {
-	apc_cache_entry_t tmp_entry, *entry;
 	time_t t = apc_time();
 	zend_bool ret = 0;
 
@@ -510,12 +520,14 @@ PHP_APCU_API zend_bool apc_cache_store(
 		return 0;
 	}
 
-	/* initialize the entry for insertion */
-	apc_cache_init_entry(&tmp_entry, key, val, ttl, t);
-	entry = apc_persist(cache->sma, cache->serializer, &tmp_entry);
+	/* create entry in the shared memory */
+	apc_cache_entry_t *entry = apc_persist(cache->sma, cache->serializer, key, val);
 	if (!entry) {
 		return 0;
 	}
+
+	/* init remaining values of the entry */
+	apc_cache_set_entry_values(entry, ttl, t);
 
 	/* execute an insertion */
 	if (!apc_cache_wlock(cache)) {
@@ -978,25 +990,6 @@ PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 }
 /* }}} */
 
-/* {{{ apc_cache_make_entry */
-static void apc_cache_init_entry(
-		apc_cache_entry_t *entry, zend_string *key, const zval *val, const int32_t ttl, time_t t)
-{
-	entry->ttl = ttl;
-	entry->key = key;
-	ZVAL_COPY_VALUE(&entry->val, val);
-
-	entry->next = NULL;
-	entry->ref_count = 0;
-	entry->mem_size = 0;
-	entry->nhits = 0;
-	entry->ctime = t;
-	entry->mtime = t;
-	entry->atime = t;
-	entry->dtime = 0;
-}
-/* }}} */
-
 static inline void array_add_long(zval *array, zend_string *key, zend_long lval) {
 	zval zv;
 	ZVAL_LONG(&zv, lval);
@@ -1015,7 +1008,7 @@ static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_entry_t *p)
 	zval link, zv;
 	array_init(&link);
 
-	ZVAL_STR(&zv, zend_string_dup(p->key, 0));
+	ZVAL_STR(&zv, zend_string_dup(&p->key, 0));
 	zend_hash_add_new(Z_ARRVAL(link), apc_str_info, &zv);
 
 	array_add_long(&link, apc_str_ttl, p->ttl);

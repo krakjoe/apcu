@@ -86,7 +86,7 @@ static inline void apc_persist_copy_zval(apc_persist_context_t *ctxt, zval *zv) 
 	apc_persist_copy_zval_impl(ctxt, zv);
 }
 
-void apc_persist_init_context(apc_persist_context_t *ctxt, apc_serializer_t *serializer) {
+static void apc_persist_init_context(apc_persist_context_t *ctxt, apc_serializer_t *serializer) {
 	ctxt->serializer = serializer;
 	ctxt->size = 0;
 	ctxt->memoization_needed = 0;
@@ -97,7 +97,7 @@ void apc_persist_init_context(apc_persist_context_t *ctxt, apc_serializer_t *ser
 	ctxt->alloc_cur = NULL;
 }
 
-void apc_persist_destroy_context(apc_persist_context_t *ctxt) {
+static void apc_persist_destroy_context(apc_persist_context_t *ctxt) {
 	if (ctxt->memoization_needed) {
 		zend_hash_destroy(&ctxt->already_counted);
 		zend_hash_destroy(&ctxt->already_allocated);
@@ -235,10 +235,10 @@ static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *
 	}
 }
 
-static zend_bool apc_persist_calc(apc_persist_context_t *ctxt, const apc_cache_entry_t *entry) {
-	ADD_SIZE(sizeof(apc_cache_entry_t));
-	ADD_SIZE_STR(ZSTR_LEN(entry->key));
-	return apc_persist_calc_zval(ctxt, &entry->val);
+static zend_bool apc_persist_calc(apc_persist_context_t *ctxt, const zend_string *key, const zval *zv) {
+	ADD_SIZE(APC_ENTRY_SIZE(ZSTR_LEN(key)));
+
+	return apc_persist_calc_zval(ctxt, zv);
 }
 
 static inline void *apc_persist_get_already_allocated(apc_persist_context_t *ctxt, void *ptr) {
@@ -435,27 +435,40 @@ static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv) {
 	}
 }
 
-static apc_cache_entry_t *apc_persist_copy(
-		apc_persist_context_t *ctxt, const apc_cache_entry_t *orig_entry) {
-	apc_cache_entry_t *entry = COPY(orig_entry, sizeof(apc_cache_entry_t));
-	entry->key = apc_persist_copy_zstr_no_add(ctxt, entry->key);
+static apc_cache_entry_t *apc_persist_create_entry(
+		apc_persist_context_t *ctxt, zend_string *key, const zval *zv)
+{
+	/* Get memory for the entry (incl. key) */
+	apc_cache_entry_t *entry = ALLOC(APC_ENTRY_SIZE(ZSTR_LEN(key)));
+
+	/* Deep copy of the key */
+	GC_SET_REFCOUNT(&entry->key, 1);
+	GC_SET_PERSISTENT_TYPE(&entry->key, IS_STRING);
+	ZSTR_LEN(&entry->key) = ZSTR_LEN(key);
+	memcpy(ZSTR_VAL(&entry->key), ZSTR_VAL(key), ZSTR_LEN(key));
+	ZSTR_VAL(&entry->key)[ZSTR_LEN(key)] = '\0';
+	ZSTR_H(&entry->key) = zend_string_hash_val(key);
+
+	/* Deep copy of the value */
+	ZVAL_COPY_VALUE(&entry->val, zv);
 	apc_persist_copy_zval(ctxt, &entry->val);
+
 	return entry;
 }
 
 apc_cache_entry_t *apc_persist(
-		apc_sma_t *sma, apc_serializer_t *serializer, const apc_cache_entry_t *orig_entry) {
+		apc_sma_t *sma, apc_serializer_t *serializer, zend_string *key, const zval *val) {
 	apc_persist_context_t ctxt;
 	apc_cache_entry_t *entry;
 
 	apc_persist_init_context(&ctxt, serializer);
 
 	/* The top-level value should never be a reference */
-	ZEND_ASSERT(Z_TYPE(orig_entry->val) != IS_REFERENCE);
+	ZEND_ASSERT(Z_TYPE_P(val) != IS_REFERENCE);
 
 	/* If we're serializing an array using the default serializer, we will have
 	 * to keep track of potentially repeated refcounted structures. */
-	if (!serializer && Z_TYPE(orig_entry->val) == IS_ARRAY) {
+	if (!serializer && Z_TYPE_P(val) == IS_ARRAY) {
 		ctxt.memoization_needed = 1;
 		zend_hash_init(&ctxt.already_counted, 0, NULL, NULL, 0);
 		zend_hash_init(&ctxt.already_allocated, 0, NULL, NULL, 0);
@@ -463,12 +476,12 @@ apc_cache_entry_t *apc_persist(
 
 	/* Objects are always serialized, and arrays when a serializer is set.
 	 * Other cases are detected during apc_persist_calc(). */
-	if (Z_TYPE(orig_entry->val) == IS_OBJECT
-			|| (serializer && Z_TYPE(orig_entry->val) == IS_ARRAY)) {
+	if (Z_TYPE_P(val) == IS_OBJECT
+			|| (serializer && Z_TYPE_P(val) == IS_ARRAY)) {
 		ctxt.use_serialization = 1;
 	}
 
-	if (!apc_persist_calc(&ctxt, orig_entry)) {
+	if (!apc_persist_calc(&ctxt, key, val)) {
 		if (!ctxt.use_serialization) {
 			apc_persist_destroy_context(&ctxt);
 			return NULL;
@@ -478,7 +491,7 @@ apc_cache_entry_t *apc_persist(
 		apc_persist_destroy_context(&ctxt);
 		apc_persist_init_context(&ctxt, serializer);
 		ctxt.use_serialization = 1;
-		if (!apc_persist_calc(&ctxt, orig_entry)) {
+		if (!apc_persist_calc(&ctxt, key, val)) {
 			apc_persist_destroy_context(&ctxt);
 			return NULL;
 		}
@@ -490,7 +503,7 @@ apc_cache_entry_t *apc_persist(
 		return NULL;
 	}
 
-	entry = apc_persist_copy(&ctxt, orig_entry);
+	entry = apc_persist_create_entry(&ctxt, key, val);
 	ZEND_ASSERT(ctxt.alloc_cur == ctxt.alloc + ctxt.size);
 
 	entry->mem_size = ctxt.size;
