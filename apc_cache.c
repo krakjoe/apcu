@@ -396,7 +396,6 @@ static void apc_cache_set_entry_values(apc_cache_entry_t *entry, const int32_t t
 	entry->ttl = ttl;
 	entry->next = NULL;
 	entry->ref_count = 0;
-	entry->mem_size = 0;
 	entry->nhits = 0;
 	entry->ctime = t;
 	entry->mtime = t;
