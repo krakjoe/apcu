@@ -58,7 +58,7 @@
 /* Defined in apc_persist.c */
 apc_cache_entry_t *apc_persist(
 		apc_sma_t *sma, apc_serializer_t *serializer, zend_string *key, const zval *val);
-zend_bool apc_unpersist(zval *dst, const zval *value, apc_serializer_t *serializer);
+zend_bool apc_unpersist(zval *dst, const apc_cache_entry_t *entry, apc_serializer_t *serializer);
 
 /* {{{ make_prime */
 static int const primes[] = {
@@ -985,7 +985,7 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 		apc_cache_t *cache, apc_cache_entry_t *entry, zval *dst)
 {
-	return apc_unpersist(dst, &entry->val, cache->serializer);
+	return apc_unpersist(dst, entry, cache->serializer);
 }
 /* }}} */
 
