@@ -150,7 +150,7 @@ form of a quick-start guide to start hacking on APCu.
     /* {{{ struct definition: apc_cache_t */
     typedef struct _apc_cache_t {
         apc_cache_header_t* header;   /* cache header (stored in SHM) */
-        apc_cache_entry_t** slots;    /* array of cache slots (stored in SHM) */
+        uintptr_t* slots;             /* array of cache slots (stored in SHM) */
         apc_sma_t* sma;               /* shared memory allocator */
         apc_serializer_t* serializer; /* serializer */
         size_t nslots;                /* number of slots in cache */
@@ -168,16 +168,16 @@ form of a quick-start guide to start hacking on APCu.
     /* {{{ struct definition: apc_cache_header_t
        Any values that must be shared among processes should go in here. */
     typedef struct _apc_cache_header_t {
-        apc_lock_t lock;                 /* header lock */
-        zend_long nhits;                 /* hit count */
-        zend_long nmisses;               /* miss count */
-        zend_long ninserts;              /* insert count */
-        zend_long nexpunges;             /* expunge count */
-        zend_long nentries;              /* entry count */
-        zend_long mem_size;              /* used */
-        time_t stime;                    /* start time */
-        apc_cache_slam_key_t lastkey;    /* last key inserted (not necessarily without error) */
-        apc_cache_entry_t *gc;           /* gc list */
+        apc_lock_t lock;                /* header lock */
+        zend_long nhits;                /* hit count */
+        zend_long nmisses;              /* miss count */
+        zend_long ninserts;             /* insert count */
+        zend_long nexpunges;            /* expunge count */
+        zend_long nentries;             /* entry count */
+        zend_long mem_size;             /* used */
+        time_t stime;                   /* start time */
+        apc_cache_slam_key_t lastkey;   /* last key inserted (not necessarily without error) */
+        uintptr_t gc;                   /* offset in shm to the first entry of gc list */
     } apc_cache_header_t; /* }}} */
 
    Since this is at the start of the shared memory segment, these values are accessible
@@ -259,7 +259,7 @@ form of a quick-start guide to start hacking on APCu.
     typedef struct apc_cache_entry_t apc_cache_entry_t;
     struct apc_cache_entry_t {
         zval val;                /* the zval copied at store time */
-        apc_cache_entry_t *next; /* next entry in linked list */
+        uintptr_t next;          /* offset in shm of next entry in linked list */
         zend_long ttl;           /* the ttl on this specific entry */
         zend_long ref_count;     /* the reference count of this entry */
         zend_long nhits;         /* number of hits to this entry */

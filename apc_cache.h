@@ -50,7 +50,7 @@ struct apc_cache_slam_key_t {
 typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
 	zval val;                /* the zval copied at store time */
-	apc_cache_entry_t *next; /* next entry in linked list */
+	uintptr_t next;          /* offset in shm of next entry in linked list */
 	zend_long ttl;           /* the ttl on this specific entry */
 	zend_long ref_count;     /* the reference count of this entry */
 	zend_long nhits;         /* number of hits to this entry */
@@ -75,13 +75,13 @@ typedef struct _apc_cache_header_t {
 	zend_long mem_size;             /* used */
 	time_t stime;                   /* start time */
 	apc_cache_slam_key_t lastkey;   /* last key inserted (not necessarily without error) */
-	apc_cache_entry_t *gc;          /* gc list */
+	uintptr_t gc;                   /* offset in shm to the first entry of gc list */
 } apc_cache_header_t; /* }}} */
 
 /* {{{ struct definition: apc_cache_t */
 typedef struct _apc_cache_t {
 	apc_cache_header_t* header;   /* cache header (stored in SHM) */
-	apc_cache_entry_t** slots;    /* array of cache slots (stored in SHM) */
+	uintptr_t* slots;             /* array of cache slots (stored in SHM) */
 	apc_sma_t* sma;               /* shared memory allocator */
 	apc_serializer_t* serializer; /* serializer */
 	size_t nslots;                /* number of slots in cache */
@@ -299,6 +299,12 @@ static inline void apc_cache_runlock(apc_cache_t *cache) {
 
 /* APC_ENTRY_SIZE takes into account the trailing key-string + terminating 0-byte */
 #define APC_ENTRY_SIZE(key_len) (ZEND_MM_ALIGNED_SIZE(XtOffsetOf(apc_cache_entry_t, key.val) + key_len + 1))
+
+/* ENTRYAT and ENTRYOF are used to convert between offsets and pointers to cache entries.
+ * Both expect the presence of cache->header that points to the cache header in the
+ * shared memory segment. */
+#define ENTRYAT(offset) ((apc_cache_entry_t *)((uintptr_t)cache->header + (uintptr_t)offset))
+#define ENTRYOF(entry) (((uintptr_t)entry) - (uintptr_t)cache->header)
 
 #endif
 
