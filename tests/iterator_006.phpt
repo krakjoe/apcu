@@ -5,7 +5,7 @@ APC: APCIterator formats
 --INI--
 apc.enabled=1
 apc.enable_cli=1
-apc.user_entries_hint=4096
+apc.entries_hint=4096
 --FILE--
 <?php
 $formats = array( 
