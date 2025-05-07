@@ -288,8 +288,8 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	zend_long cache_size;
 	size_t nslots;
 
-	/* calculate number of slots */
-	nslots = make_prime(size_hint > 0 ? size_hint : 2000);
+	/* calculate number of slots. Default: 512 slots per MB of shared memory */
+	nslots = make_prime(size_hint > 0 ? (size_t)size_hint : sma->size / 2048);
 
 	/* allocate pointer by normal means */
 	cache = pemalloc(sizeof(apc_cache_t), 1);
