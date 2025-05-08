@@ -35,6 +35,10 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
+#if defined(__linux__)
+# include <linux/mman.h>
+#endif
+
 /*
  * Some operating systems (like FreeBSD) have a MAP_NOSYNC flag that
  * tells whatever update daemons might be running to not flush dirty
@@ -51,7 +55,99 @@
 # define MAP_ANON MAP_ANONYMOUS
 #endif
 
-void *apc_mmap(char *file_mask, size_t size)
+#if defined(__linux__)
+static int apc_mmap_hugetlb_flags(char *mmap_hugetlb_mode)
+{
+	int flags;
+
+	if (!mmap_hugetlb_mode
+		|| (mmap_hugetlb_mode && !strlen(mmap_hugetlb_mode))
+		|| !strcasecmp(mmap_hugetlb_mode, "none")) {
+		return 0;
+	}
+
+# ifndef MAP_HUGETLB
+	flags = 0;
+	apc_warning("MAP_HUGETLB is not defined on this system");
+# else
+	flags = MAP_HUGETLB;
+	if (!strcasecmp(mmap_hugetlb_mode, "default")) {
+		return flags;
+	}
+#  ifdef MAP_HUGE_16KB
+	if (!strcasecmp(mmap_hugetlb_mode, "16kb")) {
+		flags |= MAP_HUGE_16KB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_64KB
+	if (!strcasecmp(mmap_hugetlb_mode, "64kb")) {
+		flags |= MAP_HUGE_64KB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_512KB
+	if (!strcasecmp(mmap_hugetlb_mode, "512kb")) {
+		flags |= MAP_HUGE_512KB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_1MB
+	if (!strcasecmp(mmap_hugetlb_mode, "1mb")) {
+		flags |= MAP_HUGE_1MB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_2MB
+	if (!strcasecmp(mmap_hugetlb_mode, "2mb")) {
+		flags |= MAP_HUGE_2MB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_8MB
+	if (!strcasecmp(mmap_hugetlb_mode, "8mb")) {
+		flags |= MAP_HUGE_8MB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_16MB
+	if (!strcasecmp(mmap_hugetlb_mode, "16mb")) {
+		flags |= MAP_HUGE_16MB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_32MB
+	if (!strcasecmp(mmap_hugetlb_mode, "32mb")) {
+		flags |= MAP_HUGE_32MB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_256MB
+	if (!strcasecmp(mmap_hugetlb_mode, "256mb")) {
+		flags |= MAP_HUGE_256MB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_512MB
+	if (!strcasecmp(mmap_hugetlb_mode, "512mb")) {
+		flags |= MAP_HUGE_512MB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_1GB
+	if (!strcasecmp(mmap_hugetlb_mode, "1gb")) {
+		flags |= MAP_HUGE_1GB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_2GB
+	if (!strcasecmp(mmap_hugetlb_mode, "2gb")) {
+		flags |= MAP_HUGE_2GB;
+	} else
+#  endif
+#  ifdef MAP_HUGE_16GB
+	if (!strcasecmp(mmap_hugetlb_mode, "16gb")) {
+		flags |= MAP_HUGE_16GB;
+	} else
+#  endif
+	{
+		apc_warning("Invalid huge page size: %s, using default huge page size.", mmap_hugetlb_mode);
+	}
+# endif
+	return flags;
+}
+#endif
+
+void *apc_mmap(char *file_mask, size_t size, char *mmap_hugetlb_mode)
 {
 	void *shmaddr;
 	int fd = -1;
@@ -84,10 +180,18 @@ void *apc_mmap(char *file_mask, size_t size)
 		unlink(file_mask);
 	}
 
+#if defined(__linux__)
+	flags |= apc_mmap_hugetlb_flags(mmap_hugetlb_mode);
+#endif
+
 	shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
 
 	if ((long)shmaddr == -1) {
-		zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. Is your apc.shm_size too large?", size);
+		if (mmap_hugetlb_mode && strlen(mmap_hugetlb_mode)) {
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with huge page size %s. Is your apc.shm_size or apc.mmap_hugetlb_mode setting invalid?", size, mmap_hugetlb_mode);
+		} else {
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. Is your apc.shm_size too large?", size);
+		}
 	}
 
 #ifdef MADV_HUGEPAGE

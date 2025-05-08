@@ -74,7 +74,7 @@ typedef struct _apc_sma_t {
 */
 PHP_APCU_API void apc_sma_init(
 		apc_sma_t* sma, void** data, apc_sma_expunge_f expunge,
-		size_t size, size_t min_alloc_size, char *mask);
+		size_t size, size_t min_alloc_size, char *mask, char *mmap_hugetlb_mode);
 
 /*
  * apc_sma_detach will detach from shared memory and cleanup local allocations.

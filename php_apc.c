@@ -124,7 +124,10 @@ STD_PHP_INI_ENTRY("apc.gc_ttl",         "3600", PHP_INI_SYSTEM, OnUpdateLong,   
 STD_PHP_INI_ENTRY("apc.ttl",            "0",    PHP_INI_SYSTEM, OnUpdateLong,              ttl,              zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.smart",          "0",    PHP_INI_SYSTEM, OnUpdateLong,              smart,            zend_apcu_globals, apcu_globals)
 #ifdef APC_MMAP
-STD_PHP_INI_ENTRY("apc.mmap_file_mask",  NULL,  PHP_INI_SYSTEM, OnUpdateString,            mmap_file_mask,   zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.mmap_file_mask", NULL,   PHP_INI_SYSTEM, OnUpdateString,            mmap_file_mask,    zend_apcu_globals, apcu_globals)
+# if defined(__linux__)
+STD_PHP_INI_ENTRY("apc.mmap_hugetlb_mode", NULL,   PHP_INI_SYSTEM, OnUpdateString,            mmap_hugetlb_mode, zend_apcu_globals, apcu_globals)
+# endif
 #endif
 STD_PHP_INI_BOOLEAN("apc.enable_cli",   "0",    PHP_INI_SYSTEM, OnUpdateBool,              enable_cli,       zend_apcu_globals, apcu_globals)
 STD_PHP_INI_BOOLEAN("apc.slam_defense", "0",    PHP_INI_SYSTEM, OnUpdateBool,              slam_defense,     zend_apcu_globals, apcu_globals)
@@ -219,10 +222,14 @@ static PHP_MINIT_FUNCTION(apcu)
 	if (APCG(enabled)) {
 
 		if (!APCG(initialized)) {
-#ifdef APC_MMAP
-			char *mmap_file_mask = APCG(mmap_file_mask);
-#else
 			char *mmap_file_mask = NULL;
+			char *mmap_hugetlb_mode = NULL;
+
+#ifdef APC_MMAP
+			mmap_file_mask = APCG(mmap_file_mask);
+# if defined(__linux__)
+			mmap_hugetlb_mode = APCG(mmap_hugetlb_mode);
+# endif
 #endif
 
 			/* ensure this runs only once */
@@ -231,7 +238,7 @@ static PHP_MINIT_FUNCTION(apcu)
 			/* initialize shared memory allocator */
 			apc_sma_init(
 				&apc_sma, (void **) &apc_user_cache, (apc_sma_expunge_f) apc_cache_default_expunge,
-				APCG(shm_size), APC_ENTRY_SIZE(0), mmap_file_mask);
+				APCG(shm_size), APC_ENTRY_SIZE(0), mmap_file_mask, mmap_hugetlb_mode);
 
 			REGISTER_LONG_CONSTANT(APC_SERIALIZER_CONSTANT, (zend_long)&_apc_register_serializer, CONST_PERSISTENT | CONST_CS);
 

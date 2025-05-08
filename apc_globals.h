@@ -44,7 +44,10 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
 	zend_long smart;             /* smart value */
 
 #ifdef APC_MMAP
-	char *mmap_file_mask;   /* mktemp-style file-mask to pass to mmap */
+	char *mmap_file_mask;     /* mktemp-style file-mask to pass to mmap */
+# if defined(__linux__)
+	char *mmap_hugetlb_mode;  /* hugetlb mode to pass to mmap */
+# endif
 #endif
 
 	/* module variables */
