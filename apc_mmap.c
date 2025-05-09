@@ -187,10 +187,13 @@ void *apc_mmap(char *file_mask, size_t size, char *mmap_hugetlb_mode)
 	shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
 
 	if ((long)shmaddr == -1) {
+#if defined(__linux__)
 		if (mmap_hugetlb_mode && strlen(mmap_hugetlb_mode)) {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with huge page size %s. Is your apc.shm_size or apc.mmap_hugetlb_mode setting invalid?", size, mmap_hugetlb_mode);
-		} else {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. Is your apc.shm_size too large?", size);
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with huge page size %s. apc.shm_size may be too large, apc.mmap_hugetlb_mode may be invalid, or the system lacks sufficient reserved HugePages.", size, mmap_hugetlb_mode);
+		} else
+#endif
+		{
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. apc.shm_size may be too large.", size);
 		}
 	}
 
