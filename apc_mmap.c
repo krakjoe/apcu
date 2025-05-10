@@ -36,7 +36,11 @@
 #include <sys/mman.h>
 
 #if defined(__linux__)
-# include <linux/mman.h>
+# ifdef __has_include
+#  if __has_include(<linux/mman.h>)
+#   include <linux/mman.h>
+#  endif
+# endif
 #endif
 
 /*
@@ -56,98 +60,42 @@
 #endif
 
 #if defined(__linux__)
-static int apc_mmap_hugetlb_flags(char *mmap_hugetlb_mode)
+static int apc_mmap_hugetlb_flags(zend_long mmap_hugetlb_page_size)
 {
-	int flags;
+	int log2_page_size = -1;
 
-	if (!mmap_hugetlb_mode
-		|| (mmap_hugetlb_mode && !strlen(mmap_hugetlb_mode))
-		|| !strcasecmp(mmap_hugetlb_mode, "none")) {
+	// not use huge page
+	if (mmap_hugetlb_page_size == -1) {
 		return 0;
 	}
 
-# ifndef MAP_HUGETLB
-	flags = 0;
-	apc_warning("MAP_HUGETLB is not defined on this system");
+# if defined(MAP_HUGETLB) && defined(MAP_HUGE_MASK) && defined(MAP_HUGE_SHIFT)
+	// use kernel default huge page size
+	if (mmap_hugetlb_page_size == 0) {
+		return MAP_HUGETLB;
+	}
+
+	// calculate log2 of huge page size
+	while (mmap_hugetlb_page_size) {
+		mmap_hugetlb_page_size >>= 1;
+		log2_page_size++;
+	}
+
+	if ((log2_page_size & MAP_HUGE_MASK) != log2_page_size) {
+		// maybe huge page size is too large
+		apc_warning("Invalid huge page size: %ld, using default huge page size", mmap_hugetlb_page_size);
+		return MAP_HUGETLB;
+	}
+
+	return MAP_HUGETLB | ((unsigned int)log2_page_size << MAP_HUGE_SHIFT);
 # else
-	flags = MAP_HUGETLB;
-	if (!strcasecmp(mmap_hugetlb_mode, "default")) {
-		return flags;
-	}
-#  ifdef MAP_HUGE_16KB
-	if (!strcasecmp(mmap_hugetlb_mode, "16kb")) {
-		flags |= MAP_HUGE_16KB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_64KB
-	if (!strcasecmp(mmap_hugetlb_mode, "64kb")) {
-		flags |= MAP_HUGE_64KB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_512KB
-	if (!strcasecmp(mmap_hugetlb_mode, "512kb")) {
-		flags |= MAP_HUGE_512KB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_1MB
-	if (!strcasecmp(mmap_hugetlb_mode, "1mb")) {
-		flags |= MAP_HUGE_1MB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_2MB
-	if (!strcasecmp(mmap_hugetlb_mode, "2mb")) {
-		flags |= MAP_HUGE_2MB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_8MB
-	if (!strcasecmp(mmap_hugetlb_mode, "8mb")) {
-		flags |= MAP_HUGE_8MB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_16MB
-	if (!strcasecmp(mmap_hugetlb_mode, "16mb")) {
-		flags |= MAP_HUGE_16MB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_32MB
-	if (!strcasecmp(mmap_hugetlb_mode, "32mb")) {
-		flags |= MAP_HUGE_32MB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_256MB
-	if (!strcasecmp(mmap_hugetlb_mode, "256mb")) {
-		flags |= MAP_HUGE_256MB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_512MB
-	if (!strcasecmp(mmap_hugetlb_mode, "512mb")) {
-		flags |= MAP_HUGE_512MB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_1GB
-	if (!strcasecmp(mmap_hugetlb_mode, "1gb")) {
-		flags |= MAP_HUGE_1GB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_2GB
-	if (!strcasecmp(mmap_hugetlb_mode, "2gb")) {
-		flags |= MAP_HUGE_2GB;
-	} else
-#  endif
-#  ifdef MAP_HUGE_16GB
-	if (!strcasecmp(mmap_hugetlb_mode, "16gb")) {
-		flags |= MAP_HUGE_16GB;
-	} else
-#  endif
-	{
-		apc_warning("Invalid huge page size: %s, using default huge page size.", mmap_hugetlb_mode);
-	}
+	apc_warning("This system does not support HugeTLB pages");
+	return 0;
 # endif
-	return flags;
 }
 #endif
 
-void *apc_mmap(char *file_mask, size_t size, char *mmap_hugetlb_mode)
+void *apc_mmap(char *file_mask, size_t size, zend_long mmap_hugetlb_page_size)
 {
 	void *shmaddr;
 	int fd = -1;
@@ -181,15 +129,15 @@ void *apc_mmap(char *file_mask, size_t size, char *mmap_hugetlb_mode)
 	}
 
 #if defined(__linux__)
-	flags |= apc_mmap_hugetlb_flags(mmap_hugetlb_mode);
+	flags |= apc_mmap_hugetlb_flags(mmap_hugetlb_page_size);
 #endif
 
 	shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
 
 	if ((long)shmaddr == -1) {
 #if defined(__linux__)
-		if (mmap_hugetlb_mode && strlen(mmap_hugetlb_mode)) {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with huge page size %s. apc.shm_size may be too large, apc.mmap_hugetlb_mode may be invalid, or the system lacks sufficient reserved HugePages.", size, mmap_hugetlb_mode);
+		if (mmap_hugetlb_page_size >= 0) {
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with huge page size %ld. apc.shm_size may be too large, apc.mmap_hugetlb_page_size may be invalid, or the system lacks sufficient reserved huge pages.", size, mmap_hugetlb_page_size);
 		} else
 #endif
 		{

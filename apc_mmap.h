@@ -35,7 +35,7 @@
 /* Wrapper functions for shared memory mapped files */
 
 #ifdef APC_MMAP
-void *apc_mmap(char *file_mask, size_t size, char *mmap_hugetlb_mode);
+void *apc_mmap(char *file_mask, size_t size, zend_long mmap_hugetlb_page_size);
 void apc_unmap(void *shmaddr, size_t size);
 #endif
 
