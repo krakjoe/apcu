@@ -35,14 +35,6 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
-#if defined(__linux__)
-# ifdef __has_include
-#  if __has_include(<linux/mman.h>)
-#   include <linux/mman.h>
-#  endif
-# endif
-#endif
-
 /*
  * Some operating systems (like FreeBSD) have a MAP_NOSYNC flag that
  * tells whatever update daemons might be running to not flush dirty
@@ -62,6 +54,7 @@
 #if defined(__linux__)
 static int apc_mmap_hugetlb_flags(zend_long mmap_hugetlb_page_size)
 {
+	zend_long page_size = mmap_hugetlb_page_size;
 	int log2_page_size = -1;
 
 	// not use huge page
@@ -76,8 +69,8 @@ static int apc_mmap_hugetlb_flags(zend_long mmap_hugetlb_page_size)
 	}
 
 	// calculate log2 of huge page size
-	while (mmap_hugetlb_page_size) {
-		mmap_hugetlb_page_size >>= 1;
+	while (page_size) {
+		page_size >>= 1;
 		log2_page_size++;
 	}
 
