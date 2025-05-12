@@ -53,14 +53,15 @@
 
 static int apc_mmap_hugepage_flags(zend_long hugepage_size)
 {
-#if !defined(MAP_HUGETLB) || !defined(MAP_HUGE_MASK) || !defined(MAP_HUGE_SHIFT)
-	apc_warning("This system does not support hugepages");
-	return 0;
-#else
 	zend_long page_size = hugepage_size;
 	int log2_page_size = -1;
 
 	if (hugepage_size == -1) return 0;           // not use hugepages
+
+#if !defined(MAP_HUGETLB) || !defined(MAP_HUGE_MASK) || !defined(MAP_HUGE_SHIFT)
+	apc_warning("This system does not support hugepages");
+	return 0;
+#else
 	if (hugepage_size == 0)  return MAP_HUGETLB; // use kernel default hugepage size
 
 	// calculate log2 of hugepage size
