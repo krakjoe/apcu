@@ -51,44 +51,35 @@
 # define MAP_ANON MAP_ANONYMOUS
 #endif
 
-#if defined(__linux__)
-static int apc_mmap_hugetlb_flags(zend_long mmap_hugetlb_page_size)
+static int apc_mmap_hugepage_flags(zend_long hugepage_size)
 {
-	zend_long page_size = mmap_hugetlb_page_size;
+#if !defined(MAP_HUGETLB) && !defined(MAP_HUGE_MASK) && !defined(MAP_HUGE_SHIFT)
+	apc_warning("This system does not support hugepages");
+	return 0;
+#else
+	zend_long page_size = hugepage_size;
 	int log2_page_size = -1;
 
-	// not use huge page
-	if (mmap_hugetlb_page_size == -1) {
-		return 0;
-	}
+	if (hugepage_size == -1) return 0;           // not use hugepages
+	if (hugepage_size == 0)  return MAP_HUGETLB; // use kernel default hugepage size
 
-# if defined(MAP_HUGETLB) && defined(MAP_HUGE_MASK) && defined(MAP_HUGE_SHIFT)
-	// use kernel default huge page size
-	if (mmap_hugetlb_page_size == 0) {
-		return MAP_HUGETLB;
-	}
-
-	// calculate log2 of huge page size
+	// calculate log2 of hugepage size
 	while (page_size) {
 		page_size >>= 1;
 		log2_page_size++;
 	}
 
 	if ((log2_page_size & MAP_HUGE_MASK) != log2_page_size) {
-		// maybe huge page size is too large
-		apc_warning("Invalid huge page size: %ld, using default huge page size", mmap_hugetlb_page_size);
+		// maybe hugepage size is too large
+		apc_warning("Invalid hugepage size: %ld, using default hugepage size", hugepage_size);
 		return MAP_HUGETLB;
 	}
 
 	return MAP_HUGETLB | ((unsigned int)log2_page_size << MAP_HUGE_SHIFT);
-# else
-	apc_warning("This system does not support HugeTLB pages");
-	return 0;
-# endif
-}
 #endif
+}
 
-void *apc_mmap(char *file_mask, size_t size, zend_long mmap_hugetlb_page_size)
+void *apc_mmap(char *file_mask, size_t size, zend_long hugepage_size)
 {
 	void *shmaddr;
 	int fd = -1;
@@ -121,19 +112,13 @@ void *apc_mmap(char *file_mask, size_t size, zend_long mmap_hugetlb_page_size)
 		unlink(file_mask);
 	}
 
-#if defined(__linux__)
-	flags |= apc_mmap_hugetlb_flags(mmap_hugetlb_page_size);
-#endif
-
+	flags |= apc_mmap_hugepage_flags(hugepage_size);
 	shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
 
 	if ((long)shmaddr == -1) {
-#if defined(__linux__)
-		if (mmap_hugetlb_page_size >= 0) {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with huge page size %ld. apc.shm_size may be too large, apc.mmap_hugetlb_page_size may be invalid, or the system lacks sufficient reserved huge pages.", size, mmap_hugetlb_page_size);
-		} else
-#endif
-		{
+		if (hugepage_size >= 0) {
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with hugepage size %ld. apc.shm_size may be too large, apc.mmap_hugepage_size may be invalid, or the system lacks sufficient reserved hugepages.", size, hugepage_size);
+		} else {
 			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. apc.shm_size may be too large.", size);
 		}
 	}
