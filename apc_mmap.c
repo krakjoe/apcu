@@ -53,7 +53,7 @@
 
 static int apc_mmap_hugepage_flags(zend_long hugepage_size)
 {
-#if !defined(MAP_HUGETLB) && !defined(MAP_HUGE_MASK) && !defined(MAP_HUGE_SHIFT)
+#if !defined(MAP_HUGETLB) || !defined(MAP_HUGE_MASK) || !defined(MAP_HUGE_SHIFT)
 	apc_warning("This system does not support hugepages");
 	return 0;
 #else
