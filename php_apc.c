@@ -140,15 +140,13 @@ static PHP_INI_MH(OnUpdateMmapHugepageSize) /* {{{ */
 #endif
 
 	if (s <= 0) {
-		php_error_docref(NULL, E_WARNING, "apc.mmap_hugepage_size must be a positive integer");
-		APCG(mmap_hugepage_size) = 0;
-		return SUCCESS;
+		php_error_docref(NULL, E_CORE_ERROR, "apc.mmap_hugepage_size must be a positive integer");
+		return FAILURE;
 	}
 
 	if (s & (s - 1)) {
-		php_error_docref(NULL, E_WARNING, "apc.mmap_hugepage_size must be a power of 2");
-		APCG(mmap_hugepage_size) = 0;
-		return SUCCESS;
+		php_error_docref(NULL, E_CORE_ERROR, "apc.mmap_hugepage_size must be a power of 2");
+		return FAILURE;
 	}
 
 	APCG(mmap_hugepage_size) = s;

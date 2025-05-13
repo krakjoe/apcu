@@ -53,16 +53,15 @@
 
 static int apc_mmap_hugepage_flags(zend_long hugepage_size)
 {
-	zend_long page_size = hugepage_size;
-	int log2_page_size = -1;
-
 	if (hugepage_size == -1) return 0;           // not use hugepages
 
 #if !defined(MAP_HUGETLB) || !defined(MAP_HUGE_MASK) || !defined(MAP_HUGE_SHIFT)
-	apc_warning("This system does not support hugepages");
-	return 0;
+	zend_error_noreturn(E_CORE_ERROR, "This system does not support hugepages");
 #else
-	if (hugepage_size == 0)  return MAP_HUGETLB; // use kernel default hugepage size
+	if (hugepage_size == 0) return MAP_HUGETLB; // use kernel default hugepage size
+
+	zend_long page_size = hugepage_size;
+	int log2_page_size = -1;
 
 	// calculate log2 of hugepage size
 	while (page_size) {
@@ -72,8 +71,7 @@ static int apc_mmap_hugepage_flags(zend_long hugepage_size)
 
 	if ((log2_page_size & MAP_HUGE_MASK) != log2_page_size) {
 		// maybe hugepage size is too large
-		apc_warning("Invalid hugepage size: %ld, using default hugepage size", hugepage_size);
-		return MAP_HUGETLB;
+		zend_error_noreturn(E_CORE_ERROR, "Invalid hugepage size: %ld", hugepage_size);
 	}
 
 	return MAP_HUGETLB | ((unsigned int)log2_page_size << MAP_HUGE_SHIFT);
