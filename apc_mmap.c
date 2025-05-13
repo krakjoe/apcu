@@ -69,8 +69,8 @@ static int apc_mmap_hugepage_flags(zend_long hugepage_size)
 		log2_page_size++;
 	}
 
-	if ((log2_page_size & MAP_HUGE_MASK) != log2_page_size) {
-		// maybe hugepage size is too large
+	if (!log2_page_size || (log2_page_size & MAP_HUGE_MASK) != log2_page_size) {
+		// maybe hugepage size is too large or small
 		zend_error_noreturn(E_CORE_ERROR, "Invalid hugepage size: %ld", hugepage_size);
 	}
 
