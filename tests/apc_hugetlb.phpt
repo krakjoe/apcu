@@ -15,7 +15,7 @@ if ($hp === false || !((int)trim($hp))) die("skip hugepages are currently unavai
 apc.enabled=1
 apc.enable_cli=1
 apc.mmap_hugepage_size=2M
-apc.shm_size=32M
+apc.shm_size=2M
 --FILE--
 <?php
 if (ini_get('apc.mmap_file_mask') === false) {

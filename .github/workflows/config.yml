@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set the hugepages parameter
-        run: sudo sh -c "echo 16 > /proc/sys/vm/nr_hugepages"
+        run: sudo sh -c "echo 1 > /proc/sys/vm/nr_hugepages"
       - name: Checkout apcu
         uses: actions/checkout@v4
       - name: Setup PHP
