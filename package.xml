@@ -89,6 +89,7 @@
     <file name="apc_store_reference_php8.phpt" role="test" />
     <file name="apc_store_string_reuse.phpt" role="test" />
     <file name="apcu_sma_info.phpt" role="test" />
+    <file name="apc_hugetlb.phpt" role="test" />
     <file name="bug63224.phpt" role="test" />
     <file name="bug76145.phpt" role="test" />
     <file name="get_included_files_inc1.inc" role="test" />
