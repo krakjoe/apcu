@@ -116,6 +116,33 @@ static PHP_INI_MH(OnUpdateShmSize) /* {{{ */
 }
 /* }}} */
 
+#if defined(APC_MMAP)
+static PHP_INI_MH(OnUpdateMmapHugepageSize) /* {{{ */
+{
+	zend_long s;
+
+#if PHP_VERSION_ID >= 80200
+	s = zend_ini_parse_quantity_warn(new_value, entry->name);
+#else
+	s = zend_atol(new_value->val, new_value->len);
+#endif
+
+	if (s < 0) {
+		php_error_docref(NULL, E_CORE_ERROR, "apc.mmap_hugepage_size must be a positive integer");
+		return FAILURE;
+	}
+
+	if (s & (s - 1)) {
+		php_error_docref(NULL, E_CORE_ERROR, "apc.mmap_hugepage_size must be a power of 2");
+		return FAILURE;
+	}
+
+	APCG(mmap_hugepage_size) = s;
+	return SUCCESS;
+}
+/* }}} */
+#endif
+
 PHP_INI_BEGIN()
 STD_PHP_INI_BOOLEAN("apc.enabled",      "1",    PHP_INI_SYSTEM, OnUpdateBool,              enabled,          zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.shm_size",       "32M",  PHP_INI_SYSTEM, OnUpdateShmSize,           shm_size,         zend_apcu_globals, apcu_globals)
@@ -124,7 +151,8 @@ STD_PHP_INI_ENTRY("apc.gc_ttl",         "3600", PHP_INI_SYSTEM, OnUpdateLong,   
 STD_PHP_INI_ENTRY("apc.ttl",            "0",    PHP_INI_SYSTEM, OnUpdateLong,              ttl,              zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.smart",          "0",    PHP_INI_SYSTEM, OnUpdateLong,              smart,            zend_apcu_globals, apcu_globals)
 #ifdef APC_MMAP
-STD_PHP_INI_ENTRY("apc.mmap_file_mask",  NULL,  PHP_INI_SYSTEM, OnUpdateString,            mmap_file_mask,   zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.mmap_file_mask", NULL,   PHP_INI_SYSTEM, OnUpdateString,            mmap_file_mask,    zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.mmap_hugepage_size", "0", PHP_INI_SYSTEM, OnUpdateMmapHugepageSize, mmap_hugepage_size, zend_apcu_globals, apcu_globals)
 #endif
 STD_PHP_INI_BOOLEAN("apc.enable_cli",   "0",    PHP_INI_SYSTEM, OnUpdateBool,              enable_cli,       zend_apcu_globals, apcu_globals)
 STD_PHP_INI_BOOLEAN("apc.slam_defense", "0",    PHP_INI_SYSTEM, OnUpdateBool,              slam_defense,     zend_apcu_globals, apcu_globals)
@@ -219,10 +247,12 @@ static PHP_MINIT_FUNCTION(apcu)
 	if (APCG(enabled)) {
 
 		if (!APCG(initialized)) {
-#ifdef APC_MMAP
-			char *mmap_file_mask = APCG(mmap_file_mask);
-#else
 			char *mmap_file_mask = NULL;
+			zend_long mmap_hugepage_size = 0;
+
+#ifdef APC_MMAP
+			mmap_file_mask = APCG(mmap_file_mask);
+			mmap_hugepage_size = APCG(mmap_hugepage_size);
 #endif
 
 			/* ensure this runs only once */
@@ -231,7 +261,7 @@ static PHP_MINIT_FUNCTION(apcu)
 			/* initialize shared memory allocator */
 			apc_sma_init(
 				&apc_sma, (void **) &apc_user_cache, (apc_sma_expunge_f) apc_cache_default_expunge,
-				APCG(shm_size), APC_ENTRY_SIZE(0), mmap_file_mask);
+				APCG(shm_size), APC_ENTRY_SIZE(0), mmap_file_mask, mmap_hugepage_size);
 
 			REGISTER_LONG_CONSTANT(APC_SERIALIZER_CONSTANT, (zend_long)&_apc_register_serializer, CONST_PERSISTENT | CONST_CS);
 

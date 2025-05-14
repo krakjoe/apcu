@@ -51,7 +51,36 @@
 # define MAP_ANON MAP_ANONYMOUS
 #endif
 
-void *apc_mmap(char *file_mask, size_t size)
+static int apc_mmap_hugepage_flags(size_t size, zend_long hugepage_size)
+{
+	if (!hugepage_size) return 0; // not use hugepages
+
+#if defined(MAP_HUGETLB) && defined(MAP_HUGE_MASK) && defined(MAP_HUGE_SHIFT)
+	if (size % hugepage_size) {
+		zend_error_noreturn(E_CORE_ERROR, "apc.shm_size must be a multiple of apc.mmap_hugepage_size");
+	}
+
+	zend_long page_size = hugepage_size;
+	int log2_page_size = -1;
+
+	// calculate log2 of hugepage size
+	while (page_size) {
+		page_size >>= 1;
+		log2_page_size++;
+	}
+
+	if (!log2_page_size || (log2_page_size & MAP_HUGE_MASK) != log2_page_size) {
+		// maybe hugepage size is too large or small
+		zend_error_noreturn(E_CORE_ERROR, "Invalid hugepage size: %ld", hugepage_size);
+	}
+
+	return MAP_HUGETLB | ((unsigned int)log2_page_size << MAP_HUGE_SHIFT);
+#else
+	zend_error_noreturn(E_CORE_ERROR, "This system does not support hugepages");
+#endif
+}
+
+void *apc_mmap(char *file_mask, size_t size, zend_long hugepage_size)
 {
 	void *shmaddr;
 	int fd = -1;
@@ -84,15 +113,22 @@ void *apc_mmap(char *file_mask, size_t size)
 		unlink(file_mask);
 	}
 
+	flags |= apc_mmap_hugepage_flags(size, hugepage_size);
 	shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
 
 	if ((long)shmaddr == -1) {
-		zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. Is your apc.shm_size too large?", size);
+		if (hugepage_size) {
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with hugepage size %ld. apc.shm_size may be too large, apc.mmap_hugepage_size may be invalid, or the system lacks sufficient reserved hugepages.", size, hugepage_size);
+		} else {
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. apc.shm_size may be too large.", size);
+		}
 	}
 
 #ifdef MADV_HUGEPAGE
 	/* enable transparent huge pages to reduce TLB misses (Linux only) */
-	madvise(shmaddr, size, MADV_HUGEPAGE);
+	if (!hugepage_size) {
+		madvise(shmaddr, size, MADV_HUGEPAGE);
+	}
 #endif
 
 	if (fd != -1) close(fd);
