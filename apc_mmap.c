@@ -126,7 +126,9 @@ void *apc_mmap(char *file_mask, size_t size, zend_long hugepage_size)
 
 #ifdef MADV_HUGEPAGE
 	/* enable transparent huge pages to reduce TLB misses (Linux only) */
-	madvise(shmaddr, size, MADV_HUGEPAGE);
+	if (!hugepage_size) {
+		madvise(shmaddr, size, MADV_HUGEPAGE);
+	}
 #endif
 
 	if (fd != -1) close(fd);
