@@ -45,7 +45,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
 
 #ifdef APC_MMAP
 	char *mmap_file_mask;         /* mktemp-style file-mask to pass to mmap */
-	zend_long mmap_hugepage_size; /* hugepage size flag to pass to mmap (-1: none, 0: default)*/
+	zend_long mmap_hugepage_size; /* hugepage size flag to pass to mmap (0: none)*/
 #endif
 
 	/* module variables */

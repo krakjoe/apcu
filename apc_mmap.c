@@ -51,14 +51,14 @@
 # define MAP_ANON MAP_ANONYMOUS
 #endif
 
-static int apc_mmap_hugepage_flags(zend_long hugepage_size)
+static int apc_mmap_hugepage_flags(size_t size, zend_long hugepage_size)
 {
-	if (hugepage_size == -1) return 0;           // not use hugepages
+	if (!hugepage_size) return 0; // not use hugepages
 
-#if !defined(MAP_HUGETLB) || !defined(MAP_HUGE_MASK) || !defined(MAP_HUGE_SHIFT)
-	zend_error_noreturn(E_CORE_ERROR, "This system does not support hugepages");
-#else
-	if (hugepage_size == 0) return MAP_HUGETLB; // use kernel default hugepage size
+#if defined(MAP_HUGETLB) && defined(MAP_HUGE_MASK) && defined(MAP_HUGE_SHIFT)
+	if (size % hugepage_size) {
+		zend_error_noreturn(E_CORE_ERROR, "apc.shm_size must be a multiple of apc.mmap_hugepage_size");
+	}
 
 	zend_long page_size = hugepage_size;
 	int log2_page_size = -1;
@@ -75,6 +75,8 @@ static int apc_mmap_hugepage_flags(zend_long hugepage_size)
 	}
 
 	return MAP_HUGETLB | ((unsigned int)log2_page_size << MAP_HUGE_SHIFT);
+#else
+	zend_error_noreturn(E_CORE_ERROR, "This system does not support hugepages");
 #endif
 }
 
@@ -111,11 +113,11 @@ void *apc_mmap(char *file_mask, size_t size, zend_long hugepage_size)
 		unlink(file_mask);
 	}
 
-	flags |= apc_mmap_hugepage_flags(hugepage_size);
+	flags |= apc_mmap_hugepage_flags(size, hugepage_size);
 	shmaddr = (void *)mmap(NULL, size, PROT_READ | PROT_WRITE, flags, fd, 0);
 
 	if ((long)shmaddr == -1) {
-		if (hugepage_size >= 0) {
+		if (hugepage_size) {
 			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with hugepage size %ld. apc.shm_size may be too large, apc.mmap_hugepage_size may be invalid, or the system lacks sufficient reserved hugepages.", size, hugepage_size);
 		} else {
 			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. apc.shm_size may be too large.", size);

@@ -121,25 +121,13 @@ static PHP_INI_MH(OnUpdateMmapHugepageSize) /* {{{ */
 {
 	zend_long s;
 
-	// if no value is set, or the value is "none", not use hugepages. (see: apc_mmap.c)
-	if (!new_value || zend_string_equals_literal_ci(new_value, "none")) {
-		APCG(mmap_hugepage_size) = -1;
-		return SUCCESS;
-	}
-
-	// if the value is "default", use the kernel default hugepage size. (see: apc_mmap.c)
-	if (zend_string_equals_literal_ci(new_value, "default")) {
-		APCG(mmap_hugepage_size) = 0;
-		return SUCCESS;
-	}
-
 #if PHP_VERSION_ID >= 80200
 	s = zend_ini_parse_quantity_warn(new_value, entry->name);
 #else
 	s = zend_atol(new_value->val, new_value->len);
 #endif
 
-	if (s <= 0) {
+	if (s < 0) {
 		php_error_docref(NULL, E_CORE_ERROR, "apc.mmap_hugepage_size must be a positive integer");
 		return FAILURE;
 	}
@@ -164,7 +152,7 @@ STD_PHP_INI_ENTRY("apc.ttl",            "0",    PHP_INI_SYSTEM, OnUpdateLong,   
 STD_PHP_INI_ENTRY("apc.smart",          "0",    PHP_INI_SYSTEM, OnUpdateLong,              smart,            zend_apcu_globals, apcu_globals)
 #ifdef APC_MMAP
 STD_PHP_INI_ENTRY("apc.mmap_file_mask", NULL,   PHP_INI_SYSTEM, OnUpdateString,            mmap_file_mask,    zend_apcu_globals, apcu_globals)
-STD_PHP_INI_ENTRY("apc.mmap_hugepage_size", NULL, PHP_INI_SYSTEM, OnUpdateMmapHugepageSize, mmap_hugepage_size, zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.mmap_hugepage_size", "0", PHP_INI_SYSTEM, OnUpdateMmapHugepageSize, mmap_hugepage_size, zend_apcu_globals, apcu_globals)
 #endif
 STD_PHP_INI_BOOLEAN("apc.enable_cli",   "0",    PHP_INI_SYSTEM, OnUpdateBool,              enable_cli,       zend_apcu_globals, apcu_globals)
 STD_PHP_INI_BOOLEAN("apc.slam_defense", "0",    PHP_INI_SYSTEM, OnUpdateBool,              slam_defense,     zend_apcu_globals, apcu_globals)
@@ -260,7 +248,7 @@ static PHP_MINIT_FUNCTION(apcu)
 
 		if (!APCG(initialized)) {
 			char *mmap_file_mask = NULL;
-			zend_long mmap_hugepage_size = -1;
+			zend_long mmap_hugepage_size = 0;
 
 #ifdef APC_MMAP
 			mmap_file_mask = APCG(mmap_file_mask);
