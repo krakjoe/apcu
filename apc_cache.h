@@ -51,6 +51,7 @@ typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
 	zval val;                /* the zval copied at store time */
 	uintptr_t next;          /* offset in shm of next entry in linked list */
+	uintptr_t origin;        /* offset to the address that refers to this entry */
 	zend_long ttl;           /* the ttl on this specific entry */
 	zend_long ref_count;     /* the reference count of this entry */
 	zend_long nhits;         /* number of hits to this entry */
@@ -300,11 +301,15 @@ static inline void apc_cache_runlock(apc_cache_t *cache) {
 /* APC_ENTRY_SIZE takes into account the trailing key-string + terminating 0-byte */
 #define APC_ENTRY_SIZE(key_len) (ZEND_MM_ALIGNED_SIZE(XtOffsetOf(apc_cache_entry_t, key.val) + key_len + 1))
 
-/* ENTRYAT and ENTRYOF are used to convert between offsets and pointers to cache entries.
- * Both expect the presence of cache->header that points to the cache header in the
- * shared memory segment. */
-#define ENTRYAT(offset) ((apc_cache_entry_t *)((uintptr_t)cache->header + (uintptr_t)offset))
-#define ENTRYOF(entry) (((uintptr_t)entry) - (uintptr_t)cache->header)
+/* APC_CACHE_GET_PTR and APC_CACHE_GET_OFF are used to convert between offsets and pointers
+ * in the cache layer. Both expect the presence of cache->header because the address of the
+ * cache header is used as the base address for the conversion. */
+#define APC_CACHE_GET_PTR(off) ((uintptr_t *)((uintptr_t)cache->header + (uintptr_t)off))
+#define APC_CACHE_GET_OFF(ptr) (((uintptr_t)ptr) - (uintptr_t)cache->header)
+
+/* ENTRYAT and ENTRYOF are used for convenience to convert between offsets and pointers to cache entries. */
+#define ENTRYAT(offset) ((apc_cache_entry_t *)APC_CACHE_GET_PTR(offset))
+#define ENTRYOF(entry) APC_CACHE_GET_OFF(entry)
 
 #endif
 

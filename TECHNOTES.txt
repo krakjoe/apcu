@@ -260,6 +260,7 @@ form of a quick-start guide to start hacking on APCu.
     struct apc_cache_entry_t {
         zval val;                /* the zval copied at store time */
         uintptr_t next;          /* offset in shm of next entry in linked list */
+        uintptr_t origin;        /* offset to the address that refers to this entry */
         zend_long ttl;           /* the ttl on this specific entry */
         zend_long ref_count;     /* the reference count of this entry */
         zend_long nhits;         /* number of hits to this entry */

@@ -160,29 +160,50 @@ static zend_bool apc_cache_entry_expired(
 		|| apc_cache_entry_soft_expired(cache, entry, t);
 }
 
-/* {{{ apc_cache_wlocked_remove_entry  */
-static void apc_cache_wlocked_remove_entry(apc_cache_t *cache, uintptr_t *entry_offset)
-{
-	apc_cache_entry_t *dead = ENTRYAT(*entry_offset);
+/* Inserts an entry into a linked list. The reference to the new entry is stored to entry_offset. */
+static void apc_cache_wlocked_link_entry(apc_cache_t *cache, uintptr_t *entry_offset, apc_cache_entry_t *entry) {
+	/* link entry into list */
+	entry->next = *entry_offset;
+	*entry_offset = ENTRYOF(entry);
 
+	/* entry->origin refers to "&entry->next" of the previous entry or to the starting-pointer of the list */
+	entry->origin = APC_CACHE_GET_OFF(entry_offset);
+	if (entry->next) {
+		ENTRYAT(entry->next)->origin = APC_CACHE_GET_OFF(&entry->next);
+	}
+}
+
+/* Removes an entry from a linked list. */
+static void apc_cache_wlocked_unlink_entry(apc_cache_t *cache, apc_cache_entry_t *entry) {
 	/* unlink entry from list */
-	*entry_offset = dead->next;
+	*APC_CACHE_GET_PTR(entry->origin) = entry->next;
+
+	/* entry->origin refers to "&entry->next" of the previous entry or to the starting-pointer of the list */
+	if (entry->next) {
+		ENTRYAT(entry->next)->origin = entry->origin;
+	}
+}
+
+/* {{{ apc_cache_wlocked_remove_entry  */
+static void apc_cache_wlocked_remove_entry(apc_cache_t *cache, apc_cache_entry_t *entry)
+{
+    /* unlink entry from list */
+	apc_cache_wlocked_unlink_entry(cache, entry);
 
 	/* adjust header info */
 	if (cache->header->mem_size)
-		cache->header->mem_size -= dead->mem_size;
+		cache->header->mem_size -= entry->mem_size;
 
 	if (cache->header->nentries)
 		cache->header->nentries--;
 
 	/* free entry if there are no references */
-	if (dead->ref_count <= 0) {
-		free_entry(cache, dead);
+	if (entry->ref_count <= 0) {
+		free_entry(cache, entry);
 	} else {
 		/* add to gc if there are still refs */
-		dead->dtime = time(0);
-		dead->next = cache->header->gc;
-		cache->header->gc = ENTRYOF(dead);
+		entry->dtime = time(0);
+		apc_cache_wlocked_link_entry(cache, &cache->header->gc, entry);
 	}
 }
 /* }}} */
@@ -220,7 +241,7 @@ static void apc_cache_wlocked_gc(apc_cache_t* cache)
 		}
 
 		/* set next and free current entry */
-		*entry_offset = entry->next;
+		apc_cache_wlocked_unlink_entry(cache, entry);
 		free_entry(cache, entry);
 	}
 }
@@ -356,7 +377,7 @@ static inline zend_bool apc_cache_wlocked_insert(
 				return 0;
 			}
 
-			apc_cache_wlocked_remove_entry(cache, entry_offset);
+			apc_cache_wlocked_remove_entry(cache, entry);
 			break;
 		}
 
@@ -365,7 +386,7 @@ static inline zend_bool apc_cache_wlocked_insert(
 		 * entries, so we don't always have to skip past a bunch of stale entries.
 		 */
 		if (apc_cache_entry_expired(cache, entry, t)) {
-			apc_cache_wlocked_remove_entry(cache, entry_offset);
+			apc_cache_wlocked_remove_entry(cache, entry);
 			continue;
 		}
 
@@ -374,8 +395,7 @@ static inline zend_bool apc_cache_wlocked_insert(
 	}
 
 	/* link in new entry */
-	new_entry->next = *entry_offset;
-	*entry_offset = ENTRYOF(new_entry);
+	apc_cache_wlocked_link_entry(cache, entry_offset, new_entry);
 
 	cache->header->mem_size += new_entry->mem_size;
 	cache->header->nentries++;
@@ -388,6 +408,7 @@ static void apc_cache_set_entry_values(apc_cache_entry_t *entry, const int32_t t
 {
 	entry->ttl = ttl;
 	entry->next = 0;
+	entry->origin = 0;
 	entry->ref_count = 0;
 	entry->nhits = 0;
 	entry->ctime = t;
@@ -696,7 +717,7 @@ static void apc_cache_wlocked_real_expunge(apc_cache_t* cache) {
 	for (i = 0; i < cache->nslots; i++) {
 		uintptr_t *entry_offset = &cache->slots[i];
 		while (*entry_offset) {
-			apc_cache_wlocked_remove_entry(cache, entry_offset);
+			apc_cache_wlocked_remove_entry(cache, ENTRYAT(*entry_offset));
 		}
 	}
 
@@ -768,7 +789,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 			apc_cache_entry_t *entry = ENTRYAT(*entry_offset);
 
 			if (apc_cache_entry_expired(cache, entry, t)) {
-				apc_cache_wlocked_remove_entry(cache, entry_offset);
+				apc_cache_wlocked_remove_entry(cache, entry);
 				continue;
 			}
 
@@ -965,7 +986,7 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 		/* check for a match by hash and identifier */
 		if (apc_entry_key_equals(entry, key, h)) {
 			/* executing removal */
-			apc_cache_wlocked_remove_entry(cache, entry_offset);
+			apc_cache_wlocked_remove_entry(cache, entry);
 
 			apc_cache_wunlock(cache);
 			return 1;
