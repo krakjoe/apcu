@@ -75,6 +75,7 @@
     <file name="apc_025.phpt" role="test" />
     <file name="apc_099.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
+    <file name="apc_defrag.phpt" role="test" />
     <file name="apc54_018.phpt" role="test" />
     <file name="apc_disabled.phpt" role="test" />
     <file name="apc_entry_001.phpt" role="test" />

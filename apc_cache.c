@@ -160,6 +160,24 @@ static zend_bool apc_cache_entry_expired(
 		|| apc_cache_entry_soft_expired(cache, entry, t);
 }
 
+/* apc_cache_wlocked_move_entry() is called during defragmentation, before an entry is moved to a new position. */
+static zend_bool apc_cache_wlocked_move_entry(apc_cache_t *cache, apc_cache_entry_t *old, apc_cache_entry_t *new) {
+	/* Check if the entry can be moved. */
+	if (old->ref_count > 0) {
+		return 0;
+	}
+
+	/* Change all references to this entry to the new position.
+	 * Since “next” is the 1st field of apc_cache_entry_t, the head pointer of the list
+	 * can be changed like a previous entry via ENTRYAT(old->prev)->next. */
+	ENTRYAT(old->prev)->next = ENTRYOF(new);
+	if (old->next) {
+		ENTRYAT(old->next)->prev = ENTRYOF(new);
+	}
+
+	return 1;
+}
+
 /* Inserts an entry into a linked list. The argument entry_offset must point either
  * to entry->next of an existing entry or to the head pointer of a linked list. */
 static void apc_cache_wlocked_link_entry(apc_cache_t *cache, uintptr_t *entry_offset, apc_cache_entry_t *entry) {
@@ -772,9 +790,6 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 		return;
 	}
 
-	/* gc */
-	apc_cache_wlocked_gc(cache);
-
 	/* smart > 1 increases the probability of a full cache wipe,
 	 * so expunge() is called less often when memory is low. */
 	size = (cache->smart > 0L) ? (size_t) (cache->smart * size) : size;
@@ -795,14 +810,28 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 		}
 	}
 
-	/* if the cache now has space, then reset last key */
-	if (apc_sma_get_avail_size(cache->sma, size)) {
-		/* wipe lastkey */
-		memset(&cache->header->lastkey, 0, sizeof(apc_cache_slam_key_t));
-	} else {
-		/* with not enough space left in cache, we are forced to expunge */
+	/* gc */
+	apc_cache_wlocked_gc(cache);
+
+	/* if all free blocks together do not provide enough memory, we immediately perform a real expunge */
+	if (!apc_sma_check_avail(cache->sma, size)) {
 		apc_cache_wlocked_real_expunge(cache);
+		apc_cache_wunlock(cache);
+		return;
 	}
+
+	/* run defragmentation to coalesce free blocks */
+	apc_sma_defrag(cache->sma, cache, (apc_sma_move_f)apc_cache_wlocked_move_entry);
+
+	/* if size bytes can't be allocated as a contiguous block after defragmentation, we do a real expunge */
+	if (!apc_sma_check_avail_contiguous(cache->sma, size)) {
+		apc_cache_wlocked_real_expunge(cache);
+		apc_cache_wunlock(cache);
+		return;
+	}
+
+	/* wipe lastkey */
+	memset(&cache->header->lastkey, 0, sizeof(apc_cache_slam_key_t));
 
 	apc_cache_wunlock(cache);
 }
