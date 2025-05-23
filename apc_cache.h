@@ -49,8 +49,8 @@ struct apc_cache_slam_key_t {
 /* {{{ struct definition: apc_cache_entry_t */
 typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
-	zval val;                /* the zval copied at store time */
-	uintptr_t next;          /* offset in shm of next entry in linked list */
+	uintptr_t next;          /* offset to next entry (MUST BE THE 1st FIELD OF THE STRUCT!) */
+	uintptr_t prev;          /* offset to previous entry / head-pointer of the linked list */
 	zend_long ttl;           /* the ttl on this specific entry */
 	zend_long ref_count;     /* the reference count of this entry */
 	zend_long nhits;         /* number of hits to this entry */
@@ -59,6 +59,7 @@ struct apc_cache_entry_t {
 	time_t dtime;            /* time entry was removed from cache */
 	time_t atime;            /* time entry was last accessed */
 	zend_long mem_size;      /* memory used */
+	zval val;                /* the zval copied at store time */
 	zend_string key;         /* entry key (MUST BE THE LAST FIELD OF THE STRUCT!) */
 };
 /* }}} */
