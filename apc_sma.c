@@ -415,7 +415,11 @@ PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma) {
 	return SMA_HDR(sma)->avail;
 }
 
-PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
+PHP_APCU_API zend_bool apc_sma_check_avail(apc_sma_t *sma, size_t size) {
+	return SMA_HDR(sma)->avail >= ALIGNWORD(size + ALIGNWORD(sizeof(block_t)));
+}
+
+PHP_APCU_API zend_bool apc_sma_check_avail_contiguous(apc_sma_t *sma, size_t size) {
 	size_t realsize = ALIGNWORD(size + ALIGNWORD(sizeof(block_t)));
 	sma_header_t *smaheader = SMA_HDR(sma);
 
@@ -440,6 +444,62 @@ PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
 	SMA_UNLOCK(sma);
 
 	return 0;
+}
+
+PHP_APCU_API void apc_sma_defrag(apc_sma_t *sma, void *data, apc_sma_move_f move) {
+	sma_header_t *smaheader = SMA_HDR(sma);
+	block_t *cur = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t)));
+	block_t *first = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+
+	if (!SMA_LOCK(sma)) {
+		return;
+	}
+
+	/* empty the free list */
+	first->fnext = sma->size - ALIGNWORD(sizeof(block_t));
+	BLOCKAT(first->fnext)->fprev = OFFSET(first);
+
+	/* loop through all blocks */
+	while (cur->size != 0) {
+		/* continue until cur points to a free block */
+		if (!cur->fnext) {
+			cur = NEXT_SBLOCK(cur);
+			continue;
+		}
+
+		/* if cur is free, nxt must be an allocated block, since we never have two consecutive free blocks */
+		block_t *nxt = NEXT_SBLOCK(cur);
+
+		/* if nxt is the last block, or if nxt can't be moved, cur can't be combined with other free blocks */
+		if (nxt->size == 0 || !move(data, (char *)nxt + ALIGNWORD(sizeof(block_t)), (char *)cur + ALIGNWORD(sizeof(block_t)))) {
+			/* insert cur into the free list */
+			cur->fnext = first->fnext;
+			cur->fprev = OFFSET(first);
+			first->fnext = OFFSET(cur);
+			BLOCKAT(cur->fnext)->fprev = first->fnext;
+			cur->prev_size = 0;
+			nxt->prev_size = cur->size;
+
+			cur = NEXT_SBLOCK(nxt);
+			continue;
+		}
+
+		/* swap cur and nxt by moving nxt (incl. header) and initializing a new block header for cur behind it */
+		size_t free_size = cur->size;
+		memmove(cur, nxt, nxt->size);
+		cur->prev_size = 0;
+		cur = NEXT_SBLOCK(cur);
+		cur->size = free_size;
+		cur->fnext = 1; /* mark cur as free */
+
+		/* if the next block is also free, combine cur and nxt to one larger free block */
+		nxt = NEXT_SBLOCK(cur);
+		if (nxt->fnext) {
+			cur->size += nxt->size;
+		}
+	}
+
+	SMA_UNLOCK(sma);
 }
 
 /* }}} */
