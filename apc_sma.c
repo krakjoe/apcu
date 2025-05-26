@@ -80,7 +80,7 @@ struct block_t {
 
 /* macros for getting the next or previous sequential block */
 #define NEXT_SBLOCK(block) ((block_t*)((char*)block + block->size))
-#define PREV_SBLOCK(block) (block->prev_size ? ((block_t*)((char*)block - block->prev_size)) : NULL)
+#define PREV_SBLOCK(block) ((block_t*)((char*)block - block->prev_size))
 
 /* Canary macros for setting, checking and resetting memory canaries */
 #ifdef APC_SMA_CANARIES
@@ -99,13 +99,18 @@ struct block_t {
 #define BEST_FIT_LIMIT 3
 
 static inline block_t *find_block(sma_header_t *smaheader, size_t realsize) {
-	block_t *cur, *prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+	block_t *cur = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
 	block_t *found = NULL;
 	uint32_t i;
-	CHECK_CANARY(prv);
+	CHECK_CANARY(cur);
 
-	while (prv->fnext) {
-		cur = BLOCKAT(prv->fnext);
+	/* First, ensure that at least realsize free bytes are available, even if they are not contiguous. */
+	if (smaheader->avail < realsize) {
+		return NULL;
+	}
+
+	while (cur->fnext) {
+		cur = BLOCKAT(cur->fnext);
 		CHECK_CANARY(cur);
 
 		/* Found a suitable block */
@@ -113,22 +118,17 @@ static inline block_t *find_block(sma_header_t *smaheader, size_t realsize) {
 			found = cur;
 			break;
 		}
-
-		prv = cur;
 	}
 
 	if (found) {
 		/* Try to find a smaller block that also fits */
-		prv = cur;
-		for (i = 0; i < BEST_FIT_LIMIT && prv->fnext; i++) {
-			cur = BLOCKAT(prv->fnext);
+		for (i = 0; i < BEST_FIT_LIMIT && cur->fnext; i++) {
+			cur = BLOCKAT(cur->fnext);
 			CHECK_CANARY(cur);
 
 			if (cur->size >= realsize && cur->size < found->size) {
 				found = cur;
 			}
-
-			prv = cur;
 		}
 	}
 
@@ -141,14 +141,8 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 	block_t* prv;           /* block prior to working block */
 	block_t* cur;           /* working block in list */
 	size_t realsize;        /* actual size of block needed, including block header */
-	size_t block_header_size = ALIGNWORD(sizeof(block_t));
 
-	realsize = ALIGNWORD(size + block_header_size);
-
-	/* First, ensure that the segment contains at least realsize free bytes, even if they are not contiguous. */
-	if (smaheader->avail < realsize) {
-		return SIZE_MAX;
-	}
+	realsize = ALIGNWORD(size + ALIGNWORD(sizeof(block_t)));
 
 	cur = find_block(smaheader, realsize);
 	if (!cur) {
@@ -189,7 +183,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 
 	SET_CANARY(cur);
 
-	return OFFSET(cur) + block_header_size;
+	return OFFSET(cur) + ALIGNWORD(sizeof(block_t));
 }
 /* }}} */
 
@@ -217,7 +211,7 @@ static APC_HOTSPOT size_t sma_deallocate(sma_header_t *smaheader, size_t offset)
 		BLOCKAT(prv->fnext)->fprev = prv->fprev;
 		BLOCKAT(prv->fprev)->fnext = prv->fnext;
 		/* cur and prv share an edge, combine them */
-		prv->size +=cur->size;
+		prv->size += cur->size;
 
 		RESET_CANARY(cur);
 		cur = prv;
@@ -382,22 +376,23 @@ PHP_APCU_API apc_sma_info_t *apc_sma_info(apc_sma_t* sma, zend_bool limited) {
 
 	SMA_LOCK(sma);
 	sma_header_t *smaheader = SMA_HDR(sma);
-	block_t *prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+	block_t *cur = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
 	apc_sma_link_t **link = &info->list;
 
-	/* For each free block */
-	while (BLOCKAT(prv->fnext)->fnext != 0) {
-		block_t *cur = BLOCKAT(prv->fnext);
+	/* Skip 1st (0-sized) block */
+	cur = BLOCKAT(cur->fnext);
 
+	/* For each free block */
+	while (cur->fnext != 0) {
 		CHECK_CANARY(cur);
 
 		*link = emalloc(sizeof(apc_sma_link_t));
 		(*link)->size = cur->size;
-		(*link)->offset = prv->fnext;
+		(*link)->offset = OFFSET(cur);
 		(*link)->next = NULL;
 		link = &(*link)->next;
 
-		prv = cur;
+		cur = BLOCKAT(cur->fnext);
 	}
 	SMA_UNLOCK(sma);
 
@@ -445,11 +440,6 @@ PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size) {
 	SMA_UNLOCK(sma);
 
 	return 0;
-}
-
-PHP_APCU_API void apc_sma_check_integrity(apc_sma_t* sma)
-{
-	/* dummy */
 }
 
 /* }}} */
