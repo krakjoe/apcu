@@ -111,11 +111,6 @@ PHP_APCU_API size_t apc_sma_get_avail_mem(apc_sma_t* sma);
 */
 PHP_APCU_API zend_bool apc_sma_get_avail_size(apc_sma_t* sma, size_t size);
 
-/*
-* apc_sma_api_check_integrity will check the integrity of sma
-*/
-PHP_APCU_API void apc_sma_check_integrity(apc_sma_t* sma); /* }}} */
-
 /* {{{ ALIGNWORD: pad up x, aligned to the system's word boundary */
 #define ALIGNWORD(x) ZEND_MM_ALIGNED_SIZE(x)
 /* }}} */
