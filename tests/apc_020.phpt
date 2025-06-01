@@ -14,10 +14,9 @@ apc.shm_size=1M
 --FILE--
 <?php
 
-apcu_store("no_ttl_unaccessed", 12);
+apcu_store("no_ttl_unaccessed", str_repeat('x', 500));
 apcu_store("no_ttl_accessed", 24);
 apcu_store("ttl", 42, 3);
-apcu_store("dummy", str_repeat('x', 1000));
 
 apcu_inc_request_time(1);
 apcu_fetch("no_ttl_accessed");
@@ -26,10 +25,11 @@ apcu_inc_request_time(1);
 
 // Fill the cache
 $i = 0;
-while (apcu_exists("dummy")) {
+do {
+    $tmp_avail = apcu_sma_info(true)['avail_mem'];
     apcu_store("key" . $i, str_repeat('x', 500));
     $i++;
-}
+} while (apcu_sma_info(true)['avail_mem'] < $tmp_avail);
 
 var_dump(apcu_fetch("no_ttl_unaccessed"));
 var_dump(apcu_fetch("no_ttl_accessed"));
