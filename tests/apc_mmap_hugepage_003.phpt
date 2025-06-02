@@ -10,6 +10,9 @@ if (ini_get('apc.mmap_hugepage_size') === false) die("skip mmap is not used");
 // currently only support Linux
 if (PHP_OS != "Linux") die("skip only on Linux");
 
+// does the kernel support MAP_HUGETLB?
+if (version_compare(preg_replace('/[^0-9.].*$/', '', php_uname('r')), '2.6.32', '<')) die("skip kernel does not support MAP_HUGETLB");
+
 // check reserved hugepage
 $hp = @file_get_contents('/proc/sys/vm/nr_hugepages');
 if ($hp === false || !((int)trim($hp))) die("skip hugepages are currently unavailable on this system");
