@@ -90,6 +90,12 @@
     <file name="apc_store_reference_php8.phpt" role="test" />
     <file name="apc_store_string_reuse.phpt" role="test" />
     <file name="apcu_sma_info.phpt" role="test" />
+    <file name="apc_mmap_hugepage_001.phpt" role="test" />
+    <file name="apc_mmap_hugepage_002.phpt" role="test" />
+    <file name="apc_mmap_hugepage_003.phpt" role="test" />
+    <file name="apc_mmap_hugepage_004.phpt" role="test" />
+    <file name="apc_mmap_hugepage_005.phpt" role="test" />
+    <file name="apc_mmap_hugepage_006.phpt" role="test" />
     <file name="bug63224.phpt" role="test" />
     <file name="bug76145.phpt" role="test" />
     <file name="get_included_files_inc1.inc" role="test" />

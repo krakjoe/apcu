@@ -243,7 +243,7 @@ static APC_HOTSPOT size_t sma_deallocate(sma_header_t *smaheader, size_t offset)
 /* }}} */
 
 /* {{{ APC SMA API */
-PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, size_t size, size_t min_alloc_size, char *mask) {
+PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, size_t size, size_t min_alloc_size, char *mask, zend_long hugepage_size) {
 	if (sma->initialized) {
 		return;
 	}
@@ -254,7 +254,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 	sma->size = ALIGNWORD(size > 0 ? size : SMA_DEFAULT_SEGSIZE);
 
 #ifdef APC_MMAP
-	sma->shmaddr = apc_mmap(mask, sma->size);
+	sma->shmaddr = apc_mmap(mask, sma->size, hugepage_size);
 #else
 	sma->shmaddr = apc_shm_attach(sma->size);
 #endif
