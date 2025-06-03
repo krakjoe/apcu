@@ -34,22 +34,20 @@ jobs:
         version: ["7.0", "7.1", "7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4"]
         arch: [x64]
         ts: [nts, ts]
-        os: [windows-2019, windows-2022]
-        exclude:
-          - { os: windows-2019, version: "8.4" }
-          - { os: windows-2019, version: "8.3" }
-          - { os: windows-2019, version: "8.2" }
-          - { os: windows-2019, version: "8.1" }
-          - { os: windows-2019, version: "8.0" }
-          - { os: windows-2022, version: "7.4" }
-          - { os: windows-2022, version: "7.3" }
-          - { os: windows-2022, version: "7.2" }
-          - { os: windows-2022, version: "7.1" }
-          - { os: windows-2022, version: "7.0" }
-    runs-on: ${{matrix.os}}
+    runs-on: windows-2022
     steps:
       - name: Checkout apcu
         uses: actions/checkout@v4
+      - name: Install VC15 component
+        if: ${{ startsWith(matrix.version, '7.') }}
+        shell: pwsh
+        run: |
+                Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+                $installPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+                $component = "Microsoft.VisualStudio.Component.VC.v141.x86.x64"
+                $args = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$installPath`"", '--add', $component, '--quiet', '--norestart', '--nocache')
+                $process = Start-Process -FilePath cmd.exe -ArgumentList $args -Wait -PassThru -WindowStyle Hidden
+
       - name: Setup PHP
         id: setup-php
         uses: php/setup-php-sdk@v0.10
