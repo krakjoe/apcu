@@ -19,6 +19,8 @@ jobs:
         run: phpize
       - name: configure
         run: ./configure --enable-apcu-debug
+      - name: Fix missing PHP_EXECUTABLE in Makefile for PHP 7.x
+        run: sed -i -e 's/^PHP_EXECUTABLE = NONE$/PHP_EXECUTABLE = \/usr\/bin\/php/' Makefile
       - name: make
         run: make
       - name: test
