@@ -880,7 +880,7 @@ PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, ti
 		return 0;
 	}
 
-	entry = apc_cache_rlocked_find_nostat(cache, key, t);
+	entry = apc_cache_rlocked_find(cache, key, t);
 	apc_cache_runlock(cache);
 
 	return entry != NULL;
