@@ -39,7 +39,27 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-- TBD
+     - If the cache is full, try to clean up expired entries based on their per-entry hard TTL even
+       if the soft apc.ttl is 0. Previously the entire cache was discarded.
+     - If a new entry cannot be inserted due to fragmentation, the cache will be defragmented,
+       combining many small free blocks into one big free block by moving around cache entries.
+       This avoids the need to discard the entire cache in more cases.
+     - The access time (which is used by the soft apc.ttl) is now also updated when using
+       apcu_exists().
+     - apc.entries_hint now defaults to 512 entries per 1MB of shared memory. Previously the
+       default was 4096, independent of shm_size. This could lead to a large number of hash
+       collisions if shm_size was increased without also increasing entries_hint.
+     - Added apc.mmap_hugepage_size to use huge pages of a certain size for the apcu shared memory
+       segment. This requires support for huge pages to be enabled in the kernel. Note that even if
+       this option is not set, shaed memory is still configured to use transparent huge pages.
+     - The apc.shm_segments ini option has been removed. Multiple SHM segments are no longer
+       supported. (They were already not supported when using mmap, which is the default mode of
+       operation)
+
+     Internal changes:
+     - Fixed -Wclobbered compiler warnings.
+     - All cache data structures are now relocatable, i.e. independent of the base address of the
+       cache. This enables defragmentation support.
  </notes>
  <contents>
   <dir name="/">
