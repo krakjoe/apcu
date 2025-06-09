@@ -51,15 +51,22 @@
        collisions if shm_size was increased without also increasing entries_hint.
      - Added apc.mmap_hugepage_size to use huge pages of a certain size for the apcu shared memory
        segment. This requires support for huge pages to be enabled in the kernel. Note that even if
-       this option is not set, shaed memory is still configured to use transparent huge pages.
+       this option is not set, shared memory is still configured to use transparent huge pages.
      - The apc.shm_segments ini option has been removed. Multiple SHM segments are no longer
        supported. (They were already not supported when using mmap, which is the default mode of
        operation)
+     - The apc.smart configuration setting should now work more reliably. Values > 1 can be used
+       to increase the chance of discarding the entire cache when the amount of memory freed by
+       removing expired entries was too small. This could be useful if performance degrades due to
+       executing the logic to remove expired entries (+ defragmentation) too frequently during
+       periods of high memory usage.
+     - Fixed several issues that caused inserting new entries to fail unexpectedly.
 
      Internal changes:
      - Fixed -Wclobbered compiler warnings.
      - All cache data structures are now relocatable, i.e. independent of the base address of the
        cache. This enables defragmentation support.
+     - Hash slots now use doubly linked lists. This is necessary for defragmentation.
  </notes>
  <contents>
   <dir name="/">
