@@ -344,6 +344,8 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache->header->nhits = 0;
 	cache->header->nmisses = 0;
 	cache->header->nentries = 0;
+	cache->header->ncleanups = 0;
+	cache->header->ndefragmentations = 0;
 	cache->header->nexpunges = 0;
 	cache->header->gc = 0;
 	cache->header->stime = time(NULL);
@@ -765,6 +767,8 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 
 	/* set info */
 	cache->header->stime = apc_time();
+	cache->header->ncleanups = 0;
+	cache->header->ndefragmentations = 0;
 	cache->header->nexpunges = 0;
 
 	apc_cache_wunlock(cache);
@@ -794,6 +798,9 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	 * so expunge() is called less often when memory is low. */
 	size = (cache->smart > 0L) ? (size_t) (cache->smart * size) : size;
 
+	/* increment cache cleanup statistics (removal of expired entries) */
+	cache->header->ncleanups++;
+
 	/* look for junk */
 	for (i = 0; i < cache->nslots; i++) {
 		uintptr_t *entry_offset = &cache->slots[i];
@@ -819,6 +826,9 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 		apc_cache_wunlock(cache);
 		return;
 	}
+
+	/* increment defragmentation statistics */
+	cache->header->ndefragmentations++;
 
 	/* run defragmentation to coalesce free blocks */
 	apc_sma_defrag(cache->sma, cache, (apc_sma_move_f)apc_cache_wlocked_move_entry);
@@ -1094,7 +1104,9 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 		add_assoc_double(info, "num_misses", (double) cache->header->nmisses);
 		add_assoc_double(info, "num_inserts", (double) cache->header->ninserts);
 		add_assoc_long(info,   "num_entries", cache->header->nentries);
-		add_assoc_double(info, "expunges", (double) cache->header->nexpunges);
+		add_assoc_long(info, "cleanups", cache->header->ncleanups);
+		add_assoc_long(info, "defragmentations", cache->header->ndefragmentations);
+		add_assoc_long(info, "expunges", cache->header->nexpunges);
 		add_assoc_long(info, "start_time", cache->header->stime);
 		array_add_double(info, apc_str_mem_size, (double) cache->header->mem_size);
 
