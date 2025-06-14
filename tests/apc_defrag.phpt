@@ -16,15 +16,15 @@ apc.shm_size=1M
 // fill_cache() fills the cache with small entries with alternating ttl=1 and ttl=3
 function fill_cache(): int {
     $i = 0;
-    $min_entry_size = apcu_sma_info(true)['avail_mem'];
+    $entry_size = apcu_sma_info(true)['avail_mem'];
     apcu_store(sprintf("ttl1_%010d", $i), $i, 1);
-    $min_entry_size -= apcu_sma_info(true)['avail_mem'];
+    $entry_size -= apcu_sma_info(true)['avail_mem'];
 
-    while (apcu_sma_info(true)['avail_mem'] >= $min_entry_size) {
+    while (apcu_sma_info(true)['avail_mem'] >= $entry_size) {
         $i++;
         apcu_store(sprintf("ttl3_%010d", $i), $i, 3);
 
-        if (apcu_sma_info(true)['avail_mem'] >= $min_entry_size) {
+        if (apcu_sma_info(true)['avail_mem'] >= $entry_size) {
             apcu_store(sprintf("ttl1_%010d", $i), $i, 1);
         }
     }
@@ -48,9 +48,6 @@ $avail_before_filled = apcu_sma_info(true)['avail_mem'];
 // fill cache with alternating ttl=1 + ttl=3 entries
 fill_cache();
 
-// ensure that cache is full
-var_dump(apcu_sma_info(true)['avail_mem']);
-
 // expire all ttl1_* entries
 apcu_inc_request_time(2);
 
@@ -72,9 +69,28 @@ var_dump(apcu_fetch("ttl3_string") === "abc");
 var_dump(apcu_fetch("ttl3_array") === [1, 2, "a", "b"]);
 var_dump(apcu_fetch("ttl3_object") == (object) ["prop1" => "val1", "prop2" => 2]);
 
+// check that cache cleanup and defragmentation have been performed, but no real expunge
+var_dump(apcu_cache_info(true)["cleanups"] === 1);
+var_dump(apcu_cache_info(true)["defragmentations"] === 1);
+var_dump(apcu_cache_info(true)["expunges"] === 0);
+
+// this insertion should trigger an default_expunge which performs a real expunge (but no defragmentation)
+var_dump(apcu_store("huge_entry", str_repeat('x', 700000), 1));
+
+// check that cache cleanup and real expunge have been performed, but no defragmentation
+var_dump(apcu_cache_info(true)["cleanups"] === 2);
+var_dump(apcu_cache_info(true)["defragmentations"] === 1);
+var_dump(apcu_cache_info(true)["expunges"] === 1);
+
 ?>
 --EXPECT--
-float(0)
+bool(true)
+bool(true)
+bool(true)
+bool(true)
+bool(true)
+bool(true)
+bool(true)
 bool(true)
 bool(true)
 bool(true)

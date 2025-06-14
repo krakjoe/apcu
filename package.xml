@@ -60,6 +60,10 @@
        removing expired entries was too small. This could be useful if performance degrades due to
        executing the logic to remove expired entries (+ defragmentation) too frequently during
        periods of high memory usage.
+     - The number of cache cleanups performed (removal of expired entries) is now available
+       in the array returned by apcu_cache_info() (via array key "cleanups").
+     - The number of defragmentations performed is now available in the array returned by
+       apcu_cache_info() (via array key "defragmentations").
      - Fixed several issues that caused inserting new entries to fail unexpectedly.
 
      Internal changes:
