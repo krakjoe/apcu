@@ -333,7 +333,8 @@ static const uint32_t uninitialized_bucket[-HT_MIN_MASK] = {HT_INVALID_IDX, HT_I
 static zend_array *apc_persist_copy_ht(apc_persist_context_t *ctxt, const HashTable *orig_ht) {
 #if PHP_VERSION_ID >= 70300
 	if (orig_ht->nNumOfElements == 0) {
-		return (HashTable *)&zend_empty_array;
+		/* To indicate using zend_empty_array during unpersist, we point to the entry's starting address. */
+		return (HashTable *)ctxt->alloc;
 	}
 #endif
 	HashTable *ht = COPY(orig_ht, sizeof(HashTable));
@@ -708,7 +709,8 @@ static void apc_unpersist_zval_impl(apc_unpersist_context_t *ctxt, zval *zv) {
 			return;
 		case IS_ARRAY:
 #if PHP_VERSION_ID >= 70300
-			if (Z_ARR_P(zv)->nNumOfElements == 0) {
+			if (Z_ARR_P(zv) == (zend_array *)ctxt->alloc) {
+				/* If the zval points to the entry's starting address, we use the zend_empty_array optimization. */
 				ZVAL_EMPTY_ARRAY(zv); /* #323 */
 				return;
 			}
