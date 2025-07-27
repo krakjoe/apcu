@@ -37,9 +37,10 @@ function fill_cache(): int {
 apcu_store("ttl1_int", 123, 1);
 
 // store entries of different datatypes with ttl=3, which must be present after expiration + defragmentation
+$reference = "b";
 apcu_store("ttl3_int", 123456789, 3);
 apcu_store("ttl3_string", "abc", 3);
-apcu_store("ttl3_array", [1, 2, "a", "b"], 3);
+apcu_store("ttl3_array", [1, "a", &$reference, []], 3);
 apcu_store("ttl3_object", (object) ["prop1" => "val1", "prop2" => 2], 3);
 
 // safe available memory for later comparison
@@ -66,7 +67,7 @@ var_dump(apcu_fetch("ttl1_int") === false);
 // all ttl3_ entries must be present (and correct after defragmentation)
 var_dump(apcu_fetch("ttl3_int") === 123456789);
 var_dump(apcu_fetch("ttl3_string") === "abc");
-var_dump(apcu_fetch("ttl3_array") === [1, 2, "a", "b"]);
+var_dump(apcu_fetch("ttl3_array") === [1, "a", &$reference, []]);
 var_dump(apcu_fetch("ttl3_object") == (object) ["prop1" => "val1", "prop2" => 2]);
 
 // check that cache cleanup and defragmentation have been performed, but no real expunge
