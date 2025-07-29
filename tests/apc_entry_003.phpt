@@ -9,7 +9,8 @@ apc.enable_cli=1
 <?php
 $value = apcu_entry("test", function($key) {
     // Fatal error
-    class X { use T; }
+    interface X { function foo(); }
+    class Y implements X {}
 });
 ?>
 --EXPECTF--
