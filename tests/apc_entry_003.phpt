@@ -9,7 +9,11 @@ apc.enable_cli=1
 <?php
 $value = apcu_entry("test", function($key) {
     // Fatal error
-    class X { use T; }
+    try {
+        class X { use T; }
+    } catch (Error $e) {
+        echo 'Fatal error: ' . $e->getMessage() . "\n";
+    }
 });
 ?>
 --EXPECTF--
