@@ -776,14 +776,17 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 /* }}} */
 
 /* {{{ apc_cache_default_expunge */
-PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
+PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 {
 	time_t t;
 	size_t i;
 
 	if (!cache) {
-		return;
+		return 1;
 	}
+
+	/* get the number of cleanups before acquiring the lock */
+	zend_long ncleanups = cache->header->ncleanups;
 
 	/* apc_time() depends on globals, don't read it if there's no cache. This may happen if SHM
 	 * is too small and the initial cache creation during MINIT triggers an expunge. */
@@ -791,15 +794,18 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 
 	/* get the lock for header */
 	if (!apc_cache_wlock(cache)) {
-		return;
+		return 1;
+	}
+
+	/* skip processing if another default expunge operation was performed while waiting for the write lock */
+	if (ncleanups < cache->header->ncleanups) {
+		apc_cache_wunlock(cache);
+		return 0;
 	}
 
 	/* smart > 1 increases the probability of a full cache wipe,
 	 * so expunge() is called less often when memory is low. */
 	size = (cache->smart > 0L) ? (size_t) (cache->smart * size) : size;
-
-	/* increment cache cleanup statistics (removal of expired entries) */
-	cache->header->ncleanups++;
 
 	/* look for junk */
 	for (i = 0; i < cache->nslots; i++) {
@@ -823,8 +829,7 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	/* if all free blocks together do not provide enough memory, we immediately perform a real expunge */
 	if (!apc_sma_check_avail(cache->sma, size)) {
 		apc_cache_wlocked_real_expunge(cache);
-		apc_cache_wunlock(cache);
-		return;
+		goto end_lbl;
 	}
 
 	/* increment defragmentation statistics */
@@ -836,14 +841,19 @@ PHP_APCU_API void apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 	/* if size bytes can't be allocated as a contiguous block after defragmentation, we do a real expunge */
 	if (!apc_sma_check_avail_contiguous(cache->sma, size)) {
 		apc_cache_wlocked_real_expunge(cache);
-		apc_cache_wunlock(cache);
-		return;
+		goto end_lbl;
 	}
 
 	/* wipe lastkey */
 	memset(&cache->header->lastkey, 0, sizeof(apc_cache_slam_key_t));
 
+end_lbl:
+	/* Increment cache cleanup statistics (removal of expired entries).
+	 * This should be done late to detect stacking of default expunge operations. */
+	cache->header->ncleanups++;
+
 	apc_cache_wunlock(cache);
+	return 1;
 }
 /* }}} */
 

@@ -326,8 +326,8 @@ restart:
 
 	/* Expunge cache in hope of freeing up memory, but only once */
 	if (!nuked) {
-		sma->expunge(*sma->data, n);
-		nuked = 1;
+		/* nuke is not set if expunge() was skipped internally to get another try */
+		nuked = sma->expunge(*sma->data, n);
 		goto restart;
 	}
 

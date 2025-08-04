@@ -52,7 +52,7 @@ struct apc_sma_info_t {
 };
 /* }}} */
 
-typedef void (*apc_sma_expunge_f)(void *pointer, size_t size); /* }}} */
+typedef zend_bool (*apc_sma_expunge_f)(void *pointer, size_t size); /* }}} */
 
 /* {{{ struct definition: apc_sma_t */
 typedef struct _apc_sma_t {
