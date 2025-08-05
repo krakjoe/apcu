@@ -30,7 +30,7 @@
  </lead>
  <date>2025-08-05</date>
  <version>
-  <release>5.1.26</release>
+  <release>5.1.27-dev</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,9 +39,6 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-  - Fixed hang introduced in apcu 5.1.25, which can occur when defragmentation is triggered under
-    load.
-  - Fixed a test on PHP 8.5.
  </notes>
  <contents>
   <dir name="/">
@@ -195,6 +192,23 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2025-08-05</date>
+   <version>
+    <release>5.1.26</release>
+    <api>5.1.18</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+    - Fixed hang introduced in apcu 5.1.25, which can occur when defragmentation is triggered under
+      load.
+    - Fixed a test on PHP 8.5.
+   </notes>
+  </release>
   <release>
    <date>2025-07-28</date>
    <version>
