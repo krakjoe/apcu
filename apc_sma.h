@@ -86,7 +86,7 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma);
 * The init_callack() can be used to perform initializations that must be completed
 * before the lock of the sma layer is released.
 */
-typedef void (*apc_sma_malloc_init_f)(void *pointer); /* }}} */
+typedef void (*apc_sma_malloc_init_f)(void *pointer);
 PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t size, apc_sma_malloc_init_f init_callback);
 
 /*
