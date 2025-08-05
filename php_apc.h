@@ -33,7 +33,7 @@
 #include "apc.h"
 #include "apc_globals.h"
 
-#define PHP_APCU_VERSION "5.1.26-dev"
+#define PHP_APCU_VERSION "5.1.26"
 #define PHP_APCU_EXTNAME "apcu"
 
 PHP_APCU_API zend_bool apc_is_enabled(void);

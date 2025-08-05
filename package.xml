@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2025-07-28</date>
+ <date>2025-08-05</date>
  <version>
-  <release>5.1.26-dev</release>
+  <release>5.1.26</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,6 +39,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
+  - Fixed hang introduced in apcu 5.1.25, which can occur when defragmentation is triggered under
+    load.
+  - Fixed a test on PHP 8.5.
  </notes>
  <contents>
   <dir name="/">
