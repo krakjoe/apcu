@@ -301,7 +301,7 @@ PHP_APCU_API void apc_sma_detach(apc_sma_t* sma) {
 #endif
 }
 
-PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t n) {
+PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t n, apc_sma_malloc_init_f init_callback) {
 	size_t off;
 	zend_bool nuked = 0;
 
@@ -314,15 +314,22 @@ restart:
 
 	off = sma_allocate(SMA_HDR(sma), n);
 
-	SMA_UNLOCK(sma);
-
 	if (off != SIZE_MAX) {
 		void *p = (void *)(SMA_ADDR(sma) + off);
+
+		if (init_callback) {
+			/* Perform initializations that must be done before releasing the lock */
+			init_callback(p);
+		}
+
+		SMA_UNLOCK(sma);
 #ifdef VALGRIND_MALLOCLIKE_BLOCK
 		VALGRIND_MALLOCLIKE_BLOCK(p, n, 0, 0);
 #endif
 		return p;
 	}
+
+	SMA_UNLOCK(sma);
 
 	/* Expunge cache in hope of freeing up memory, but only once */
 	if (!nuked) {
