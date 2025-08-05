@@ -82,9 +82,12 @@ PHP_APCU_API void apc_sma_init(
 PHP_APCU_API void apc_sma_detach(apc_sma_t* sma);
 
 /*
-* apc_smap_api_malloc will allocate a block from the sma of the given size
+* apc_smap_api_malloc will allocate a block from the sma of the given size.
+* The init_callack() can be used to perform initializations that must be completed
+* before the lock of the sma layer is released.
 */
-PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t size);
+typedef void (*apc_sma_malloc_init_f)(void *pointer);
+PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t size, apc_sma_malloc_init_f init_callback);
 
 /*
 * apc_sma_api_free will free p (which should be a pointer to a block allocated from sma)

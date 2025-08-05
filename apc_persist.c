@@ -475,6 +475,13 @@ static apc_cache_entry_t *apc_persist_create_entry(
 	return entry;
 }
 
+static void apc_persist_sma_init_entry(apc_cache_entry_t *entry) {
+	/* The ref_count must be initialized during allocation. This ensures that the entry
+	 * is not moved by defragmentation before all persistence operations are completed
+	 * and the entry is stored in the hash table. */
+	entry->ref_count = 1;
+}
+
 apc_cache_entry_t *apc_persist(
 		apc_sma_t *sma, apc_serializer_t *serializer, zend_string *key, const zval *val) {
 	apc_persist_context_t ctxt;
@@ -516,7 +523,7 @@ apc_cache_entry_t *apc_persist(
 		}
 	}
 
-	ctxt.alloc = ctxt.alloc_cur = apc_sma_malloc(sma, ctxt.size);
+	ctxt.alloc = ctxt.alloc_cur = apc_sma_malloc(sma, ctxt.size, (apc_sma_malloc_init_f)apc_persist_sma_init_entry);
 	if (!ctxt.alloc) {
 		apc_persist_destroy_context(&ctxt);
 		return NULL;

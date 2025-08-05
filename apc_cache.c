@@ -330,7 +330,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache_size = sizeof(apc_cache_header_t) + nslots * sizeof(uintptr_t);
 
 	/* allocate shm */
-	cache->header = apc_sma_malloc(sma, cache_size);
+	cache->header = apc_sma_malloc(sma, cache_size, NULL);
 
 	if (!cache->header) {
 		zend_error_noreturn(E_CORE_ERROR, "Unable to allocate " ZEND_LONG_FMT " bytes of shared memory for cache structures. Either apc.shm_size is too small or apc.entries_hint too large", cache_size);
@@ -426,7 +426,6 @@ static void apc_cache_set_entry_values(apc_cache_entry_t *entry, const int32_t t
 	entry->ttl = ttl;
 	entry->next = 0;
 	entry->prev = 0;
-	entry->ref_count = 0;
 	entry->nhits = 0;
 	entry->ctime = t;
 	entry->mtime = t;
@@ -458,6 +457,9 @@ static inline zend_bool apc_cache_store_internal(
 		free_entry(cache, entry);
 		return 0;
 	}
+
+	/* release entry, because the ref_count of a new entry is initialized to 1 during allocation */
+	apc_cache_entry_release(cache, entry);
 
 	return 1;
 }
@@ -571,6 +573,8 @@ PHP_APCU_API zend_bool apc_cache_store(
 	php_apc_try {
 		ret = apc_cache_wlocked_insert(cache, entry, exclusive);
 	} php_apc_finally {
+		/* release entry, because the ref_count of a new entry is initialized to 1 during allocation */
+		apc_cache_entry_release(cache, entry);
 		apc_cache_wunlock(cache);
 	} php_apc_end_try();
 
