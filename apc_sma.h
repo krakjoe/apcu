@@ -28,33 +28,29 @@
 #ifndef APC_SMA_H
 #define APC_SMA_H
 
-/* {{{ SMA API
-	APC SMA API provides support for shared memory allocators to external libraries ( and to APC )
-	Skip to the bottom macros for error free usage of the SMA API
+/*
+ * SMA API
+ * APC SMA API provides support for shared memory allocators to external libraries ( and to APC )
+ * Skip to the bottom macros for error free usage of the SMA API
 */
 
 #include "apc.h"
 
-/* {{{ struct definition: apc_sma_link_t */
 typedef struct apc_sma_link_t apc_sma_link_t;
 struct apc_sma_link_t {
 	zend_long size;         /* size of this free block */
 	zend_long offset;       /* offset in segment of this block */
 	apc_sma_link_t* next;   /* link to next free block */
 };
-/* }}} */
 
-/* {{{ struct definition: apc_sma_info_t */
 typedef struct apc_sma_info_t apc_sma_info_t;
 struct apc_sma_info_t {
 	size_t seg_size;       /* segment size */
 	apc_sma_link_t* list;  /* list of free blocks */
 };
-/* }}} */
 
-typedef zend_bool (*apc_sma_expunge_f)(void *pointer, size_t size); /* }}} */
+typedef zend_bool (*apc_sma_expunge_f)(void *pointer, size_t size);
 
-/* {{{ struct definition: apc_sma_t */
 typedef struct _apc_sma_t {
 	zend_bool initialized;         /* flag to indicate this sma has been initialized */
 
@@ -65,7 +61,7 @@ typedef struct _apc_sma_t {
 	/* info */
 	size_t size;                   /* segment size */
 	void  *shmaddr;                /* address of shm segment */
-} apc_sma_t; /* }}} */
+} apc_sma_t;
 
 /*
 * apc_sma_init will initialize a shared memory allocator with the given size of shared memory
@@ -132,9 +128,7 @@ PHP_APCU_API zend_bool apc_sma_check_avail_contiguous(apc_sma_t *sma, size_t siz
 typedef zend_bool (*apc_sma_move_f)(void *data, void *pointer_old, void *pointer_new);
 PHP_APCU_API void apc_sma_defrag(apc_sma_t *sma, void *data, apc_sma_move_f move);
 
-/* {{{ ALIGNWORD: pad up x, aligned to the system's word boundary */
+/* ALIGNWORD: pad up x, aligned to the system's word boundary */
 #define ALIGNWORD(x) ZEND_MM_ALIGNED_SIZE(x)
-/* }}} */
 
 #endif
-

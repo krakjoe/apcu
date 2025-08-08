@@ -60,7 +60,7 @@ apc_cache_entry_t *apc_persist(
 		apc_sma_t *sma, apc_serializer_t *serializer, zend_string *key, const zval *val);
 zend_bool apc_unpersist(zval *dst, const apc_cache_entry_t *entry, apc_serializer_t *serializer);
 
-/* {{{ make_prime */
+/* make_prime */
 static int const primes[] = {
   257, /*   256 */
   521, /*   512 */
@@ -120,19 +120,17 @@ static int make_prime(int n)
 	}
 	return *(k-1);
 }
-/* }}} */
 
 static inline void free_entry(apc_cache_t *cache, apc_cache_entry_t *entry) {
 	apc_sma_free(cache->sma, entry);
 }
 
-/* {{{ apc_cache_hash_slot
- Note: These calculations can and should be done outside of a lock */
+/* These calculations can and should be done outside of a lock */
 static inline void apc_cache_hash_slot(
 		apc_cache_t* cache, zend_string *key, zend_ulong* hash, size_t* slot) {
 	*hash = ZSTR_HASH(key);
 	*slot = *hash % cache->nslots;
-} /* }}} */
+}
 
 static inline zend_bool apc_entry_key_equals(const apc_cache_entry_t *entry, zend_string *key, zend_ulong hash) {
 	return ZSTR_H(&entry->key) == hash
@@ -140,8 +138,8 @@ static inline zend_bool apc_entry_key_equals(const apc_cache_entry_t *entry, zen
 		&& memcmp(ZSTR_VAL(&entry->key), ZSTR_VAL(key), ZSTR_LEN(key)) == 0;
 }
 
-/* An entry is hard expired if the creation time if older than the per-entry TTL.
- * Hard expired entries must be treated indentially to non-existent entries. */
+/* An entry is hard expired if the creation time is older than the per-entry TTL.
+ * Hard expired entries must be treated identically to non-existent entries. */
 static zend_bool apc_cache_entry_hard_expired(apc_cache_entry_t *entry, time_t t) {
 	return entry->ttl && (time_t) (entry->ctime + entry->ttl) < t;
 }
@@ -199,7 +197,6 @@ static void apc_cache_wlocked_unlink_entry(apc_cache_t *cache, apc_cache_entry_t
 	}
 }
 
-/* {{{ apc_cache_wlocked_remove_entry  */
 static void apc_cache_wlocked_remove_entry(apc_cache_t *cache, apc_cache_entry_t *entry)
 {
     /* unlink entry from list */
@@ -221,9 +218,7 @@ static void apc_cache_wlocked_remove_entry(apc_cache_t *cache, apc_cache_entry_t
 		apc_cache_wlocked_link_entry(cache, &cache->header->gc, entry);
 	}
 }
-/* }}} */
 
-/* {{{ apc_cache_wlocked_gc */
 static void apc_cache_wlocked_gc(apc_cache_t* cache)
 {
 	/* This function scans the list of removed cache entries and deletes any
@@ -260,9 +255,8 @@ static void apc_cache_wlocked_gc(apc_cache_t* cache)
 		free_entry(cache, entry);
 	}
 }
-/* }}} */
 
-/* {{{ php serializer */
+/* php serializer */
 PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS)
 {
 	smart_str strbuf = {0};
@@ -290,9 +284,9 @@ PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS)
 		return 1;
 	}
 	return 0;
-} /* }}} */
+}
 
-/* {{{ php unserializer */
+/* php unserializer */
 PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 {
 	const unsigned char *tmp = buf;
@@ -312,9 +306,8 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 		return 0;
 	}
 	return 1;
-} /* }}} */
+}
 
-/* {{{ apc_cache_create */
 PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, zend_long size_hint, zend_long gc_ttl, zend_long ttl, zend_long smart, zend_bool defend) {
 	apc_cache_t* cache;
 	zend_long cache_size;
@@ -364,7 +357,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	CREATE_LOCK(&cache->header->lock);
 
 	return cache;
-} /* }}} */
+}
 
 static inline zend_bool apc_cache_wlocked_insert(
 		apc_cache_t *cache, apc_cache_entry_t *new_entry, zend_bool exclusive) {
@@ -539,7 +532,6 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find_incref(
 	return entry;
 }
 
-/* {{{ apc_cache_store */
 PHP_APCU_API zend_bool apc_cache_store(
 		apc_cache_t* cache, zend_string *key, const zval *val,
 		const int32_t ttl, const zend_bool exclusive) {
@@ -583,10 +575,9 @@ PHP_APCU_API zend_bool apc_cache_store(
 	}
 
 	return ret;
-} /* }}} */
+}
 
 #ifndef ZTS
-/* {{{ data_unserialize */
 static zval data_unserialize(const char *filename)
 {
 	zval retval;
@@ -669,7 +660,7 @@ static int apc_load_data(apc_cache_t* cache, const char *data_file)
 }
 #endif
 
-/* {{{ apc_cache_preload shall load the prepared data files in path into the specified cache */
+/* apc_cache_preload shall load the prepared data files in path into the specified cache */
 PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path)
 {
 #ifndef ZTS
@@ -703,16 +694,13 @@ PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path)
 	apc_error("Cannot load data from apc.preload_path=%s in thread-safe mode", path);
 	return 0;
 #endif
-} /* }}} */
+}
 
-/* {{{ apc_cache_entry_release */
 PHP_APCU_API void apc_cache_entry_release(apc_cache_t *cache, apc_cache_entry_t *entry)
 {
 	ATOMIC_DEC(entry->ref_count);
 }
-/* }}} */
 
-/* {{{ apc_cache_detach */
 PHP_APCU_API void apc_cache_detach(apc_cache_t *cache)
 {
 	/* Important: This function should not clean up anything that's in shared memory,
@@ -725,9 +713,7 @@ PHP_APCU_API void apc_cache_detach(apc_cache_t *cache)
 
 	free(cache);
 }
-/* }}} */
 
-/* {{{ apc_cache_wlocked_real_expunge */
 static void apc_cache_wlocked_real_expunge(apc_cache_t* cache) {
 	size_t i;
 
@@ -753,9 +739,8 @@ static void apc_cache_wlocked_real_expunge(apc_cache_t* cache) {
 
 	/* resets lastkey */
 	memset(&cache->header->lastkey, 0, sizeof(apc_cache_slam_key_t));
-} /* }}} */
+}
 
-/* {{{ apc_cache_clear */
 PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 {
 	if (!cache) {
@@ -777,9 +762,7 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 
 	apc_cache_wunlock(cache);
 }
-/* }}} */
 
-/* {{{ apc_cache_default_expunge */
 PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size)
 {
 	time_t t;
@@ -859,9 +842,7 @@ end_lbl:
 	apc_cache_wunlock(cache);
 	return 1;
 }
-/* }}} */
 
-/* {{{ apc_cache_fetch */
 PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, time_t t, zval *dst)
 {
 	apc_cache_entry_t *entry;
@@ -889,9 +870,8 @@ PHP_APCU_API zend_bool apc_cache_fetch(apc_cache_t* cache, zend_string *key, tim
 	} php_apc_end_try();
 
 	return retval;
-} /* }}} */
+}
 
-/* {{{ apc_cache_exists */
 PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, time_t t)
 {
 	apc_cache_entry_t *entry;
@@ -909,9 +889,7 @@ PHP_APCU_API zend_bool apc_cache_exists(apc_cache_t* cache, zend_string *key, ti
 
 	return entry != NULL;
 }
-/* }}} */
 
-/* {{{ apc_cache_update */
 PHP_APCU_API zend_bool apc_cache_update(
 		apc_cache_t *cache, zend_string *key, apc_cache_updater_t updater, void *data,
 		zend_bool insert_if_not_found, zend_long ttl)
@@ -959,9 +937,7 @@ retry_update:
 
 	return 0;
 }
-/* }}} */
 
-/* {{{ apc_cache_atomic_update_long */
 PHP_APCU_API zend_bool apc_cache_atomic_update_long(
 		apc_cache_t *cache, zend_string *key, apc_cache_atomic_updater_t updater, void *data,
 		zend_bool insert_if_not_found, zend_long ttl)
@@ -1009,9 +985,7 @@ retry_update:
 
 	return 0;
 }
-/* }}} */
 
-/* {{{ apc_cache_delete */
 PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 {
 	zend_ulong h;
@@ -1048,15 +1022,12 @@ PHP_APCU_API zend_bool apc_cache_delete(apc_cache_t *cache, zend_string *key)
 	apc_cache_wunlock(cache);
 	return 0;
 }
-/* }}} */
 
-/* {{{ apc_cache_entry_fetch_zval */
 PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 		apc_cache_t *cache, apc_cache_entry_t *entry, zval *dst)
 {
 	return apc_unpersist(dst, entry, cache->serializer);
 }
-/* }}} */
 
 static inline void array_add_long(zval *array, zend_string *key, zend_long lval) {
 	zval zv;
@@ -1070,7 +1041,6 @@ static inline void array_add_double(zval *array, zend_string *key, double dval) 
 	zend_hash_add_new(Z_ARRVAL_P(array), key, &zv);
 }
 
-/* {{{ apc_cache_link_info */
 static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_entry_t *p)
 {
 	zval link, zv;
@@ -1090,9 +1060,7 @@ static zval apc_cache_link_info(apc_cache_t *cache, apc_cache_entry_t *p)
 
 	return link;
 }
-/* }}} */
 
-/* {{{ apc_cache_info */
 PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool limited)
 {
 	zval list;
@@ -1175,11 +1143,8 @@ PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool 
 
 	return 1;
 }
-/* }}} */
 
-/*
- fetches information about the key provided
-*/
+/* fetches information about the key provided */
 PHP_APCU_API void apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *stat) {
 	zend_ulong h;
 	size_t s;
@@ -1223,7 +1188,6 @@ PHP_APCU_API void apc_cache_stat(apc_cache_t *cache, zend_string *key, zval *sta
 	} php_apc_end_try();
 }
 
-/* {{{ apc_cache_defense */
 PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, time_t t)
 {
 	/* only continue if slam defense is enabled */
@@ -1263,16 +1227,14 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 
 	return 0;
 }
-/* }}} */
 
-/* {{{ apc_cache_serializer */
 PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name) {
 	if (cache && !cache->serializer) {
 		cache->serializer = apc_find_serializer(name);
 	}
-} /* }}} */
+}
 
-PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value) {/*{{{*/
+PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fcall_info *fci, zend_fcall_info_cache *fcc, zend_long ttl, zend_long now, zval *return_value) {
 	apc_cache_entry_t *entry = NULL;
 
 	if (!cache) {
@@ -1312,7 +1274,6 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fca
 		apc_cache_wunlock(cache);
 	} php_apc_end_try();
 }
-/*}}}*/
 
 /*
  * Local variables:

@@ -34,7 +34,7 @@
 #include "apc_globals.h"
 #include "php.h"
 
-/* {{{ console display functions */
+/* console display functions */
 #define APC_PRINT_FUNCTION(name, verbosity)					\
 	void apc_##name(const char *format, ...)				\
 	{									\
@@ -54,9 +54,7 @@ APC_PRINT_FUNCTION(debug, E_NOTICE)
 #else
 void apc_debug(const char *format, ...) {}
 #endif
-/* }}} */
 
-/* {{{ apc_flip_hash */
 HashTable* apc_flip_hash(HashTable *hash) {
 	zval data, *entry;
 	HashTable *new_hash;
@@ -79,7 +77,6 @@ HashTable* apc_flip_hash(HashTable *hash) {
 
 	return new_hash;
 }
-/* }}} */
 
 /*
 * Serializer API
@@ -88,9 +85,7 @@ HashTable* apc_flip_hash(HashTable *hash) {
 
 /* pointer to the list of serializers */
 static apc_serializer_t apc_serializers[APC_MAX_SERIALIZERS] = {{0,}};
-/* }}} */
 
-/* {{{ apc_register_serializer */
 PHP_APCU_API int _apc_register_serializer(
         const char* name, apc_serialize_t serialize, apc_unserialize_t unserialize, void *config) {
 	int i;
@@ -112,14 +107,12 @@ PHP_APCU_API int _apc_register_serializer(
 	}
 
 	return 0;
-} /* }}} */
+}
 
-/* {{{ apc_get_serializers */
 PHP_APCU_API apc_serializer_t* apc_get_serializers()  {
 	return &(apc_serializers[0]);
-} /* }}} */
+}
 
-/* {{{ apc_find_serializer */
 PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name) {
 	int i;
 	apc_serializer_t *serializer;
@@ -131,7 +124,7 @@ PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name) {
 		}
 	}
 	return NULL;
-} /* }}} */
+}
 
 /*
  * Local variables:
