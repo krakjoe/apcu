@@ -52,7 +52,7 @@ static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context);
 
 extern apc_cache_t* apc_user_cache;
 
-/* {{{ apc_core_unmap
+/* apc_core_unmap
  *  Coredump signal handler, detached from shm and calls previously installed handlers
  */
 static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
@@ -67,11 +67,11 @@ static void apc_core_unmap(int signo, siginfo_t *siginfo, void *context)
 #else
 	raise(signo);
 #endif
-} /* }}} */
+}
 
 
 #if defined(SIGUSR1) && defined(APC_CLEAR_SIGNAL)
-/* {{{ apc_reload_cache */
+/* apc_reload_cache */
 static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
 	if (apc_user_cache) {
 		apc_cache_clear(apc_user_cache);
@@ -84,10 +84,10 @@ static void apc_clear_cache(int signo, siginfo_t *siginfo, void *context) {
 #else
 	raise(signo);
 #endif
-} /* }}} */
+}
 #endif
 
-/* {{{ apc_rehandle_signal
+/* apc_rehandle_signal
  *  Call the previously registered handler for a signal
  */
 static void apc_rehandle_signal(int signo, siginfo_t *siginfo, void *context)
@@ -106,9 +106,9 @@ static void apc_rehandle_signal(int signo, siginfo_t *siginfo, void *context)
 		}
 	}
 
-} /* }}} */
+}
 
-/* {{{ apc_register_signal
+/* apc_register_signal
  *  Set a handler for a previously installed signal and save so we can
  *  callback when handled
  */
@@ -150,9 +150,9 @@ static int apc_register_signal(int signo, void (*handler)(int, siginfo_t*, void*
 		return SUCCESS;
 	}
 	return FAILURE;
-} /* }}} */
+}
 
-/* {{{ apc_set_signals
+/* apc_set_signals
  *  Install our signal handlers */
 void apc_set_signals()
 {
@@ -196,9 +196,9 @@ void apc_set_signals()
 #endif
 		}
 	}
-} /* }}} */
+}
 
-/* {{{ apc_set_signals
+/* apc_set_signals
  *  cleanup signals for shutdown */
 void apc_shutdown_signals()
 {
@@ -211,7 +211,6 @@ void apc_shutdown_signals()
 		apc_signal_info.installed = 0; /* just in case */
 	}
 }
-/* }}} */
 
 #endif  /* HAVE_SIGACTION */
 

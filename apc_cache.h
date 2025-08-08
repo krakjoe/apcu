@@ -46,7 +46,7 @@ struct apc_cache_slam_key_t {
 #endif
 };
 
-/* {{{ struct definition: apc_cache_entry_t */
+/* struct definition: apc_cache_entry_t */
 typedef struct apc_cache_entry_t apc_cache_entry_t;
 struct apc_cache_entry_t {
 	uintptr_t next;          /* offset to next entry (MUST BE THE 1st FIELD OF THE STRUCT!) */
@@ -62,9 +62,8 @@ struct apc_cache_entry_t {
 	zval val;                /* the zval copied at store time */
 	zend_string key;         /* entry key (MUST BE THE LAST FIELD OF THE STRUCT!) */
 };
-/* }}} */
 
-/* {{{ struct definition: apc_cache_header_t
+/* struct definition: apc_cache_header_t
    Any values that must be shared among processes should go in here. */
 typedef struct _apc_cache_header_t {
 	apc_lock_t lock;                /* header lock */
@@ -79,9 +78,9 @@ typedef struct _apc_cache_header_t {
 	time_t stime;                   /* start time */
 	apc_cache_slam_key_t lastkey;   /* last key inserted (not necessarily without error) */
 	uintptr_t gc;                   /* offset in shm to the first entry of gc list */
-} apc_cache_header_t; /* }}} */
+} apc_cache_header_t;
 
-/* {{{ struct definition: apc_cache_t */
+/* struct definition: apc_cache_t */
 typedef struct _apc_cache_t {
 	apc_cache_header_t* header;   /* cache header (stored in SHM) */
 	uintptr_t* slots;             /* array of cache slots (stored in SHM) */
@@ -92,13 +91,13 @@ typedef struct _apc_cache_t {
 	zend_long ttl;                /* if slot is needed and entry's access time is older than this ttl, remove it */
 	zend_long smart;              /* smart parameter for gc */
 	zend_bool defend;             /* defense parameter for runtime */
-} apc_cache_t; /* }}} */
+} apc_cache_t;
 
-/* {{{ typedef: apc_cache_updater_t */
-typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void* data); /* }}} */
+/* typedef: apc_cache_updater_t */
+typedef zend_bool (*apc_cache_updater_t)(apc_cache_t*, apc_cache_entry_t*, void* data);
 
-/* {{{ typedef: apc_cache_atomic_updater_t */
-typedef zend_bool (*apc_cache_atomic_updater_t)(apc_cache_t*, zend_long*, void* data); /* }}} */
+/* typedef: apc_cache_atomic_updater_t */
+typedef zend_bool (*apc_cache_atomic_updater_t)(apc_cache_t*, zend_long*, void* data);
 
 /*
  * apc_cache_create creates the shared memory cache.
@@ -243,7 +242,8 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name);
 * Note: beware of locking (copy it exactly), setting states is also important
 */
 
-/* {{{ apc_cache_default_expunge
+/*
+* apc_cache_default_expunge
 * Where smart is not set:
 *  1) Perform cleanup of stale entries
 *  2) If available memory is less than the size requested, run full expunge
