@@ -65,7 +65,7 @@ typedef apc_windows_cs_rwlock_t apc_lock_t;
 # define APC_LOCK_SHARED
 #endif
 
-/* {{{ functions */
+/* functions */
 /*
   The following functions should be called once per process:
 	apc_lock_init initializes attributes suitable for all locks
@@ -82,16 +82,15 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock);
 PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock);
 PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock);
 PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock);
-PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
+PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock);
 
-/* {{{ generic locking macros */
+/* generic locking macros */
 #define CREATE_LOCK(lock)     apc_lock_create(lock)
 #define DESTROY_LOCK(lock)    apc_lock_destroy(lock)
 #define WLOCK(lock)           apc_lock_wlock(lock)
 #define WUNLOCK(lock)         { apc_lock_wunlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
 #define RLOCK(lock)           apc_lock_rlock(lock)
 #define RUNLOCK(lock)         { apc_lock_runlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
-/* }}} */
 
 /* atomic operations */
 #ifdef PHP_WIN32
