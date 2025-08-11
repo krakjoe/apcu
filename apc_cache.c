@@ -817,7 +817,8 @@ PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size
 		while (*entry_offset) {
 			apc_cache_entry_t *entry = ENTRYAT(*entry_offset);
 
-			if (apc_cache_entry_expired(cache, entry, t)) {
+			/* remove all entries that are expired or cannot expire via hard or soft ttl */
+			if (apc_cache_entry_expired(cache, entry, t) || (!cache->ttl && !entry->ttl)) {
 				apc_cache_wlocked_remove_entry(cache, entry);
 				continue;
 			}
