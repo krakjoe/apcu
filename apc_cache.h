@@ -152,6 +152,13 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache);
 PHP_APCU_API zend_bool apc_cache_store(
         apc_cache_t* cache, zend_string *key, const zval *val,
         const int32_t ttl, const zend_bool exclusive);
+
+/*
+ * apc_cache_update_ttl updates ttl of the key, if it exists
+ */
+PHP_APCU_API zend_bool apc_cache_update_ttl(
+		apc_cache_t* cache, zend_string *key, const int32_t ttl);
+
 /*
  * apc_cache_update updates an entry in place. The updater function must not bailout.
  * The update is performed under write-lock and doesn't have to be atomic.

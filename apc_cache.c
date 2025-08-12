@@ -585,6 +585,34 @@ PHP_APCU_API zend_bool apc_cache_store(
 	return ret;
 } /* }}} */
 
+/* {{{ apc_cache_set_ttl */
+PHP_APCU_API zend_bool apc_cache_update_ttl(
+		apc_cache_t* cache, zend_string *key, const int32_t ttl) {
+	apc_cache_entry_t *entry;
+	zend_bool retval = 0;
+	time_t t = apc_time();
+
+	if (!cache) {
+		return 0;
+	}
+
+	if (!apc_cache_rlock(cache)) {
+		return 0;
+	}
+
+	entry = apc_cache_rlocked_find_nostat(cache, key, t);
+	if (!entry) {
+		apc_cache_runlock(cache);
+		return 0;
+	}
+
+	entry->ctime = t;
+	entry->ttl = ttl;
+
+	apc_cache_runlock(cache);
+	return 1;
+} /* }}} */
+
 #ifndef ZTS
 /* {{{ data_unserialize */
 static zval data_unserialize(const char *filename)
