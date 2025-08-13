@@ -107,32 +107,26 @@ PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
 typedef int (*apc_serialize_t)(APC_SERIALIZER_ARGS);
 typedef int (*apc_unserialize_t)(APC_UNSERIALIZER_ARGS);
 
-/* {{{ struct definition: apc_serializer_t */
 typedef struct apc_serializer_t {
 	const char*        name;
 	apc_serialize_t    serialize;
 	apc_unserialize_t  unserialize;
 	void*              config;
 } apc_serializer_t;
-/* }}} */
 
-/* {{{ _apc_register_serializer
- registers the serializer using the given name and parameters */
+/* registers the serializer using the given name and parameters */
 PHP_APCU_API int _apc_register_serializer(
         const char* name, apc_serialize_t serialize, apc_unserialize_t unserialize, void *config);
-/* }}} */
 
-/* {{{ apc_get_serializers
- fetches the list of serializers */
-PHP_APCU_API apc_serializer_t* apc_get_serializers(void); /* }}} */
+/* fetches the list of serializers */
+PHP_APCU_API apc_serializer_t* apc_get_serializers(void);
 
-/* {{{ apc_find_serializer
- finds a previously registered serializer by name */
-PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name); /* }}} */
+/* finds a previously registered serializer by name */
+PHP_APCU_API apc_serializer_t* apc_find_serializer(const char* name);
 
-/* {{{ default serializers */
+/* default serializers */
 PHP_APCU_API int APC_SERIALIZER_NAME(php) (APC_SERIALIZER_ARGS);
-PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS); /* }}} */
+PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS);
 
 #define php_apc_try                        \
 {                                          \

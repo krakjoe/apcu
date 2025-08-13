@@ -46,7 +46,6 @@
 #define APC_ITER_NONE       0
 #define APC_ITER_ALL        (0xffffffffL)
 
-/* {{{ apc_iterator_t */
 typedef struct _apc_iterator_t {
 	short int initialized;   /* sanity check in case __construct failed */
 	zend_long format;             /* format bitmask of the return values ie: key, value, info */
@@ -69,17 +68,14 @@ typedef struct _apc_iterator_t {
 	zend_long count;              /* count total */
 	zend_object obj;
 } apc_iterator_t;
-/* }}} */
 
 #define apc_iterator_fetch_from(o) ((apc_iterator_t*)((char*)o - XtOffsetOf(apc_iterator_t, obj)))
 #define apc_iterator_fetch(z) apc_iterator_fetch_from(Z_OBJ_P(z))
 
-/* {{{ apc_iterator_item */
 typedef struct _apc_iterator_item_t {
 	zend_string *key;
 	zval value;
 } apc_iterator_item_t;
-/* }}} */
 
 PHP_APCU_API void apc_iterator_obj_init(
 	apc_iterator_t *iterator,

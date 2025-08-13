@@ -135,7 +135,7 @@ static inline block_t *find_block(sma_header_t *smaheader, size_t realsize) {
 	return found;
 }
 
-/* {{{ sma_allocate: tries to allocate at least size bytes of shared memory */
+/* sma_allocate: tries to allocate at least size bytes of shared memory */
 static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 {
 	block_t* prv;           /* block prior to working block */
@@ -185,9 +185,8 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 
 	return OFFSET(cur) + ALIGNWORD(sizeof(block_t));
 }
-/* }}} */
 
-/* {{{ sma_deallocate: deallocates the block at the given offset */
+/* sma_deallocate: deallocates the block at the given offset */
 static APC_HOTSPOT size_t sma_deallocate(sma_header_t *smaheader, size_t offset)
 {
 	block_t* cur;       /* the new block to insert */
@@ -240,9 +239,7 @@ static APC_HOTSPOT size_t sma_deallocate(sma_header_t *smaheader, size_t offset)
 
 	return size;
 }
-/* }}} */
 
-/* {{{ APC SMA API */
 PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f expunge, size_t size, size_t min_alloc_size, char *mask, zend_long hugepage_size) {
 	if (sma->initialized) {
 		return;
@@ -508,8 +505,6 @@ PHP_APCU_API void apc_sma_defrag(apc_sma_t *sma, void *data, apc_sma_move_f move
 
 	SMA_UNLOCK(sma);
 }
-
-/* }}} */
 
 /*
  * Local variables:

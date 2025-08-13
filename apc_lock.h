@@ -22,10 +22,10 @@
 /*
  APCu works most efficiently where there is access to native read/write locks
  If the current system has native rwlocks present they will be used, if they are
-	not present, APCu will emulate their behavior with standard mutex.
+ not present, APCu will emulate their behavior with standard mutex.
  While APCu is emulating read/write locks, reads and writes are exclusive,
-	additionally the write lock prefers readers, as is the default behaviour of
-	the majority of Posix rwlock implementations
+ additionally the write lock prefers readers, as is the default behavior of
+ the majority of Posix rwlock implementations
 */
 
 #ifdef HAVE_CONFIG_H
@@ -65,13 +65,14 @@ typedef apc_windows_cs_rwlock_t apc_lock_t;
 # define APC_LOCK_SHARED
 #endif
 
-/* {{{ functions */
 /*
-  The following functions should be called once per process:
-	apc_lock_init initializes attributes suitable for all locks
-	apc_lock_cleanup destroys those attributes
-  This saves us from having to create and destroy attributes for
-  every lock we use at runtime */
+ The following functions should be called once per process:
+ - apc_lock_init initializes attributes suitable for all locks
+ - apc_lock_cleanup destroys those attributes
+
+ This saves us from having to create and destroy attributes for
+ every lock we use at runtime
+ */
 PHP_APCU_API zend_bool apc_lock_init(void);
 PHP_APCU_API void      apc_lock_cleanup(void);
 /*
@@ -82,16 +83,15 @@ PHP_APCU_API zend_bool apc_lock_rlock(apc_lock_t *lock);
 PHP_APCU_API zend_bool apc_lock_wlock(apc_lock_t *lock);
 PHP_APCU_API zend_bool apc_lock_runlock(apc_lock_t *lock);
 PHP_APCU_API zend_bool apc_lock_wunlock(apc_lock_t *lock);
-PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock); /* }}} */
+PHP_APCU_API void apc_lock_destroy(apc_lock_t *lock);
 
-/* {{{ generic locking macros */
+/* generic locking macros */
 #define CREATE_LOCK(lock)     apc_lock_create(lock)
 #define DESTROY_LOCK(lock)    apc_lock_destroy(lock)
 #define WLOCK(lock)           apc_lock_wlock(lock)
 #define WUNLOCK(lock)         { apc_lock_wunlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
 #define RLOCK(lock)           apc_lock_rlock(lock)
 #define RUNLOCK(lock)         { apc_lock_runlock(lock); HANDLE_UNBLOCK_INTERRUPTIONS(); }
-/* }}} */
 
 /* atomic operations */
 #ifdef PHP_WIN32
