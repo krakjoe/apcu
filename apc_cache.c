@@ -565,14 +565,16 @@ PHP_APCU_API zend_bool apc_cache_store(
 	php_apc_try {
 		ret = apc_cache_wlocked_insert(cache, entry, exclusive);
 	} php_apc_finally {
-		/* release entry, because the ref_count of a new entry is initialized to 1 during allocation */
-		apc_cache_entry_release(cache, entry);
 		apc_cache_wunlock(cache);
-	} php_apc_end_try();
 
-	if (!ret) {
-		free_entry(cache, entry);
-	}
+		if (ret) {
+			/* release entry, because the ref_count of a new entry is initialized to 1 during allocation */
+			apc_cache_entry_release(cache, entry);
+		} else {
+			/* the entry mustn't be released before it is freed to prevent defragmentation from moving the entry */
+			free_entry(cache, entry);
+		}
+	} php_apc_end_try();
 
 	return ret;
 }
