@@ -41,7 +41,7 @@ ZEND_BEGIN_MODULE_GLOBALS(apcu)
 	zend_long entries_hint;      /* hint at the number of entries expected */
 	zend_long gc_ttl;            /* parameter to apc_cache_create */
 	zend_long ttl;               /* parameter to apc_cache_create */
-	zend_long smart;             /* smart value */
+	zend_long expunge_threshold; /* expunge if less than this thousandth of shm is free after cleanup */
 
 #ifdef APC_MMAP
 	char *mmap_file_mask;         /* mktemp-style file-mask to pass to mmap */
