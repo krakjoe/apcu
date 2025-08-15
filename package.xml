@@ -39,6 +39,15 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
+  - The apc.smart configuration setting has been further improved. Smart now specifies the minimum
+    percentage of shared memory that must be freed by removing expired entries during the default
+    expunge operation. If less memory is freed, the entire cache is discarded (expunge).
+    This prevents the default expunge operation from being called too often, thus preventing
+    unnecessary cpu load. Furthermore, the default value of apc.smart is now 1. This means that
+    the entire cache is now discarded by default if less than 1% of the shared memory could be
+    freed by removing all expired entries. If apc.smart >= 100, the default expunge operation no
+    longer attempts to free memory by removing expired entries and immediately discards the
+    entire cache.
  </notes>
  <contents>
   <dir name="/">

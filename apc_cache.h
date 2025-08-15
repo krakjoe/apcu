@@ -243,13 +243,12 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name);
 * free shared memory to satisfy an allocation request. It attempts to free memory
 * (e.g., by removing entries) so that the allocation request can be satisfied.
 *
-* Where smart is not set:
-*  1) Perform cleanup of stale entries
-*  2) If available memory is less than the size requested, run full expunge
+* Where apc.smart < 100:
+*  1) Perform cleanup of expired entries
+*  2) If available memory is less than (shm_size / 100 * smart + size), run full expunge
 *
-* Where smart is set:
-*  1) Perform cleanup of stale entries
-*  2) If available memory is less than the size requested * smart, run full expunge
+* Where apc.smart >= 100:
+*  1) A full expunge is always performed
 *
 * The TTL of an entry takes precedence over the TTL of a cache
 */
