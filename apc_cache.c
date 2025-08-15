@@ -792,23 +792,27 @@ PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size
 		return 0;
 	}
 
-	/* smart > 1 increases the probability of a full cache wipe,
-	 * so expunge() is called less often when memory is low. */
-	size = (cache->smart > 0L) ? (size_t) (cache->smart * size) : size;
+	/* smart contains the minimum percentage of memory that should be freed by removing expired entries.
+	 * If not enough memory could be freed, a full cache wipe will be performed, so that
+	 * the default expunge operation is called less often when memory pressure is high. */
+	size = (cache->smart > 0L) ? (size_t) (cache->sma->size / 100 * cache->smart + size) : size;
 
-	/* look for junk */
-	for (i = 0; i < cache->nslots; i++) {
-		uintptr_t *entry_offset = &cache->slots[i];
-		while (*entry_offset) {
-			apc_cache_entry_t *entry = ENTRYAT(*entry_offset);
+	/* if smart is set to 100%, skip removing expired entries as this always results in a real expunge */
+	if (cache->smart < 100) {
+		/* remove expired entries */
+		for (i = 0; i < cache->nslots; i++) {
+			uintptr_t *entry_offset = &cache->slots[i];
+			while (*entry_offset) {
+				apc_cache_entry_t * entry = ENTRYAT(*entry_offset);
 
-			if (apc_cache_entry_expired(cache, entry, t)) {
-				apc_cache_wlocked_remove_entry(cache, entry);
-				continue;
+				if (apc_cache_entry_expired(cache, entry, t)) {
+					apc_cache_wlocked_remove_entry(cache, entry);
+					continue;
+				}
+
+				/* grab next entry */
+				entry_offset = &entry->next;
 			}
-
-			/* grab next entry */
-			entry_offset = &entry->next;
 		}
 	}
 
