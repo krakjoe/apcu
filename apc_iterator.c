@@ -303,7 +303,7 @@ static void apc_iterator_totals(apc_iterator_t *iterator) {
 	} php_apc_end_try();
 }
 
-void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long format, size_t chunk_size, zend_long list)
+void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_ulong format, size_t chunk_size, zend_long list)
 {
 	if (!APCG(enabled)) {
 		zend_throw_error(NULL, "APC must be enabled to use APCUIterator");
@@ -311,7 +311,7 @@ void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long for
 	}
 
 	if (format > APC_ITER_ALL) {
-		apc_error("APCUIterator format is invalid");
+		zend_throw_error(NULL, "APCUIterator format is invalid");
 		return;
 	}
 
@@ -341,9 +341,10 @@ void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long for
 		iterator->pce = pcre_get_compiled_regex_cache(iterator->regex);
 
 		if (!iterator->pce) {
-			apc_error("Could not compile regular expression: %s", Z_STRVAL_P(search));
+			zend_throw_error(NULL, "Could not compile regular expression: %s", Z_STRVAL_P(search));
 			zend_string_release(iterator->regex);
 			iterator->regex = NULL;
+			return;
 		}
 
 #if PHP_VERSION_ID >= 70300
@@ -372,7 +373,7 @@ PHP_METHOD(APCUIterator, __construct) {
 	ZEND_PARSE_PARAMETERS_END();
 
 	if (chunk_size < 0) {
-		apc_error("APCUIterator chunk size must be 0 or greater");
+		zend_throw_error(NULL, "APCUIterator chunk size must be 0 or greater");
 		return;
 	}
 
@@ -563,7 +564,7 @@ int apc_iterator_delete(zval *zobj) {
 	apc_iterator_item_t *item;
 
 	if (!ce || !instanceof_function(ce, apc_iterator_ce)) {
-		apc_error("apc_delete object argument must be instance of APCUIterator.");
+		apc_warning("apcu_delete object argument must be an instance of APCUIterator.");
 		return 0;
 	}
 	iterator = apc_iterator_fetch(zobj);
