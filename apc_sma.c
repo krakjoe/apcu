@@ -178,6 +178,9 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 
 	cur->fnext = 0;
 
+	/* store used space to be able to reclaim unused space during defragmentation */
+	cur->fprev = realsize;
+
 	/* update the segment header */
 	smaheader->avail -= cur->size;
 
@@ -454,6 +457,7 @@ PHP_APCU_API void apc_sma_defrag(apc_sma_t *sma, void *data, apc_sma_move_f move
 	sma_header_t *smaheader = SMA_HDR(sma);
 	block_t *cur = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)) + ALIGNWORD(sizeof(block_t)));
 	block_t *first = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+	size_t reclaimed_size = 0;
 
 	if (!SMA_LOCK(sma)) {
 		return;
@@ -488,8 +492,13 @@ PHP_APCU_API void apc_sma_defrag(apc_sma_t *sma, void *data, apc_sma_move_f move
 			continue;
 		}
 
+		/* reclaim unused space from the allocated block (nxt->fprev contains the used space) */
+		size_t free_size = nxt->size - nxt->fprev;
+		reclaimed_size += free_size;
+		nxt->size -= free_size;
+		free_size += cur->size;
+
 		/* swap cur and nxt by moving nxt (incl. header) and initializing a new block header for cur behind it */
-		size_t free_size = cur->size;
 		memmove(cur, nxt, nxt->size);
 		cur->prev_size = 0;
 		cur = NEXT_SBLOCK(cur);
@@ -502,6 +511,8 @@ PHP_APCU_API void apc_sma_defrag(apc_sma_t *sma, void *data, apc_sma_move_f move
 			cur->size += nxt->size;
 		}
 	}
+
+	smaheader->avail += reclaimed_size;
 
 	SMA_UNLOCK(sma);
 }
