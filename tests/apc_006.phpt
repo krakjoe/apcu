@@ -9,7 +9,6 @@ if (PHP_VERSION_ID >= 70300) die('skip Only for PHP < 7.3');
 apc.enabled=1
 apc.enable_cli=1
 apc.serializer=php
-report_memleaks=0
 --FILE--
 <?php
 
