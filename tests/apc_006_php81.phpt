@@ -9,7 +9,6 @@ if (PHP_VERSION_ID < 80100) die('skip Only for PHP >= 8.1');
 apc.enabled=1
 apc.enable_cli=1
 apc.serializer=php
-report_memleaks=0
 --FILE--
 <?php
 
