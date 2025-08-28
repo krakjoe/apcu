@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2025-08-05</date>
+ <date>2025-08-28</date>
  <version>
-  <release>5.1.27-dev</release>
+  <release>5.1.27</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,6 +39,12 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
+  - Fixed another hang introduced in apcu 5.1.25, which can occur when defragmentation is triggered
+    under load.
+
+  Internal changes:
+  - The report_memleaks INI directive has been removed from all tests as it will be deprecated in
+  PHP 8.5.
  </notes>
  <contents>
   <dir name="/">
