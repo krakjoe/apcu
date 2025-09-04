@@ -74,12 +74,21 @@ apc_sma_t apc_sma;
 	APC_STRINGS
 #undef X
 
+#if PHP_VERSION_ID < 80000
+#ifndef ZTS
+#define ZEND_INI_GET_BASE() ((char *) mh_arg2)
+#else
+#define ZEND_INI_GET_BASE() ((char *) ts_resource(*((int *) mh_arg2)))
+#endif
+#define ZEND_INI_GET_ADDR() (ZEND_INI_GET_BASE() + (size_t) mh_arg1)
+#endif
+
 /* Global init functions */
 static void php_apc_init_globals(zend_apcu_globals* apcu_globals)
 {
 	apcu_globals->initialized = 0;
 	apcu_globals->slam_defense = 0;
-	apcu_globals->smart = 0;
+	apcu_globals->expunge_threshold = 0;
 	apcu_globals->preload_path = NULL;
 	apcu_globals->coredump_unmap = 0;
 	apcu_globals->use_request_time = 0;
@@ -88,6 +97,25 @@ static void php_apc_init_globals(zend_apcu_globals* apcu_globals)
 }
 
 /* PHP_INI */
+
+static PHP_INI_MH(OnUpdateThousandth)
+{
+#if PHP_VERSION_ID >= 80200
+	zend_long s = zend_ini_parse_quantity_warn(new_value, entry->name);
+#else
+	zend_long s = zend_atol(new_value->val, new_value->len);
+#endif
+
+	if ((s < 0) || (s > 1000)) {
+		php_error_docref(NULL, E_CORE_ERROR, "%s must be a value from 0 - 1000", ZSTR_VAL(entry->name));
+		return FAILURE;
+	}
+
+	zend_long *p = (zend_long *) ZEND_INI_GET_ADDR();
+	*p = s;
+
+	return SUCCESS;
+}
 
 static PHP_INI_MH(OnUpdateShmSize)
 {
@@ -145,7 +173,7 @@ STD_PHP_INI_ENTRY("apc.shm_size",       "32M",  PHP_INI_SYSTEM, OnUpdateShmSize,
 STD_PHP_INI_ENTRY("apc.entries_hint",   "0",    PHP_INI_SYSTEM, OnUpdateLong,              entries_hint,     zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.gc_ttl",         "3600", PHP_INI_SYSTEM, OnUpdateLong,              gc_ttl,           zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.ttl",            "0",    PHP_INI_SYSTEM, OnUpdateLong,              ttl,              zend_apcu_globals, apcu_globals)
-STD_PHP_INI_ENTRY("apc.smart",          "0",    PHP_INI_SYSTEM, OnUpdateLong,              smart,            zend_apcu_globals, apcu_globals)
+STD_PHP_INI_ENTRY("apc.expunge_threshold", "5", PHP_INI_SYSTEM, OnUpdateThousandth,        expunge_threshold, zend_apcu_globals, apcu_globals)
 #ifdef APC_MMAP
 STD_PHP_INI_ENTRY("apc.mmap_file_mask", NULL,   PHP_INI_SYSTEM, OnUpdateString,            mmap_file_mask,    zend_apcu_globals, apcu_globals)
 STD_PHP_INI_ENTRY("apc.mmap_hugepage_size", "0", PHP_INI_SYSTEM, OnUpdateMmapHugepageSize, mmap_hugepage_size, zend_apcu_globals, apcu_globals)
@@ -267,7 +295,7 @@ static PHP_MINIT_FUNCTION(apcu)
 			apc_user_cache = apc_cache_create(
 				&apc_sma,
 				apc_find_serializer(APCG(serializer_name)),
-				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(smart), APCG(slam_defense));
+				APCG(entries_hint), APCG(gc_ttl), APCG(ttl), APCG(expunge_threshold), APCG(slam_defense));
 
 			/* preload data from path specified in configuration */
 			if (APCG(preload_path)) {
