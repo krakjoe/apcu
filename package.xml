@@ -39,6 +39,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
+  - Shared memory for new entries is allocated faster in scenarios with many free memory blocks.
+    This should improve APCu's insertion performance when entries are frequently deleted or
+    replaced, or when APCu is used with larger amounts of memory.
  </notes>
  <contents>
   <dir name="/">
