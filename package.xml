@@ -96,7 +96,6 @@
     <file name="apc_mmap_hugepage_004.phpt" role="test" />
     <file name="apc_mmap_hugepage_005.phpt" role="test" />
     <file name="apc_mmap_hugepage_006.phpt" role="test" />
-    <file name="bug63224.phpt" role="test" />
     <file name="bug76145.phpt" role="test" />
     <file name="get_included_files_inc1.inc" role="test" />
     <file name="get_included_files_inc2.inc" role="test" />
