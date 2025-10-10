@@ -98,6 +98,21 @@ struct block_t {
 /* How many extra blocks to check for a better fit */
 #define BEST_FIT_LIMIT 3
 
+static inline void link_free_block_at_start(sma_header_t *smaheader, block_t *cur) {
+	block_t *dst = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+
+	/* insert cur as first block in the free list */
+	cur->fnext = dst->fnext;
+	cur->fprev = OFFSET(dst);
+	dst->fnext = OFFSET(cur);
+	BLOCKAT(cur->fnext)->fprev = dst->fnext;
+}
+
+static inline void unlink_free_block(sma_header_t *smaheader, block_t *cur) {
+	BLOCKAT(cur->fprev)->fnext = cur->fnext;
+	BLOCKAT(cur->fnext)->fprev = cur->fprev;
+}
+
 static inline block_t *find_block(sma_header_t *smaheader, size_t realsize) {
 	block_t *cur = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
 	block_t *found = NULL;
@@ -150,8 +165,7 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 	}
 
 	/* remove cur from the list of free blocks */
-	BLOCKAT(cur->fprev)->fnext = cur->fnext;
-	BLOCKAT(cur->fnext)->fprev = cur->fprev;
+	unlink_free_block(smaheader, cur);
 
 	if (cur->size >= realsize && cur->size < (realsize + smaheader->min_block_size)) {
 		/* cur is big enough for realsize, but too small to split */
@@ -170,13 +184,10 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 		SET_CANARY(nxt);
 
 		/* put the remaining block (nxt) back into the free list */
-		block_t *dst = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
-		nxt->fnext = dst->fnext;
-		nxt->fprev = OFFSET(dst);
-		dst->fnext = OFFSET(nxt);
-		BLOCKAT(nxt->fnext)->fprev = dst->fnext;
+		link_free_block_at_start(smaheader, nxt);
 	}
 
+	/* mark cur as allocated */
 	cur->fnext = 0;
 
 	/* store used space to be able to reclaim unused space during defragmentation */
@@ -209,10 +220,10 @@ static APC_HOTSPOT size_t sma_deallocate(sma_header_t *smaheader, size_t offset)
 	size = cur->size;
 
 	if (cur->prev_size != 0) {
-		/* remove prv from list */
+		/* remove prv from the list of free blocks */
 		prv = PREV_SBLOCK(cur);
-		BLOCKAT(prv->fnext)->fprev = prv->fprev;
-		BLOCKAT(prv->fprev)->fnext = prv->fnext;
+		unlink_free_block(smaheader, prv);
+
 		/* cur and prv share an edge, combine them */
 		prv->size += cur->size;
 
@@ -223,23 +234,21 @@ static APC_HOTSPOT size_t sma_deallocate(sma_header_t *smaheader, size_t offset)
 	nxt = NEXT_SBLOCK(cur);
 	if (nxt->fnext != 0) {
 		assert(NEXT_SBLOCK(NEXT_SBLOCK(cur))->prev_size == nxt->size);
+		/* remove nxt from the list of free blocks */
+		unlink_free_block(smaheader, nxt);
+
 		/* cur and nxt shared an edge, combine them */
-		BLOCKAT(nxt->fnext)->fprev = nxt->fprev;
-		BLOCKAT(nxt->fprev)->fnext = nxt->fnext;
 		cur->size += nxt->size;
 
 		CHECK_CANARY(nxt);
 		RESET_CANARY(nxt);
 	}
 
+	/* mark in the sequentially next block that the previous block is free */
 	NEXT_SBLOCK(cur)->prev_size = cur->size;
 
-	/* insert new block after prv */
-	prv = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
-	cur->fnext = prv->fnext;
-	prv->fnext = OFFSET(cur);
-	cur->fprev = OFFSET(prv);
-	BLOCKAT(cur->fnext)->fprev = OFFSET(cur);
+	/* insert cur into the free list */
+	link_free_block_at_start(smaheader, cur);
 
 	return size;
 }
@@ -482,10 +491,8 @@ PHP_APCU_API void apc_sma_defrag(apc_sma_t *sma, void *data, apc_sma_move_f move
 		/* if nxt is the last block, or if nxt can't be moved, cur can't be combined with other free blocks */
 		if (nxt->size == 0 || !move(data, (char *)nxt + ALIGNWORD(sizeof(block_t)), (char *)cur + ALIGNWORD(sizeof(block_t)))) {
 			/* insert cur into the free list */
-			cur->fnext = first->fnext;
-			cur->fprev = OFFSET(first);
-			first->fnext = OFFSET(cur);
-			BLOCKAT(cur->fnext)->fprev = first->fnext;
+			link_free_block_at_start(smaheader, cur);
+
 			cur->prev_size = 0;
 			nxt->prev_size = cur->size;
 
