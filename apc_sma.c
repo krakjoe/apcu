@@ -138,7 +138,6 @@ static inline block_t *find_block(sma_header_t *smaheader, size_t realsize) {
 /* sma_allocate: tries to allocate at least size bytes of shared memory */
 static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 {
-	block_t* prv;           /* block prior to working block */
 	block_t* cur;           /* working block in list */
 	size_t realsize;        /* actual size of block needed, including block header */
 
@@ -150,11 +149,12 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 		return SIZE_MAX;
 	}
 
+	/* remove cur from the list of free blocks */
+	BLOCKAT(cur->fprev)->fnext = cur->fnext;
+	BLOCKAT(cur->fnext)->fprev = cur->fprev;
+
 	if (cur->size >= realsize && cur->size < (realsize + smaheader->min_block_size)) {
-		/* cur is big enough for realsize, but too small to split - unlink it */
-		prv = BLOCKAT(cur->fprev);
-		prv->fnext = cur->fnext;
-		BLOCKAT(cur->fnext)->fprev = OFFSET(prv);
+		/* cur is big enough for realsize, but too small to split */
 		NEXT_SBLOCK(cur)->prev_size = 0;  /* block is alloc'd */
 	} else {
 		/* cur is too big; split it into two smaller blocks */
@@ -169,11 +169,12 @@ static APC_HOTSPOT size_t sma_allocate(sma_header_t *smaheader, size_t size)
 		NEXT_SBLOCK(nxt)->prev_size = nxt->size;  /* adjust size */
 		SET_CANARY(nxt);
 
-		/* replace cur with next in free list */
-		nxt->fnext = cur->fnext;
-		nxt->fprev = cur->fprev;
-		BLOCKAT(nxt->fnext)->fprev = OFFSET(nxt);
-		BLOCKAT(nxt->fprev)->fnext = OFFSET(nxt);
+		/* put the remaining block (nxt) back into the free list */
+		block_t *dst = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
+		nxt->fnext = dst->fnext;
+		nxt->fprev = OFFSET(dst);
+		dst->fnext = OFFSET(nxt);
+		BLOCKAT(nxt->fnext)->fprev = dst->fnext;
 	}
 
 	cur->fnext = 0;
