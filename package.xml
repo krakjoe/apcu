@@ -118,6 +118,7 @@
     <file name="iterator_009.phpt" role="test" />
     <file name="iterator_010.phpt" role="test" />
     <file name="iterator_011.phpt" role="test" />
+    <file name="iterator_012.phpt" role="test" />
     <file name="not_enough_shm.phpt" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />
