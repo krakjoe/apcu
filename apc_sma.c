@@ -391,7 +391,11 @@ PHP_APCU_API apc_sma_info_t *apc_sma_info(apc_sma_t* sma, zend_bool limited) {
 		return info;
 	}
 
-	SMA_LOCK(sma);
+	if (!SMA_LOCK(sma)) {
+		efree(info);
+		return NULL;
+	}
+
 	sma_header_t *smaheader = SMA_HDR(sma);
 	block_t *cur = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
 	apc_sma_link_t **link = &info->list;
@@ -445,7 +449,10 @@ PHP_APCU_API zend_bool apc_sma_check_avail_contiguous(apc_sma_t *sma, size_t siz
 		return 0;
 	}
 
-	SMA_LOCK(sma);
+	if (!SMA_LOCK(sma)) {
+		return 0;
+	}
+
 	block_t *cur = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
 
 	/* Look for a contiguous block of memory */
