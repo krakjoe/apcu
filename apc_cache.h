@@ -86,7 +86,7 @@ typedef struct _apc_cache_t {
 	size_t nslots;                /* number of slots in cache */
 	zend_long gc_ttl;             /* maximum time on GC list for a entry */
 	zend_long ttl;                /* if slot is needed and entry's access time is older than this ttl, remove it */
-	zend_long smart;              /* smart parameter for gc */
+	double expunge_threshold;     /* expunge if less than this percentage of shm is free after cleanup */
 	zend_bool defend;             /* defense parameter for runtime */
 } apc_cache_t;
 
@@ -116,13 +116,16 @@ typedef zend_bool (*apc_cache_atomic_updater_t)(apc_cache_t*, zend_long*, void* 
  * is needed.  This helps in cleaning up the cache and ensuring that entries
  * hit frequently stay cached and ones not hit very often eventually disappear.
  *
- * for an explanation of smart, see apc_cache_default_expunge
+ * expunge_threshold specifies the percentage of memory that must be free after
+ * removing expired entries during default expunge. If not enough memory could be freed,
+ * a full cache wipe will be performed, so that the default expunge operation is called
+ * less often when memory pressure is high.
  *
  * defend enables/disables slam defense for this particular cache
  */
 PHP_APCU_API apc_cache_t* apc_cache_create(
         apc_sma_t* sma, apc_serializer_t* serializer, zend_long size_hint,
-        zend_long gc_ttl, zend_long ttl, zend_long smart, zend_bool defend);
+        zend_long gc_ttl, zend_long ttl, double expunge_threshold, zend_bool defend);
 
 /*
 * apc_cache_preload preloads the data at path into the specified cache
@@ -242,14 +245,6 @@ PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name);
 * apc_cache_default_expunge() is executed by the sma layer when there is not enough
 * free shared memory to satisfy an allocation request. It attempts to free memory
 * (e.g., by removing entries) so that the allocation request can be satisfied.
-*
-* Where smart is not set:
-*  1) Perform cleanup of stale entries
-*  2) If available memory is less than the size requested, run full expunge
-*
-* Where smart is set:
-*  1) Perform cleanup of stale entries
-*  2) If available memory is less than the size requested * smart, run full expunge
 *
 * The TTL of an entry takes precedence over the TTL of a cache
 */
