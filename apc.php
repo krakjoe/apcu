@@ -766,6 +766,8 @@ case OB_HOST_STATS:
     $insert_rate_user = sprintf("%.2f", $cache['num_inserts'] ? (($cache['num_inserts'])/$elapsed) : 0);
     $apcversion = phpversion('apcu');
     $phpversion = phpversion();
+    $cleanups = $cache['cleanups'] ?? '-';
+    $defragmentations = $cache['defragmentations'] ?? '-';
     $number_vars = $cache['num_entries'];
     $size_vars = bsize($cache['mem_size']);
     $num_hits_and_misses = $cache['num_hits'] + $cache['num_misses'];
@@ -804,8 +806,8 @@ EOB;
             <tr class=tr-0><td class=td-0>Hit Rate</td><td>$hit_rate_user cache requests/second</td></tr>
             <tr class=tr-1><td class=td-0>Miss Rate</td><td>$miss_rate_user cache requests/second</td></tr>
             <tr class=tr-0><td class=td-0>Insert Rate</td><td>$insert_rate_user cache requests/second</td></tr>
-            <tr class=tr-1><td class=td-0>Cache cleanup count</td><td>{$cache['cleanups']}</td></tr>
-            <tr class=tr-0><td class=td-0>Cache defragmentation count</td><td>{$cache['defragmentations']}</td></tr>
+            <tr class=tr-1><td class=td-0>Cache cleanup count</td><td>$cleanups</td></tr>
+            <tr class=tr-0><td class=td-0>Cache defragmentation count</td><td>$defragmentations</td></tr>
             <tr class=tr-1><td class=td-0>Cache full count</td><td>{$cache['expunges']}</td></tr>
         </tbody>
         </table>
