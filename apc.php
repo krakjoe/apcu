@@ -1117,6 +1117,10 @@ EOB;
     } else {
         $apcversion = phpversion('apcu');
 
+        if ($rss[0] !== '<') {
+            $rss = gzdecode($rss);
+        }
+
         preg_match('!<title>APCu ([0-9.]+)</title>!', $rss, $match);
         echo '<tr class="tr-0 center"><td>';
         if (version_compare($apcversion, $match[1], '>=')) {
