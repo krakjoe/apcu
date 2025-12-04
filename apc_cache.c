@@ -652,7 +652,7 @@ static int apc_load_data(apc_cache_t* cache, const char *data_file)
 				apc_cache_store(
 					cache, name, &data, 0, 1);
 				zend_string_release(name);
-				zval_dtor(&data);
+				zval_ptr_dtor_nogc(&data);
 			}
 			return 1;
 		}
