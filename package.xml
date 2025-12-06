@@ -42,6 +42,16 @@
   - Shared memory for new entries is allocated faster in scenarios with many free memory blocks.
     This should improve APCu's insertion performance when entries are frequently deleted or
     replaced, or when APCu is used with larger amounts of memory.
+  - The apc.expunge_threshold specifies the percentage of shared memory that must be free
+    after expired entries have been removed during the default expunge operation. If not enough
+    memory has been freed, the entire cache is discarded (expunge). This prevents the default
+    expunge operation from being called too often, thus preventing unnecessary cpu load.
+    The default value of apc.expunge_threshold is 0.5. This means that the entire cache will be
+    discarded if less than 0.5% of shared memory is free after removing all expired entries.
+    When apc.expunge_threshold is set to 100, the default expunge operation no longer attempts
+    to free memory by removing expired entries. Instead, it always discards the entire cache.
+  - The apc.smart configuration setting has been removed because it has been replaced by
+    apc.expunge_threshold, which should provide more predictable results.
  </notes>
  <contents>
   <dir name="/">
