@@ -60,6 +60,7 @@ typedef struct _apc_sma_t {
 
 	/* info */
 	size_t size;                   /* segment size */
+	size_t max_alloc_size;         /* max size of memory available for allocation */
 	void  *shmaddr;                /* address of shm segment */
 } apc_sma_t;
 
