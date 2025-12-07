@@ -28,9 +28,9 @@
   <email>nikic@php.net</email>
   <active>yes</active>
  </lead>
- <date>2025-08-28</date>
+ <date>2025-12-07</date>
  <version>
-  <release>5.1.28-dev</release>
+  <release>5.1.28</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -44,6 +44,8 @@
     This should improve APCu's insertion performance when entries are frequently deleted or
     replaced, or when APCu is used with larger amounts of memory.
   - Trying to insert entries larger than the shared memory no longer results in cache wipes.
+  - Fix build against PHP 8.6.
+  - Fix apc.php compatibility with older apcu versions.
  </notes>
  <contents>
   <dir name="/">
