@@ -30,7 +30,7 @@
  </lead>
  <date>2025-12-07</date>
  <version>
-  <release>5.1.28</release>
+  <release>5.1.29-dev</release>
   <api>5.1.18</api>
  </version>
  <stability>
@@ -39,13 +39,7 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-  - Defragmentation now reclaims unused space from moved entries, resulting in better compaction.
-  - Shared memory for new entries is allocated faster in scenarios with many free memory blocks.
-    This should improve APCu's insertion performance when entries are frequently deleted or
-    replaced, or when APCu is used with larger amounts of memory.
-  - Trying to insert entries larger than the shared memory no longer results in cache wipes.
-  - Fix build against PHP 8.6.
-  - Fix apc.php compatibility with older apcu versions.
+  - TBD
  </notes>
  <contents>
   <dir name="/">
@@ -195,6 +189,27 @@
   <configureoption name="enable-apcu-debug" default="no" prompt="Enable internal debugging in APCu" />
  </extsrcrelease>
  <changelog>
+  <release>
+   <date>2025-12-07</date>
+   <version>
+    <release>5.1.28</release>
+    <api>5.1.18</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <license uri="http://www.php.net/license">PHP License</license>
+   <notes>
+    - Defragmentation now reclaims unused space from moved entries, resulting in better compaction.
+    - Shared memory for new entries is allocated faster in scenarios with many free memory blocks.
+      This should improve APCu's insertion performance when entries are frequently deleted or
+      replaced, or when APCu is used with larger amounts of memory.
+    - Trying to insert entries larger than the shared memory no longer results in cache wipes.
+    - Fix build against PHP 8.6.
+    - Fix apc.php compatibility with older apcu versions.
+   </notes>
+  </release>
   <release>
    <date>2025-08-28</date>
    <version>
