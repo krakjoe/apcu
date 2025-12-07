@@ -273,6 +273,7 @@ PHP_APCU_API void apc_sma_init(apc_sma_t* sma, void** data, apc_sma_expunge_f ex
 	SMA_CREATE_LOCK(&smaheader->sma_lock);
 	smaheader->min_block_size = min_alloc_size > 0 ? ALIGNWORD(min_alloc_size + ALIGNWORD(sizeof(block_t))) : MINBLOCKSIZE;
 	smaheader->avail = sma->size - ALIGNWORD(sizeof(sma_header_t)) - ALIGNWORD(sizeof(block_t)) - ALIGNWORD(sizeof(block_t));
+	sma->max_alloc_size = smaheader->avail - ALIGNWORD(sizeof(block_t));
 
 	block_t *first = BLOCKAT(ALIGNWORD(sizeof(sma_header_t)));
 	first->size = 0;
@@ -317,6 +318,11 @@ PHP_APCU_API void* apc_sma_malloc(apc_sma_t* sma, size_t n, apc_sma_malloc_init_
 
 restart:
 	assert(sma->initialized);
+
+	/* Prevent cache wipes caused by huge allocations that don't fit into shm */
+	if (n > sma->max_alloc_size) {
+		return NULL;
+	}
 
 	if (!SMA_LOCK(sma)) {
 		return NULL;
