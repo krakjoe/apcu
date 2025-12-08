@@ -1112,6 +1112,12 @@ EOB;
     } else {
         $rss = @file_get_contents("https://pecl.php.net/feeds/pkg_apcu.rss");
     }
+
+    // check for magic numbers to detect gzip encoded content
+    if ($rss && ord($rss[0]) === 0x1f && ord($rss[1]) === 0x8b) {
+        $rss = gzdecode($rss);
+    }
+
     if (!$rss) {
         echo '<tr class="td-last center"><td>Unable to fetch version information.</td></tr>';
     } else {
