@@ -1,6 +1,13 @@
 name: Build and Test
 on: [push, pull_request]
 jobs:
+  common:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout apcu
+        uses: actions/checkout@v4
+      - name: Check files referenced in package.xml
+        run: ./checkrel.sh
   ubuntu:
     strategy:
       matrix:
