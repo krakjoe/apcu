@@ -73,6 +73,7 @@
     <file name="apc_023.phpt" role="test" />
     <file name="apc_024.phpt" role="test" />
     <file name="apc_025.phpt" role="test" />
+    <file name="apc_026.phpt" role="test" />
     <file name="apc_099.phpt" role="test" />
     <file name="apc54_014.phpt" role="test" />
     <file name="apc_defrag.phpt" role="test" />
