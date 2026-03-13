@@ -718,7 +718,7 @@ PHP_FUNCTION(apcu_delete) {
 		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(keys), hentry) {
 			ZVAL_DEREF(hentry);
 			if (Z_TYPE_P(hentry) != IS_STRING) {
-				apc_warning("apc_delete() expects a string, array of strings, or APCIterator instance");
+				apc_warning("apcu_delete() expects a string, array of strings, or APCUIterator instance");
 				add_next_index_zval(return_value, hentry);
 				Z_TRY_ADDREF_P(hentry);
 			} else if (apc_cache_delete(apc_user_cache, Z_STR_P(hentry)) != 1) {
@@ -729,7 +729,7 @@ PHP_FUNCTION(apcu_delete) {
 	} else if (Z_TYPE_P(keys) == IS_OBJECT) {
 		RETURN_BOOL(apc_iterator_delete(keys) != 0);
 	} else {
-		apc_warning("apc_delete() expects a string, array of strings, or APCIterator instance");
+		apc_warning("apcu_delete() expects a string, array of strings, or APCUIterator instance");
 		RETURN_FALSE;
 	}
 }
