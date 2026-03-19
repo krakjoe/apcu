@@ -140,6 +140,7 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS);
 #define php_apc_finally                    \
 	} else {                               \
 		_bailout = 1;                      \
+		EG(bailout) = zb;                  \
 	}
 
 #define php_apc_end_try()                  \
