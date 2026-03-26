@@ -32,6 +32,7 @@ jobs:
         run: make
       - name: test
         run: |
+            export RUN_APCU_RESOURCE_HEAVY_TESTS=1
             make test TESTS="--show-diff -d apc.serializer=default tests"
             make test TESTS="--show-diff -d apc.serializer=php tests"
             make test TESTS="--show-diff -d apc.serializer=default -d opcache.enable_cli=1 tests"
