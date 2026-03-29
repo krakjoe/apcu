@@ -39,7 +39,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
-  - TBD
+  Internal changes:
+  - Added stress test to CI. This test will hopefully help to detect unexpected behavior
+    that can only occur when multiple processes access the cache simultaneously.
  </notes>
  <contents>
   <dir name="/">
@@ -121,6 +123,7 @@
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />
     <file name="sma001.phpt" role="test" />
+    <file name="stress_test_001.phpt" role="test" />
     <file name="typed_prop.phpt" role="test" />
     <file name="data/abc.data" role="test" />
     <file name="bad/abc.data" role="test" />
