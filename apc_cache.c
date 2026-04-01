@@ -308,7 +308,7 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 	return 1;
 }
 
-PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, zend_long size_hint, zend_long gc_ttl, zend_long ttl, zend_long smart, zend_bool defend) {
+PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* serializer, zend_long size_hint, zend_long gc_ttl, zend_long ttl, double expunge_threshold, zend_bool defend) {
 	apc_cache_t* cache;
 	zend_long cache_size;
 	size_t nslots;
@@ -350,7 +350,7 @@ PHP_APCU_API apc_cache_t* apc_cache_create(apc_sma_t* sma, apc_serializer_t* ser
 	cache->nslots = nslots;
 	cache->gc_ttl = gc_ttl;
 	cache->ttl = ttl;
-	cache->smart = smart;
+	cache->expunge_threshold = expunge_threshold;
 	cache->defend = defend;
 
 	/* header lock */
@@ -792,11 +792,20 @@ PHP_APCU_API zend_bool apc_cache_default_expunge(apc_cache_t* cache, size_t size
 		return 0;
 	}
 
-	/* smart > 1 increases the probability of a full cache wipe,
-	 * so expunge() is called less often when memory is low. */
-	size = (cache->smart > 0L) ? (size_t) (cache->smart * size) : size;
+	/* expunge_threshold specifies the percentage of memory that must be free after removing
+	 * expired entries. If not enough memory could be freed, a full cache wipe will be performed,
+	 * so that the default expunge operation is called less often when memory pressure is high. */
+	size += cache->sma->size / 100 * cache->expunge_threshold;
 
-	/* look for junk */
+	/* if size >= total shm size (e.g., if expunge_threshold >= 100), skip removing
+	 * expired entries and defragmentation as this always results in a real expunge */
+	if (size >= cache->sma->size) {
+		apc_cache_wlocked_real_expunge(cache);
+		apc_cache_wlocked_gc(cache);
+		goto end_lbl;
+	}
+
+	/* remove expired entries */
 	for (i = 0; i < cache->nslots; i++) {
 		uintptr_t *entry_offset = &cache->slots[i];
 		while (*entry_offset) {
