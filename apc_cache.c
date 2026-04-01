@@ -1233,6 +1233,9 @@ PHP_APCU_API zend_bool apc_cache_defense(apc_cache_t *cache, zend_string *key, t
 PHP_APCU_API void apc_cache_serializer(apc_cache_t* cache, const char* name) {
 	if (cache && !cache->serializer) {
 		cache->serializer = apc_find_serializer(name);
+		if (strcmp(name, "default") != 0 && !cache->serializer) {
+			php_error_docref(NULL, E_WARNING, "apc_cache_serializer: serializer \"%s\" is not supported", name);
+		}
 	}
 }
 
