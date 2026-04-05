@@ -39,6 +39,9 @@
  </stability>
  <license uri="http://www.php.net/license">PHP License</license>
  <notes>
+  - Entries in the garbage collection list are now cleaned up during apcu_clear_cache().
+    Previously these entries remained untouched in the shared memory.
+
   Internal changes:
   - Added stress test to CI. This test will hopefully help to detect unexpected behavior
     that can only occur when multiple processes access the cache simultaneously.
