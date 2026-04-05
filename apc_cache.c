@@ -756,8 +756,10 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache)
 	/* expunge cache */
 	apc_cache_wlocked_real_expunge(cache);
 
+	/* garbage collection */
+	apc_cache_wlocked_gc(cache);
+
 	/* set info */
-	cache->header->stime = apc_time();
 	cache->header->ncleanups = 0;
 	cache->header->ndefragmentations = 0;
 	cache->header->nexpunges = 0;
