@@ -301,7 +301,7 @@ PHP_APCU_API int APC_UNSERIALIZER_NAME(php) (APC_UNSERIALIZER_ARGS)
 	BG(serialize_lock)--;
 
 	if (!result) {
-		php_error_docref(NULL, E_NOTICE, "Error at offset %td of %zd bytes", tmp - buf, buf_len);
+		php_error_docref(NULL, E_NOTICE, "Error at offset %td of %zu bytes", tmp - buf, buf_len);
 		ZVAL_NULL(value);
 		return 0;
 	}
