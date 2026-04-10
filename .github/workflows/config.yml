@@ -11,7 +11,7 @@ jobs:
   ubuntu:
     strategy:
       matrix:
-          version: ["7.0", "7.1", "7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4", "8.5"]
+          version: ["7.0", "7.1", "7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4", "8.5", "8.6"]
     runs-on: ubuntu-latest
     steps:
       - name: Set the hugepages parameter
@@ -36,52 +36,23 @@ jobs:
             make test TESTS="--show-diff -d apc.serializer=default -d opcache.enable_cli=1 tests"
             make test TESTS="--show-diff -d apc.serializer=php -d opcache.enable_cli=1 tests"
   windows:
-    defaults:
-      run:
-        shell: cmd
     strategy:
       matrix:
-        version: ["8.0", "8.1", "8.2", "8.3", "8.4", "8.5"]
+        php-version: ["8.0", "8.1", "8.2", "8.3", "8.4", "8.5"]
         arch: [x64]
         ts: [nts, ts]
     runs-on: windows-2022
     steps:
       - name: Checkout apcu
         uses: actions/checkout@v4
-      - name: Setup PHP
-        id: setup-php
-        uses: php/setup-php-sdk@v0.12
+      # Packaging and artifact upload are handled automatically by the builder.
+      # See https://github.com/php/php-windows-builder
+      - name: Build the extension
+        uses: php/php-windows-builder/extension@v1
         with:
-          version: ${{matrix.version}}
-          arch: ${{matrix.arch}}
-          ts: ${{matrix.ts}}
-          cache: true
-      - name: Enable Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{matrix.arch}}
-          toolset: ${{steps.setup-php.outputs.toolset}}
-      - name: phpize
-        run: phpize
-      - name: configure
-        run: configure --enable-apcu --enable-debug-pack --with-prefix=${{steps.setup-php.outputs.prefix}}
-      - name: make
-        run: nmake
-      - name: test
-        run: nmake test TESTS="--show-diff tests"
-      - name: package
-        run: |
-          md win-install
-          copy LICENSE win-install
-          if exist x64 (
-            if exist x64\Release (set prefix=x64\Release) else set prefix=x64\Release_TS
-          ) else (
-            if exist Release (set prefix=Release) else set prefix=Release_TS
-          )
-          copy %prefix%\php_apcu.dll win-install
-          copy %prefix%\php_apcu.pdb win-install
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: apcu-${{matrix.version}}-${{matrix.arch}}-${{matrix.ts}}
-          path: win-install
+          php-version: ${{ matrix.php-version }}
+          arch: ${{ matrix.arch }}
+          ts: ${{ matrix.ts }}
+          args: --enable-apcu --enable-debug-pack
+          run-tests: true
+          test-runner-args: "--show-diff tests"

@@ -67,6 +67,16 @@
 #include "php.h"
 #include "main/php_streams.h"
 
+/* ZEND_UNREACHABLE() was added in PHP 8.0. Provide fallback for PHP 7.x.
+ * Remove this block when APCu drops support for PHP < 8.0. */
+#if PHP_VERSION_ID < 80000
+# if ZEND_DEBUG
+#  define ZEND_UNREACHABLE() do {ZEND_ASSERT(0); ZEND_ASSUME(0);} while (0)
+# else
+#  define ZEND_UNREACHABLE() ZEND_ASSUME(0)
+# endif
+#endif
+
 /* console display functions */
 PHP_APCU_API void apc_error(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
 PHP_APCU_API void apc_warning(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
