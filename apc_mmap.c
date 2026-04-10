@@ -71,7 +71,7 @@ static int apc_mmap_hugepage_flags(size_t size, zend_long hugepage_size)
 
 	if (!log2_page_size || (log2_page_size & MAP_HUGE_MASK) != log2_page_size) {
 		// maybe hugepage size is too large or small
-		zend_error_noreturn(E_CORE_ERROR, "Invalid hugepage size: %ld", hugepage_size);
+		zend_error_noreturn(E_CORE_ERROR, "Invalid hugepage size: " ZEND_LONG_FMT, hugepage_size);
 	}
 
 	return MAP_HUGETLB | ((unsigned int)log2_page_size << MAP_HUGE_SHIFT);
@@ -118,7 +118,7 @@ void *apc_mmap(char *file_mask, size_t size, zend_long hugepage_size)
 
 	if ((long)shmaddr == -1) {
 		if (hugepage_size) {
-			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with hugepage size %ld. apc.shm_size may be too large, apc.mmap_hugepage_size may be invalid, or the system lacks sufficient reserved hugepages.", size, hugepage_size);
+			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes with hugepage size " ZEND_LONG_FMT ". apc.shm_size may be too large, apc.mmap_hugepage_size may be invalid, or the system lacks sufficient reserved hugepages.", size, hugepage_size);
 		} else {
 			zend_error_noreturn(E_CORE_ERROR, "apc_mmap: Failed to mmap %zu bytes. apc.shm_size may be too large.", size);
 		}
