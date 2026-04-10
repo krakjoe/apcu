@@ -244,7 +244,8 @@ static zend_bool apc_persist_calc_zval(apc_persist_context_t *ctxt, const zval *
 		case IS_RESOURCE:
 			apc_warning("Cannot store resources in apcu cache");
 			return 0;
-		EMPTY_SWITCH_DEFAULT_CASE()
+		default:
+			ZEND_UNREACHABLE();
 	}
 }
 
@@ -450,7 +451,8 @@ static void apc_persist_copy_zval_impl(apc_persist_context_t *ctxt, zval *zv) {
 			if (!ptr) ptr = apc_persist_copy_ref(ctxt, Z_REF_P(zv));
 			ZVAL_REF(zv, ptr);
 			return;
-		EMPTY_SWITCH_DEFAULT_CASE()
+		default:
+			ZEND_UNREACHABLE();
 	}
 }
 
