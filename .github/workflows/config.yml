@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout apcu
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Check files referenced in package.xml
         run: ./checkrel.sh
   ubuntu:
@@ -17,7 +17,7 @@ jobs:
       - name: Set the hugepages parameter
         run: sudo sh -c "echo 1 > /proc/sys/vm/nr_hugepages"
       - name: Checkout apcu
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -44,7 +44,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Checkout apcu
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       # Packaging and artifact upload are handled automatically by the builder.
       # See https://github.com/php/php-windows-builder
       - name: Build the extension
