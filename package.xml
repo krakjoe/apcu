@@ -41,9 +41,6 @@
  <notes>
   - Entries in the garbage collection list are now cleaned up during apcu_clear_cache().
     Previously these entries remained untouched in the shared memory.
-  - Shared memory for new entries is allocated faster in scenarios with many free memory blocks.
-    This should improve APCu's insertion performance when entries are frequently deleted or
-    replaced, or when APCu is used with larger amounts of memory.
   - The apc.expunge_threshold specifies the percentage of shared memory that must be free
     after expired entries have been removed during the default expunge operation. If not enough
     memory has been freed, the entire cache is discarded (expunge). This prevents the default
@@ -54,10 +51,18 @@
     to free memory by removing expired entries. Instead, it always discards the entire cache.
   - The apc.smart configuration setting has been removed because it has been superseded by
     apc.expunge_threshold, which should provide more predictable results.
+  - Fix version comparison in apc.php.
+  - Fix php_apc_finally to prevent a bailout within a php_apc_finally block from re-triggering
+    the finally block again, which can cause the PHP process to crash.
 
   Internal changes:
   - Added stress test to CI. This test will hopefully help to detect unexpected behavior
     that can only occur when multiple processes access the cache simultaneously.
+  - Fix build against PHP 8.6. EMPTY_SWITCH_DEFAULT_CASE() was replaced by ZEND_UNREACHABLE()
+    and a fallback definition for ZEND_UNREACHABLE() has been added for PHP 7.x.
+  - The pipeline now uses php/php-windows-builder for building and testing on Windows.
+  - Fix potential compiler warnings by using proper format specifiers.
+  - Transition to actions/checkout@v6 because of the Node.js 20 deprecation.
  </notes>
  <contents>
   <dir name="/">
