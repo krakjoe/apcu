@@ -69,7 +69,7 @@ typedef struct _apc_iterator_t {
 	zend_object obj;
 } apc_iterator_t;
 
-#define apc_iterator_fetch_from(o) ((apc_iterator_t*)((char*)o - XtOffsetOf(apc_iterator_t, obj)))
+#define apc_iterator_fetch_from(o) ((apc_iterator_t*)((char*)o - offsetof(apc_iterator_t, obj)))
 #define apc_iterator_fetch(z) apc_iterator_fetch_from(Z_OBJ_P(z))
 
 typedef struct _apc_iterator_item_t {

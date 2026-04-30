@@ -295,7 +295,7 @@ static inline void apc_cache_runlock(apc_cache_t *cache) {
 }
 
 /* APC_ENTRY_SIZE takes into account the trailing key-string + terminating 0-byte */
-#define APC_ENTRY_SIZE(key_len) (ZEND_MM_ALIGNED_SIZE(XtOffsetOf(apc_cache_entry_t, key.val) + key_len + 1))
+#define APC_ENTRY_SIZE(key_len) (ZEND_MM_ALIGNED_SIZE(offsetof(apc_cache_entry_t, key.val) + key_len + 1))
 
 /* ENTRYAT and ENTRYOF are used to convert between offsets and pointers to cache entries.
  * Both expect the presence of cache->header that points to the cache header in the
