@@ -548,7 +548,7 @@ int apc_iterator_init(int module_number) {
 
 	apc_iterator_object_handlers.clone_obj = NULL;
 	apc_iterator_object_handlers.free_obj = apc_iterator_free;
-	apc_iterator_object_handlers.offset = XtOffsetOf(apc_iterator_t, obj);
+	apc_iterator_object_handlers.offset = offsetof(apc_iterator_t, obj);
 
 	return SUCCESS;
 }
