@@ -1,0 +1,45 @@
+# This workflow is triggered if a new release or prerelease is published on GitHub (no drafts).
+# It builds and publishes zip-files with prebuilt Windows DLLs as release artifacts. These
+# artifacts are required by PIE (PHP Installer for Extensions). See https://github.com/php/pie
+# and https://github.com/php/php-windows-builder for more information.
+name: Release
+
+on:
+  # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#release
+  release:
+    types: [published]
+
+jobs:
+  # Build and test on Windows
+  windows:
+    strategy:
+      matrix:
+        php-version: ["7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4", "8.5"]
+        arch: [x64, x86]
+        ts: [nts, ts]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout apcu
+        uses: actions/checkout@v6
+      # The builder handles building, testing and artifact packaging/upload automatically
+      - name: Build and test the extension
+        uses: php/php-windows-builder/extension@v1
+        with:
+          php-version: ${{ matrix.php-version }}
+          arch: ${{ matrix.arch }}
+          ts: ${{ matrix.ts }}
+          args: --enable-apcu --enable-debug-pack
+          run-tests: true
+          test-runner-args: "--show-diff tests"
+
+  # Upload zip-files with prebuilt Windows DLLs to the release (required for PIE)
+  release_windows_pie:
+    if: ${{ github.event_name == 'release' }}
+    needs: windows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload artifacts to the release
+        uses: php/php-windows-builder/release@v1
+        with:
+          release: ${{ github.event.release.tag_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}

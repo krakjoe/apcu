@@ -1,5 +1,10 @@
 name: Build and Test
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    # Trigger on all branches, but not on tags, to prevent CI runs if a release is published (which pushes a tag)
+    branches: ['**']
+
 jobs:
   common:
     runs-on: ubuntu-latest
@@ -8,6 +13,8 @@ jobs:
         uses: actions/checkout@v6
       - name: Check files referenced in package.xml
         run: ./checkrel.sh
+
+  # Build and test on Linux
   ubuntu:
     strategy:
       matrix:
@@ -35,19 +42,20 @@ jobs:
             make test TESTS="--show-diff -d apc.serializer=php tests"
             make test TESTS="--show-diff -d apc.serializer=default -d opcache.enable_cli=1 tests"
             make test TESTS="--show-diff -d apc.serializer=php -d opcache.enable_cli=1 tests"
+
+  # Build and test on Windows
   windows:
     strategy:
       matrix:
-        php-version: ["8.0", "8.1", "8.2", "8.3", "8.4", "8.5"]
-        arch: [x64]
+        php-version: ["7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4", "8.5"]
+        arch: [x64, x86]
         ts: [nts, ts]
     runs-on: windows-2022
     steps:
       - name: Checkout apcu
         uses: actions/checkout@v6
-      # Packaging and artifact upload are handled automatically by the builder.
-      # See https://github.com/php/php-windows-builder
-      - name: Build the extension
+      # The builder handles building, testing and artifact packaging/upload automatically
+      - name: Build and test the extension
         uses: php/php-windows-builder/extension@v1
         with:
           php-version: ${{ matrix.php-version }}
