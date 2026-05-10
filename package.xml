@@ -54,6 +54,9 @@
   - Fix version comparison in apc.php.
   - Fix php_apc_finally to prevent a bailout within a php_apc_finally block from re-triggering
     the finally block again, which can cause the PHP process to crash.
+  - Add a new GitHub workflow that automatically uploads ZIP files containing pre-built Windows
+    DLLs as assets to new releases. As a result, the installation of APCu via PIE should work
+    more reliably for Windows users starting with the next release.
 
   Internal changes:
   - Added stress test to CI. This test will hopefully help to detect unexpected behavior
