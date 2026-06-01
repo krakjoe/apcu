@@ -294,19 +294,18 @@ static zend_string *apc_persist_copy_cstr(
 	ZSTR_LEN(str) = buf_len;
 	memcpy(ZSTR_VAL(str), orig_buf, buf_len);
 	ZSTR_VAL(str)[buf_len] = '\0';
-	zend_string_hash_val(str);
 
 	return str;
 }
 
 static zend_string *apc_persist_copy_zstr_no_add(
-		apc_persist_context_t *ctxt, const zend_string *orig_str) {
+		apc_persist_context_t *ctxt, zend_string *orig_str) {
 	return apc_persist_copy_cstr(
-		ctxt, ZSTR_VAL(orig_str), ZSTR_LEN(orig_str), ZSTR_H(orig_str));
+		ctxt, ZSTR_VAL(orig_str), ZSTR_LEN(orig_str), ZSTR_HASH(orig_str));
 }
 
 static inline zend_string *apc_persist_copy_zstr(
-		apc_persist_context_t *ctxt, const zend_string *orig_str) {
+		apc_persist_context_t *ctxt, zend_string *orig_str) {
 	zend_string *str = apc_persist_copy_zstr_no_add(ctxt, orig_str);
 	apc_persist_add_already_allocated(ctxt, orig_str, str);
 	return str;

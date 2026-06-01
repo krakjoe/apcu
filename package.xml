@@ -56,7 +56,11 @@
     the finally block again, which can cause the PHP process to crash.
   - Add a new GitHub workflow that automatically uploads ZIP files containing pre-built Windows
     DLLs as assets to new releases. As a result, the installation of APCu via PIE should work
-    more reliably for Windows users starting with the next release.
+    more reliably for Windows users starting with this release.
+  - For entries storing the data in a serialized form, the hash value of the serialized data string
+    is no longer computed, as the hash is not needed for the unserialization. This significantly
+    improves performance when saving larger objects or arrays by using a serializer (tested with
+    the PHP serializer, which is currently the default).
 
   Internal changes:
   - Added stress test to CI. This test will hopefully help to detect unexpected behavior
