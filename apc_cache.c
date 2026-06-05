@@ -414,7 +414,7 @@ static inline zend_bool apc_cache_wlocked_insert(
 	return 1;
 }
 
-static void apc_cache_set_entry_values(apc_cache_entry_t *entry, const int32_t ttl, const time_t t)
+static void apc_cache_set_entry_values(apc_cache_entry_t *entry, const zend_long ttl, const time_t t)
 {
 	entry->ttl = ttl;
 	entry->next = 0;
@@ -429,7 +429,7 @@ static void apc_cache_set_entry_values(apc_cache_entry_t *entry, const int32_t t
 /* TODO This function may lead to a deadlock on expunge */
 static inline zend_bool apc_cache_wlocked_store_internal(
 		apc_cache_t *cache, zend_string *key, const zval *val,
-		const int32_t ttl, const zend_bool exclusive) {
+		const zend_long ttl, const zend_bool exclusive) {
 	time_t t = apc_time();
 
 	if (apc_cache_defense(cache, key, t)) {
@@ -534,7 +534,7 @@ static inline apc_cache_entry_t *apc_cache_rlocked_find_incref(
 
 PHP_APCU_API zend_bool apc_cache_store(
 		apc_cache_t* cache, zend_string *key, const zval *val,
-		const int32_t ttl, const zend_bool exclusive) {
+		const zend_long ttl, const zend_bool exclusive) {
 	time_t t = apc_time();
 	zend_bool ret = 0;
 
@@ -1275,8 +1275,7 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fca
 			zval_ptr_dtor(&params[0]);
 
 			if (result == SUCCESS && !EG(exception)) {
-				apc_cache_wlocked_store_internal(
-					cache, key, return_value, (uint32_t) ttl, 1);
+				apc_cache_wlocked_store_internal(cache, key, return_value, ttl, 1);
 			}
 		} else {
 			apc_cache_entry_fetch_zval(cache, entry, return_value);

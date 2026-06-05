@@ -486,7 +486,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 			} else {
 				hkey = zend_long_to_str(hkey_idx);
 			}
-			if (!apc_cache_store(apc_user_cache, hkey, hentry, (uint32_t) ttl, exclusive)) {
+			if (!apc_cache_store(apc_user_cache, hkey, hentry, ttl, exclusive)) {
 				zend_symtable_add_new(Z_ARRVAL_P(return_value), hkey, &fail_zv);
 			}
 			zend_string_release(hkey);
@@ -498,7 +498,7 @@ static void apc_store_helper(INTERNAL_FUNCTION_PARAMETERS, const zend_bool exclu
 			RETURN_FALSE;
 		}
 
-		RETURN_BOOL(apc_cache_store(apc_user_cache, Z_STR_P(key), val, (uint32_t) ttl, exclusive));
+		RETURN_BOOL(apc_cache_store(apc_user_cache, Z_STR_P(key), val, ttl, exclusive));
 	} else {
 		apc_warning("apc_store expects key parameter to be a string or an array of key/value pairs.");
 		RETURN_FALSE;
