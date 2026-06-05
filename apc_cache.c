@@ -427,7 +427,7 @@ static void apc_cache_set_entry_values(apc_cache_entry_t *entry, const int32_t t
 }
 
 /* TODO This function may lead to a deadlock on expunge */
-static inline zend_bool apc_cache_store_internal(
+static inline zend_bool apc_cache_wlocked_store_internal(
 		apc_cache_t *cache, zend_string *key, const zval *val,
 		const int32_t ttl, const zend_bool exclusive) {
 	time_t t = apc_time();
@@ -1275,7 +1275,7 @@ PHP_APCU_API void apc_cache_entry(apc_cache_t *cache, zend_string *key, zend_fca
 			zval_ptr_dtor(&params[0]);
 
 			if (result == SUCCESS && !EG(exception)) {
-				apc_cache_store_internal(
+				apc_cache_wlocked_store_internal(
 					cache, key, return_value, (uint32_t) ttl, 1);
 			}
 		} else {
