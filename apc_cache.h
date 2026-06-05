@@ -149,7 +149,7 @@ PHP_APCU_API void apc_cache_clear(apc_cache_t* cache);
  */
 PHP_APCU_API zend_bool apc_cache_store(
         apc_cache_t* cache, zend_string *key, const zval *val,
-        const int32_t ttl, const zend_bool exclusive);
+        const zend_long ttl, const zend_bool exclusive);
 
 /*
  * apc_cache_update updates an entry in place. The updater function must not bailout.
