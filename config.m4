@@ -201,6 +201,25 @@ if test "$PHP_APCU" != "no"; then
 
   AC_CHECK_FUNCS(sigaction)
 
+  dnl Ensure that the compiler can include pcre2.h if it was installed via Homebrew on macOS
+  dnl See https://github.com/krakjoe/apcu/issues/572
+  if test "$PHP_EXTERNAL_PCRE" != "no"; then
+    AC_CHECK_HEADER([pcre2.h], [apcu_pcre2_found=yes], [apcu_pcre2_found=no], [#define PCRE2_CODE_UNIT_WIDTH 8])
+    if test "$apcu_pcre2_found" = "no"; then
+      AC_CHECK_PROG([apcu_brew], [brew], [brew])
+      if test -n "$apcu_brew"; then
+        apcu_homebrew_include_dir="$($apcu_brew --prefix 2> /dev/null)/include"
+        AC_MSG_CHECKING([for pcre2.h in homebrew include directory $apcu_homebrew_include_dir])
+        if test -f "$apcu_homebrew_include_dir/pcre2.h"; then
+          PHP_ADD_INCLUDE([$apcu_homebrew_include_dir])
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no])
+        fi
+      fi
+    fi
+  fi
+
   for i in -Wall -Wextra -Wno-clobbered -Wno-unused-parameter; do
     AX_CHECK_COMPILE_FLAG([$i], [APCU_CFLAGS="$APCU_CFLAGS $i"])
   done

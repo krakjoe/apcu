@@ -61,6 +61,8 @@
     is no longer computed, as the hash is not needed for the unserialization. This significantly
     improves performance when saving larger objects or arrays by using a serializer (tested with
     the PHP serializer, which is currently the default).
+  - Fix build on macOS. If pcre2 was installed via Homebrew, the header file pcre2.h wasn't found
+    during the build process.
 
   Internal changes:
   - Added stress test to CI. This test will hopefully help to detect unexpected behavior
@@ -70,6 +72,7 @@
   - The pipeline now uses php/php-windows-builder for building and testing on Windows.
   - Fix potential compiler warnings by using proper format specifiers.
   - Transition to actions/checkout@v6 because of the Node.js 20 deprecation.
+  - Added tests on macOS to the CI.
  </notes>
  <contents>
   <dir name="/">
