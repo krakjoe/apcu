@@ -693,6 +693,11 @@ PHP_APCU_API zend_bool apc_cache_preload(apc_cache_t* cache, const char *path)
 #endif
 }
 
+PHP_APCU_API void apc_cache_entry_incref(apc_cache_t *cache, apc_cache_entry_t *entry)
+{
+	ATOMIC_INC_RLOCKED(entry->ref_count);
+}
+
 PHP_APCU_API void apc_cache_entry_release(apc_cache_t *cache, apc_cache_entry_t *entry)
 {
 	ATOMIC_DEC(entry->ref_count);

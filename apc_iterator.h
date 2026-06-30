@@ -53,7 +53,8 @@ typedef struct _apc_iterator_t {
 							 /* fetch callback to fetch items from cache slots or lists */
 	size_t slot_idx;           /* index to the slot array or linked list */
 	size_t chunk_size;         /* number of entries to pull down per fetch */
-	apc_stack_t *stack;      /* stack of entries pulled from cache */
+	apc_stack_t *stack;      /* stack of items pulled from cache */
+	apc_stack_t *entries;    /* stack of pinned entries */
 	int stack_idx;           /* index into the current stack */
 	pcre_cache_entry *pce;     /* regex filter on entry identifiers */
 #if PHP_VERSION_ID >= 70300
