@@ -201,6 +201,14 @@ PHP_APCU_API zend_bool apc_cache_entry_fetch_zval(
 PHP_APCU_API void apc_cache_entry_release(apc_cache_t *cache, apc_cache_entry_t *entry);
 
 /*
+ * apc_cache_entry_incref increments the reference count of a cache entry to pin it,
+ * preventing it from being freed or relocated by defragmentation while a reference is
+ * held. It must be called while holding the cache read lock; release the reference with
+ * apc_cache_entry_release once the entry is no longer needed.
+ */
+PHP_APCU_API void apc_cache_entry_incref(apc_cache_t *cache, apc_cache_entry_t *entry);
+
+/*
  * fetches information about the cache provided for userland status functions
  */
 PHP_APCU_API zend_bool apc_cache_info(zval *info, apc_cache_t *cache, zend_bool limited);
