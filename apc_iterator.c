@@ -93,7 +93,9 @@ static apc_iterator_item_t* apc_iterator_item_ctor(
 		zend_hash_add_new(ht, apc_str_access_time, &zv);
 	}
 	if (APC_ITER_REFCOUNT & iterator->format) {
-		ZVAL_LONG(&zv, entry->ref_count);
+		/* The iterator holds one reference to pin the entry during construction;
+		 * exclude it so the reported count reflects the cache-visible value. */
+		ZVAL_LONG(&zv, entry->ref_count - 1);
 		zend_hash_add_new(ht, apc_str_ref_count, &zv);
 	}
 	if (APC_ITER_MEM_SIZE & iterator->format) {
@@ -127,6 +129,7 @@ static void apc_iterator_free(zend_object *object) {
 	}
 
 	apc_stack_destroy(iterator->stack);
+	apc_stack_destroy(iterator->entries);
 
 	if (iterator->regex) {
 		zend_string_release(iterator->regex);
@@ -153,6 +156,7 @@ zend_object* apc_iterator_create(zend_class_entry *ce) {
 
 	iterator->initialized = 0;
 	iterator->stack = NULL;
+	iterator->entries = NULL;
 	iterator->regex = NULL;
 	iterator->search_hash = NULL;
 	iterator->obj.handlers = &apc_iterator_object_handlers;
@@ -199,7 +203,7 @@ static int apc_iterator_check_expiry(apc_cache_t* cache, apc_cache_entry_t *entr
 static size_t apc_iterator_fetch_active(apc_iterator_t *iterator) {
 	apc_cache_t *cache = apc_user_cache;
 	size_t count = 0;
-	apc_iterator_item_t *item;
+	int i;
 	time_t t = apc_time();
 
 	while (apc_stack_size(iterator->stack) > 0) {
@@ -210,27 +214,43 @@ static size_t apc_iterator_fetch_active(apc_iterator_t *iterator) {
 		return count;
 	}
 
+	/* The outer try guarantees the references pinned below are dropped (and the entries
+	 * stack cleared) even if a bailout occurs at any point. */
 	php_apc_try {
-		while (count <= iterator->chunk_size && iterator->slot_idx < cache->nslots) {
-			uintptr_t entry_offset = cache->slots[iterator->slot_idx];
-			while (entry_offset) {
-				apc_cache_entry_t *entry = ENTRYAT(entry_offset);
-				if (apc_iterator_check_expiry(cache, entry, t)) {
-					if (apc_iterator_search_match(iterator, entry)) {
-						count++;
-						item = apc_iterator_item_ctor(iterator, entry);
-						if (item) {
-							apc_stack_push(iterator->stack, item);
+		/* Collect the matching entries under the lock, pinning each with a reference.
+		 * The values must not be unserialized here: unserialization runs userland code
+		 * (__wakeup / Serializable::unserialize) that can re-enter apcu and deadlock
+		 * against the held lock (or, on recursive-mutex builds, free the entry
+		 * mid-iteration). */
+		php_apc_try {
+			while (count <= iterator->chunk_size && iterator->slot_idx < cache->nslots) {
+				uintptr_t entry_offset = cache->slots[iterator->slot_idx];
+				while (entry_offset) {
+					apc_cache_entry_t *entry = ENTRYAT(entry_offset);
+					if (apc_iterator_check_expiry(cache, entry, t)) {
+						if (apc_iterator_search_match(iterator, entry)) {
+							count++;
+							apc_stack_push(iterator->entries, entry);
+							apc_cache_entry_incref(cache, entry);
 						}
 					}
+					entry_offset = entry->next;
 				}
-				entry_offset = entry->next;
+				iterator->slot_idx++;
 			}
-			iterator->slot_idx++;
+		} php_apc_finally {
+			iterator->stack_idx = 0;
+			apc_cache_runlock(cache);
+		} php_apc_end_try();
+
+		/* Build the items with the lock released. */
+		for (i = 0; i < apc_stack_size(iterator->entries); i++) {
+			apc_stack_push(iterator->stack, apc_iterator_item_ctor(iterator, apc_stack_get(iterator->entries, i)));
 		}
 	} php_apc_finally {
-		iterator->stack_idx = 0;
-		apc_cache_runlock(cache);
+		while (apc_stack_size(iterator->entries) > 0) {
+			apc_cache_entry_release(cache, apc_stack_pop(iterator->entries));
+		}
 	} php_apc_end_try();
 
 	return count;
@@ -239,34 +259,44 @@ static size_t apc_iterator_fetch_active(apc_iterator_t *iterator) {
 static size_t apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 	apc_cache_t *cache = apc_user_cache;
 	size_t count = 0;
-	apc_iterator_item_t *item;
+	int i;
 
 	if (!apc_cache_rlock(cache)) {
 		return count;
 	}
 
+	/* As in apc_iterator_fetch_active, collect and pin the matching entries under the
+	 * lock and defer value unserialization until the lock is released. */
 	php_apc_try {
-		uintptr_t entry_offset = cache->header->gc;
-		while (entry_offset && count <= iterator->slot_idx) {
-			count++;
-			entry_offset = ENTRYAT(entry_offset)->next;
-		}
-		count = 0;
-		while (entry_offset && count < iterator->chunk_size) {
-			apc_cache_entry_t *entry = ENTRYAT(entry_offset);
-			if (apc_iterator_search_match(iterator, entry)) {
+		php_apc_try {
+			uintptr_t entry_offset = cache->header->gc;
+			while (entry_offset && count <= iterator->slot_idx) {
 				count++;
-				item = apc_iterator_item_ctor(iterator, entry);
-				if (item) {
-					apc_stack_push(iterator->stack, item);
-				}
+				entry_offset = ENTRYAT(entry_offset)->next;
 			}
-			entry_offset = entry->next;
+			count = 0;
+			while (entry_offset && count < iterator->chunk_size) {
+				apc_cache_entry_t *entry = ENTRYAT(entry_offset);
+				if (apc_iterator_search_match(iterator, entry)) {
+					count++;
+					apc_stack_push(iterator->entries, entry);
+					apc_cache_entry_incref(cache, entry);
+				}
+				entry_offset = entry->next;
+			}
+		} php_apc_finally {
+			iterator->slot_idx += count;
+			iterator->stack_idx = 0;
+			apc_cache_runlock(cache);
+		} php_apc_end_try();
+
+		for (i = 0; i < apc_stack_size(iterator->entries); i++) {
+			apc_stack_push(iterator->stack, apc_iterator_item_ctor(iterator, apc_stack_get(iterator->entries, i)));
 		}
 	} php_apc_finally {
-		iterator->slot_idx += count;
-		iterator->stack_idx = 0;
-		apc_cache_runlock(cache);
+		while (apc_stack_size(iterator->entries) > 0) {
+			apc_cache_entry_release(cache, apc_stack_pop(iterator->entries));
+		}
 	} php_apc_end_try();
 
 	return count;
@@ -328,7 +358,8 @@ void apc_iterator_obj_init(apc_iterator_t *iterator, zval *search, zend_long for
 	iterator->stack_idx = 0;
 	iterator->key_idx = 0;
 	iterator->chunk_size = chunk_size == 0 ? APC_DEFAULT_CHUNK_SIZE : chunk_size;
-	iterator->stack = apc_stack_create(chunk_size);
+	iterator->stack = apc_stack_create(iterator->chunk_size);
+	iterator->entries = apc_stack_create(iterator->chunk_size);
 	iterator->format = format;
 	iterator->totals_flag = 0;
 	iterator->count = 0;

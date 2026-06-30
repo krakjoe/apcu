@@ -63,6 +63,8 @@
     the PHP serializer, which is currently the default).
   - Fix build on macOS. If pcre2 was installed via Homebrew, the header file pcre2.h wasn't found
     during the build process.
+  - Fixed self-deadlock in APCUIterator when a stored object's __wakeup() re-enters APCu, by
+    unserializing values after the cache lock is released instead of while it is held.
 
   Internal changes:
   - Added stress test to CI. This test will hopefully help to detect unexpected behavior
@@ -150,6 +152,7 @@
     <file name="iterator_009.phpt" role="test" />
     <file name="iterator_010.phpt" role="test" />
     <file name="iterator_011.phpt" role="test" />
+    <file name="iterator_012.phpt" role="test" />
     <file name="not_enough_shm.phpt" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />
