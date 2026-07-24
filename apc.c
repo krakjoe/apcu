@@ -39,10 +39,13 @@
 	void apc_##name(const char *format, ...)				\
 	{									\
 		va_list args;							\
+		char *buf;							\
 										\
 		va_start(args, format);						\
-		php_verror(NULL, "", verbosity, format, args);			\
+		vspprintf(&buf, 0, format, args);				\
 		va_end(args);							\
+		php_error_docref(NULL, verbosity, "%s", buf);			\
+		efree(buf);							\
 	}
 
 APC_PRINT_FUNCTION(error, E_ERROR)
