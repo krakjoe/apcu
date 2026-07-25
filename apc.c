@@ -34,27 +34,6 @@
 #include "apc_globals.h"
 #include "php.h"
 
-/* console display functions */
-#define APC_PRINT_FUNCTION(name, verbosity)					\
-	void apc_##name(const char *format, ...)				\
-	{									\
-		va_list args;							\
-										\
-		va_start(args, format);						\
-		php_verror(NULL, "", verbosity, format, args);			\
-		va_end(args);							\
-	}
-
-APC_PRINT_FUNCTION(error, E_ERROR)
-APC_PRINT_FUNCTION(warning, E_WARNING)
-APC_PRINT_FUNCTION(notice, E_NOTICE)
-
-#ifdef APC_DEBUG
-APC_PRINT_FUNCTION(debug, E_NOTICE)
-#else
-void apc_debug(const char *format, ...) {}
-#endif
-
 HashTable* apc_flip_hash(HashTable *hash) {
 	zval data, *entry;
 	HashTable *new_hash;

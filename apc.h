@@ -78,10 +78,16 @@
 #endif
 
 /* console display functions */
-PHP_APCU_API void apc_error(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
-PHP_APCU_API void apc_warning(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
-PHP_APCU_API void apc_notice(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
-PHP_APCU_API void apc_debug(const char *format, ...) ZEND_ATTRIBUTE_FORMAT(printf, 1, 2);
+#define apc_error(...) php_error_docref(NULL, E_ERROR, __VA_ARGS__)
+#define apc_warning(...) php_error_docref(NULL, E_WARNING, __VA_ARGS__)
+#define apc_notice(...) php_error_docref(NULL, E_NOTICE, __VA_ARGS__)
+
+#ifdef APC_DEBUG
+# define apc_debug(...) php_error_docref(NULL, E_NOTICE, __VA_ARGS__)
+#else
+/* if (0) keeps compile-time format checking at zero runtime cost */
+# define apc_debug(...) do { if (0) php_error_docref(NULL, E_NOTICE, __VA_ARGS__); } while (0)
+#endif
 
 /* apc_flip_hash flips keys and values for faster searching */
 PHP_APCU_API HashTable* apc_flip_hash(HashTable *hash);
