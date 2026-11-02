@@ -31,6 +31,12 @@ Debug_TS
 Makefile
 Makefile.fragments
 Makefile.objects
+Makefile.global
+acinclude.m4
+build/
+configure.in
+ltmain.sh
+run-tests.php
 Release
 Release_TS
 Release_TSDbg
