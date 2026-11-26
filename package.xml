@@ -65,6 +65,9 @@
     during the build process.
   - Fixed self-deadlock in APCUIterator when a stored object's __wakeup() re-enters APCu, by
     unserializing values after the cache lock is released instead of while it is held.
+  - Fix APCUIterator on the deleted list (APC_LIST_DELETED): the iteration never ended once the
+    first chunk had been returned, the first entry of the list was always skipped and, with a
+    search filter, entries could be returned more than once.
 
   Internal changes:
   - Added stress test to CI. This test will hopefully help to detect unexpected behavior
@@ -153,6 +156,7 @@
     <file name="iterator_010.phpt" role="test" />
     <file name="iterator_011.phpt" role="test" />
     <file name="iterator_012.phpt" role="test" />
+    <file name="iterator_013.phpt" role="test" />
     <file name="not_enough_shm.phpt" role="test" />
     <file name="server_test.inc" role="test" />
     <file name="skipif.inc" role="test" />

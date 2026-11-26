@@ -261,6 +261,10 @@ static size_t apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 	size_t count = 0;
 	int i;
 
+	while (apc_stack_size(iterator->stack) > 0) {
+		apc_iterator_item_dtor(apc_stack_pop(iterator->stack));
+	}
+
 	if (!apc_cache_rlock(cache)) {
 		return count;
 	}
@@ -270,11 +274,14 @@ static size_t apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 	php_apc_try {
 		php_apc_try {
 			uintptr_t entry_offset = cache->header->gc;
-			while (entry_offset && count <= iterator->slot_idx) {
-				count++;
+			size_t skipped = 0;
+
+			/* slot_idx is the number of list entries walked by the previous chunks,
+			 * matching or not, so that a search filter does not shift the position */
+			while (entry_offset && skipped < iterator->slot_idx) {
+				skipped++;
 				entry_offset = ENTRYAT(entry_offset)->next;
 			}
-			count = 0;
 			while (entry_offset && count < iterator->chunk_size) {
 				apc_cache_entry_t *entry = ENTRYAT(entry_offset);
 				if (apc_iterator_search_match(iterator, entry)) {
@@ -283,9 +290,9 @@ static size_t apc_iterator_fetch_deleted(apc_iterator_t *iterator) {
 					apc_cache_entry_incref(cache, entry);
 				}
 				entry_offset = entry->next;
+				iterator->slot_idx++;
 			}
 		} php_apc_finally {
-			iterator->slot_idx += count;
 			iterator->stack_idx = 0;
 			apc_cache_runlock(cache);
 		} php_apc_end_try();
